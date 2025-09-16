@@ -5,7 +5,9 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
 ## Get started
 
 1. Install dependencies
-   Please install pnpm as package manager.
+   Please install pnpm as package manager with version >= 10.
+   [pnpm official install guide](https://pnpm.io/installation)
+   `npm install -g pnpm@latest-10` or `brew install pnpm`
 
    ```bash
    pnpm install
