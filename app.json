@@ -43,6 +43,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "058a60a5-6caf-492e-8330-d0814b655293"
+      }
+    },
+    "owner": "perpetual-protocol"
   }
 }
