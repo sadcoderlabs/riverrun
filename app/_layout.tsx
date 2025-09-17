@@ -1,6 +1,6 @@
+import { tamaguiConfig } from "@/tamagui.config";
 import { Stack } from "expo-router";
-import { tamaguiConfig } from "@/tamagui.config"
-import { TamaguiProvider } from "tamagui"
+import { TamaguiProvider } from "tamagui";
 
 // make sure import @walletconnect/react-native-compat before wagmi to avoid issues
 import "@walletconnect/react-native-compat";
@@ -11,7 +11,7 @@ import {
   defaultWagmiConfig,
 } from "@reown/appkit-wagmi-react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { arbitrum, mainnet, polygon } from "@wagmi/core/chains";
+import { arbitrum, mainnet } from "@wagmi/core/chains";
 import { WagmiProvider } from "wagmi";
 
 
@@ -24,9 +24,9 @@ const projectId = "REOWN_PROJECT_ID_REMOVED";
 
 // 2. Create config
 const metadata = {
-  name: "AppKit RN",
-  description: "AppKit RN Example",
-  url: "https://reown.com/appkit",
+  name: "Riverrun",
+  description: "A trading app built by perpetual protocol",
+  url: "https://riverrun.perp.com",
   icons: ["https://avatars.githubusercontent.com/u/179229932"],
   redirect: {
     native: "YOUR_APP_SCHEME://",
@@ -34,7 +34,7 @@ const metadata = {
   },
 };
 
-const chains = [mainnet, polygon, arbitrum] as const;
+const chains = [mainnet, arbitrum] as const;
 
 const wagmiConfig = defaultWagmiConfig({ chains, projectId, metadata });
 
