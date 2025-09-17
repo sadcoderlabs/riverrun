@@ -1,4 +1,4 @@
-import { Text, View } from "react-native";
+import { Text, View, Button } from "tamagui";
 
 export default function Index() {
   return (
@@ -10,6 +10,7 @@ export default function Index() {
       }}
     >
       <Text>Edit app/index.tsx to edit this screen.</Text>
+      <Button size="$3">Tamagui Button</Button>
     </View>
   );
 }

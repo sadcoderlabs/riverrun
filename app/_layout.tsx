@@ -1,4 +1,6 @@
 import { Stack } from "expo-router";
+import { tamaguiConfig } from "@/tamagui.config"
+import { TamaguiProvider } from "tamagui"
 
 // make sure import @walletconnect/react-native-compat before wagmi to avoid issues
 import "@walletconnect/react-native-compat";
@@ -48,11 +50,13 @@ createAppKit({
 
 export default function RootLayout() {
   return (
-    <WagmiProvider config={wagmiConfig}>
-      <QueryClientProvider client={queryClient}>
-        <Stack />
-        <AppKit />
-      </QueryClientProvider>
-    </WagmiProvider>
+      <TamaguiProvider config={tamaguiConfig}>
+        <WagmiProvider config={wagmiConfig}>
+          <QueryClientProvider client={queryClient}>
+            <Stack />
+            <AppKit />
+          </QueryClientProvider>
+        </WagmiProvider>
+      </TamaguiProvider>
   );
 }
