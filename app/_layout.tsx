@@ -48,10 +48,8 @@ createAppKit({
 });
 
 
+const isConnected = false
 export default function RootLayout() {
-  const isConnected = false
-  console.log("isConnected", isConnected)
-
   return (
       <TamaguiProvider config={tamaguiConfig}>
         <WagmiProvider config={wagmiConfig}>
@@ -61,7 +59,7 @@ export default function RootLayout() {
                 <Stack.Screen name="login" />
               </Stack.Protected>
               <Stack.Protected guard={isConnected}>
-                <Stack.Screen name="(main)" />
+                <Stack.Screen name="(main)/index" />
               </Stack.Protected>
             </Stack>
             <AppKit />
