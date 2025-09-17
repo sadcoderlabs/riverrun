@@ -11,7 +11,7 @@ export default function Index() {
         alignItems: "center",
       }}
     >
-      <Text>Edit app/index.tsx to edit this screen.</Text>
+      <Text>Home screen</Text>
       <Button size="$3" onPress={() => open()}>Connect Wallet</Button>
     </View>
   );
