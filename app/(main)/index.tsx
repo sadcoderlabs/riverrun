@@ -1,3 +1,4 @@
+import { Link } from "expo-router";
 import { Text, View } from "tamagui";
 
 export default function Index() {
@@ -9,6 +10,7 @@ export default function Index() {
         alignItems: "center",
       }}
     >
+      <Link href="/settings">Settings</Link>
       <Text>Home screen</Text>
     </View>
   );

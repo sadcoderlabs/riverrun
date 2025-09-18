@@ -1,4 +1,5 @@
 import { Text, View } from "react-native";
+import { Button } from "tamagui";
 
 export default function Index() {
   return (
@@ -10,6 +11,7 @@ export default function Index() {
       }}
     >
       <Text>This is settings screen</Text>
+      <Button>Disconnect Wallet</Button>
     </View>
   );
 }
