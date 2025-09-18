@@ -69,10 +69,10 @@ function WalletInfoDisplay() {
     <>
       <Stack>
         <Stack.Protected guard={!isConnected}>
-          <Stack.Screen name="login" />
+          <Stack.Screen name="login" options={{ headerShown: false }} />
         </Stack.Protected>
         <Stack.Protected guard={isConnected}>
-          <Stack.Screen name="(main)/index" />
+          <Stack.Screen name="(main)/index" options={{ headerShown: false }} />
           <Stack.Screen name="(main)/settings" />
         </Stack.Protected>
       </Stack>
