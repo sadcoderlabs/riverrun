@@ -9,7 +9,7 @@ export default function Index() {
         alignItems: 'center',
       }}
     >
-      <Text>Positions screen</Text>
+      <Text>Account Positions screen</Text>
     </View>
   );
 }

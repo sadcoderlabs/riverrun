@@ -11,7 +11,7 @@ export default function Index() {
       }}
     >
       <Link href="/(main)/settings">Settings</Link>
-      <Link href="/(main)/account/(tab)/positions">Positions</Link>
+      <Link href="/(main)/trade/[market]/(tab)/positions">Trade Positions</Link>
       <Text>Home screen</Text>
     </View>
   );
