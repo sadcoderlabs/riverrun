@@ -1,5 +1,5 @@
-import { useAppKit } from "@reown/appkit-wagmi-react-native";
-import { Button, Text, View } from "tamagui";
+import { useAppKit } from '@reown/appkit-wagmi-react-native';
+import { Button, Text, View } from 'tamagui';
 
 export default function Login() {
   const { open } = useAppKit();
@@ -7,12 +7,14 @@ export default function Login() {
     <View
       style={{
         flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
+        justifyContent: 'center',
+        alignItems: 'center',
       }}
     >
       <Text>Login screen</Text>
-      <Button size="$3" onPress={() => open()}>Connect Wallet</Button>
+      <Button size="$3" onPress={() => open()}>
+        Connect Wallet
+      </Button>
     </View>
   );
 }

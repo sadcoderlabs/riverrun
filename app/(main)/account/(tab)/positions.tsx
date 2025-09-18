@@ -1,21 +1,15 @@
-import { MainLayout } from '@/components/global/main-layout';
 import { Text, View } from 'tamagui';
 
-export default function AccountPositionsScreen() {
+export default function Index() {
   return (
-    <MainLayout>
-      <View
-        style={{
-          flex: 1,
-          justifyContent: 'center',
-          alignItems: 'center',
-        }}
-      >
-        <Text fontFamily="$interSemiBold" style={{ fontSize: 16 }}>
-          Account Positions
-        </Text>
-        <Text marginTop="$4">Your account positions will appear here</Text>
-      </View>
-    </MainLayout>
+    <View
+      style={{
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+      }}
+    >
+      <Text>Positions screen</Text>
+    </View>
   );
 }

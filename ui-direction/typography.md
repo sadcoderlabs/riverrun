@@ -19,7 +19,13 @@ The fonts are loaded using Expo's font loading system:
 
 ```tsx
 // In _layout.tsx
-import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
+import {
+  useFonts,
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+} from '@expo-google-fonts/inter';
 
 // Load fonts
 const [fontsLoaded, fontError] = useFonts({
@@ -35,22 +41,22 @@ These fonts are configured in Tamagui through the `tamagui.config.ts` file:
 ```tsx
 // Font definitions in tamagui.config.ts
 const interRegular = createFont({
-  family: "Inter_400Regular, sans-serif",
+  family: 'Inter_400Regular, sans-serif',
   // other configuration...
 });
 
 const interMedium = createFont({
-  family: "Inter_500Medium, sans-serif",
+  family: 'Inter_500Medium, sans-serif',
   // other configuration...
 });
 
 const interSemiBold = createFont({
-  family: "Inter_600SemiBold, sans-serif",
+  family: 'Inter_600SemiBold, sans-serif',
   // other configuration...
 });
 
 const interBold = createFont({
-  family: "Inter_700Bold, sans-serif",
+  family: 'Inter_700Bold, sans-serif',
   // other configuration...
 });
 
@@ -75,6 +81,7 @@ export const tamaguiConfig = createTamagui({
 The application uses a type scale that adapts based on the platform (iOS or Android). The scale is defined in `tamagui.config.ts` and includes sizes from 1 to 16, with specific semantic meanings:
 
 #### iOS Scale:
+
 - Size 1: 11px (Caption)
 - Size 2: 13px (Footnote)
 - Size 3: 15px (Subhead)
@@ -86,6 +93,7 @@ The application uses a type scale that adapts based on the platform (iOS or Andr
 - Size 9-16: Larger sizes for special cases
 
 #### Android Scale:
+
 - Size 1: 11px (Caption)
 - Size 2: 12px (Label)
 - Size 3: 14px (H6)

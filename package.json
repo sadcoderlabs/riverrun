@@ -4,7 +4,6 @@
   "version": "1.0.0",
   "scripts": {
     "start": "expo start",
-    "reset-project": "node ./scripts/reset-project.js",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
@@ -46,6 +45,7 @@
     "expo-symbols": "1.0.7",
     "expo-system-ui": "6.0.7",
     "expo-web-browser": "15.0.7",
+    "hyperliquid": "1.7.7",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-native": "0.81.4",

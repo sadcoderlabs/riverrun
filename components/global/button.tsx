@@ -22,39 +22,44 @@
  * which Expo Router will automatically select on iOS devices.
  */
 
-import React, { forwardRef } from "react"
-import { styled, Button as TamaguiButton, ButtonProps as TamaguiButtonProps, TamaguiElement } from "tamagui"
+import React, { forwardRef } from 'react';
+import {
+  styled,
+  Button as TamaguiButton,
+  ButtonProps as TamaguiButtonProps,
+  TamaguiElement,
+} from 'tamagui';
 
 /**
  * Base Button - Text-only button with transparent background
  * Used for low-emphasis actions
  */
 const StyledBaseButton = styled(TamaguiButton, {
-  fontWeight: "$5",
+  fontWeight: '$5',
   pressTheme: true,
-  rounded: "$12",
-  bg: "transparent",
-  color: "$accent9",
+  rounded: '$12',
+  bg: 'transparent',
+  color: '$accent9',
   chromeless: true,
   borderWidth: 0,
   outlineWidth: 0,
   pressStyle: {
-    bg: "$backgroundHover",
+    bg: '$backgroundHover',
     outlineWidth: 0,
     opacity: 0.8,
   },
   hoverStyle: {
-    bg: "$backgroundHover",
+    bg: '$backgroundHover',
     outlineWidth: 0,
   },
-  size: "$3",
-  height: "$3.5",
-  px: "$3",
+  size: '$3',
+  height: '$3.5',
+  px: '$3',
   variants: {
     level: {
-      sm: { fontSize: "$3", size: "$3", height: "$3", px: "$3", py: "$0" },
-      md: { fontSize: "$3", size: "$3", height: "$4", px: "$5", py: "$0.5" },
-      lg: { fontSize: "$4", size: "$4", height: "$5", px: "$6", py: "$1" },
+      sm: { fontSize: '$3', size: '$3', height: '$3', px: '$3', py: '$0' },
+      md: { fontSize: '$3', size: '$3', height: '$4', px: '$5', py: '$0.5' },
+      lg: { fontSize: '$4', size: '$4', height: '$5', px: '$6', py: '$1' },
     },
     disabled: {
       true: {
@@ -62,33 +67,33 @@ const StyledBaseButton = styled(TamaguiButton, {
       },
     },
   },
-})
+});
 
 // Use styleable for functional components that wrap styled components
 const ButtonBase = forwardRef<TamaguiElement, ButtonProps>((props, ref) => {
-  return <StyledBaseButton {...props} ref={ref} />
-})
-ButtonBase.displayName = "ButtonBase"
+  return <StyledBaseButton {...props} ref={ref} />;
+});
+ButtonBase.displayName = 'ButtonBase';
 
 /**
  * Filled Button - Primary action button with solid background
  * Used for high-emphasis, primary actions
  */
 const StyledTintedButton = styled(TamaguiButton, {
-  fontWeight: "$5",
-  color: "$accent11",
+  fontWeight: '$5',
+  color: '$accent11',
   borderWidth: 0,
-  bg: "$accent3",
-  rounded: "$12",
-  theme: "accent",
-  size: "$3",
-  height: "$3.5",
-  px: "$5",
+  bg: '$accent3',
+  rounded: '$12',
+  theme: 'accent',
+  size: '$3',
+  height: '$3.5',
+  px: '$5',
   variants: {
     level: {
-      sm: { fontSize: "$3", size: "$3", height: "$3", px: "$3", py: "$0" },
-      md: { fontSize: "$3", size: "$3", height: "$4", px: "$5", py: "$0.5" },
-      lg: { fontSize: "$4", size: "$4", height: "$5", px: "$6", py: "$1" },
+      sm: { fontSize: '$3', size: '$3', height: '$3', px: '$3', py: '$0' },
+      md: { fontSize: '$3', size: '$3', height: '$4', px: '$5', py: '$0.5' },
+      lg: { fontSize: '$4', size: '$4', height: '$5', px: '$6', py: '$1' },
     },
     disabled: {
       true: {
@@ -96,40 +101,40 @@ const StyledTintedButton = styled(TamaguiButton, {
       },
     },
   },
-})
+});
 
 const ButtonFilled = forwardRef<TamaguiElement, ButtonProps>((props, ref) => {
-  return <StyledFilledButton {...props} ref={ref} />
-})
-ButtonFilled.displayName = "ButtonFilled"
+  return <StyledFilledButton {...props} ref={ref} />;
+});
+ButtonFilled.displayName = 'ButtonFilled';
 
 /**
  * Tinted Button - Secondary action button with light accent background
  * Used for medium-emphasis actions
  */
 const StyledFilledButton = styled(TamaguiButton, {
-  fontWeight: "$5",
-  rounded: "$12",
-  color: "$accent1",
-  bg: "$accent9",
+  fontWeight: '$5',
+  rounded: '$12',
+  color: '$accent1',
+  bg: '$accent9',
   borderWidth: 0,
   outlineWidth: 0,
   hoverStyle: {
-    bg: "$accent9",
+    bg: '$accent9',
     opacity: 0.9,
   },
   pressStyle: {
-    bg: "$accent11",
+    bg: '$accent11',
     opacity: 0.8,
   },
-  size: "$3",
-  height: "$3.5",
-  px: "$5",
+  size: '$3',
+  height: '$3.5',
+  px: '$5',
   variants: {
     level: {
-      sm: { fontSize: "$3", size: "$3", height: "$3", px: "$3", py: "$0" },
-      md: { fontSize: "$3", size: "$3", height: "$4", px: "$5", py: "$0.5" },
-      lg: { fontSize: "$4", size: "$4", height: "$5", px: "$6", py: "$1" },
+      sm: { fontSize: '$3', size: '$3', height: '$3', px: '$3', py: '$0' },
+      md: { fontSize: '$3', size: '$3', height: '$4', px: '$5', py: '$0.5' },
+      lg: { fontSize: '$4', size: '$4', height: '$5', px: '$6', py: '$1' },
     },
     disabled: {
       true: {
@@ -137,31 +142,31 @@ const StyledFilledButton = styled(TamaguiButton, {
       },
     },
   },
-})
+});
 
 const ButtonTinted = forwardRef<TamaguiElement, ButtonProps>((props, ref) => {
-  return <StyledTintedButton {...props} ref={ref} />
-})
-ButtonTinted.displayName = "ButtonTinted"
+  return <StyledTintedButton {...props} ref={ref} />;
+});
+ButtonTinted.displayName = 'ButtonTinted';
 
 /**
  * Gray Button - Outlined button with neutral styling
  * Used for tertiary actions or in contexts where a less prominent button is needed
  */
 const StyledGrayButton = styled(TamaguiButton, {
-  fontWeight: "$5",
-  rounded: "$12",
-  variant: "outlined",
+  fontWeight: '$5',
+  rounded: '$12',
+  variant: 'outlined',
   borderWidth: 1,
-  color: "$accent9",
-  size: "$3",
-  height: "$3.5",
-  px: "$5",
+  color: '$accent9',
+  size: '$3',
+  height: '$3.5',
+  px: '$5',
   variants: {
     level: {
-      sm: { fontSize: "$3", size: "$3", height: "$3", px: "$3", py: "$0" },
-      md: { fontSize: "$3", size: "$3", height: "$4", px: "$5", py: "$0.5" },
-      lg: { fontSize: "$4", size: "$4", height: "$5", px: "$6", py: "$1" },
+      sm: { fontSize: '$3', size: '$3', height: '$3', px: '$3', py: '$0' },
+      md: { fontSize: '$3', size: '$3', height: '$4', px: '$5', py: '$0.5' },
+      lg: { fontSize: '$4', size: '$4', height: '$5', px: '$6', py: '$1' },
     },
     disabled: {
       true: {
@@ -169,12 +174,12 @@ const StyledGrayButton = styled(TamaguiButton, {
       },
     },
   },
-})
+});
 
 const ButtonGray = forwardRef<TamaguiElement, ButtonProps>((props, ref) => {
-  return <StyledGrayButton {...props} ref={ref} />
-})
-ButtonGray.displayName = "ButtonGray"
+  return <StyledGrayButton {...props} ref={ref} />;
+});
+ButtonGray.displayName = 'ButtonGray';
 
 /**
  * Inline Button - Text-only button with transparent background, same as base button
@@ -186,27 +191,27 @@ const StyledInlineButton = styled(TamaguiButton, {
   pressTheme: true,
   pressStyle: {
     opacity: 0.8,
-    bg: "transparent",
+    bg: 'transparent',
   },
-  fontSize: "$4",
-  fontWeight: "$5",
-  color: "$accent9",
+  fontSize: '$4',
+  fontWeight: '$5',
+  color: '$accent9',
   variants: {
     level: {
-      sm: { fontSize: "$3" },
-      md: { fontSize: "$4" },
-      lg: { fontSize: "$5" },
+      sm: { fontSize: '$3' },
+      md: { fontSize: '$4' },
+      lg: { fontSize: '$5' },
     },
   } as const,
   defaultVariants: {
-    level: "md",
+    level: 'md',
   },
-})
+});
 
 const ButtonInline = forwardRef<TamaguiElement, ButtonProps>((props, ref) => {
-  return <StyledInlineButton {...props} ref={ref} />
-})
-ButtonInline.displayName = "ButtonInline"
+  return <StyledInlineButton {...props} ref={ref} />;
+});
+ButtonInline.displayName = 'ButtonInline';
 
 /**
  * Unified Button component with multiple variants.
@@ -224,11 +229,11 @@ export const Button = Object.assign(ButtonBase, {
   Gray: ButtonGray,
   Inline: ButtonInline,
 }) as typeof ButtonBase & {
-  Filled: typeof ButtonFilled
-  Tinted: typeof ButtonTinted
-  Gray: typeof ButtonGray
-  Inline: typeof ButtonInline
-}
+  Filled: typeof ButtonFilled;
+  Tinted: typeof ButtonTinted;
+  Gray: typeof ButtonGray;
+  Inline: typeof ButtonInline;
+};
 
 /**
  * Custom ButtonProps interface extending TamaguiButtonProps.
@@ -236,5 +241,5 @@ export const Button = Object.assign(ButtonBase, {
  * @property level - Controls the size/padding of the button (sm, md, lg)
  */
 export interface ButtonProps extends TamaguiButtonProps {
-  level?: "sm" | "md" | "lg"
+  level?: 'sm' | 'md' | 'lg';
 }

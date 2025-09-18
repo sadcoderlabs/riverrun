@@ -10,7 +10,7 @@ import {
 import { SplashScreen, Stack } from 'expo-router';
 import { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { Paragraph, TamaguiProvider, View } from 'tamagui';
+import { TamaguiProvider, View } from 'tamagui';
 
 // make sure import @walletconnect/react-native-compat before wagmi to avoid issues
 import '@walletconnect/react-native-compat';
@@ -67,18 +67,16 @@ function WalletInfoDisplay() {
 
   return (
     <>
-      <Paragraph>
-        walletInfo:
-        {JSON.stringify(walletInfo)}
-      </Paragraph>
       <Stack>
         <Stack.Protected guard={!isConnected}>
           <Stack.Screen name="login" />
         </Stack.Protected>
         <Stack.Protected guard={isConnected}>
           <Stack.Screen name="(main)/index" />
+          <Stack.Screen name="(main)/settings" />
         </Stack.Protected>
       </Stack>
+      <AppKit />
     </>
   );
 }

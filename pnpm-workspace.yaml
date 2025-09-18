@@ -1,4 +1,4 @@
 packageExtensions:
   tamagui:
     peerDependencies:
-      react-native: ">=0.81.4"
+      react-native: '>=0.81.4'
