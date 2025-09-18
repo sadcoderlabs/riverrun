@@ -1,5 +1,7 @@
 import { tamaguiConfig } from "@/tamagui.config";
-import { Stack } from "expo-router";
+import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold, useFonts } from '@expo-google-fonts/inter';
+import { SplashScreen, Stack } from "expo-router";
+import { useEffect } from 'react';
 import { TamaguiProvider } from "tamagui";
 
 // make sure import @walletconnect/react-native-compat before wagmi to avoid issues
@@ -14,6 +16,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { arbitrum, mainnet } from "@wagmi/core/chains";
 import { WagmiProvider } from "wagmi";
 
+// Prevent the splash screen from auto-hiding
+SplashScreen.preventAutoHideAsync();
 
 
 // 0. Setup queryClient
@@ -50,6 +54,26 @@ createAppKit({
 
 const isConnected = false
 export default function RootLayout() {
+  // Load the Inter fonts
+  const [fontsLoaded, fontError] = useFonts({
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+  });
+
+  // Hide the splash screen once the fonts have loaded
+  useEffect(() => {
+    if (fontsLoaded || fontError) {
+      SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded, fontError]);
+
+  // If fonts are still loading, don't render anything
+  if (!fontsLoaded && !fontError) {
+    return null;
+  }
+  
   return (
       <TamaguiProvider config={tamaguiConfig}>
         <WagmiProvider config={wagmiConfig}>
