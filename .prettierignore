@@ -1,0 +1,7 @@
+# Ignore artifacts
+node_modules
+.expo
+dist
+build
+coverage
+pnpm-lock.yaml
