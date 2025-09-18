@@ -8,7 +8,7 @@ import {
 } from '@expo-google-fonts/inter';
 import { SplashScreen, Stack } from 'expo-router';
 import { useEffect } from 'react';
-import { TamaguiProvider } from 'tamagui';
+import { Paragraph, TamaguiProvider } from 'tamagui';
 
 // make sure import @walletconnect/react-native-compat before wagmi to avoid issues
 import '@walletconnect/react-native-compat';
@@ -58,6 +58,29 @@ createAppKit({
 });
 
 const isConnected = false;
+// Create a child component that uses the wallet info hook
+function WalletInfoDisplay() {
+  const { walletInfo } = useWalletInfo();
+  console.log(walletInfo);
+
+  return (
+    <>
+      <Paragraph>
+        walletInfo:
+        {JSON.stringify(walletInfo)}
+      </Paragraph>
+      <Stack>
+        <Stack.Protected guard={!isConnected}>
+          <Stack.Screen name="login" />
+        </Stack.Protected>
+        <Stack.Protected guard={isConnected}>
+          <Stack.Screen name="(main)/index" />
+        </Stack.Protected>
+      </Stack>
+    </>
+  );
+}
+
 export default function RootLayout() {
   // Load the Inter fonts
   const [fontsLoaded, fontError] = useFonts({
@@ -79,25 +102,11 @@ export default function RootLayout() {
     return null;
   }
 
-  const { walletInfo } = useWalletInfo();
-  console.log(walletInfo);
-
   return (
     <TamaguiProvider config={tamaguiConfig}>
       <WagmiProvider config={wagmiConfig}>
         <QueryClientProvider client={queryClient}>
-          <Paragraph>
-            walletInfo:
-            {walletInfo}
-          </Paragraph>
-          <Stack>
-            <Stack.Protected guard={!isConnected}>
-              <Stack.Screen name="login" />
-            </Stack.Protected>
-            <Stack.Protected guard={isConnected}>
-              <Stack.Screen name="(main)/index" />
-            </Stack.Protected>
-          </Stack>
+          <WalletInfoDisplay />
           <AppKit />
         </QueryClientProvider>
       </WagmiProvider>
