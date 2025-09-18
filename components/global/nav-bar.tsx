@@ -1,7 +1,7 @@
 import { Home, TrendingUp } from '@tamagui/lucide-icons';
 import { usePathname, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { AnimatePresence, styled, Text, XStack, YStack } from 'tamagui';
+import { AnimatePresence, styled, Text, useTheme, XStack, YStack } from 'tamagui';
 
 const NavBarContainer = styled(XStack, {
   backgroundColor: '$background',
@@ -29,6 +29,8 @@ const NavItem = styled(YStack, {
   justifyContent: 'center',
   paddingVertical: '$2',
   flex: 1,
+  animation: 'bouncy',
+  pressStyle: { scale: 0.9 },
   variants: {
     active: {
       true: {
@@ -51,7 +53,7 @@ const NavText = styled(Text, {
         color: '$accent9',
       },
       false: {
-        color: '$color',
+        color: '$color9',
       },
     },
   } as const,
@@ -61,12 +63,18 @@ export function NavBar() {
   const router = useRouter();
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
+  const theme = useTheme();
+
+  // Debug the current pathname
+  console.log('Current pathname:', pathname);
 
   const isHomeActive =
     pathname === '/' ||
     pathname === '/index' ||
     pathname === '/(main)' ||
-    pathname === '/(main)/index';
+    pathname === '/(main)/index' ||
+    pathname === '/(main)/settings' ||
+    pathname.includes('/settings'); // More inclusive check for settings paths
   const isTradeActive = pathname.includes('/trade');
 
   const navigateToHome = () => {
@@ -85,23 +93,13 @@ export function NavBar() {
       }}
     >
       <AnimatePresence>
-        <NavItem
-          active={isHomeActive}
-          onPress={navigateToHome}
-          animation="bouncy"
-          pressStyle={{ scale: 0.9 }}
-        >
-          <Home size={24} color={isHomeActive ? '#00C097' : '#797b86'} />
+        <NavItem key="home" active={isHomeActive} onPress={navigateToHome}>
+          <Home size={24} color={isHomeActive ? theme.accent9 : theme.color9} />
           <NavText active={isHomeActive}>Home</NavText>
         </NavItem>
 
-        <NavItem
-          active={isTradeActive}
-          onPress={navigateToTrade}
-          animation="bouncy"
-          pressStyle={{ scale: 0.9 }}
-        >
-          <TrendingUp size={24} color={isTradeActive ? '#00C097' : '#797b86'} />
+        <NavItem key="trade" active={isTradeActive} onPress={navigateToTrade}>
+          <TrendingUp size={24} color={isTradeActive ? theme.accent9 : theme.color9} />
           <NavText active={isTradeActive}>Trade</NavText>
         </NavItem>
       </AnimatePresence>
