@@ -1,3 +1,4 @@
+import { NavBar } from '@/components/global/nav-bar';
 import { tamaguiConfig } from '@/tamagui.config';
 import {
   Inter_400Regular,
@@ -8,7 +9,8 @@ import {
 } from '@expo-google-fonts/inter';
 import { SplashScreen, Stack } from 'expo-router';
 import { useEffect } from 'react';
-import { Paragraph, TamaguiProvider } from 'tamagui';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { Paragraph, TamaguiProvider, View } from 'tamagui';
 
 // make sure import @walletconnect/react-native-compat before wagmi to avoid issues
 import '@walletconnect/react-native-compat';
@@ -57,7 +59,7 @@ createAppKit({
   enableAnalytics: true, // Optional - defaults to your Cloud configuration
 });
 
-const isConnected = false;
+const isConnected = true;
 // Create a child component that uses the wallet info hook
 function WalletInfoDisplay() {
   const { walletInfo } = useWalletInfo();
@@ -104,12 +106,17 @@ export default function RootLayout() {
 
   return (
     <TamaguiProvider config={tamaguiConfig}>
-      <WagmiProvider config={wagmiConfig}>
-        <QueryClientProvider client={queryClient}>
-          <WalletInfoDisplay />
-          <AppKit />
-        </QueryClientProvider>
-      </WagmiProvider>
+      <SafeAreaProvider>
+        <WagmiProvider config={wagmiConfig}>
+          <QueryClientProvider client={queryClient}>
+            <View style={{ flex: 1 }}>
+              <WalletInfoDisplay />
+              <AppKit />
+              <NavBar />
+            </View>
+          </QueryClientProvider>
+        </WagmiProvider>
+      </SafeAreaProvider>
     </TamaguiProvider>
   );
 }
