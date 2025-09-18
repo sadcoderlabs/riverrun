@@ -17,11 +17,11 @@ import {
   AppKit,
   createAppKit,
   defaultWagmiConfig,
-  useWalletInfo
-} from "@reown/appkit-wagmi-react-native";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { arbitrum, mainnet } from "@wagmi/core/chains";
-import { useAccount, WagmiProvider } from "wagmi";
+  useWalletInfo,
+} from '@reown/appkit-wagmi-react-native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { arbitrum, mainnet } from '@wagmi/core/chains';
+import { useAccount, WagmiProvider } from 'wagmi';
 
 // Prevent the splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
@@ -58,54 +58,54 @@ createAppKit({
 });
 
 function AppContent() {
-    // useAccount has to be inside WagmiProvider context, so we need to separate AppContent component
-    const { status } = useAccount()
-    const isConnected = status === "connected"
-    return (
-        <>
-            <Stack>
-                <Stack.Protected guard={!isConnected}>
-                    <Stack.Screen name="login" />
-                </Stack.Protected>
-                <Stack.Protected guard={isConnected}>
-                    <Stack.Screen name="(main)/index" />
-                    <Stack.Screen name="(main)/settings" />
-                </Stack.Protected>
-            </Stack>
-            <AppKit />
-        </>
-    );
+  // useAccount has to be inside WagmiProvider context, so we need to separate AppContent component
+  const { status } = useAccount();
+  const isConnected = status === 'connected';
+  return (
+    <>
+      <Stack>
+        <Stack.Protected guard={!isConnected}>
+          <Stack.Screen name="login" />
+        </Stack.Protected>
+        <Stack.Protected guard={isConnected}>
+          <Stack.Screen name="(main)/index" />
+          <Stack.Screen name="(main)/settings" />
+        </Stack.Protected>
+      </Stack>
+      <AppKit />
+    </>
+  );
 }
 
 export default function RootLayout() {
-    // Load the Inter fonts
-    const [fontsLoaded, fontError] = useFonts({
-        Inter_400Regular,
-        Inter_500Medium,
-        Inter_600SemiBold,
-        Inter_700Bold,
-    });
+  // Load the Inter fonts
+  const [fontsLoaded, fontError] = useFonts({
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+  });
 
-    // Hide the splash screen once the fonts have loaded
-    useEffect(() => {
-        if (fontsLoaded || fontError) {
-            SplashScreen.hideAsync();
-        }
-    }, [fontsLoaded, fontError]);
-
-    // If fonts are still loading, don't render anything
-    if (!fontsLoaded && !fontError) {
-        return null;
+  // Hide the splash screen once the fonts have loaded
+  useEffect(() => {
+    if (fontsLoaded || fontError) {
+      SplashScreen.hideAsync();
     }
+  }, [fontsLoaded, fontError]);
 
-    return (
-        <TamaguiProvider config={tamaguiConfig}>
-            <WagmiProvider config={wagmiConfig}>
-                <QueryClientProvider client={queryClient}>
-                    <AppContent />
-                    <AppKit />
-                </QueryClientProvider>
-            </WagmiProvider>
-        </TamaguiProvider>
-    );
+  // If fonts are still loading, don't render anything
+  if (!fontsLoaded && !fontError) {
+    return null;
+  }
+
+  return (
+    <TamaguiProvider config={tamaguiConfig}>
+      <WagmiProvider config={wagmiConfig}>
+        <QueryClientProvider client={queryClient}>
+          <AppContent />
+          <AppKit />
+        </QueryClientProvider>
+      </WagmiProvider>
+    </TamaguiProvider>
+  );
 }

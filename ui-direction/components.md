@@ -76,20 +76,17 @@ export function PriceDisplay({
   size = 'medium',
 }: PriceDisplayProps) {
   const isPositive = change >= 0;
-  
+
   // Map size to Tamagui size tokens
   const sizeMap = {
     small: '$3',
     medium: '$4',
     large: '$5',
   };
-  
+
   return (
     <Stack space="$2" flexDirection="row" alignItems="center">
-      <Text 
-        fontFamily="$interSemiBold" 
-        size={sizeMap[size]}
-      >
+      <Text fontFamily="$interSemiBold" size={sizeMap[size]}>
         ${value.toFixed(precision)}
       </Text>
       {change !== 0 && (
@@ -98,7 +95,8 @@ export function PriceDisplay({
           size={sizeMap[size] === '$5' ? '$4' : '$2'}
           color={isPositive ? '$green9' : '$red9'}
         >
-          {isPositive ? '+' : ''}{change.toFixed(precision)}%
+          {isPositive ? '+' : ''}
+          {change.toFixed(precision)}%
         </Text>
       )}
     </Stack>
@@ -110,7 +108,7 @@ export const OrderButton = styled(Stack, {
   backgroundColor: '$accent9',
   borderRadius: '$4',
   padding: '$3',
-  
+
   variants: {
     type: {
       buy: {
@@ -181,10 +179,11 @@ import { Stack } from 'tamagui';
   exitStyle={{ opacity: 0, scale: 0.9 }}
 >
   {/* Component content */}
-</Stack>
+</Stack>;
 ```
 
 Prefer these animation presets:
+
 - `fast`: For micro-interactions
 - `medium`: For standard transitions
 - `bouncy`: For playful feedback

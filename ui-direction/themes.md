@@ -19,6 +19,7 @@ The theme system is organized into:
 The base theme includes 12 color steps for both light and dark modes:
 
 #### Dark Palette
+
 ```
 darkPalette = [
   "#111113", // 0: Darkest background
@@ -37,6 +38,7 @@ darkPalette = [
 ```
 
 #### Light Palette
+
 ```
 lightPalette = [
   "#fcfcfd", // 0: White background
@@ -59,9 +61,11 @@ lightPalette = [
 The accent theme provides green-focused colors for primary actions and highlights:
 
 #### Dark Accent
+
 A range of dark green shades from very dark (`#0f120d`) to bright (`#d6f7c5`).
 
 #### Light Accent
+
 A range of light green shades from white (`#fbfef9`) to dark green (`#23460b`).
 
 ### Semantic Themes
@@ -81,7 +85,7 @@ import { Text, Stack } from 'tamagui';
 <Stack backgroundColor="$background">
   <Text color="$color">Regular text</Text>
   <Text color="$color10">Emphasized text</Text>
-</Stack>
+</Stack>;
 ```
 
 ### Theme Variants
@@ -187,12 +191,16 @@ const builtThemes = createThemes({
     },
     extra: {
       // Additional theme properties
-    }
+    },
   },
   accent: {
     palette: {
-      dark: [/* accent dark palette */],
-      light: [/* accent light palette */],
+      dark: [
+        /* accent dark palette */
+      ],
+      light: [
+        /* accent light palette */
+      ],
     },
   },
   childrenThemes: {

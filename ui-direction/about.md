@@ -66,4 +66,4 @@ To work with this design system:
 
 ---
 
-*This document serves as a living guide for the UI direction of Riverrun. As the project evolves, this document should be updated to reflect changes in design philosophy and implementation details.*
+_This document serves as a living guide for the UI direction of Riverrun. As the project evolves, this document should be updated to reflect changes in design philosophy and implementation details._

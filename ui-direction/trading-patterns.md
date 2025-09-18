@@ -17,12 +17,7 @@ Price displays should follow these guidelines:
 
 ```tsx
 // Example Price Display Component
-<PriceDisplay 
-  value={29876.45} 
-  change={2.34} 
-  precision={2} 
-  timeframe="24h"
-/>
+<PriceDisplay value={29876.45} change={2.34} precision={2} timeframe="24h" />
 ```
 
 ### Order Entry
@@ -65,7 +60,7 @@ Position displays should:
   entryPrice={1850.75}
   currentPrice={1875.25}
   leverage={10}
-  liquidationPrice={1650.20}
+  liquidationPrice={1650.2}
   pnl={61.25}
   pnlPercentage={3.31}
   onClose={handleClosePosition}
@@ -85,12 +80,7 @@ Order book displays should:
 
 ```tsx
 // Example Order Book Component
-<OrderBook
-  asset="BTC-PERP"
-  depth={10}
-  aggregation={1}
-  onPriceSelect={handlePriceSelect}
-/>
+<OrderBook asset="BTC-PERP" depth={10} aggregation={1} onPriceSelect={handlePriceSelect} />
 ```
 
 ### Charts
@@ -124,12 +114,7 @@ Recent trades displays should:
 
 ```tsx
 // Example Recent Trades Component
-<RecentTrades
-  asset="BTC-PERP"
-  limit={50}
-  showSize={true}
-  minSize={0.1}
-/>
+<RecentTrades asset="BTC-PERP" limit={50} showSize={true} minSize={0.1} />
 ```
 
 ## Trading-Specific Interactions
