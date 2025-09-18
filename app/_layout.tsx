@@ -1,6 +1,6 @@
 import { tamaguiConfig } from "@/tamagui.config";
 import { Stack } from "expo-router";
-import { TamaguiProvider } from "tamagui";
+import { Paragraph, TamaguiProvider } from "tamagui";
 
 // make sure import @walletconnect/react-native-compat before wagmi to avoid issues
 import "@walletconnect/react-native-compat";
@@ -9,6 +9,7 @@ import {
   AppKit,
   createAppKit,
   defaultWagmiConfig,
+  useWalletInfo
 } from "@reown/appkit-wagmi-react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { arbitrum, mainnet } from "@wagmi/core/chains";
@@ -50,10 +51,17 @@ createAppKit({
 
 const isConnected = false
 export default function RootLayout() {
+  const { walletInfo } = useWalletInfo()
+  console.log(walletInfo)
+
   return (
       <TamaguiProvider config={tamaguiConfig}>
         <WagmiProvider config={wagmiConfig}>
           <QueryClientProvider client={queryClient}>
+            <Paragraph>
+              walletInfo:
+              {walletInfo}
+            </Paragraph>
             <Stack>
               <Stack.Protected guard={!isConnected}>
                 <Stack.Screen name="login" />
