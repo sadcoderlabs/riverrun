@@ -1,7 +1,9 @@
+import { useAppKit } from "@reown/appkit-wagmi-react-native";
 import { Text, View } from "react-native";
 import { Button } from "tamagui";
 
 export default function Index() {
+  const { open } = useAppKit()
   return (
     <View
       style={{
@@ -11,7 +13,7 @@ export default function Index() {
       }}
     >
       <Text>This is settings screen</Text>
-      <Button>Disconnect Wallet</Button>
+      <Button onPress={() => open()}>Disconnect Wallet</Button>
     </View>
   );
 }

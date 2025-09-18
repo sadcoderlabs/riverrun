@@ -1,6 +1,6 @@
 import { tamaguiConfig } from "@/tamagui.config";
 import { Stack } from "expo-router";
-import { Paragraph, TamaguiProvider } from "tamagui";
+import { TamaguiProvider } from "tamagui";
 
 // make sure import @walletconnect/react-native-compat before wagmi to avoid issues
 import "@walletconnect/react-native-compat";
@@ -8,12 +8,11 @@ import "@walletconnect/react-native-compat";
 import {
   AppKit,
   createAppKit,
-  defaultWagmiConfig,
-  useWalletInfo
+  defaultWagmiConfig
 } from "@reown/appkit-wagmi-react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { arbitrum, mainnet } from "@wagmi/core/chains";
-import { WagmiProvider } from "wagmi";
+import { useAccount, WagmiProvider } from "wagmi";
 
 
 
@@ -49,30 +48,34 @@ createAppKit({
 });
 
 
-const isConnected = false
-export default function RootLayout() {
-  const { walletInfo } = useWalletInfo()
-  console.log(walletInfo)
-
+function AppContent() {
+  // useAccount has to be inside WagmiProvider context, so we need to separate AppContent component
+  const { status } = useAccount()
+  const isConnected = status === "connected"
   return (
-      <TamaguiProvider config={tamaguiConfig}>
-        <WagmiProvider config={wagmiConfig}>
-          <QueryClientProvider client={queryClient}>
-            <Paragraph>
-              walletInfo:
-              {walletInfo}
-            </Paragraph>
-            <Stack>
-              <Stack.Protected guard={!isConnected}>
-                <Stack.Screen name="login" />
-              </Stack.Protected>
-              <Stack.Protected guard={isConnected}>
-                <Stack.Screen name="(main)/index" />
-              </Stack.Protected>
-            </Stack>
-            <AppKit />
-          </QueryClientProvider>
-        </WagmiProvider>
-      </TamaguiProvider>
+    <>
+      <Stack>
+        <Stack.Protected guard={!isConnected}>
+          <Stack.Screen name="login" />
+        </Stack.Protected>
+        <Stack.Protected guard={isConnected}>
+          <Stack.Screen name="(main)/index" />
+          <Stack.Screen name="(main)/settings" />
+        </Stack.Protected>
+      </Stack>
+      <AppKit />
+    </>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <TamaguiProvider config={tamaguiConfig}>
+      <WagmiProvider config={wagmiConfig}>
+        <QueryClientProvider client={queryClient}>
+          <AppContent />
+        </QueryClientProvider>
+      </WagmiProvider>
+    </TamaguiProvider>
   );
 }

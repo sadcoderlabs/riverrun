@@ -10,7 +10,7 @@ export default function Index() {
         alignItems: "center",
       }}
     >
-      <Link href="/settings">Settings</Link>
+      <Link href="/(main)/settings">Settings</Link>
       <Text>Home screen</Text>
     </View>
   );
