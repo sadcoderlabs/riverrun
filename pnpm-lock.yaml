@@ -49,6 +49,9 @@ importers:
       '@tamagui/core':
         specifier: 1.132.24
         version: 1.132.24(react-dom@19.1.0(react@19.1.0))(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(bufferutil@4.0.9)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
+      '@tamagui/lucide-icons':
+        specifier: 1.132.24
+        version: 1.132.24(react-dom@19.1.0(react@19.1.0))(react-native-svg@15.12.1(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(bufferutil@4.0.9)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0))(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(bufferutil@4.0.9)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
       '@tamagui/theme-builder':
         specifier: 1.132.24
         version: 1.132.24(react-dom@19.1.0(react@19.1.0))(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(bufferutil@4.0.9)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
@@ -1883,6 +1886,12 @@ packages:
       react: '*'
       react-native: ^0.79.2
 
+  '@tamagui/helpers-icon@1.132.24':
+    resolution: {integrity: sha512-wmxIBVLwrFawNVEododMS/3p1HO3zjD+NETkc5S/9TgiaxaPkFPTPDpNDweIVTtjzjpcu0PolNQJpSJVbhQbiQ==}
+    peerDependencies:
+      react: '*'
+      react-native-svg: '>=12'
+
   '@tamagui/helpers-tamagui@1.132.24':
     resolution: {integrity: sha512-RFcAnVNIOqPcP+vBXijtEcEw78mJg39ERznr9ARB5L/tPWfsPkzJsb0jQYTJr+/uy4SHCh/Den2loXvxhoQzLg==}
     peerDependencies:
@@ -1921,6 +1930,12 @@ packages:
     resolution: {integrity: sha512-BOF/zA1NuVZCglxfR773WlXrX2U49GK9KjDgpm9Aul3QReLwvWRQV/Vr+V0MTzf0RHedSMFIfsQkSu/J4oudLQ==}
     peerDependencies:
       react: '*'
+
+  '@tamagui/lucide-icons@1.132.24':
+    resolution: {integrity: sha512-dLz6YgSIKqcELmNB3u1JVkCNimP2Q5V1pSRRhR0cdJnkqBXe6pSTg2N2+Cb8V/ZSJ1GI3J6M2ph10b9ONk9zmA==}
+    peerDependencies:
+      react: '*'
+      react-native-svg: '>=12'
 
   '@tamagui/normalize-css-color@1.132.24':
     resolution: {integrity: sha512-oI0X+7R3hCccptKhh3DRgTBLN89Qm1RoQgchK0xI8pHDqEZVoYT8DYuxey80scYxIBTxLzEQOhNDG1bRILrDOQ==}
@@ -9068,6 +9083,15 @@ snapshots:
     transitivePeerDependencies:
       - react-dom
 
+  '@tamagui/helpers-icon@1.132.24(react-dom@19.1.0(react@19.1.0))(react-native-svg@15.12.1(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(bufferutil@4.0.9)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0))(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(bufferutil@4.0.9)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)':
+    dependencies:
+      '@tamagui/core': 1.132.24(react-dom@19.1.0(react@19.1.0))(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(bufferutil@4.0.9)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
+      react: 19.1.0
+      react-native-svg: 15.12.1(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(bufferutil@4.0.9)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
+    transitivePeerDependencies:
+      - react-dom
+      - react-native
+
   '@tamagui/helpers-tamagui@1.132.24(react-dom@19.1.0(react@19.1.0))(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(bufferutil@4.0.9)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)':
     dependencies:
       '@tamagui/helpers': 1.132.24(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(bufferutil@4.0.9)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
@@ -9133,6 +9157,16 @@ snapshots:
       '@tamagui/text': 1.132.24(react-dom@19.1.0(react@19.1.0))(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(bufferutil@4.0.9)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
       '@tamagui/web': 1.132.24(react-dom@19.1.0(react@19.1.0))(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(bufferutil@4.0.9)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
       react: 19.1.0
+    transitivePeerDependencies:
+      - react-dom
+      - react-native
+
+  '@tamagui/lucide-icons@1.132.24(react-dom@19.1.0(react@19.1.0))(react-native-svg@15.12.1(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(bufferutil@4.0.9)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0))(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(bufferutil@4.0.9)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)':
+    dependencies:
+      '@tamagui/core': 1.132.24(react-dom@19.1.0(react@19.1.0))(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(bufferutil@4.0.9)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
+      '@tamagui/helpers-icon': 1.132.24(react-dom@19.1.0(react@19.1.0))(react-native-svg@15.12.1(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(bufferutil@4.0.9)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0))(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(bufferutil@4.0.9)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
+      react: 19.1.0
+      react-native-svg: 15.12.1(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(bufferutil@4.0.9)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)
     transitivePeerDependencies:
       - react-dom
       - react-native

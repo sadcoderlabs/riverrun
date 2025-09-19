@@ -88,6 +88,32 @@ import { Text, Stack } from 'tamagui';
 </Stack>;
 ```
 
+### Navigation Component Theming
+
+Navigation components should follow these color guidelines:
+
+```tsx
+// Navigation bar with themed colors
+const NavItem = styled(YStack, {
+  // Use theme colors for consistent styling
+  variants: {
+    active: {
+      true: {
+        color: '$accent9', // Active state uses accent color
+      },
+      false: {
+        color: '$color9', // Inactive state uses neutral color
+      },
+    },
+  },
+});
+
+// Icon coloring should use the same theme tokens
+<Icon color={isActive ? '$accent9' : '$color9'} />
+```
+
+Always use theme tokens like `$accent9` and `$color9` instead of hardcoded hex values to ensure consistency across light and dark modes.
+
 ### Theme Variants
 
 ```tsx

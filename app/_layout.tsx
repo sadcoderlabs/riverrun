@@ -1,3 +1,4 @@
+import { NavBar } from '@/components/global/nav-bar';
 import { tamaguiConfig } from '@/tamagui.config';
 import {
   Inter_400Regular,
@@ -8,7 +9,8 @@ import {
 } from '@expo-google-fonts/inter';
 import { SplashScreen, Stack } from 'expo-router';
 import { useEffect } from 'react';
-import { TamaguiProvider } from 'tamagui';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { TamaguiProvider, View } from 'tamagui';
 
 // make sure import @walletconnect/react-native-compat before wagmi to avoid issues
 import '@walletconnect/react-native-compat';
@@ -21,7 +23,7 @@ import {
 } from '@reown/appkit-wagmi-react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { arbitrum, mainnet } from '@wagmi/core/chains';
-import { useAccount, WagmiProvider } from 'wagmi';
+import { WagmiProvider } from 'wagmi';
 
 // Prevent the splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
@@ -57,18 +59,20 @@ createAppKit({
   enableAnalytics: true, // Optional - defaults to your Cloud configuration
 });
 
-function AppContent() {
-  // useAccount has to be inside WagmiProvider context, so we need to separate AppContent component
-  const { status } = useAccount();
-  const isConnected = status === 'connected';
+const isConnected = true;
+// Create a child component that uses the wallet info hook
+function WalletInfoDisplay() {
+  const { walletInfo } = useWalletInfo();
+  console.log(walletInfo);
+
   return (
     <>
       <Stack>
         <Stack.Protected guard={!isConnected}>
-          <Stack.Screen name="login" />
+          <Stack.Screen name="login" options={{ headerShown: false }} />
         </Stack.Protected>
         <Stack.Protected guard={isConnected}>
-          <Stack.Screen name="(main)/index" />
+          <Stack.Screen name="(main)/index" options={{ headerShown: false }} />
           <Stack.Screen name="(main)/settings" />
         </Stack.Protected>
       </Stack>
@@ -100,12 +104,17 @@ export default function RootLayout() {
 
   return (
     <TamaguiProvider config={tamaguiConfig}>
-      <WagmiProvider config={wagmiConfig}>
-        <QueryClientProvider client={queryClient}>
-          <AppContent />
-          <AppKit />
-        </QueryClientProvider>
-      </WagmiProvider>
+      <SafeAreaProvider>
+        <WagmiProvider config={wagmiConfig}>
+          <QueryClientProvider client={queryClient}>
+            <View style={{ flex: 1 }}>
+              <WalletInfoDisplay />
+              <AppKit />
+              <NavBar />
+            </View>
+          </QueryClientProvider>
+        </WagmiProvider>
+      </SafeAreaProvider>
     </TamaguiProvider>
   );
 }

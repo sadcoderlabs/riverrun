@@ -32,9 +32,18 @@ Components designed specifically for trading functionality:
 
 Components related to app navigation:
 
-- **TabBar**: Custom bottom tab navigation
+- **NavBar**: Custom bottom navigation bar with themed icons and text
 - **Header**: App headers with context-specific actions
 - **Modal**: Modal dialogs and sheets
+
+#### Navigation Bar Guidelines
+
+The NavBar component follows these guidelines:
+
+1. **Theme Integration**: Uses theme tokens for colors (`$accent9`, `$color9`) instead of hardcoded values
+2. **Interactive Feedback**: Implements press animations for better user feedback
+3. **Active State**: Clearly indicates the active route with accent colors
+4. **Accessibility**: Ensures adequate touch target size and visual distinction
 
 ### 4. Feedback Components
 
@@ -181,6 +190,28 @@ import { Stack } from 'tamagui';
   {/* Component content */}
 </Stack>;
 ```
+
+### Using AnimatePresence
+
+When using AnimatePresence for animations, always provide unique keys to child components:
+
+```tsx
+import { AnimatePresence, YStack } from 'tamagui';
+
+// Correct usage with keys
+<AnimatePresence>
+  <YStack key="item1" animation="bouncy">
+    {/* Content */}
+  </YStack>
+  <YStack key="item2" animation="bouncy">
+    {/* Content */}
+  </YStack>
+</AnimatePresence>
+```
+
+Missing keys will cause React errors about duplicate keys and may break animations.
+
+### Animation Presets
 
 Prefer these animation presets:
 

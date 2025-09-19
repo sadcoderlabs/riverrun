@@ -8,6 +8,7 @@ Riverrun is a native mobile application designed to provide a seamless and intui
 
 - **UI Framework**: [Tamagui](https://tamagui.dev/) - A fully-featured UI kit for React Native and Web
 - **Font System**: Inter font family (Regular, Medium, SemiBold, Bold)
+- **Icon System**: [Lucide Icons](https://lucide.dev/) - A beautiful and consistent icon set
 - **Theme System**: Custom light/dark themes with accent colors and semantic variants (success, warning, error)
 
 ## Design System Approach
