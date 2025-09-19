@@ -82,7 +82,7 @@ export function NavBar() {
   };
 
   const navigateToTrade = () => {
-    router.navigate('/(main)/trade/BTC-USD/(tab)/trade');
+    router.navigate('/(main)/trade/BTC-USD/(tab)');
   };
 
   return (

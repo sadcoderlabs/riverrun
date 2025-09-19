@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { styled, YStack } from 'tamagui';
+import { NavBar } from './nav-bar';
 import { TopBar } from './top-bar';
 
 interface MainLayoutProps {
@@ -34,6 +35,7 @@ export function MainLayout({
     >
       {showTopBar && <TopBar />}
       {children}
+      <NavBar />
     </MainContainer>
   );
 }
