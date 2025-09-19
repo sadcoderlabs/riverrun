@@ -1,4 +1,3 @@
-import { NavBar } from '@/components/global/nav-bar';
 import { tamaguiConfig } from '@/tamagui.config';
 import {
   Inter_400Regular,
@@ -59,7 +58,7 @@ createAppKit({
   enableAnalytics: true, // Optional - defaults to your Cloud configuration
 });
 
-const isConnected = true;
+const isConnected = false;
 // Create a child component that uses the wallet info hook
 function WalletInfoDisplay() {
   const { walletInfo } = useWalletInfo();
@@ -74,6 +73,8 @@ function WalletInfoDisplay() {
         <Stack.Protected guard={isConnected}>
           <Stack.Screen name="(main)/index" options={{ headerShown: false }} />
           <Stack.Screen name="(main)/settings" />
+          <Stack.Screen name="(main)/trade/market-list" />
+          <Stack.Screen name="(main)/trade/[market]" options={{ headerShown: false }} />
         </Stack.Protected>
       </Stack>
       <AppKit />
@@ -110,7 +111,6 @@ export default function RootLayout() {
             <View style={{ flex: 1 }}>
               <WalletInfoDisplay />
               <AppKit />
-              <NavBar />
             </View>
           </QueryClientProvider>
         </WagmiProvider>
