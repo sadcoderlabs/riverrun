@@ -47,7 +47,11 @@ export default function Login() {
 
       {/* Powered by logo at bottom */}
       <YStack paddingBottom="$4" alignItems="center" width="100%" padding="$2">
-        <Text>Powered by Hyperliquid</Text>
+        <Image
+          source={require('@/assets/images/PoweredByHL-dark.png')}
+          style={{ width: 200 }}
+          resizeMode="contain"
+        />
       </YStack>
     </View>
   );
