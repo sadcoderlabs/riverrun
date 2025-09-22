@@ -2,6 +2,7 @@ import { Ban } from '@tamagui/lucide-icons';
 import React, { useState } from 'react';
 import { Separator, Text, useTheme, View, XStack, YStack } from 'tamagui';
 import { CardContainer } from '../global/card-container';
+import { HistoryData, HistoryItem } from './history-item';
 import { PositionData, PositionItem } from './position-item';
 
 type Tab = 'positions' | 'history';
@@ -43,6 +44,46 @@ const positionsData: PositionData[] = [
     liqPrice: '4350.8',
     pnl: '-3.15',
     pnlPercentage: '-0.63%',
+  },
+];
+
+// Mock history data for UI rendering
+const historyData: HistoryData[] = [
+  {
+    id: '1',
+    symbol: 'ETH-USD',
+    type: 'Close',
+    direction: 'Long',
+    timestamp: '16 Sep 25, 11:56 PM',
+    size: '0.0248',
+    sizeUnit: 'ETH',
+    sizeInUSDC: '0.61',
+    price: '4467.9',
+    fee: '0.0644',
+  },
+  {
+    id: '2',
+    symbol: 'ETH-USD',
+    type: 'Open',
+    direction: 'Long',
+    timestamp: '16 Sep 25, 10:43 PM',
+    size: '0.0248',
+    sizeUnit: 'ETH',
+    sizeInUSDC: '0.06',
+    price: '4440.6',
+    fee: '0.064',
+  },
+  {
+    id: '3',
+    symbol: 'BTC-USD',
+    type: 'Open',
+    direction: 'Short',
+    timestamp: '15 Sep 25, 09:22 PM',
+    size: '0.0015',
+    sizeUnit: 'BTC',
+    sizeInUSDC: '0.12',
+    price: '67250.8',
+    fee: '0.0842',
   },
 ];
 
@@ -107,6 +148,12 @@ export function AccountInfo() {
             </YStack>
           </YStack>
         )
+      ) : historyData.length > 0 ? (
+        <View>
+          {historyData.map(history => (
+            <HistoryItem key={history.id} history={history} />
+          ))}
+        </View>
       ) : (
         <YStack
           height={200}

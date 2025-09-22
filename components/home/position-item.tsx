@@ -69,7 +69,7 @@ export function PositionItem({ position, isExpanded, onToggle }: PositionItemPro
   };
 
   return (
-    <YStack borderBottomWidth={1} borderBottomColor="$borderColor" px="$2" py="$4" gap="$2">
+    <YStack borderBottomWidth={1} borderBottomColor="$borderColor" px="$2" py="$3" gap="$2">
       {/* Default state - First row with market pair and chevron */}
       <XStack padding="$3" justifyContent="space-between" alignItems="center">
         <XStack gap="$2" justify={'space-between'} alignItems="center">
