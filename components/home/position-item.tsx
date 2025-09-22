@@ -1,4 +1,5 @@
 import { ChevronDown, ChevronUp } from '@tamagui/lucide-icons';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Text, XStack, YStack, useTheme } from 'tamagui';
 import { Button } from '../global/button';
@@ -29,9 +30,16 @@ interface PositionItemProps {
 export function PositionItem({ position }: PositionItemProps) {
   const [expanded, setExpanded] = useState(false);
   const theme = useTheme();
+  const router = useRouter();
 
   const toggleExpanded = () => {
     setExpanded(!expanded);
+  };
+
+  const navigateToMarket = () => {
+    // Extract the base symbol from the position symbol (e.g., "BTC-USD" -> "BTC-USD")
+    const marketId = position.symbol;
+    router.push(`/(main)/trade/${marketId}/(tab)`);
   };
 
   const isPnlPositive = position.pnl.startsWith('+');
@@ -64,9 +72,16 @@ export function PositionItem({ position }: PositionItemProps) {
       {/* Default state - First row with market pair and chevron */}
       <XStack padding="$3" justifyContent="space-between" alignItems="center">
         <XStack gap="$2" justify={'space-between'} alignItems="center">
-          <Text fontFamily="$interSemiBold" fontSize="$4" fontWeight="$5">
-            {position.symbol}
-          </Text>
+          <XStack
+            onPress={navigateToMarket}
+            pressStyle={{ opacity: 0.7 }}
+            borderRadius="$2"
+            padding="$1"
+          >
+            <Text fontFamily="$interSemiBold" fontSize="$4" fontWeight="$5">
+              {position.symbol}
+            </Text>
+          </XStack>
           <XStack gap="$2" justifyContent="flex-start" alignItems="center">
             <PillBadge
               text={`${position.type} ${position.leverage}`}
@@ -91,19 +106,20 @@ export function PositionItem({ position }: PositionItemProps) {
       </XStack>
 
       {/* Default state - Second row with PNL info */}
-      <XStack padding="$3" paddingTop="$0" justifyContent="space-between" alignItems="center">
-        <YStack>
+      <XStack padding="$3" paddingTop="$0" justifyContent="flex-start" alignItems="center">
+        <YStack gap="$2" justifyContent="flex-start">
           <Text fontSize="$2" color="$color9">
             Active PNL({position.sizeUnit})
           </Text>
-          <Text color={pnlColor} fontFamily="$interSemiBold" fontSize="$4">
-            {position.pnl}
-          </Text>
+          <XStack justifyContent="flex-start" alignItems="center" gap="$2">
+            <Text color={pnlColor} fontFamily="$interSemiBold" fontSize="$4">
+              {position.pnl}
+            </Text>
+            <Text color={pnlColor} fontFamily="$interSemiBold">
+              ({position.pnlPercentage})
+            </Text>
+          </XStack>
         </YStack>
-
-        <Text color={pnlColor} fontFamily="$interSemiBold">
-          {position.pnlPercentage}
-        </Text>
       </XStack>
 
       {/* Expanded state */}
