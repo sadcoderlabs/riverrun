@@ -1,12 +1,19 @@
-import { Heading } from '@/components/global/heading';
 import { MainLayout } from '@/components/global/main-layout';
-import { YStack } from 'tamagui';
+import { AccountInfo } from '@/components/home/account-info';
+import { AccountValue } from '@/components/home/account-value';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { View, YStack } from 'tamagui';
 
 export default function Index() {
+  const insets = useSafeAreaInsets();
+
   return (
     <MainLayout noHeader={true} showTopBar={true}>
-      <YStack flex={1} padding="$4" justifyContent="center" alignItems="center" gap="$4">
-        <Heading.H1>Hello, there</Heading.H1>
+      {/* Add a spacer that's exactly the height of the TopBar */}
+      <View height={insets.top + 12} />
+      <YStack flex={1} padding="$4" gap="$4">
+        <AccountValue value={0.0} />
+        <AccountInfo />
       </YStack>
     </MainLayout>
   );

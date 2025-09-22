@@ -58,7 +58,7 @@ createAppKit({
   enableAnalytics: true, // Optional - defaults to your Cloud configuration
 });
 
-const isConnected = false;
+const isConnected = true;
 // Create a child component that uses the wallet info hook
 function WalletInfoDisplay() {
   const { walletInfo } = useWalletInfo();
