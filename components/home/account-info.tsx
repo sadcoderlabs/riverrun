@@ -48,10 +48,19 @@ const positionsData: PositionData[] = [
 
 export function AccountInfo() {
   const [activeTab, setActiveTab] = useState<Tab>('positions');
+  const [expandedPositionId, setExpandedPositionId] = useState<string | null>(null);
   const theme = useTheme();
 
   const handleTabPress = (tab: Tab) => {
     setActiveTab(tab);
+    // Close any expanded position when switching tabs
+    setExpandedPositionId(null);
+  };
+
+  const handlePositionToggle = (id: string) => {
+    // If the position is already expanded, collapse it
+    // Otherwise, expand the clicked position and collapse any other
+    setExpandedPositionId(expandedPositionId === id ? null : id);
   };
 
   return (
@@ -74,7 +83,12 @@ export function AccountInfo() {
         positionsData.length > 0 ? (
           <View>
             {positionsData.map(position => (
-              <PositionItem key={position.id} position={position} />
+              <PositionItem
+                key={position.id}
+                position={position}
+                isExpanded={expandedPositionId === position.id}
+                onToggle={handlePositionToggle}
+              />
             ))}
           </View>
         ) : (

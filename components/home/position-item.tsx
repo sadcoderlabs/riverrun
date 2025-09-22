@@ -1,6 +1,6 @@
 import { ChevronDown, ChevronUp } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React from 'react';
 import { Text, XStack, YStack, useTheme } from 'tamagui';
 import { Button } from '../global/button';
 
@@ -25,15 +25,16 @@ export interface PositionData {
 
 interface PositionItemProps {
   position: PositionData;
+  isExpanded: boolean;
+  onToggle: (id: string) => void;
 }
 
-export function PositionItem({ position }: PositionItemProps) {
-  const [expanded, setExpanded] = useState(false);
+export function PositionItem({ position, isExpanded, onToggle }: PositionItemProps) {
   const theme = useTheme();
   const router = useRouter();
 
-  const toggleExpanded = () => {
-    setExpanded(!expanded);
+  const handleToggle = () => {
+    onToggle(position.id);
   };
 
   const navigateToMarket = () => {
@@ -68,7 +69,7 @@ export function PositionItem({ position }: PositionItemProps) {
   };
 
   return (
-    <YStack borderBottomWidth={1} borderBottomColor="$borderColor" p="$2" gap="$2">
+    <YStack borderBottomWidth={1} borderBottomColor="$borderColor" px="$2" py="$4" gap="$2">
       {/* Default state - First row with market pair and chevron */}
       <XStack padding="$3" justifyContent="space-between" alignItems="center">
         <XStack gap="$2" justify={'space-between'} alignItems="center">
@@ -91,13 +92,8 @@ export function PositionItem({ position }: PositionItemProps) {
           </XStack>
         </XStack>
 
-        <XStack
-          padding="$1"
-          borderRadius="$2"
-          pressStyle={{ opacity: 0.7 }}
-          onPress={toggleExpanded}
-        >
-          {expanded ? (
+        <XStack padding="$1" borderRadius="$2" pressStyle={{ opacity: 0.7 }} onPress={handleToggle}>
+          {isExpanded ? (
             <ChevronUp size={20} color={theme.color9} />
           ) : (
             <ChevronDown size={20} color={theme.color9} />
@@ -123,7 +119,7 @@ export function PositionItem({ position }: PositionItemProps) {
       </XStack>
 
       {/* Expanded state */}
-      {expanded && (
+      {isExpanded && (
         <YStack padding="$3" paddingTop="$0">
           {/* 3x3 grid for stats */}
           <YStack gap="$4">
