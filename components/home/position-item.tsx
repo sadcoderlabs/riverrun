@@ -39,32 +39,6 @@ export function PositionItem({ position }: PositionItemProps) {
 
   // Pill badge style for leverage and cross mode
   const PillBadge = ({ text, type }: { text: string; type?: 'long' | 'short' | 'neutral' }) => {
-    // Define colors based on type
-    const getBadgeStyles = () => {
-      switch (type) {
-        case 'long':
-          return {
-            borderColor: '$green9',
-            bg: '$green2',
-            textColor: '$green9',
-          };
-        case 'short':
-          return {
-            borderColor: '$red9',
-            bg: '$red2',
-            textColor: '$red9',
-          };
-        default:
-          return {
-            borderColor: '$borderColor',
-            bg: '$background02',
-            textColor: '$color9',
-          };
-      }
-    };
-
-    const styles = getBadgeStyles();
-
     return (
       <XStack
         px="$2"
@@ -72,10 +46,13 @@ export function PositionItem({ position }: PositionItemProps) {
         borderRadius="$4"
         alignItems="center"
         borderWidth={1}
-        borderColor={styles.borderColor}
-        bg={styles.bg}
+        borderColor={type === 'long' ? '$green9' : type === 'short' ? '$red9' : '$color8'}
+        backgroundColor={type === 'long' ? '$green2' : type === 'short' ? '$red2' : '$color2'}
       >
-        <Text fontSize="$2" color={styles.textColor}>
+        <Text
+          fontSize="$2"
+          color={type === 'long' ? '$green9' : type === 'short' ? '$red9' : '$color11'}
+        >
           {text}
         </Text>
       </XStack>
