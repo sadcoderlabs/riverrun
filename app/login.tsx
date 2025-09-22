@@ -1,4 +1,5 @@
 import { Button } from '@/components/global/button';
+import { Heading } from '@/components/global/heading';
 import { useAppKit } from '@reown/appkit-wagmi-react-native';
 import { Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -22,11 +23,9 @@ export default function Login() {
       {/* Main content - centered vertically */}
       <YStack flex={1} justifyContent="center" alignItems="center" gap="$4">
         {/* App Logo */}
-        <Image
-          source={require('@/assets/images/raver.png')}
-          style={{ width: 180, height: 80 }}
-          resizeMode="contain"
-        />
+        <Heading.H1 fontFamily="$interSemiBold" fontSize="$10" lineHeight={70} paddingVertical="$2">
+          RVR
+        </Heading.H1>
 
         {/* Tagline */}
         <Text
