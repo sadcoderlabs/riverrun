@@ -20,6 +20,11 @@ export default function TradeIndex() {
         </Text>
         <Text marginTop="$2">Trading interface will be implemented here</Text>
         <YStack mt="$4" gap="$2">
+          <Link href="/(main)/trade/market-list" asChild>
+            <Button.Filled my="$2" level="md">
+              Check Markets List
+            </Button.Filled>
+          </Link>
           <Link href="/(main)/trade/[market]/(tab)/positions" asChild>
             <Button.Filled my="$2" level="md">
               Check Positions
