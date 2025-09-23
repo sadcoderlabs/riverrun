@@ -1,4 +1,4 @@
-import { MainLayout } from '@/components/global/main-layout';
+import { CleanLayout } from '@/components/global/clean-layout';
 import { useRouter } from 'expo-router';
 import { Separator, Text, XStack, YStack } from 'tamagui';
 
@@ -12,11 +12,11 @@ export default function MarketListScreen() {
   ];
 
   const navigateToMarket = (marketId: string) => {
-    router.navigate(`/(main)/trade/${marketId}/(tab)/trade`);
+    router.push(`/(main)/trade/${marketId}/(tab)`);
   };
 
   return (
-    <MainLayout>
+    <CleanLayout>
       <YStack flex={1} padding="$4">
         <Text fontFamily="$interSemiBold" style={{ fontSize: 18 }} marginBottom="$4">
           Markets
@@ -44,6 +44,6 @@ export default function MarketListScreen() {
           </YStack>
         ))}
       </YStack>
-    </MainLayout>
+    </CleanLayout>
   );
 }
