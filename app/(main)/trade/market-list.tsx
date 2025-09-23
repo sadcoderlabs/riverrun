@@ -11,6 +11,7 @@ type Market = {
   price: number;
   change: number;
   maxLeverage: number;
+  fundingRate: number;
 };
 
 export default function MarketListScreen() {
@@ -21,16 +22,86 @@ export default function MarketListScreen() {
 
   const markets = useMemo<Market[]>(
     () => [
-      { id: 'BTC-USD', name: 'Bitcoin', price: 28450.75, change: 2.34, maxLeverage: 40 },
-      { id: 'ETH-USD', name: 'Ethereum', price: 1875.25, change: -0.87, maxLeverage: 20 },
-      { id: 'SOL-USD', name: 'Solana', price: 42.18, change: 3.65, maxLeverage: 10 },
-      { id: 'AVAX-USD', name: 'Avalanche', price: 32.47, change: 1.23, maxLeverage: 10 },
-      { id: 'MATIC-USD', name: 'Polygon', price: 0.85, change: -1.45, maxLeverage: 5 },
-      { id: 'DOT-USD', name: 'Polkadot', price: 7.92, change: 0.78, maxLeverage: 10 },
-      { id: 'LINK-USD', name: 'Chainlink', price: 14.36, change: 4.21, maxLeverage: 10 },
-      { id: 'ADA-USD', name: 'Cardano', price: 0.52, change: -0.34, maxLeverage: 5 },
-      { id: 'DOGE-USD', name: 'Dogecoin', price: 0.078, change: 5.67, maxLeverage: 5 },
-      { id: 'XRP-USD', name: 'Ripple', price: 0.63, change: 1.89, maxLeverage: 5 },
+      {
+        id: 'BTC-USD',
+        name: 'Bitcoin',
+        price: 28450.75,
+        change: 2.34,
+        maxLeverage: 40,
+        fundingRate: 0.0012,
+      },
+      {
+        id: 'ETH-USD',
+        name: 'Ethereum',
+        price: 1875.25,
+        change: -0.87,
+        maxLeverage: 20,
+        fundingRate: -0.0008,
+      },
+      {
+        id: 'SOL-USD',
+        name: 'Solana',
+        price: 42.18,
+        change: 3.65,
+        maxLeverage: 10,
+        fundingRate: 0.0025,
+      },
+      {
+        id: 'AVAX-USD',
+        name: 'Avalanche',
+        price: 32.47,
+        change: 1.23,
+        maxLeverage: 10,
+        fundingRate: 0.0018,
+      },
+      {
+        id: 'MATIC-USD',
+        name: 'Polygon',
+        price: 0.85,
+        change: -1.45,
+        maxLeverage: 5,
+        fundingRate: -0.0015,
+      },
+      {
+        id: 'DOT-USD',
+        name: 'Polkadot',
+        price: 7.92,
+        change: 0.78,
+        maxLeverage: 10,
+        fundingRate: 0.0009,
+      },
+      {
+        id: 'LINK-USD',
+        name: 'Chainlink',
+        price: 14.36,
+        change: 4.21,
+        maxLeverage: 10,
+        fundingRate: 0.0031,
+      },
+      {
+        id: 'ADA-USD',
+        name: 'Cardano',
+        price: 0.52,
+        change: -0.34,
+        maxLeverage: 5,
+        fundingRate: -0.0005,
+      },
+      {
+        id: 'DOGE-USD',
+        name: 'Dogecoin',
+        price: 0.078,
+        change: 5.67,
+        maxLeverage: 5,
+        fundingRate: 0.0042,
+      },
+      {
+        id: 'XRP-USD',
+        name: 'Ripple',
+        price: 0.63,
+        change: 1.89,
+        maxLeverage: 5,
+        fundingRate: 0.0016,
+      },
     ],
     [],
   );
