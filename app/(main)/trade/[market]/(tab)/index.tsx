@@ -1,6 +1,9 @@
 import { MainLayout } from '@/components/global/main-layout';
+import { ChartUI } from '@/components/trade/chart-ui';
+import { TradeUI } from '@/components/trade/trade-ui';
 import { CandlestickChart, Menu } from '@tamagui/lucide-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useState } from 'react';
 import { Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, XStack, YStack } from 'tamagui';
@@ -9,9 +12,14 @@ export default function TradeIndex() {
   const { market } = useLocalSearchParams<{ market: string }>();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const [mode, setMode] = useState<'trade' | 'chart'>('trade');
 
   const navigateToMarketList = () => {
     router.push('/(main)/trade/market-list');
+  };
+
+  const toggleMode = () => {
+    setMode(mode === 'trade' ? 'chart' : 'trade');
   };
 
   // Hard-coded market data for rendering purposes
@@ -68,7 +76,9 @@ export default function TradeIndex() {
                 {marketData.id}
               </Text>
             </XStack>
-            <CandlestickChart size="$1.5" color="$color" />
+            <XStack onPress={toggleMode} pressStyle={{ opacity: 0.7 }} padding="$1">
+              <CandlestickChart size="$1.5" color={mode === 'chart' ? '$gray9' : '$color'} />
+            </XStack>
           </XStack>
 
           {/* Second row: Price info and Funding Rate */}
@@ -93,8 +103,12 @@ export default function TradeIndex() {
           </XStack>
         </YStack>
 
-        {/* Rest of the market content will go here */}
-        <YStack flex={1} padding="$4"></YStack>
+        {/* Conditional rendering based on mode */}
+        {mode === 'trade' ? (
+          <TradeUI marketId={marketData.id} />
+        ) : (
+          <ChartUI marketId={marketData.id} onSwitchToTrade={() => setMode('trade')} />
+        )}
       </YStack>
     </MainLayout>
   );
