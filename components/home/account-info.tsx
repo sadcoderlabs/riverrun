@@ -8,7 +8,7 @@ import { PositionData, PositionItem } from './position-item';
 type Tab = 'positions' | 'history';
 
 // Mock position data for UI rendering
-const positionsData: PositionData[] = [
+export const positionsData: PositionData[] = [
   {
     id: '1',
     symbol: 'BTC-USD',
@@ -26,6 +26,8 @@ const positionsData: PositionData[] = [
     liqPrice: '3618',
     pnl: '+0.01',
     pnlPercentage: '0.1%',
+    funding: '+0.05',
+    fundingPercentage: '0.02%',
   },
   {
     id: '2',
@@ -44,11 +46,13 @@ const positionsData: PositionData[] = [
     liqPrice: '4350.8',
     pnl: '-3.15',
     pnlPercentage: '-0.63%',
+    funding: '-0.12',
+    fundingPercentage: '-0.04%',
   },
 ];
 
 // Mock history data for UI rendering
-const historyData: HistoryData[] = [
+export const historyData: HistoryData[] = [
   {
     id: '1',
     symbol: 'ETH-USD',

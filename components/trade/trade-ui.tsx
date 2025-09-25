@@ -25,7 +25,7 @@ export function TradeUI({ marketId }: TradeUIProps) {
   const [leverage, setLeverage] = useState('5x');
   const [orderType, setOrderType] = useState('Market');
   const [sizeUnit, setSizeUnit] = useState('USDC');
-  const [orderSide, setOrderSide] = useState<'Long' | 'Short' | null>(null);
+  const [orderSide, setOrderSide] = useState<'Long' | 'Short'>('Long');
   const [sizePercentage, setSizePercentage] = useState(0);
 
   // Calculate order details
@@ -36,13 +36,6 @@ export function TradeUI({ marketId }: TradeUIProps) {
     orderSide === 'Long'
       ? marketData.price * 0.8 // Simplified calculation for demo
       : marketData.price * 1.2;
-
-  // Determine which tab is active based on the current path
-  // For Trade tab, it should be active by default when not on other tabs
-  const isPositionsActive = pathname.includes('/positions');
-  const isOrdersActive = pathname.includes('/orders');
-  const isHistoryActive = pathname.includes('/history');
-  const isTradeActive = !isPositionsActive && !isOrdersActive && !isHistoryActive;
 
   // Navigate to the appropriate tab
   const navigateToTab = (tab: string) => {
@@ -89,18 +82,10 @@ export function TradeUI({ marketId }: TradeUIProps) {
     <YStack flex={1} padding="$0">
       {/* Tab Navigation */}
       <XStack borderBottomWidth={1} borderBottomColor="$borderColor">
-        <TabItem label="Trade" isActive={isTradeActive} onPress={() => navigateToTab('trade')} />
-        <TabItem
-          label="Positions"
-          isActive={isPositionsActive}
-          onPress={() => navigateToTab('positions')}
-        />
-        <TabItem label="Orders" isActive={isOrdersActive} onPress={() => navigateToTab('orders')} />
-        <TabItem
-          label="History"
-          isActive={isHistoryActive}
-          onPress={() => navigateToTab('history')}
-        />
+        <TabItem label="Trade" isActive={true} onPress={() => navigateToTab('trade')} />
+        <TabItem label="Positions" isActive={false} onPress={() => navigateToTab('positions')} />
+        <TabItem label="Orders" isActive={false} onPress={() => navigateToTab('orders')} />
+        <TabItem label="History" isActive={false} onPress={() => navigateToTab('history')} />
       </XStack>
 
       {/* Trade UI Content */}
@@ -210,7 +195,7 @@ export function TradeUI({ marketId }: TradeUIProps) {
 
         {/* Second Stack: Size Slider */}
         <YStack gap="$2">
-          <Text fontSize="$3" color="$color" textAlign="center">
+          <Text fontSize="$3" color="$color" textAlign="center" paddingBottom="$2">
             {sizePercentage === 0 ? '0' : Math.round(sizePercentage)}%{' '}
             {sizePercentage > 0 ? convertOrderSize(tradableAmount) : ''}
           </Text>
@@ -235,7 +220,7 @@ export function TradeUI({ marketId }: TradeUIProps) {
         </YStack>
 
         {/* Third Stack: Order Information */}
-        <YStack backgroundColor="$gray3" padding="$4" borderRadius="$4" gap="$3">
+        <YStack backgroundColor="$gray3" padding="$2" borderRadius="$4" gap="$3">
           <XStack justifyContent="space-between">
             <Text color="$color" fontSize="$4">
               Tradable
