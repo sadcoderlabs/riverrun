@@ -21,6 +21,8 @@ export interface PositionData {
   liqPrice: string;
   pnl: string;
   pnlPercentage: string;
+  funding: string;
+  fundingPercentage: string;
 }
 
 interface PositionItemProps {
@@ -102,7 +104,7 @@ export function PositionItem({ position, isExpanded, onToggle }: PositionItemPro
       </XStack>
 
       {/* Default state - Second row with PNL info */}
-      <XStack padding="$3" paddingTop="$0" justifyContent="flex-start" alignItems="center">
+      <XStack padding="$3" paddingTop="$0" justifyContent="space-between" alignItems="center">
         <YStack gap="$2" justifyContent="flex-start">
           <Text fontSize="$2" color="$color9">
             Active PNL({position.sizeUnit})
@@ -113,6 +115,26 @@ export function PositionItem({ position, isExpanded, onToggle }: PositionItemPro
             </Text>
             <Text color={pnlColor} fontFamily="$interSemiBold">
               ({position.pnlPercentage})
+            </Text>
+          </XStack>
+        </YStack>
+        <YStack gap="$2" justifyContent="flex-start">
+          <Text fontSize="$2" color="$color9">
+            Funding
+          </Text>
+          <XStack justifyContent="flex-start" alignItems="center" gap="$2">
+            <Text
+              color={position.funding.startsWith('+') ? '$green9' : '$red9'}
+              fontFamily="$interSemiBold"
+              fontSize="$4"
+            >
+              {position.funding}
+            </Text>
+            <Text
+              color={position.funding.startsWith('+') ? '$green9' : '$red9'}
+              fontFamily="$interSemiBold"
+            >
+              ({position.fundingPercentage})
             </Text>
           </XStack>
         </YStack>
