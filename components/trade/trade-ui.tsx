@@ -2,6 +2,7 @@ import AdaptiveSelect from '@/components/global/adaptive-select';
 import { ChevronDown } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
+import { Alert } from 'react-native';
 import { Button, Slider, Text, XStack, YStack } from 'tamagui';
 
 interface TradeUIProps {
@@ -30,8 +31,9 @@ export function TradeUI({ marketId }: TradeUIProps) {
 
   // Calculate order details
   const accountBalance = 1000; // Mock account balance
-  const tradableAmount = accountBalance * (sizePercentage / 100);
-  const margin = tradableAmount / Number(leverage.replace('x', ''));
+  const margin = accountBalance * (sizePercentage / 100); // Margin is the amount user is willing to risk
+  const leverageFactor = Number(leverage.replace('x', ''));
+  const orderSize = margin * leverageFactor; // Total position size including leverage
   const liquidationPrice =
     orderSide === 'Long'
       ? marketData.price * 0.8 // Simplified calculation for demo
@@ -62,20 +64,16 @@ export function TradeUI({ marketId }: TradeUIProps) {
     return num.toFixed(2);
   };
 
-  // Convert order size between USDC and asset based on current unit
-  const convertOrderSize = (amount: number): string => {
-    if (amount === 0) return '0.00';
+  // ordersize calculation
+  const calcOrderSize = (marginAmount: number): string => {
+    if (marginAmount === 0) return '0.00';
 
     const assetSymbol = marketData.id.split('-')[0];
+    const leverageFactor = Number(leverage.replace('x', ''));
+    const totalOrderSize = marginAmount * leverageFactor;
+    const assetAmount = totalOrderSize / marketData.price;
 
-    if (sizeUnit === 'USDC') {
-      // Convert from USDC to asset (e.g., BTC, ETH)
-      const assetAmount = amount / marketData.price;
-      return `≈ ${assetAmount.toFixed(4)} ${assetSymbol}`;
-    } else {
-      // When unit is asset, just show the USDC value directly
-      return `${formatNumber(amount)} USDC`;
-    }
+    return `≈ ${assetAmount.toFixed(4)} ${assetSymbol} (${formatNumber(marginAmount)} USDC margin × ${leverage} = ${formatNumber(totalOrderSize)} USDC position)`;
   };
 
   return (
@@ -198,11 +196,13 @@ export function TradeUI({ marketId }: TradeUIProps) {
         </YStack>
 
         {/* Second Stack: Size Slider */}
-        <YStack gap="$2">
-          <Text fontSize="$3" color="$color" textAlign="center" paddingBottom="$2">
-            {sizePercentage === 0 ? '0' : Math.round(sizePercentage)}%{' '}
-            {sizePercentage > 0 ? convertOrderSize(tradableAmount) : ''}
-          </Text>
+        <YStack gap="$2" py="$2">
+          <XStack alignItems="center" justifyContent="space-between">
+            <Text>{sizePercentage === 0 ? '0' : Math.round(sizePercentage)}% </Text>
+            <Text fontSize="$3" color="$color" textAlign="center" paddingBottom="$2">
+              {`Available: ${formatNumber(accountBalance * (sizePercentage / 100))} USDC`}
+            </Text>
+          </XStack>
           <Slider
             defaultValue={[0]}
             max={100}
@@ -227,19 +227,19 @@ export function TradeUI({ marketId }: TradeUIProps) {
         <YStack backgroundColor="$gray3" padding="$2" borderRadius="$4" gap="$3">
           <XStack justifyContent="space-between">
             <Text color="$color" fontSize="$4">
-              Tradable
+              Margin
             </Text>
             <Text color="$color" fontSize="$4" fontFamily="$interSemiBold">
-              {formatNumber(accountBalance)} USDC
+              {formatNumber(margin)} USDC
             </Text>
           </XStack>
 
           <XStack justifyContent="space-between">
             <Text color="$color" fontSize="$4">
-              Margin
+              Order Size
             </Text>
             <Text color="$color" fontSize="$4" fontFamily="$interSemiBold">
-              {formatNumber(margin)} USDC
+              {formatNumber(orderSize)} USDC
             </Text>
           </XStack>
 
@@ -261,6 +261,28 @@ export function TradeUI({ marketId }: TradeUIProps) {
           marginTop="auto"
           disabled={!orderSide}
           opacity={orderSide ? 1 : 0.7}
+          onPress={() => {
+            // Show a native confirmation dialog
+            Alert.alert(
+              'Builder Fee Approval',
+              'Please sign before continue',
+              [
+                {
+                  text: 'Cancel',
+                  style: 'cancel',
+                },
+                {
+                  text: 'Accept',
+                  onPress: () => {
+                    // Handle acceptance here
+                    console.log('User accepted the builder fee');
+                  },
+                  style: 'default',
+                },
+              ],
+              { cancelable: false },
+            );
+          }}
         >
           <Text fontFamily="$interSemiBold" color="$color1" fontSize="$4" textAlign="center">
             Place Order
