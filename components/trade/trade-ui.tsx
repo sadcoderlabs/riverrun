@@ -69,6 +69,22 @@ export function TradeUI({ marketId }: TradeUIProps) {
     return num.toFixed(2);
   };
 
+  // Convert order size between USDC and asset based on current unit
+  const convertOrderSize = (amount: number): string => {
+    if (amount === 0) return '0.00';
+
+    const assetSymbol = marketData.id.split('-')[0];
+
+    if (sizeUnit === 'USDC') {
+      // Convert from USDC to asset (e.g., BTC, ETH)
+      const assetAmount = amount / marketData.price;
+      return `≈ ${assetAmount.toFixed(4)} ${assetSymbol}`;
+    } else {
+      // When unit is asset, just show the USDC value directly
+      return `${formatNumber(amount)} USDC`;
+    }
+  };
+
   return (
     <YStack flex={1} padding="$0">
       {/* Tab Navigation */}
@@ -131,6 +147,7 @@ export function TradeUI({ marketId }: TradeUIProps) {
               paddingVertical="$1"
               onPress={() => setOrderSide('Long')}
               borderRadius="$4"
+              opacity={orderSide === 'Long' ? 1 : 0.4}
             >
               <Text
                 fontFamily="$interSemiBold"
@@ -151,6 +168,7 @@ export function TradeUI({ marketId }: TradeUIProps) {
               paddingVertical="$1"
               onPress={() => setOrderSide('Short')}
               borderRadius="$4"
+              opacity={orderSide === 'Short' ? 1 : 0.4}
             >
               <Text
                 fontFamily="$interSemiBold"
@@ -193,8 +211,8 @@ export function TradeUI({ marketId }: TradeUIProps) {
         {/* Second Stack: Size Slider */}
         <YStack gap="$2">
           <Text fontSize="$3" color="$color" textAlign="center">
-            ~{sizePercentage === 0 ? '0.0' : formatNumber(sizePercentage)}% (
-            {formatNumber(tradableAmount)} USDC)
+            {sizePercentage === 0 ? '0' : Math.round(sizePercentage)}%{' '}
+            {sizePercentage > 0 ? convertOrderSize(tradableAmount) : ''}
           </Text>
           <Slider
             defaultValue={[0]}
