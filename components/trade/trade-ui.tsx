@@ -200,7 +200,9 @@ export function TradeUI({ marketId }: TradeUIProps) {
           <XStack alignItems="center" justifyContent="space-between">
             <Text>{sizePercentage === 0 ? '0' : Math.round(sizePercentage)}% </Text>
             <Text fontSize="$3" color="$color" textAlign="center" paddingBottom="$2">
-              {`Available: ${formatNumber(accountBalance * (sizePercentage / 100))} USDC`}
+              {sizePercentage === 0
+                ? `Available: ${formatNumber(accountBalance)} USDC`
+                : `${formatNumber(accountBalance * (sizePercentage / 100))} USDC`}
             </Text>
           </XStack>
           <Slider
