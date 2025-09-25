@@ -1,4 +1,5 @@
 import { tamaguiConfig } from '@/tamagui.config';
+import { ActionSheetProvider } from '@expo/react-native-action-sheet';
 import {
   Inter_400Regular,
   Inter_500Medium,
@@ -106,14 +107,16 @@ export default function RootLayout() {
   return (
     <TamaguiProvider config={tamaguiConfig}>
       <SafeAreaProvider>
-        <WagmiProvider config={wagmiConfig}>
-          <QueryClientProvider client={queryClient}>
-            <View style={{ flex: 1 }}>
-              <WalletInfoDisplay />
-              <AppKit />
-            </View>
-          </QueryClientProvider>
-        </WagmiProvider>
+        <ActionSheetProvider>
+          <WagmiProvider config={wagmiConfig}>
+            <QueryClientProvider client={queryClient}>
+              <View style={{ flex: 1 }}>
+                <WalletInfoDisplay />
+                <AppKit />
+              </View>
+            </QueryClientProvider>
+          </WagmiProvider>
+        </ActionSheetProvider>
       </SafeAreaProvider>
     </TamaguiProvider>
   );

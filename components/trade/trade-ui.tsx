@@ -1,7 +1,8 @@
+import AdaptiveSelect from '@/components/global/adaptive-select';
 import { ChevronDown } from '@tamagui/lucide-icons';
-import { usePathname, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Adapt, Button, Select, Sheet, Slider, Text, XStack, YStack } from 'tamagui';
+import { Button, Slider, Text, XStack, YStack } from 'tamagui';
 
 interface TradeUIProps {
   marketId?: string;
@@ -9,7 +10,6 @@ interface TradeUIProps {
 
 export function TradeUI({ marketId }: TradeUIProps) {
   const router = useRouter();
-  const pathname = usePathname();
 
   // Mock market data (similar to what's in the index.tsx)
   const marketData = {
@@ -93,8 +93,9 @@ export function TradeUI({ marketId }: TradeUIProps) {
         {/* First Stack: 2x3 Grid */}
         <YStack gap="$3">
           <XStack gap="$3">
-            {/* Collateral Mode Selector */}
+            {/* Margin Type */}
             <SelectBox
+              title="Margin Type"
               value={collateralMode}
               onValueChange={setCollateralMode}
               items={[
@@ -107,6 +108,7 @@ export function TradeUI({ marketId }: TradeUIProps) {
 
             {/* Leverage Selector */}
             <SelectBox
+              title="Leverage"
               value={leverage}
               onValueChange={setLeverage}
               items={[
@@ -169,6 +171,7 @@ export function TradeUI({ marketId }: TradeUIProps) {
           <XStack gap="$3">
             {/* Order Type Selector */}
             <SelectBox
+              title="Order Type"
               value={orderType}
               onValueChange={setOrderType}
               items={[
@@ -179,8 +182,9 @@ export function TradeUI({ marketId }: TradeUIProps) {
               flex={1}
             />
 
-            {/* Size Unit Selector */}
+            {/* Order Size Preference */}
             <SelectBox
+              title="Order Size"
               value={sizeUnit}
               onValueChange={setSizeUnit}
               items={[
@@ -299,6 +303,7 @@ function TabItem({ label, isActive, onPress }: TabItemProps) {
 
 // SelectBox Component for dropdown selectors
 interface SelectBoxProps {
+  title: string;
   value: string;
   onValueChange: (value: string) => void;
   items: { value: string; label: string }[];
@@ -306,56 +311,37 @@ interface SelectBoxProps {
   flex?: number;
 }
 
-function SelectBox({ value, onValueChange, items, placeholder, flex }: SelectBoxProps) {
+function SelectBox({ title, value, onValueChange, items, placeholder, flex }: SelectBoxProps) {
+  // Find the selected item's label to display
+  const selectedItem = items.find(item => item.value === value);
+  const displayText = selectedItem?.label || placeholder;
+
   return (
-    <Select value={value} onValueChange={onValueChange} defaultValue={items[0]?.value}>
-      <Select.Trigger flex={flex} backgroundColor="$gray3" borderRadius="$4" paddingVertical="$3">
-        <Select.Value placeholder={placeholder} />
-        <ChevronDown size="$1" color="$color" />
-      </Select.Trigger>
-
-      <Adapt when="sm" platform="touch">
-        <Sheet modal dismissOnSnapToBottom>
-          <Sheet.Frame padding="$4">
-            <Sheet.ScrollView>
-              <Adapt.Contents />
-            </Sheet.ScrollView>
-          </Sheet.Frame>
-          <Sheet.Overlay />
-        </Sheet>
-      </Adapt>
-
-      <Select.Content zIndex={200000}>
-        <Select.ScrollUpButton
+    <AdaptiveSelect value={value} onValueChange={onValueChange} title={title}>
+      <AdaptiveSelect.Trigger>
+        <XStack
+          flex={flex}
+          backgroundColor="$gray3"
+          borderRadius="$4"
+          paddingVertical="$3"
+          paddingHorizontal="$3"
+          borderColor="$gray8"
+          borderWidth={1}
           alignItems="center"
-          justifyContent="center"
-          position="relative"
-          width="100%"
-          height="$3"
+          justifyContent="space-between"
         >
-          <ChevronDown size="$1" color="$color" style={{ transform: [{ rotate: '180deg' }] }} />
-        </Select.ScrollUpButton>
-
-        <Select.Viewport minWidth={200}>
-          <Select.Group>
-            {items.map(item => (
-              <Select.Item key={item.value} index={0} value={item.value}>
-                <Select.ItemText>{item.label}</Select.ItemText>
-              </Select.Item>
-            ))}
-          </Select.Group>
-        </Select.Viewport>
-
-        <Select.ScrollDownButton
-          alignItems="center"
-          justifyContent="center"
-          position="relative"
-          width="100%"
-          height="$3"
-        >
+          <Text color="$color" fontSize="$3" fontFamily="$interRegular">
+            {displayText}
+          </Text>
           <ChevronDown size="$1" color="$color" />
-        </Select.ScrollDownButton>
-      </Select.Content>
-    </Select>
+        </XStack>
+      </AdaptiveSelect.Trigger>
+
+      {items.map((item, index) => (
+        <AdaptiveSelect.Item key={item.value} value={item.value} index={index}>
+          {item.label}
+        </AdaptiveSelect.Item>
+      ))}
+    </AdaptiveSelect>
   );
 }
