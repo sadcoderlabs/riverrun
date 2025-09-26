@@ -24,7 +24,7 @@ export default function WebViewScreen() {
           <div id="tv_chart_container"></div>
           <script>
             new TradingView.widget({
-              symbol: 'NASDAQ:AAPL',
+              symbol: 'BINANCE:BTCUSD',
               interval: '5',
               timezone: 'Etc/UTC',
               theme: 'dark',

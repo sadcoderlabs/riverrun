@@ -1,7 +1,6 @@
 import { Button } from '@/components/global/button';
 import { Heading } from '@/components/global/heading';
 import { useAppKit } from '@reown/appkit-wagmi-react-native';
-import { Link } from 'expo-router';
 import { Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, View, YStack } from 'tamagui';
@@ -43,9 +42,6 @@ export default function Login() {
         <Button.Filled level="lg" onPress={() => open()}>
           Connect Wallet
         </Button.Filled>
-        <Link href="./webview" asChild>
-          <Button.Filled level="lg">Open TradingView Test</Button.Filled>
-        </Link>
       </YStack>
 
       {/* Powered by logo at bottom */}
