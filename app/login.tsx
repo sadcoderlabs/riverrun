@@ -44,7 +44,7 @@ export default function Login() {
           Connect Wallet
         </Button.Filled>
         <Link href="./webview" asChild>
-          <Button.Filled level="lg">WebView</Button.Filled>
+          <Button.Filled level="lg">Open TradingView Test</Button.Filled>
         </Link>
       </YStack>
 
