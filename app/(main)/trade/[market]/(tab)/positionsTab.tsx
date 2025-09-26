@@ -47,7 +47,7 @@ interface ClearinghouseState {
   time: number;
 }
 
-export default function Positions() {
+export default function PositionsTab() {
   const { address } = useAccount();
   const [positions, setPositions] = useState<Position[]>([]);
   const [loading, setLoading] = useState(true);
