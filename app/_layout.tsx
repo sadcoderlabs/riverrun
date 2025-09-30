@@ -15,15 +15,10 @@ import { TamaguiProvider, View } from 'tamagui';
 // make sure import @walletconnect/react-native-compat before wagmi to avoid issues
 import '@walletconnect/react-native-compat';
 
-import {
-  AppKit,
-  createAppKit,
-  defaultWagmiConfig,
-  useWalletInfo,
-} from '@reown/appkit-wagmi-react-native';
+import { AppKit, createAppKit, defaultWagmiConfig } from '@reown/appkit-wagmi-react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { arbitrum, mainnet } from '@wagmi/core/chains';
-import { WagmiProvider } from 'wagmi';
+import { useAccount, WagmiProvider } from 'wagmi';
 
 // Prevent the splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
@@ -59,11 +54,11 @@ createAppKit({
   enableAnalytics: true, // Optional - defaults to your Cloud configuration
 });
 
-const isConnected = false;
+// const isConnected = false;
 // Create a child component that uses the wallet info hook
 function WalletInfoDisplay() {
-  const { walletInfo } = useWalletInfo();
-  console.log(walletInfo);
+  const { status } = useAccount();
+  const isConnected = status === 'connected';
 
   return (
     <>
