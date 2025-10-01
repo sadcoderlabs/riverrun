@@ -79,6 +79,9 @@ importers:
       ethers:
         specifier: 6.15.0
         version: 6.15.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+      event-target-polyfill:
+        specifier: 0.0.4
+        version: 0.0.4
       expo:
         specifier: 54.0.8
         version: 54.0.8(@babel/core@7.28.4)(@expo/metro-runtime@6.1.2)(bufferutil@4.0.9)(expo-router@6.0.6)(react-native-webview@13.16.0(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(bufferutil@4.0.9)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0))(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(bufferutil@4.0.9)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)(utf-8-validate@5.0.10)
@@ -121,6 +124,9 @@ importers:
       expo-web-browser:
         specifier: 15.0.7
         version: 15.0.7(expo@54.0.8)(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(bufferutil@4.0.9)(react@19.1.0)(utf-8-validate@5.0.10))
+      fast-text-encoding:
+        specifier: 1.0.6
+        version: 1.0.6
       hyperliquid:
         specifier: 1.7.7
         version: 1.7.7(bufferutil@4.0.9)(utf-8-validate@5.0.10)
@@ -3661,6 +3667,9 @@ packages:
   ethers@6.15.0:
     resolution: {integrity: sha512-Kf/3ZW54L4UT0pZtsY/rf+EkBU7Qi5nnhonjUb8yTXcxH3cdcWrV2cRyk0Xk/4jK6OoHhxxZHriyhje20If2hQ==}
     engines: {node: '>=14.0.0'}
+
+  event-target-polyfill@0.0.4:
+    resolution: {integrity: sha512-Gs6RLjzlLRdT8X9ZipJdIZI/Y6/HhRLyq9RdDlCsnpxr/+Nn6bU2EFGuC94GjxqhM+Nmij2Vcq98yoHrU8uNFQ==}
 
   event-target-shim@5.0.1:
     resolution: {integrity: sha512-i/2XbnSz/uxRCU6+NdVJgKWDTM427+MqYbkQzD321DuCQJUqOuJKIA0IM2+W2xtYHdKOmZ4dR6fExsd4SXL+WQ==}
@@ -12427,6 +12436,8 @@ snapshots:
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
+
+  event-target-polyfill@0.0.4: {}
 
   event-target-shim@5.0.1: {}
 
