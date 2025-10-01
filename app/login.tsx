@@ -1,3 +1,5 @@
+import '@walletconnect/react-native-compat';
+
 import { Button } from '@/components/global/button';
 import { Heading } from '@/components/global/heading';
 import { useAppKit, useAppKitAccount } from '@reown/appkit-ethers-react-native';

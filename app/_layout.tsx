@@ -1,17 +1,3 @@
-import { tamaguiConfig } from '@/tamagui.config';
-import {
-  Inter_400Regular,
-  Inter_500Medium,
-  Inter_600SemiBold,
-  Inter_700Bold,
-  useFonts,
-} from '@expo-google-fonts/inter';
-import { ActionSheetProvider } from '@expo/react-native-action-sheet';
-import { SplashScreen, Stack } from 'expo-router';
-import { useEffect } from 'react';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { TamaguiProvider, View } from 'tamagui';
-
 // make sure import @walletconnect/react-native-compat before wagmi to avoid issues
 import '@walletconnect/react-native-compat';
 
@@ -22,8 +8,20 @@ import {
   useAppKitAccount,
 } from '@reown/appkit-ethers-react-native';
 
-// Prevent the splash screen from auto-hiding
-SplashScreen.preventAutoHideAsync();
+import { tamaguiConfig } from '@/tamagui.config';
+import {
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+  useFonts,
+} from '@expo-google-fonts/inter';
+
+import { ActionSheetProvider } from '@expo/react-native-action-sheet';
+import { SplashScreen, Stack } from 'expo-router';
+import { useEffect } from 'react';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { TamaguiProvider, View } from 'tamagui';
 
 // 1. Get projectId at https://dashboard.reown.com
 const projectId = 'REOWN_PROJECT_ID_REMOVED';
@@ -70,8 +68,9 @@ createAppKit({
   enableAnalytics: true, // Optional - defaults to your Cloud configuration
 });
 
-// const isConnected = false;
-// Create a child component that uses the wallet info hook
+// Prevent the splash screen from auto-hiding
+SplashScreen.preventAutoHideAsync();
+
 function WalletInfoDisplay() {
   const { isConnected } = useAppKitAccount();
   return (
@@ -113,15 +112,17 @@ export default function RootLayout() {
   }
 
   return (
-    <TamaguiProvider config={tamaguiConfig}>
-      <SafeAreaProvider>
-        <ActionSheetProvider>
-          <View style={{ flex: 1 }}>
-            <WalletInfoDisplay />
-            <AppKit />
-          </View>
-        </ActionSheetProvider>
-      </SafeAreaProvider>
-    </TamaguiProvider>
+    <>
+      <TamaguiProvider config={tamaguiConfig}>
+        <SafeAreaProvider>
+          <ActionSheetProvider>
+            <View style={{ flex: 1 }}>
+              <WalletInfoDisplay />
+            </View>
+          </ActionSheetProvider>
+        </SafeAreaProvider>
+      </TamaguiProvider>
+      <AppKit />
+    </>
   );
 }

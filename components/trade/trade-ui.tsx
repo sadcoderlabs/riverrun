@@ -1,15 +1,128 @@
+import 'event-target-polyfill'; // polyfill for hyperliquid sdk
+import 'fast-text-encoding'; // polyfill for hyperliquid sdk
+
+import * as hl from '@nktkas/hyperliquid';
+
 import PositionsTab from '@/app/(main)/trade/[market]/(tab)/positionsTab';
 import AdaptiveSelect from '@/components/global/adaptive-select';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAppKitProvider } from '@reown/appkit-ethers-react-native';
 import { ChevronDown } from '@tamagui/lucide-icons';
+import { BrowserProvider, Wallet } from 'ethers';
 import { useState } from 'react';
-import { Alert } from 'react-native';
 import { Button, Slider, Text, XStack, YStack } from 'tamagui';
 
 interface TradeUIProps {
   marketId?: string;
 }
 
+const AGENT_STORAGE_PREFIX = 'hl-agent:private-key:';
+
+async function getOrCreateAgentSigner(masterAddress: string, provider: BrowserProvider) {
+  const storageKey = `${AGENT_STORAGE_PREFIX}${masterAddress.toLowerCase()}`;
+
+  try {
+    const storedPrivateKey = await AsyncStorage.getItem(storageKey);
+    if (storedPrivateKey) {
+      return new Wallet(storedPrivateKey).connect(provider);
+    }
+  } catch (error) {
+    console.error('Failed to load stored agent signer', error);
+  }
+
+  const generatedWallet = Wallet.createRandom();
+
+  try {
+    await AsyncStorage.setItem(storageKey, generatedWallet.privateKey);
+  } catch (error) {
+    console.error('Failed to persist generated agent signer', error);
+  }
+
+  return generatedWallet.connect(provider);
+}
+
 export function TradeUI({ marketId }: TradeUIProps) {
+  const { walletProvider } = useAppKitProvider();
+
+  async function placeOrderWithAgentExample() {
+    if (!walletProvider) {
+      console.warn('Wallet provider not available');
+      return;
+    }
+
+    try {
+      const ethersProvider = new BrowserProvider(walletProvider);
+      const transport = new hl.HttpTransport();
+
+      const masterSigner = await ethersProvider.getSigner();
+      const masterAddress = (await masterSigner.getAddress()).toLowerCase();
+      const masterExchangeClient = new hl.ExchangeClient({
+        wallet: masterSigner,
+        transport,
+      });
+
+      const agentSigner = await getOrCreateAgentSigner(masterAddress, ethersProvider);
+      const agentAddress = await agentSigner.getAddress();
+
+      const infoClient = new hl.InfoClient({ transport });
+      const existingAgents = await infoClient.extraAgents({ user: masterAddress });
+      const isApproved = existingAgents.some(
+        agent => agent.address.toLowerCase() === agentAddress.toLowerCase(),
+      );
+
+      if (!isApproved) {
+        await masterExchangeClient.approveAgent({
+          agentAddress,
+          agentName: 'Riverrun Agent',
+        });
+      }
+
+      const meta = await infoClient.meta();
+      const btcAssetIndex = meta.universe.findIndex(asset => {
+        const assetName = asset.name.toUpperCase();
+        return assetName === 'BTC' || assetName === 'BTC-USD' || assetName === 'BTCUSD';
+      });
+
+      if (btcAssetIndex === -1) {
+        console.error('Unable to locate BTC perpetual market metadata');
+        return;
+      }
+
+      const btcMeta = meta.universe[btcAssetIndex];
+      const limitPrice = '99999';
+      const notionalUsd = 100;
+      const sizeDecimals = btcMeta.szDecimals ?? 4;
+      const baseSizeNumber = notionalUsd / Number(limitPrice);
+      const baseSize = baseSizeNumber.toFixed(sizeDecimals);
+
+      const agentExchangeClient = new hl.ExchangeClient({
+        wallet: agentSigner,
+        transport,
+      });
+
+      const orderResponse = await agentExchangeClient.order({
+        orders: [
+          {
+            a: btcAssetIndex,
+            b: true,
+            p: limitPrice,
+            s: baseSize,
+            r: false,
+            t: {
+              limit: {
+                tif: 'Gtc',
+              },
+            },
+          },
+        ],
+      });
+
+      console.log('Agent order response', orderResponse);
+    } catch (error) {
+      console.error('Failed to place order via agent', error);
+    }
+  }
+
   // Mock market data (similar to what's in the index.tsx)
   const marketData = {
     id: marketId || 'BTC-USD',
@@ -250,25 +363,7 @@ export function TradeUI({ marketId }: TradeUIProps) {
               opacity={orderSide ? 1 : 0.7}
               onPress={() => {
                 // Show a native confirmation dialog
-                Alert.alert(
-                  'Builder Fee Approval',
-                  'Please sign before continue',
-                  [
-                    {
-                      text: 'Cancel',
-                      style: 'cancel',
-                    },
-                    {
-                      text: 'Accept',
-                      onPress: () => {
-                        // Handle acceptance here
-                        console.log('User accepted the builder fee');
-                      },
-                      style: 'default',
-                    },
-                  ],
-                  { cancelable: false },
-                );
+                placeOrderWithAgentExample();
               }}
             >
               <Text fontFamily="$interSemiBold" color="$color1" fontSize="$4" textAlign="center">
