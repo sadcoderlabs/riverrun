@@ -1,25 +1,21 @@
 import { MainLayout } from '@/components/global/main-layout';
 import { ChartUI } from '@/components/trade/chart-ui';
 import { TradeUI } from '@/components/trade/trade-ui';
-import { CandlestickChart, Menu } from '@tamagui/lucide-icons';
+import { CandlestickChart, ChevronUp, Menu } from '@tamagui/lucide-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Text, XStack, YStack } from 'tamagui';
+import { AnimatePresence, Text, XStack, YStack } from 'tamagui';
 
 export default function TradeIndex() {
   const { market } = useLocalSearchParams<{ market: string }>();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const [mode, setMode] = useState<'trade' | 'chart'>('trade');
+  const [isChart, setIsChart] = useState(false);
 
   const navigateToMarketList = () => {
     router.push('/(main)/trade/market-list');
-  };
-
-  const toggleMode = () => {
-    setMode(mode === 'trade' ? 'chart' : 'trade');
   };
 
   // Hard-coded market data for rendering purposes
@@ -76,8 +72,8 @@ export default function TradeIndex() {
                 {marketData.id}
               </Text>
             </XStack>
-            <XStack onPress={toggleMode} pressStyle={{ opacity: 0.7 }} padding="$1">
-              <CandlestickChart size="$1.5" color={mode === 'chart' ? '$gray9' : '$color'} />
+            <XStack onPress={() => setIsChart(!isChart)} pressStyle={{ opacity: 0.7 }} padding="$1">
+              <CandlestickChart size="$1.5" color={isChart ? '$gray9' : '$color'} />
             </XStack>
           </XStack>
 
@@ -103,12 +99,43 @@ export default function TradeIndex() {
           </XStack>
         </YStack>
 
-        {/* Conditional rendering based on mode */}
-        {mode === 'trade' ? (
-          <TradeUI marketId={marketData.id} />
-        ) : (
-          <ChartUI marketId={marketData.id} onSwitchToTrade={() => setMode('trade')} />
-        )}
+        {/* Collapsible Chart Section */}
+        <AnimatePresence>
+          {isChart && (
+            <YStack
+              key="chart-container"
+              animation="quick"
+              enterStyle={{
+                height: 0,
+                opacity: 0,
+              }}
+              exitStyle={{
+                height: 0,
+                opacity: 0,
+              }}
+              animateOnly={['height', 'opacity']}
+              height={400}
+              opacity={1}
+              overflow="hidden"
+            >
+              <ChartUI marketId={marketData.id} />
+              <XStack
+                justifyContent="center"
+                alignItems="center"
+                paddingVertical="$2"
+                backgroundColor="$background"
+                borderBottomWidth={1}
+                borderBottomColor="$gray8"
+                onPress={() => setIsChart(false)}
+                pressStyle={{ opacity: 0.7 }}
+              >
+                <ChevronUp size="$1" color="$gray10" />
+              </XStack>
+            </YStack>
+          )}
+        </AnimatePresence>
+
+        <TradeUI marketId={marketData.id} />
       </YStack>
     </MainLayout>
   );
