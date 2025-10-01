@@ -1,4 +1,4 @@
-import { useAppKit } from '@reown/appkit-wagmi-react-native';
+import { useAppKit } from '@reown/appkit-ethers-react-native';
 import { Text, View } from 'react-native';
 import { Button } from 'tamagui';
 

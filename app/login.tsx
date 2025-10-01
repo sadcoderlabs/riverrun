@@ -1,16 +1,15 @@
 import { Button } from '@/components/global/button';
 import { Heading } from '@/components/global/heading';
-import { useAppKit } from '@reown/appkit-wagmi-react-native';
+import { useAppKit, useAppKitAccount } from '@reown/appkit-ethers-react-native';
 import { Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, View, YStack } from 'tamagui';
-import { useAccount } from 'wagmi';
 
 export default function Login() {
   const { open } = useAppKit();
   const insets = useSafeAreaInsets();
 
-  const { status } = useAccount();
+  const { address, isConnected, chainId } = useAppKitAccount();
 
   return (
     <View
@@ -40,7 +39,9 @@ export default function Login() {
         >
           Futures Trading In Motion
         </Text>
-        <Text>status:{status}</Text>
+        <Text>address:{address}</Text>
+        <Text>isConnected:{`${isConnected}`}</Text>
+        <Text>chainId:{chainId}</Text>
 
         {/* Connect Wallet Button */}
         <Button.Filled level="lg" onPress={() => open()}>

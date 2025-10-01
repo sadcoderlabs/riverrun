@@ -15,16 +15,15 @@ import { TamaguiProvider, View } from 'tamagui';
 // make sure import @walletconnect/react-native-compat before wagmi to avoid issues
 import '@walletconnect/react-native-compat';
 
-import { AppKit, createAppKit, defaultWagmiConfig } from '@reown/appkit-wagmi-react-native';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { arbitrum, mainnet } from '@wagmi/core/chains';
-import { useAccount, WagmiProvider } from 'wagmi';
+import {
+  AppKit,
+  createAppKit,
+  defaultConfig,
+  useAppKitAccount,
+} from '@reown/appkit-ethers-react-native';
 
 // Prevent the splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
-
-// 0. Setup queryClient
-const queryClient = new QueryClient();
 
 // 1. Get projectId at https://dashboard.reown.com
 const projectId = 'REOWN_PROJECT_ID_REMOVED';
@@ -41,15 +40,32 @@ const metadata = {
   },
 };
 
-const chains = [mainnet, arbitrum] as const;
+const mainnet = {
+  chainId: 1,
+  name: 'Ethereum',
+  currency: 'ETH',
+  explorerUrl: 'https://etherscan.io',
+  rpcUrl: 'https://cloudflare-eth.com',
+};
 
-const wagmiConfig = defaultWagmiConfig({ chains, projectId, metadata });
+const arbitrum = {
+  chainId: 42161,
+  name: 'Arbitrum',
+  currency: 'ETH',
+  explorerUrl: 'https://arbiscan.io',
+  rpcUrl: 'https://arb-mainnet.g.alchemy.com/v2/demo',
+};
+
+const chains = [mainnet, arbitrum];
+
+const config = defaultConfig({ metadata });
 
 // 3. Create modal
 createAppKit({
   projectId,
   metadata,
-  wagmiConfig,
+  chains,
+  config,
   defaultChain: mainnet, // Optional
   enableAnalytics: true, // Optional - defaults to your Cloud configuration
 });
@@ -57,9 +73,7 @@ createAppKit({
 // const isConnected = false;
 // Create a child component that uses the wallet info hook
 function WalletInfoDisplay() {
-  const { status } = useAccount();
-  const isConnected = status === 'connected';
-
+  const { isConnected } = useAppKitAccount();
   return (
     <>
       <Stack>
@@ -73,7 +87,6 @@ function WalletInfoDisplay() {
           <Stack.Screen name="(main)/trade/[market]" options={{ headerShown: false }} />
         </Stack.Protected>
       </Stack>
-      <AppKit />
     </>
   );
 }
@@ -103,14 +116,10 @@ export default function RootLayout() {
     <TamaguiProvider config={tamaguiConfig}>
       <SafeAreaProvider>
         <ActionSheetProvider>
-          <WagmiProvider config={wagmiConfig}>
-            <QueryClientProvider client={queryClient}>
-              <View style={{ flex: 1 }}>
-                <WalletInfoDisplay />
-                <AppKit />
-              </View>
-            </QueryClientProvider>
-          </WagmiProvider>
+          <View style={{ flex: 1 }}>
+            <WalletInfoDisplay />
+            <AppKit />
+          </View>
         </ActionSheetProvider>
       </SafeAreaProvider>
     </TamaguiProvider>
