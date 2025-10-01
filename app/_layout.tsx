@@ -1,6 +1,3 @@
-// make sure import @walletconnect/react-native-compat before wagmi to avoid issues
-import '@walletconnect/react-native-compat';
-
 import {
   AppKit,
   createAppKit,
