@@ -1,16 +1,23 @@
-import { Button } from '@/components/global/button';
 import { StyleSheet } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
-import { XStack, YStack } from 'tamagui';
+import { YStack } from 'tamagui';
 
 interface ChartUIProps {
   marketId?: string;
-  onSwitchToTrade: () => void;
 }
 
-export function ChartUI({ marketId, onSwitchToTrade }: ChartUIProps) {
-  const insets = useSafeAreaInsets();
+export function ChartUI({ marketId }: ChartUIProps) {
+  // Convert market ID format (e.g., "BTC-USD") to TradingView symbol (e.g., "BINANCE:BTCUSDZ2025")
+  const getTradingViewSymbol = (market?: string): string => {
+    if (!market) return 'BINANCE:BTCUSDZ2025';
+
+    // Remove the hyphen and convert to uppercase (e.g., "BTC-USD" -> "BTCUSD")
+    const baseSymbol = market.replace('-', '').toUpperCase();
+
+    return `BINANCE:${baseSymbol}Z2025`;
+  };
+
+  const tradingViewSymbol = getTradingViewSymbol(marketId);
 
   const htmlContent = `
         <!DOCTYPE html>
@@ -34,7 +41,7 @@ export function ChartUI({ marketId, onSwitchToTrade }: ChartUIProps) {
           <div id="tv_chart_container"></div>
           <script>
             new TradingView.widget({
-              symbol: 'BINANCE:BTCUSD',
+              symbol: '${tradingViewSymbol}',
               interval: '5',
               timezone: 'Etc/UTC',
               theme: 'dark',
@@ -42,7 +49,7 @@ export function ChartUI({ marketId, onSwitchToTrade }: ChartUIProps) {
               height: '99.5%',
               style: '1',
               locale: 'en',
-              hide_side_toolbar: false,
+              hide_side_toolbar: true,
               toolbar_bg: '#f1f3f6',
               container_id: 'tv_chart_container'
             });
@@ -53,18 +60,12 @@ export function ChartUI({ marketId, onSwitchToTrade }: ChartUIProps) {
 
   return (
     <YStack flex={1} padding="$0" position="relative">
-      <WebView originWhitelist={['*']} source={{ html: htmlContent }} style={styles.container} />
-      <XStack
-        position="absolute"
-        bottom={insets.bottom > 0 ? insets.bottom : 16}
-        left={16}
-        right={16}
-        zIndex={2}
-      >
-        <Button.Filled onPress={onSwitchToTrade} level="lg" width="100%">
-          Trade
-        </Button.Filled>
-      </XStack>
+      <WebView
+        key={tradingViewSymbol}
+        originWhitelist={['*']}
+        source={{ html: htmlContent }}
+        style={styles.container}
+      />
     </YStack>
   );
 }
