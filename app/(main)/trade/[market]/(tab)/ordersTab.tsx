@@ -2,7 +2,7 @@ import { setupAgentClients } from '@/lib/hyperliquid/agent';
 import * as hl from '@nktkas/hyperliquid';
 import { useAppKitAccount, useAppKitProvider } from '@reown/appkit-ethers-react-native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { RefreshControl } from 'react-native';
+import { Alert, RefreshControl } from 'react-native';
 import { Button, ScrollView, Spinner, Text, XStack, YStack } from 'tamagui';
 
 const formatNumber = (value: number | string, decimals = 4) => {
@@ -158,7 +158,6 @@ export default function OrdersTab() {
       }
 
       setCancelError(undefined);
-      setCancelingOrderIds(prev => ({ ...prev, [order.oid]: true }));
 
       try {
         const transport = transportRef.current;
@@ -167,6 +166,50 @@ export default function OrdersTab() {
         if (!transport || !infoClient) {
           throw new Error('Client transport not initialized');
         }
+
+        const {
+          agentExchangeClient,
+          masterExchangeClient,
+          agentAddress,
+          agentName,
+          isAgentApproved,
+        } = await setupAgentClients({
+          walletProvider,
+          transport,
+          infoClient,
+          autoApprove: false,
+        });
+
+        if (!isAgentApproved) {
+          const handleAgentApproval = async () => {
+            try {
+              await masterExchangeClient.approveAgent({
+                agentAddress,
+                agentName,
+              });
+            } catch (approveErr) {
+              console.error('Error approving agent:', approveErr);
+              setCancelError('Failed to initiate agent approval. Please try again.');
+            }
+          };
+
+          Alert.alert(
+            'Agent approval required',
+            'Canceling an order requires approving the agent first. Confirm to approve now.',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              {
+                text: 'Confirm',
+                onPress: () => {
+                  void handleAgentApproval();
+                },
+              },
+            ],
+          );
+          return;
+        }
+
+        setCancelingOrderIds(prev => ({ ...prev, [order.oid]: true }));
 
         let universe = metaUniverse;
         if (!universe) {
@@ -183,12 +226,6 @@ export default function OrdersTab() {
         if (assetIndex === -1) {
           throw new Error(`Unable to determine asset index for ${order.coin}`);
         }
-
-        const { agentExchangeClient } = await setupAgentClients({
-          walletProvider,
-          transport,
-          infoClient,
-        });
 
         await agentExchangeClient.cancel({
           cancels: [
@@ -211,7 +248,14 @@ export default function OrdersTab() {
         });
       }
     },
-    [walletProvider, cancelingOrderIds, metaUniverse, normalizeAssetName, fetchOpenOrders],
+    [
+      walletProvider,
+      cancelingOrderIds,
+      metaUniverse,
+      normalizeAssetName,
+      fetchOpenOrders,
+      setMetaUniverse,
+    ],
   );
 
   if (!isConnected || !address) {

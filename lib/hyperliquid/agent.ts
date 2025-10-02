@@ -31,12 +31,36 @@ export async function getOrCreateAgentSigner(
   return generatedWallet.connect(provider);
 }
 
+export async function clearAgentSigner(masterAddress: string): Promise<void> {
+  const storageKey = `${AGENT_STORAGE_PREFIX}${masterAddress.toLowerCase()}`;
+
+  try {
+    await AsyncStorage.removeItem(storageKey);
+  } catch (error) {
+    console.error('Failed to clear stored agent signer', error);
+    throw error;
+  }
+}
+
 export interface EnsureAgentApprovalOptions {
   infoClient: hl.InfoClient;
   masterAddress: string;
   agentAddress: string;
   masterExchangeClient: hl.ExchangeClient;
   agentName?: string;
+}
+
+async function checkAgentApproval({
+  infoClient,
+  masterAddress,
+  agentAddress,
+}: Pick<
+  EnsureAgentApprovalOptions,
+  'infoClient' | 'masterAddress' | 'agentAddress'
+>): Promise<boolean> {
+  const existingAgents = await infoClient.extraAgents({ user: masterAddress });
+
+  return existingAgents.some(agent => agent.address.toLowerCase() === agentAddress.toLowerCase());
 }
 
 export async function ensureAgentApproval({
@@ -46,12 +70,9 @@ export async function ensureAgentApproval({
   masterExchangeClient,
   agentName = DEFAULT_AGENT_NAME,
 }: EnsureAgentApprovalOptions): Promise<void> {
-  const existingAgents = await infoClient.extraAgents({ user: masterAddress });
-  const isApproved = existingAgents.some(
-    agent => agent.address.toLowerCase() === agentAddress.toLowerCase(),
-  );
+  const approved = await checkAgentApproval({ infoClient, masterAddress, agentAddress });
 
-  if (!isApproved) {
+  if (!approved) {
     await masterExchangeClient.approveAgent({
       agentAddress,
       agentName,
@@ -66,6 +87,7 @@ export interface SetupAgentClientsOptions {
   transport: hl.HttpTransport;
   infoClient: hl.InfoClient;
   agentName?: string;
+  autoApprove?: boolean;
 }
 
 export interface AgentClientContext {
@@ -76,6 +98,8 @@ export interface AgentClientContext {
   agentExchangeClient: hl.ExchangeClient;
   masterExchangeClient: hl.ExchangeClient;
   ethersProvider: BrowserProvider;
+  agentName: string;
+  isAgentApproved: boolean;
 }
 
 export async function setupAgentClients({
@@ -83,6 +107,7 @@ export async function setupAgentClients({
   transport,
   infoClient,
   agentName,
+  autoApprove = true,
 }: SetupAgentClientsOptions): Promise<AgentClientContext> {
   const ethersProvider = new BrowserProvider(walletProvider as unknown as BrowserProviderInput);
   const masterSigner = await ethersProvider.getSigner();
@@ -101,13 +126,21 @@ export async function setupAgentClients({
     transport,
   });
 
-  await ensureAgentApproval({
+  const resolvedAgentName = agentName ?? DEFAULT_AGENT_NAME;
+
+  let isAgentApproved = await checkAgentApproval({
     infoClient,
     masterAddress,
     agentAddress,
-    masterExchangeClient,
-    agentName,
   });
+
+  if (autoApprove && !isAgentApproved) {
+    await masterExchangeClient.approveAgent({
+      agentAddress,
+      agentName: resolvedAgentName,
+    });
+    isAgentApproved = true;
+  }
 
   return {
     masterSigner,
@@ -117,5 +150,7 @@ export async function setupAgentClients({
     agentExchangeClient,
     masterExchangeClient,
     ethersProvider,
+    agentName: resolvedAgentName,
+    isAgentApproved,
   };
 }
