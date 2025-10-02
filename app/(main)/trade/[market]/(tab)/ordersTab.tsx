@@ -1,8 +1,9 @@
+import { setupAgentClients } from '@/lib/hyperliquid/agent';
 import * as hl from '@nktkas/hyperliquid';
-import { useAppKitAccount } from '@reown/appkit-ethers-react-native';
+import { useAppKitAccount, useAppKitProvider } from '@reown/appkit-ethers-react-native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { RefreshControl } from 'react-native';
-import { ScrollView, Spinner, Text, XStack, YStack } from 'tamagui';
+import { Button, ScrollView, Spinner, Text, XStack, YStack } from 'tamagui';
 
 const formatNumber = (value: number | string, decimals = 4) => {
   const numericValue = typeof value === 'string' ? parseFloat(value) : value;
@@ -43,17 +44,26 @@ const formatSide = (side: string) => {
 
 export default function OrdersTab() {
   const { address, isConnected } = useAppKitAccount();
+  const { walletProvider } = useAppKitProvider();
 
   const [orders, setOrders] = useState<hl.OpenOrdersResponse>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | undefined>(undefined);
+  const [cancelError, setCancelError] = useState<string | undefined>(undefined);
+  const [cancelingOrderIds, setCancelingOrderIds] = useState<Record<number, boolean>>({});
 
-  const infoClientRef = useRef<hl.InfoClient | null>(null);
+  type MetaUniverse = Awaited<ReturnType<hl.InfoClient['meta']>>['universe'];
+  const [metaUniverse, setMetaUniverse] = useState<MetaUniverse | undefined>(undefined);
 
-  if (infoClientRef.current === null) {
-    infoClientRef.current = new hl.InfoClient({ transport: new hl.HttpTransport() });
-  }
+  const transportRef = useRef<hl.HttpTransport | undefined>(undefined);
+  const infoClientRef = useRef<hl.InfoClient | undefined>(undefined);
+
+  const transport = transportRef.current ?? new hl.HttpTransport();
+  transportRef.current = transport;
+
+  const infoClient = infoClientRef.current ?? new hl.InfoClient({ transport });
+  infoClientRef.current = infoClient;
 
   const fetchOpenOrders = useCallback(
     async (isRefresh = false) => {
@@ -65,7 +75,7 @@ export default function OrdersTab() {
       }
 
       try {
-        setError(null);
+        setError(undefined);
         if (isRefresh) {
           setRefreshing(true);
         } else {
@@ -93,6 +103,24 @@ export default function OrdersTab() {
     [address],
   );
 
+  const fetchMeta = useCallback(async () => {
+    if (metaUniverse) {
+      return;
+    }
+
+    const client = infoClientRef.current;
+    if (!client) {
+      return;
+    }
+
+    try {
+      const meta = await client.meta();
+      setMetaUniverse(meta.universe);
+    } catch (err) {
+      console.error('Error fetching meta data:', err);
+    }
+  }, [metaUniverse]);
+
   useEffect(() => {
     if (!address) {
       setLoading(false);
@@ -102,6 +130,10 @@ export default function OrdersTab() {
     fetchOpenOrders();
   }, [address, fetchOpenOrders]);
 
+  useEffect(() => {
+    fetchMeta();
+  }, [fetchMeta]);
+
   const onRefresh = useCallback(() => {
     fetchOpenOrders(true);
   }, [fetchOpenOrders]);
@@ -109,6 +141,78 @@ export default function OrdersTab() {
   const sortedOrders = useMemo(() => {
     return [...orders].sort((a, b) => b.timestamp - a.timestamp);
   }, [orders]);
+
+  const normalizeAssetName = useCallback((value: string) => {
+    return value.replace(/[^a-z0-9]/gi, '').toLowerCase();
+  }, []);
+
+  const handleCancelOrder = useCallback(
+    async (order: hl.OpenOrdersResponse[number]) => {
+      if (!walletProvider) {
+        setCancelError('Wallet provider not available. Please reconnect.');
+        return;
+      }
+
+      if (cancelingOrderIds[order.oid]) {
+        return;
+      }
+
+      setCancelError(undefined);
+      setCancelingOrderIds(prev => ({ ...prev, [order.oid]: true }));
+
+      try {
+        const transport = transportRef.current;
+        const infoClient = infoClientRef.current;
+
+        if (!transport || !infoClient) {
+          throw new Error('Client transport not initialized');
+        }
+
+        let universe = metaUniverse;
+        if (!universe) {
+          const meta = await infoClient.meta();
+          universe = meta.universe;
+          setMetaUniverse(universe);
+        }
+
+        const normalizedCoin = normalizeAssetName(order.coin);
+        const assetIndex = universe.findIndex(
+          asset => normalizeAssetName(asset.name) === normalizedCoin,
+        );
+
+        if (assetIndex === -1) {
+          throw new Error(`Unable to determine asset index for ${order.coin}`);
+        }
+
+        const { agentExchangeClient } = await setupAgentClients({
+          walletProvider,
+          transport,
+          infoClient,
+        });
+
+        await agentExchangeClient.cancel({
+          cancels: [
+            {
+              a: assetIndex,
+              o: order.oid,
+            },
+          ],
+        });
+
+        await fetchOpenOrders();
+      } catch (err) {
+        console.error('Error canceling order:', err);
+        setCancelError('Failed to cancel order. Please try again.');
+      } finally {
+        setCancelingOrderIds(prev => {
+          const next = { ...prev };
+          delete next[order.oid];
+          return next;
+        });
+      }
+    },
+    [walletProvider, cancelingOrderIds, metaUniverse, normalizeAssetName, fetchOpenOrders],
+  );
 
   if (!isConnected || !address) {
     return (
@@ -152,6 +256,19 @@ export default function OrdersTab() {
         }
       >
         <YStack gap="$3" paddingBottom="$4">
+          {cancelError ? (
+            <YStack
+              borderRadius="$2"
+              backgroundColor="$red4"
+              borderColor="$red8"
+              borderWidth={1}
+              padding="$2"
+            >
+              <Text color="$red10" fontFamily="$interMedium">
+                {cancelError}
+              </Text>
+            </YStack>
+          ) : undefined}
           {sortedOrders.map(order => {
             const price = parseFloat(order.limitPx);
             const size = parseFloat(order.sz);
@@ -205,6 +322,17 @@ export default function OrdersTab() {
                     <Text fontFamily="$interMedium">{formatTimestamp(order.timestamp)}</Text>
                   </XStack>
                 </YStack>
+
+                <XStack justifyContent="flex-end" marginTop="$2">
+                  <Button
+                    size="$3"
+                    variant="outlined"
+                    disabled={Boolean(cancelingOrderIds[order.oid])}
+                    onPress={() => handleCancelOrder(order)}
+                  >
+                    {cancelingOrderIds[order.oid] ? 'Canceling...' : 'Cancel Order'}
+                  </Button>
+                </XStack>
               </YStack>
             );
           })}
