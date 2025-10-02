@@ -1,76 +1,35 @@
-import { Hyperliquid } from 'hyperliquid';
-import { useEffect, useState } from 'react';
+import * as hl from '@nktkas/hyperliquid';
+import { useAppKitAccount } from '@reown/appkit-ethers-react-native';
+import { useEffect, useRef, useState } from 'react';
 import { ScrollView, Spinner, Text, View, XStack, YStack } from 'tamagui';
-import { useAccount } from 'wagmi';
-
-interface Position {
-  coin: string;
-  szi: number | string;
-  leverage: {
-    type: string;
-    value: number;
-    rawUsd: number | string;
-  };
-  entryPx: number | string;
-  positionValue: number | string;
-  unrealizedPnl: number | string;
-  returnOnEquity: number | string;
-  liquidationPx: number | string;
-  marginUsed: number | string;
-  maxLeverage: number;
-  cumFunding: {
-    allTime: number | string;
-    sinceOpen: number | string;
-    sinceChange: number | string;
-  };
-}
-
-interface ClearinghouseState {
-  marginSummary: {
-    accountValue: number | string;
-    totalNtlPos: number | string;
-    totalRawUsd: number | string;
-    totalMarginUsed: number | string;
-  };
-  crossMarginSummary: {
-    accountValue: number | string;
-    totalNtlPos: number | string;
-    totalRawUsd: number | string;
-    totalMarginUsed: number | string;
-  };
-  crossMaintenanceMarginUsed: number | string;
-  withdrawable: number | string;
-  assetPositions: {
-    type: string;
-    position: Position;
-  }[];
-  time: number;
-}
+type Position = hl.ClearinghouseStateResponse['assetPositions'][number]['position'];
 
 export default function PositionsTab() {
-  const { address } = useAccount();
+  const { address, isConnected } = useAppKitAccount();
   const [positions, setPositions] = useState<Position[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!address) {
-      setLoading(false);
-      return;
-    }
+  const infoClientRef = useRef<hl.InfoClient | null>(null);
 
+  useEffect(() => {
     const fetchPositions = async () => {
+      if (!address || !isConnected) {
+        setPositions([]);
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
         setError(null);
 
-        const sdk = new Hyperliquid({
-          enableWs: false,
-          walletAddress: address,
-        });
+        if (infoClientRef.current === null) {
+          infoClientRef.current = new hl.InfoClient({ transport: new hl.HttpTransport() });
+        }
 
-        const clearinghouseState: ClearinghouseState =
-          await sdk.info.perpetuals.getClearinghouseState(address);
+        const client = infoClientRef.current;
+        const clearinghouseState = await client.clearinghouseState({ user: address });
 
         const userPositions = clearinghouseState.assetPositions
           .filter(asset => asset.position && Number(asset.position.szi) !== 0)
@@ -80,13 +39,14 @@ export default function PositionsTab() {
       } catch (err) {
         console.error('Error fetching positions:', err);
         setError('Failed to fetch positions');
+        setPositions([]);
       } finally {
         setLoading(false);
       }
     };
 
     fetchPositions();
-  }, [address]);
+  }, [address, isConnected]);
 
   const formatNumber = (num: number | string, decimals = 2) => {
     const value = typeof num === 'string' ? parseFloat(num) : num;
@@ -111,7 +71,7 @@ export default function PositionsTab() {
     return `${side} ${leverage}x`;
   };
 
-  if (!address) {
+  if (!isConnected || !address) {
     return (
       <View flex={1} justifyContent="center" alignItems="center" padding="$4">
         <Text>Please connect your wallet to view positions</Text>
@@ -151,7 +111,8 @@ export default function PositionsTab() {
           const entryPx = Number(position.entryPx);
           const unrealizedPnl = Number(position.unrealizedPnl);
           const szi = Number(position.szi);
-          const currentPrice = entryPx + unrealizedPnl / Math.abs(szi);
+          const currentPrice =
+            szi !== 0 ? entryPx + unrealizedPnl / Math.abs(szi) : entryPx;
           const pnlPercentage = Number(position.returnOnEquity) * 100 || 0;
 
           return (
