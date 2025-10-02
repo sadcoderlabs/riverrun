@@ -3,6 +3,7 @@ import 'fast-text-encoding'; // polyfill for hyperliquid sdk
 
 import * as hl from '@nktkas/hyperliquid';
 
+import OrdersTab from '@/app/(main)/trade/[market]/(tab)/ordersTab';
 import PositionsTab from '@/app/(main)/trade/[market]/(tab)/positionsTab';
 import AdaptiveSelect from '@/components/global/adaptive-select';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -78,6 +79,7 @@ export function TradeUI({ marketId }: TradeUIProps) {
       }
 
       const meta = await infoClient.meta();
+      console.log('meta', meta.universe);
       const btcAssetIndex = meta.universe.findIndex(asset => {
         const assetName = asset.name.toUpperCase();
         return assetName === 'BTC' || assetName === 'BTC-USD' || assetName === 'BTCUSD';
@@ -379,12 +381,7 @@ export function TradeUI({ marketId }: TradeUIProps) {
           </YStack>
         )}
 
-        {activeTab === 'orders' && (
-          <TabPlaceholder
-            title={`${marketData.id} Orders`}
-            message="Your orders will appear here"
-          />
-        )}
+        {activeTab === 'orders' && <OrdersTab />}
 
         {activeTab === 'history' && (
           <TabPlaceholder
