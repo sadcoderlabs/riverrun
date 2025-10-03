@@ -64,14 +64,14 @@ export function PositionItem({ position, isExpanded, onToggle }: PositionItemPro
       <XStack
         px="$2"
         py="$1"
-        borderRadius="$4"
+        borderRadius="$5"
         alignItems="center"
         borderWidth={1}
         borderColor={type === 'long' ? '$green9' : type === 'short' ? '$red9' : '$color8'}
         backgroundColor={type === 'long' ? '$green2' : type === 'short' ? '$red2' : '$color2'}
       >
         <Text
-          fontSize="$2"
+          fontSize="$1"
           color={type === 'long' ? '$green9' : type === 'short' ? '$red9' : '$color11'}
         >
           {text}
@@ -91,7 +91,7 @@ export function PositionItem({ position, isExpanded, onToggle }: PositionItemPro
             borderRadius="$2"
             padding="$1"
           >
-            <Text fontFamily="$interSemiBold" fontSize="$4" fontWeight="$5">
+            <Text fontFamily="$interSemiBold" fontSize="$3">
               {position.coin}
             </Text>
           </XStack>
@@ -120,7 +120,7 @@ export function PositionItem({ position, isExpanded, onToggle }: PositionItemPro
             Active PNL(USD)
           </Text>
           <XStack justifyContent="flex-start" alignItems="center" gap="$2">
-            <Text color={pnlColor} fontFamily="$interSemiBold" fontSize="$4">
+            <Text color={pnlColor} fontFamily="$interSemiBold" fontSize="$2">
               {formatPnL(unrealizedPnl)}
             </Text>
             <Text color={pnlColor} fontFamily="$interSemiBold">
@@ -137,7 +137,7 @@ export function PositionItem({ position, isExpanded, onToggle }: PositionItemPro
             <Text
               color={isFundingPositive ? '$green9' : '$red9'}
               fontFamily="$interSemiBold"
-              fontSize="$4"
+              fontSize="$2"
             >
               {isFundingPositive ? '+' : ''}${formatNumber(Math.abs(funding))}
             </Text>
@@ -156,7 +156,7 @@ export function PositionItem({ position, isExpanded, onToggle }: PositionItemPro
                 <Text fontSize="$2" color="$color9">
                   Size({position.coin})
                 </Text>
-                <Text fontSize="$3" fontFamily="$interMedium">
+                <Text fontSize="$2" fontFamily="$interMedium">
                   {formatNumber(Math.abs(szi), 4)}
                 </Text>
               </YStack>
@@ -165,7 +165,7 @@ export function PositionItem({ position, isExpanded, onToggle }: PositionItemPro
                 <Text fontSize="$2" color="$color9">
                   Value(USD)
                 </Text>
-                <Text fontSize="$3" fontFamily="$interMedium">
+                <Text fontSize="$2" fontFamily="$interMedium">
                   ${formatNumber(position.positionValue)}
                 </Text>
               </YStack>
@@ -174,7 +174,7 @@ export function PositionItem({ position, isExpanded, onToggle }: PositionItemPro
                 <Text fontSize="$2" color="$color9">
                   Margin(USD)
                 </Text>
-                <Text fontSize="$3" fontFamily="$interMedium">
+                <Text fontSize="$2" fontFamily="$interMedium">
                   ${formatNumber(position.marginUsed)}
                 </Text>
               </YStack>
@@ -186,7 +186,7 @@ export function PositionItem({ position, isExpanded, onToggle }: PositionItemPro
                 <Text fontSize="$2" color="$color9">
                   Avg. Entry
                 </Text>
-                <Text fontSize="$3" fontFamily="$interMedium">
+                <Text fontSize="$2" fontFamily="$interMedium">
                   ${formatNumber(entryPx)}
                 </Text>
               </YStack>
@@ -195,7 +195,7 @@ export function PositionItem({ position, isExpanded, onToggle }: PositionItemPro
                 <Text fontSize="$2" color="$color9">
                   Mark price
                 </Text>
-                <Text fontSize="$3" fontFamily="$interMedium">
+                <Text fontSize="$2" fontFamily="$interMedium">
                   ${formatNumber(currentPrice)}
                 </Text>
               </YStack>
@@ -204,7 +204,7 @@ export function PositionItem({ position, isExpanded, onToggle }: PositionItemPro
                 <Text fontSize="$2" color="$color9">
                   Liq. price
                 </Text>
-                <Text fontSize="$3" fontFamily="$interMedium">
+                <Text fontSize="$2" fontFamily="$interMedium">
                   {position.liquidationPx ? `$${formatNumber(position.liquidationPx)}` : '-'}
                 </Text>
               </YStack>
@@ -213,10 +213,10 @@ export function PositionItem({ position, isExpanded, onToggle }: PositionItemPro
 
           {/* Action buttons */}
           <XStack gap="$4" pt="$6">
-            <Button.Filled flex={1} level="lg">
+            <Button.Filled flex={1} level="lg" fontSize="$3">
               Set TP/SL
             </Button.Filled>
-            <Button.Filled flex={1} level="lg">
+            <Button.Filled flex={1} level="lg" fontSize="$3">
               Close Position
             </Button.Filled>
           </XStack>

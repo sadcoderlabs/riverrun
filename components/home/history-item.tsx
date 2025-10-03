@@ -29,13 +29,13 @@ export function HistoryItem({ history }: HistoryItemProps) {
       <XStack
         px="$2"
         py="$1"
-        borderRadius="$4"
+        borderRadius="$5"
         alignItems="center"
         borderWidth={1}
         borderColor={type === 'open' ? '$green9' : '$red9'}
         backgroundColor={type === 'open' ? '$green2' : '$red2'}
       >
-        <Text fontSize="$2" color={type === 'open' ? '$green9' : '$red9'}>
+        <Text fontSize="$1" color={type === 'open' ? '$green9' : '$red9'}>
           {text}
         </Text>
       </XStack>
@@ -47,7 +47,7 @@ export function HistoryItem({ history }: HistoryItemProps) {
       {/* First row: Symbol, Type and Timestamp */}
       <XStack justifyContent="space-between" alignItems="center" mb="$3">
         <XStack gap="$2" alignItems="center">
-          <Text fontFamily="$interSemiBold" fontSize="$4">
+          <Text fontFamily="$interBold" fontSize="$3">
             {history.symbol}
           </Text>
           <PillBadge
@@ -55,8 +55,7 @@ export function HistoryItem({ history }: HistoryItemProps) {
             type={isOpen ? 'open' : 'close'}
           />
         </XStack>
-
-        <Text color="$color9" fontSize="$2">
+        <Text color="$color9" fontSize="$1">
           {history.timestamp}
         </Text>
       </XStack>
@@ -64,15 +63,15 @@ export function HistoryItem({ history }: HistoryItemProps) {
       {/* Second row: Size */}
       <XStack justifyContent="space-between" alignItems="center" mb="$2">
         <XStack alignItems="center" gap="$1.5">
-          <Text color="$color9" fontSize="$3">
+          <Text color="$color9" fontSize="$2">
             Size
           </Text>
-          <Text fontSize="$3" fontFamily="$interMedium">
+          <Text fontSize="$2" fontFamily="$interMedium">
             {history.size} {history.sizeUnit}
           </Text>
         </XStack>
 
-        <Text fontSize="$4" fontFamily="$interSemiBold" color={amountColor}>
+        <Text fontSize="$2" fontFamily="$interSemiBold" color={amountColor}>
           {isOpen ? '-' : ''}
           {history.sizeInUSDC} USDC
         </Text>
@@ -81,19 +80,19 @@ export function HistoryItem({ history }: HistoryItemProps) {
       {/* Third row: Price and Fee */}
       <XStack justifyContent="space-between" alignItems="center">
         <XStack alignItems="center" gap="$1.5">
-          <Text color="$color9" fontSize="$3">
+          <Text color="$color9" fontSize="$2">
             Price
           </Text>
-          <Text fontSize="$3" fontFamily="$interMedium">
+          <Text fontSize="$2" fontFamily="$interMedium">
             {history.price} USDC
           </Text>
         </XStack>
 
         <XStack alignItems="center" gap="$1.5">
-          <Text color="$color9" fontSize="$3">
+          <Text color="$color9" fontSize="$2">
             Fee
           </Text>
-          <Text fontSize="$3" fontFamily="$interMedium">
+          <Text fontSize="$2" fontFamily="$interMedium">
             {history.fee} USDC
           </Text>
         </XStack>
