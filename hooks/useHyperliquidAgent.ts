@@ -7,7 +7,6 @@ import { AgentClientContext, setupAgentClients } from '@/lib/hyperliquid/agent';
 interface UseHyperliquidAgentResult {
   requiresAgentApproval: boolean | undefined;
   isCheckingApproval: boolean;
-  refreshApprovalStatus: () => Promise<void>;
   getAgentContext: () => Promise<AgentClientContext>;
   transport: hl.HttpTransport;
   infoClient: hl.InfoClient;
@@ -51,32 +50,38 @@ export function useHyperliquidAgent(): UseHyperliquidAgentResult {
     return context;
   }, [walletProvider, transport, infoClient]);
 
-  const refreshApprovalStatus = useCallback(async () => {
+  useEffect(() => {
     if (!walletProvider) {
       setRequiresAgentApproval(undefined);
+      setIsCheckingApproval(false);
       return;
     }
 
+    let cancelled = false;
     setIsCheckingApproval(true);
-    try {
-      await getAgentContext();
-    } catch (error) {
-      console.error('Error checking agent approval status', error);
-      setRequiresAgentApproval(undefined);
-    } finally {
-      setIsCheckingApproval(false);
-    }
-  }, [walletProvider, getAgentContext]);
 
-  useEffect(() => {
-    void refreshApprovalStatus();
-  }, [refreshApprovalStatus]);
+    void getAgentContext()
+      .catch(error => {
+        console.error('Error checking agent approval status', error);
+        if (!cancelled) {
+          setRequiresAgentApproval(undefined);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsCheckingApproval(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [walletProvider, getAgentContext]);
 
   return useMemo(
     () => ({
       requiresAgentApproval,
       isCheckingApproval,
-      refreshApprovalStatus,
       getAgentContext,
       transport,
       infoClient,
@@ -86,7 +91,6 @@ export function useHyperliquidAgent(): UseHyperliquidAgentResult {
       getAgentContext,
       infoClient,
       isCheckingApproval,
-      refreshApprovalStatus,
       requiresAgentApproval,
       transport,
       walletProvider,

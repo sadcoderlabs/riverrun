@@ -18,7 +18,6 @@ interface ApprovalGateContextValue {
   infoClient: ReturnType<typeof useHyperliquidAgent>['infoClient'];
   transport: ReturnType<typeof useHyperliquidAgent>['transport'];
   getAgentContext: ReturnType<typeof useHyperliquidAgent>['getAgentContext'];
-  refreshApprovalStatus: ReturnType<typeof useHyperliquidAgent>['refreshApprovalStatus'];
 }
 
 const ApprovalGateContext = createContext<ApprovalGateContextValue | undefined>(undefined);
@@ -77,12 +76,11 @@ export function ApprovalGateProvider({ children }: ApprovalGateProviderProps) {
                     agentName: initialContext.agentName,
                   });
 
-                  await agent.refreshApprovalStatus();
+                  const approvedContext = await agent.getAgentContext();
 
-                  const approvedContext: AgentClientContext = {
-                    ...initialContext,
-                    isAgentApproved: true,
-                  };
+                  if (!approvedContext.isAgentApproved) {
+                    throw new Error('Agent approval not confirmed.');
+                  }
 
                   await executeAction(approvedContext);
 
@@ -123,7 +121,6 @@ export function ApprovalGateProvider({ children }: ApprovalGateProviderProps) {
       infoClient: agent.infoClient,
       transport: agent.transport,
       getAgentContext: agent.getAgentContext,
-      refreshApprovalStatus: agent.refreshApprovalStatus,
     }),
     [agent, isEnsuringApproval, withAgentApproval],
   );
