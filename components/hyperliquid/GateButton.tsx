@@ -20,11 +20,10 @@ export function GateButton({
   children,
   ...buttonProps
 }: GateButtonProps) {
-  const { requiresAgentApproval, isCheckingApproval, isEnsuringApproval, withAgentApproval } =
-    useApprovalGate();
+  const { requiresAgentApproval, isCheckingApproval, withAgentApproval } = useApprovalGate();
   const [isRunning, setIsRunning] = useState(false);
 
-  const busy = loading || isRunning || isCheckingApproval || isEnsuringApproval;
+  const busy = loading || isRunning || isCheckingApproval;
   const effectiveDisabled = disabled || busy;
 
   const buttonVisuals = useMemo(() => {

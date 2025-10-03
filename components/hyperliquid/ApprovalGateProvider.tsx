@@ -1,6 +1,6 @@
 import { useHyperliquidAgent } from '@/hooks/useHyperliquidAgent';
 import type { AgentClientContext } from '@/lib/hyperliquid/agent';
-import { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useMemo } from 'react';
 import { Alert } from 'react-native';
 
 interface ApprovalGateProviderProps {
@@ -10,7 +10,6 @@ interface ApprovalGateProviderProps {
 interface ApprovalGateContextValue {
   requiresAgentApproval: boolean | undefined;
   isCheckingApproval: boolean;
-  isEnsuringApproval: boolean;
   withAgentApproval: (
     action: (context: AgentClientContext) => Promise<void> | void,
   ) => Promise<boolean>;
@@ -24,7 +23,6 @@ const ApprovalGateContext = createContext<ApprovalGateContextValue | undefined>(
 
 export function ApprovalGateProvider({ children }: ApprovalGateProviderProps) {
   const agent = useHyperliquidAgent();
-  const [isEnsuringApproval, setIsEnsuringApproval] = useState(false);
 
   const withAgentApproval = useCallback<ApprovalGateContextValue['withAgentApproval']>(
     async action => {
@@ -69,7 +67,6 @@ export function ApprovalGateProvider({ children }: ApprovalGateProviderProps) {
             text: confirmLabel,
             onPress: () => {
               void (async () => {
-                setIsEnsuringApproval(true);
                 try {
                   await initialContext.masterExchangeClient.approveAgent({
                     agentAddress: initialContext.agentAddress,
@@ -99,8 +96,6 @@ export function ApprovalGateProvider({ children }: ApprovalGateProviderProps) {
                     settled = true;
                     reject(error instanceof Error ? error : new Error('Agent approval failed'));
                   }
-                } finally {
-                  setIsEnsuringApproval(false);
                 }
               })();
             },
@@ -115,14 +110,13 @@ export function ApprovalGateProvider({ children }: ApprovalGateProviderProps) {
     () => ({
       requiresAgentApproval: agent.requiresAgentApproval,
       isCheckingApproval: agent.isCheckingApproval,
-      isEnsuringApproval,
       withAgentApproval,
       walletProvider: agent.walletProvider,
       infoClient: agent.infoClient,
       transport: agent.transport,
       getAgentContext: agent.getAgentContext,
     }),
-    [agent, isEnsuringApproval, withAgentApproval],
+    [agent, withAgentApproval],
   );
 
   return <ApprovalGateContext.Provider value={value}>{children}</ApprovalGateContext.Provider>;
