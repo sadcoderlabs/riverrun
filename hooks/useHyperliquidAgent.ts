@@ -2,11 +2,7 @@ import * as hl from '@nktkas/hyperliquid';
 import { useAppKitProvider } from '@reown/appkit-ethers-react-native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import {
-  AgentClientContext,
-  ensureAgentApproval,
-  setupAgentClients,
-} from '@/lib/hyperliquid/agent';
+import { AgentClientContext, setupAgentClients } from '@/lib/hyperliquid/agent';
 
 interface UseHyperliquidAgentOptions {
   autoRefresh?: boolean;
@@ -17,7 +13,6 @@ interface UseHyperliquidAgentResult {
   isCheckingApproval: boolean;
   refreshApprovalStatus: () => Promise<void>;
   getAgentClients: () => Promise<AgentClientContext>;
-  ensureAgentApproved: () => Promise<AgentClientContext>;
   transport: hl.HttpTransport;
   infoClient: hl.InfoClient;
   walletProvider: ReturnType<typeof useAppKitProvider>['walletProvider'];
@@ -94,43 +89,17 @@ export function useHyperliquidAgent(
     return context;
   }, [walletProvider, transport, infoClient]);
 
-  const ensureAgentApproved = useCallback(async () => {
-    const context = await getAgentClients();
-
-    if (context.isAgentApproved) {
-      return context;
-    }
-
-    await ensureAgentApproval({
-      infoClient,
-      masterAddress: context.masterAddress,
-      agentAddress: context.agentAddress,
-      masterExchangeClient: context.masterExchangeClient,
-      agentName: context.agentName,
-    });
-
-    const approvedContext: AgentClientContext = {
-      ...context,
-      isAgentApproved: true,
-    };
-
-    setRequiresAgentApproval(false);
-    return approvedContext;
-  }, [getAgentClients, infoClient]);
-
   return useMemo(
     () => ({
       requiresAgentApproval,
       isCheckingApproval,
       refreshApprovalStatus,
       getAgentClients,
-      ensureAgentApproved,
       transport,
       infoClient,
       walletProvider,
     }),
     [
-      ensureAgentApproved,
       getAgentClients,
       infoClient,
       isCheckingApproval,
