@@ -4,10 +4,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { AgentClientContext, setupAgentClients } from '@/lib/hyperliquid/agent';
 
-interface UseHyperliquidAgentOptions {
-  autoRefresh?: boolean;
-}
-
 interface UseHyperliquidAgentResult {
   requiresAgentApproval: boolean | undefined;
   isCheckingApproval: boolean;
@@ -18,10 +14,7 @@ interface UseHyperliquidAgentResult {
   walletProvider: ReturnType<typeof useAppKitProvider>['walletProvider'];
 }
 
-export function useHyperliquidAgent(
-  options: UseHyperliquidAgentOptions = {},
-): UseHyperliquidAgentResult {
-  const { autoRefresh = true } = options;
+export function useHyperliquidAgent(): UseHyperliquidAgentResult {
   const { walletProvider } = useAppKitProvider();
 
   const transportRef = useRef<hl.HttpTransport | undefined>(undefined);
@@ -67,12 +60,8 @@ export function useHyperliquidAgent(
   }, [walletProvider, transport, infoClient]);
 
   useEffect(() => {
-    if (!autoRefresh) {
-      return;
-    }
-
     void refreshApprovalStatus();
-  }, [autoRefresh, refreshApprovalStatus]);
+  }, [refreshApprovalStatus]);
 
   const getAgentContext = useCallback(async () => {
     if (!walletProvider) {
