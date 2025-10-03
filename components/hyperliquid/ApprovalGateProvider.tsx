@@ -17,7 +17,7 @@ interface ApprovalGateContextValue {
   walletProvider: ReturnType<typeof useHyperliquidAgent>['walletProvider'];
   infoClient: ReturnType<typeof useHyperliquidAgent>['infoClient'];
   transport: ReturnType<typeof useHyperliquidAgent>['transport'];
-  getAgentClients: ReturnType<typeof useHyperliquidAgent>['getAgentClients'];
+  getAgentContext: ReturnType<typeof useHyperliquidAgent>['getAgentContext'];
   refreshApprovalStatus: ReturnType<typeof useHyperliquidAgent>['refreshApprovalStatus'];
 }
 
@@ -38,7 +38,7 @@ export function ApprovalGateProvider({ children }: ApprovalGateProviderProps) {
         await Promise.resolve(action(context));
       };
 
-      const initialContext = await agent.getAgentClients();
+      const initialContext = await agent.getAgentContext();
 
       if (initialContext.isAgentApproved) {
         await executeAction(initialContext);
@@ -122,7 +122,7 @@ export function ApprovalGateProvider({ children }: ApprovalGateProviderProps) {
       walletProvider: agent.walletProvider,
       infoClient: agent.infoClient,
       transport: agent.transport,
-      getAgentClients: agent.getAgentClients,
+      getAgentContext: agent.getAgentContext,
       refreshApprovalStatus: agent.refreshApprovalStatus,
     }),
     [agent, isEnsuringApproval, withAgentApproval],

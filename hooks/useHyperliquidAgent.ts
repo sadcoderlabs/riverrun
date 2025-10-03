@@ -12,7 +12,7 @@ interface UseHyperliquidAgentResult {
   requiresAgentApproval: boolean | undefined;
   isCheckingApproval: boolean;
   refreshApprovalStatus: () => Promise<void>;
-  getAgentClients: () => Promise<AgentClientContext>;
+  getAgentContext: () => Promise<AgentClientContext>;
   transport: hl.HttpTransport;
   infoClient: hl.InfoClient;
   walletProvider: ReturnType<typeof useAppKitProvider>['walletProvider'];
@@ -74,7 +74,7 @@ export function useHyperliquidAgent(
     void refreshApprovalStatus();
   }, [autoRefresh, refreshApprovalStatus]);
 
-  const getAgentClients = useCallback(async () => {
+  const getAgentContext = useCallback(async () => {
     if (!walletProvider) {
       throw new Error('Wallet provider not available');
     }
@@ -94,13 +94,13 @@ export function useHyperliquidAgent(
       requiresAgentApproval,
       isCheckingApproval,
       refreshApprovalStatus,
-      getAgentClients,
+      getAgentContext,
       transport,
       infoClient,
       walletProvider,
     }),
     [
-      getAgentClients,
+      getAgentContext,
       infoClient,
       isCheckingApproval,
       refreshApprovalStatus,
