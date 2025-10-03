@@ -39,7 +39,7 @@ export function ApprovalGateProvider({ children }: ApprovalGateProviderProps) {
         await Promise.resolve(action(context));
       };
 
-      const initialContext = await agent.getAgentClients(false);
+      const initialContext = await agent.getAgentClients();
 
       if (initialContext.isAgentApproved) {
         await executeAction(initialContext);

@@ -87,7 +87,6 @@ export interface SetupAgentClientsOptions {
   transport: hl.HttpTransport;
   infoClient: hl.InfoClient;
   agentName?: string;
-  autoApprove?: boolean;
 }
 
 export interface AgentClientContext {
@@ -107,7 +106,6 @@ export async function setupAgentClients({
   transport,
   infoClient,
   agentName,
-  autoApprove = true,
 }: SetupAgentClientsOptions): Promise<AgentClientContext> {
   const ethersProvider = new BrowserProvider(walletProvider as unknown as BrowserProviderInput);
   const masterSigner = await ethersProvider.getSigner();
@@ -128,19 +126,11 @@ export async function setupAgentClients({
 
   const resolvedAgentName = agentName ?? DEFAULT_AGENT_NAME;
 
-  let isAgentApproved = await checkAgentApproval({
+  const isAgentApproved = await checkAgentApproval({
     infoClient,
     masterAddress,
     agentAddress,
   });
-
-  if (autoApprove && !isAgentApproved) {
-    await masterExchangeClient.approveAgent({
-      agentAddress,
-      agentName: resolvedAgentName,
-    });
-    isAgentApproved = true;
-  }
 
   return {
     masterSigner,

@@ -2,7 +2,11 @@ import * as hl from '@nktkas/hyperliquid';
 import { useAppKitProvider } from '@reown/appkit-ethers-react-native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { AgentClientContext, setupAgentClients } from '@/lib/hyperliquid/agent';
+import {
+  AgentClientContext,
+  ensureAgentApproval,
+  setupAgentClients,
+} from '@/lib/hyperliquid/agent';
 
 interface UseHyperliquidAgentOptions {
   autoRefresh?: boolean;
@@ -12,7 +16,7 @@ interface UseHyperliquidAgentResult {
   requiresAgentApproval: boolean | undefined;
   isCheckingApproval: boolean;
   refreshApprovalStatus: () => Promise<void>;
-  getAgentClients: (autoApprove?: boolean) => Promise<AgentClientContext>;
+  getAgentClients: () => Promise<AgentClientContext>;
   ensureAgentApproved: () => Promise<AgentClientContext>;
   transport: hl.HttpTransport;
   infoClient: hl.InfoClient;
@@ -56,7 +60,6 @@ export function useHyperliquidAgent(
         walletProvider,
         transport,
         infoClient,
-        autoApprove: false,
       });
 
       setRequiresAgentApproval(!isAgentApproved);
@@ -76,28 +79,44 @@ export function useHyperliquidAgent(
     void refreshApprovalStatus();
   }, [autoRefresh, refreshApprovalStatus]);
 
-  const getAgentClients = useCallback(
-    async (autoApprove = false) => {
-      if (!walletProvider) {
-        throw new Error('Wallet provider not available');
-      }
+  const getAgentClients = useCallback(async () => {
+    if (!walletProvider) {
+      throw new Error('Wallet provider not available');
+    }
 
-      const context = await setupAgentClients({
-        walletProvider,
-        transport,
-        infoClient,
-        autoApprove,
-      });
+    const context = await setupAgentClients({
+      walletProvider,
+      transport,
+      infoClient,
+    });
 
-      setRequiresAgentApproval(!context.isAgentApproved);
-      return context;
-    },
-    [walletProvider, transport, infoClient],
-  );
+    setRequiresAgentApproval(!context.isAgentApproved);
+    return context;
+  }, [walletProvider, transport, infoClient]);
 
   const ensureAgentApproved = useCallback(async () => {
-    return getAgentClients(true);
-  }, [getAgentClients]);
+    const context = await getAgentClients();
+
+    if (context.isAgentApproved) {
+      return context;
+    }
+
+    await ensureAgentApproval({
+      infoClient,
+      masterAddress: context.masterAddress,
+      agentAddress: context.agentAddress,
+      masterExchangeClient: context.masterExchangeClient,
+      agentName: context.agentName,
+    });
+
+    const approvedContext: AgentClientContext = {
+      ...context,
+      isAgentApproved: true,
+    };
+
+    setRequiresAgentApproval(false);
+    return approvedContext;
+  }, [getAgentClients, infoClient]);
 
   return useMemo(
     () => ({
