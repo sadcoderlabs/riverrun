@@ -1,82 +1,48 @@
 import 'event-target-polyfill'; // polyfill for hyperliquid sdk
 import 'fast-text-encoding'; // polyfill for hyperliquid sdk
 
-import * as hl from '@nktkas/hyperliquid';
-
 import OrdersTab from '@/app/(main)/trade/[market]/(tab)/ordersTab';
 import PositionsTab from '@/app/(main)/trade/[market]/(tab)/positionsTab';
 import AdaptiveSelect from '@/components/global/adaptive-select';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useAppKitProvider } from '@reown/appkit-ethers-react-native';
 import { ChevronDown } from '@tamagui/lucide-icons';
-import { BrowserProvider, Wallet } from 'ethers';
+import { useHyperliquidAgent } from '@/hooks/useHyperliquidAgent';
 import { useState } from 'react';
+import { Alert } from 'react-native';
 import { Button, Slider, Text, XStack, YStack } from 'tamagui';
 
 interface TradeUIProps {
   marketId?: string;
 }
 
-const AGENT_STORAGE_PREFIX = 'hl-agent:private-key:';
-
-async function getOrCreateAgentSigner(masterAddress: string, provider: BrowserProvider) {
-  const storageKey = `${AGENT_STORAGE_PREFIX}${masterAddress.toLowerCase()}`;
-
-  try {
-    const storedPrivateKey = await AsyncStorage.getItem(storageKey);
-    if (storedPrivateKey) {
-      return new Wallet(storedPrivateKey).connect(provider);
-    }
-  } catch (error) {
-    console.error('Failed to load stored agent signer', error);
-  }
-
-  const generatedWallet = Wallet.createRandom();
-
-  try {
-    await AsyncStorage.setItem(storageKey, generatedWallet.privateKey);
-  } catch (error) {
-    console.error('Failed to persist generated agent signer', error);
-  }
-
-  return generatedWallet.connect(provider);
-}
-
 export function TradeUI({ marketId }: TradeUIProps) {
-  const { walletProvider } = useAppKitProvider();
+  const { infoClient, requiresAgentApproval, ensureAgentApproved, getAgentClients } =
+    useHyperliquidAgent();
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
   async function placeOrderWithAgentExample() {
-    if (!walletProvider) {
-      console.warn('Wallet provider not available');
+    if (requiresAgentApproval) {
+      Alert.alert(
+        'Agent approval required',
+        'Placing an order requires approving the agent first. Confirm to approve now.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Confirm',
+            onPress: () => {
+              void ensureAgentApproved().catch(error => {
+                console.error('Failed to approve agent for trading', error);
+              });
+            },
+          },
+        ],
+      );
       return;
     }
 
     try {
-      const ethersProvider = new BrowserProvider(walletProvider);
-      const transport = new hl.HttpTransport();
+      setIsPlacingOrder(true);
 
-      const masterSigner = await ethersProvider.getSigner();
-      const masterAddress = (await masterSigner.getAddress()).toLowerCase();
-      const masterExchangeClient = new hl.ExchangeClient({
-        wallet: masterSigner,
-        transport,
-      });
-
-      const agentSigner = await getOrCreateAgentSigner(masterAddress, ethersProvider);
-      const agentAddress = await agentSigner.getAddress();
-
-      const infoClient = new hl.InfoClient({ transport });
-      const existingAgents = await infoClient.extraAgents({ user: masterAddress });
-      const isApproved = existingAgents.some(
-        agent => agent.address.toLowerCase() === agentAddress.toLowerCase(),
-      );
-
-      if (!isApproved) {
-        await masterExchangeClient.approveAgent({
-          agentAddress,
-          agentName: 'Riverrun Agent',
-        });
-      }
+      const context = await getAgentClients(false);
 
       const meta = await infoClient.meta();
       console.log('meta', meta.universe);
@@ -97,12 +63,7 @@ export function TradeUI({ marketId }: TradeUIProps) {
       const baseSizeNumber = notionalUsd / Number(limitPrice);
       const baseSize = baseSizeNumber.toFixed(sizeDecimals);
 
-      const agentExchangeClient = new hl.ExchangeClient({
-        wallet: agentSigner,
-        transport,
-      });
-
-      const orderResponse = await agentExchangeClient.order({
+      const orderResponse = await context.agentExchangeClient.order({
         orders: [
           {
             a: btcAssetIndex,
@@ -122,6 +83,8 @@ export function TradeUI({ marketId }: TradeUIProps) {
       console.log('Agent order response', orderResponse);
     } catch (error) {
       console.error('Failed to place order via agent', error);
+    } finally {
+      setIsPlacingOrder(false);
     }
   }
 
@@ -143,6 +106,14 @@ export function TradeUI({ marketId }: TradeUIProps) {
   const [sizeUnit, setSizeUnit] = useState('USDC');
   const [orderSide, setOrderSide] = useState<'Long' | 'Short'>('Long');
   const [sizePercentage, setSizePercentage] = useState(0);
+
+  const isPlaceOrderDisabled = !orderSide || isPlacingOrder;
+  const buttonVisuals =
+    requiresAgentApproval === false
+      ? { background: '$green9', border: '$green10', text: '$color1' }
+      : requiresAgentApproval === true
+        ? { background: '$gray6', border: '$gray7', text: '$color12' }
+        : { background: '$accent9', border: '$accent9', text: '$color1' };
 
   // Calculate order details
   const accountBalance = 1000; // Mock account balance
@@ -357,19 +328,27 @@ export function TradeUI({ marketId }: TradeUIProps) {
 
             {/* Fourth Stack: Place Order Button */}
             <Button
-              backgroundColor="$accent9"
+              backgroundColor={buttonVisuals.background}
               paddingVertical="$1"
               borderRadius="$4"
               marginTop="auto"
-              disabled={!orderSide}
-              opacity={orderSide ? 1 : 0.7}
+              disabled={isPlaceOrderDisabled}
+              opacity={isPlaceOrderDisabled ? 0.7 : 1}
+              borderColor={buttonVisuals.border}
+              borderWidth={1}
+              pressStyle={{ opacity: 0.85 }}
               onPress={() => {
                 // Show a native confirmation dialog
                 placeOrderWithAgentExample();
               }}
             >
-              <Text fontFamily="$interSemiBold" color="$color1" fontSize="$4" textAlign="center">
-                Place Order
+              <Text
+                fontFamily="$interSemiBold"
+                color={buttonVisuals.text}
+                fontSize="$4"
+                textAlign="center"
+              >
+                {isPlacingOrder ? 'Placing...' : 'Place Order'}
               </Text>
             </Button>
           </YStack>

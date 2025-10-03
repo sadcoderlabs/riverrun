@@ -1,7 +1,8 @@
-import { setupAgentClients } from '@/lib/hyperliquid/agent';
+import { useHyperliquidAgent } from '@/hooks/useHyperliquidAgent';
+import type { AgentClientContext } from '@/lib/hyperliquid/agent';
 import * as hl from '@nktkas/hyperliquid';
-import { useAppKitAccount, useAppKitProvider } from '@reown/appkit-ethers-react-native';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useAppKitAccount } from '@reown/appkit-ethers-react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, RefreshControl } from 'react-native';
 import { Button, ScrollView, Spinner, Text, XStack, YStack } from 'tamagui';
 
@@ -44,7 +45,14 @@ const formatSide = (side: string) => {
 
 export default function OrdersTab() {
   const { address, isConnected } = useAppKitAccount();
-  const { walletProvider } = useAppKitProvider();
+  const {
+    walletProvider,
+    infoClient,
+    requiresAgentApproval,
+    refreshApprovalStatus,
+    ensureAgentApproved,
+    getAgentClients,
+  } = useHyperliquidAgent();
 
   const [orders, setOrders] = useState<hl.OpenOrdersResponse>([]);
   const [loading, setLoading] = useState(true);
@@ -52,21 +60,9 @@ export default function OrdersTab() {
   const [error, setError] = useState<string | undefined>(undefined);
   const [cancelError, setCancelError] = useState<string | undefined>(undefined);
   const [cancelingOrderIds, setCancelingOrderIds] = useState<Record<number, boolean>>({});
-  const [requiresAgentApproval, setRequiresAgentApproval] = useState<boolean | undefined>(
-    undefined,
-  );
 
   type MetaUniverse = Awaited<ReturnType<hl.InfoClient['meta']>>['universe'];
   const [metaUniverse, setMetaUniverse] = useState<MetaUniverse | undefined>(undefined);
-
-  const transportRef = useRef<hl.HttpTransport | undefined>(undefined);
-  const infoClientRef = useRef<hl.InfoClient | undefined>(undefined);
-
-  const transport = transportRef.current ?? new hl.HttpTransport();
-  transportRef.current = transport;
-
-  const infoClient = infoClientRef.current ?? new hl.InfoClient({ transport });
-  infoClientRef.current = infoClient;
 
   const fetchOpenOrders = useCallback(
     async (isRefresh = false) => {
@@ -85,12 +81,7 @@ export default function OrdersTab() {
           setLoading(true);
         }
 
-        const client = infoClientRef.current;
-        if (!client) {
-          throw new Error('Info client not initialized');
-        }
-
-        const userOpenOrders = await client.openOrders({ user: address });
+        const userOpenOrders = await infoClient.openOrders({ user: address });
         setOrders(userOpenOrders);
       } catch (err) {
         console.error('Error fetching open orders:', err);
@@ -103,7 +94,7 @@ export default function OrdersTab() {
         }
       }
     },
-    [address],
+    [address, infoClient],
   );
 
   const fetchMeta = useCallback(async () => {
@@ -111,18 +102,13 @@ export default function OrdersTab() {
       return;
     }
 
-    const client = infoClientRef.current;
-    if (!client) {
-      return;
-    }
-
     try {
-      const meta = await client.meta();
+      const meta = await infoClient.meta();
       setMetaUniverse(meta.universe);
     } catch (err) {
       console.error('Error fetching meta data:', err);
     }
-  }, [metaUniverse]);
+  }, [infoClient, metaUniverse]);
 
   useEffect(() => {
     if (!address) {
@@ -141,37 +127,9 @@ export default function OrdersTab() {
     fetchOpenOrders(true);
   }, [fetchOpenOrders]);
 
-  const updateAgentApprovalStatus = useCallback(async () => {
-    if (!walletProvider || !address) {
-      setRequiresAgentApproval(undefined);
-      return;
-    }
-
-    const transport = transportRef.current;
-    const infoClient = infoClientRef.current;
-
-    if (!transport || !infoClient) {
-      return;
-    }
-
-    try {
-      const { isAgentApproved } = await setupAgentClients({
-        walletProvider,
-        transport,
-        infoClient,
-        autoApprove: false,
-      });
-
-      setRequiresAgentApproval(!isAgentApproved);
-    } catch (err) {
-      console.error('Error checking agent approval status:', err);
-      setRequiresAgentApproval(undefined);
-    }
-  }, [walletProvider, address]);
-
   useEffect(() => {
-    void updateAgentApprovalStatus();
-  }, [updateAgentApprovalStatus]);
+    void refreshApprovalStatus();
+  }, [refreshApprovalStatus]);
 
   const sortedOrders = useMemo(() => {
     return [...orders].sort((a, b) => b.timestamp - a.timestamp);
@@ -194,43 +152,49 @@ export default function OrdersTab() {
 
       setCancelError(undefined);
 
-      try {
-        const transport = transportRef.current;
-        const infoClient = infoClientRef.current;
+      const performCancel = async (context: AgentClientContext) => {
+        setCancelingOrderIds(prev => ({ ...prev, [order.oid]: true }));
 
-        if (!transport || !infoClient) {
-          throw new Error('Client transport not initialized');
+        try {
+          let universe = metaUniverse;
+          if (!universe) {
+            const meta = await infoClient.meta();
+            universe = meta.universe;
+            setMetaUniverse(universe);
+          }
+
+          const normalizedCoin = normalizeAssetName(order.coin);
+          const assetIndex = universe.findIndex(
+            asset => normalizeAssetName(asset.name) === normalizedCoin,
+          );
+
+          if (assetIndex === -1) {
+            throw new Error(`Unable to determine asset index for ${order.coin}`);
+          }
+
+          await context.agentExchangeClient.cancel({
+            cancels: [
+              {
+                a: assetIndex,
+                o: order.oid,
+              },
+            ],
+          });
+
+          await fetchOpenOrders();
+        } finally {
+          setCancelingOrderIds(prev => {
+            const next = { ...prev };
+            delete next[order.oid];
+            return next;
+          });
         }
+      };
 
-        const {
-          agentExchangeClient,
-          masterExchangeClient,
-          agentAddress,
-          agentName,
-          isAgentApproved,
-        } = await setupAgentClients({
-          walletProvider,
-          transport,
-          infoClient,
-          autoApprove: false,
-        });
+      try {
+        const context = await getAgentClients(false);
 
-        setRequiresAgentApproval(!isAgentApproved);
-
-        if (!isAgentApproved) {
-          const handleAgentApproval = async () => {
-            try {
-              await masterExchangeClient.approveAgent({
-                agentAddress,
-                agentName,
-              });
-              setRequiresAgentApproval(false);
-            } catch (approveErr) {
-              console.error('Error approving agent:', approveErr);
-              setCancelError('Failed to initiate agent approval. Please try again.');
-            }
-          };
-
+        if (!context.isAgentApproved) {
           Alert.alert(
             'Agent approval required',
             'Canceling an order requires approving the agent first. Confirm to approve now.',
@@ -239,7 +203,10 @@ export default function OrdersTab() {
               {
                 text: 'Confirm',
                 onPress: () => {
-                  void handleAgentApproval();
+                  void ensureAgentApproved().catch(err => {
+                    console.error('Error approving agent:', err);
+                    setCancelError('Failed to initiate agent approval. Please try again.');
+                  });
                 },
               },
             ],
@@ -247,43 +214,10 @@ export default function OrdersTab() {
           return;
         }
 
-        setCancelingOrderIds(prev => ({ ...prev, [order.oid]: true }));
-
-        let universe = metaUniverse;
-        if (!universe) {
-          const meta = await infoClient.meta();
-          universe = meta.universe;
-          setMetaUniverse(universe);
-        }
-
-        const normalizedCoin = normalizeAssetName(order.coin);
-        const assetIndex = universe.findIndex(
-          asset => normalizeAssetName(asset.name) === normalizedCoin,
-        );
-
-        if (assetIndex === -1) {
-          throw new Error(`Unable to determine asset index for ${order.coin}`);
-        }
-
-        await agentExchangeClient.cancel({
-          cancels: [
-            {
-              a: assetIndex,
-              o: order.oid,
-            },
-          ],
-        });
-
-        await fetchOpenOrders();
+        await performCancel(context);
       } catch (err) {
         console.error('Error canceling order:', err);
         setCancelError('Failed to cancel order. Please try again.');
-      } finally {
-        setCancelingOrderIds(prev => {
-          const next = { ...prev };
-          delete next[order.oid];
-          return next;
-        });
       }
     },
     [
@@ -293,6 +227,9 @@ export default function OrdersTab() {
       normalizeAssetName,
       fetchOpenOrders,
       setMetaUniverse,
+      getAgentClients,
+      ensureAgentApproved,
+      infoClient,
     ],
   );
 
