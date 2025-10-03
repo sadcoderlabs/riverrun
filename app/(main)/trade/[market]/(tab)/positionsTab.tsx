@@ -111,8 +111,7 @@ export default function PositionsTab() {
           const entryPx = Number(position.entryPx);
           const unrealizedPnl = Number(position.unrealizedPnl);
           const szi = Number(position.szi);
-          const currentPrice =
-            szi !== 0 ? entryPx + unrealizedPnl / Math.abs(szi) : entryPx;
+          const currentPrice = szi !== 0 ? entryPx + unrealizedPnl / Math.abs(szi) : entryPx;
           const pnlPercentage = Number(position.returnOnEquity) * 100 || 0;
 
           return (
