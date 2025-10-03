@@ -1,10 +1,13 @@
-import { useHyperliquidAgent } from '@/hooks/useHyperliquidAgent';
-import type { AgentClientContext } from '@/lib/hyperliquid/agent';
+import {
+  ApprovalGateProvider,
+  useApprovalGate,
+} from '@/components/hyperliquid/ApprovalGateProvider';
+import { GateButton } from '@/components/hyperliquid/GateButton';
 import * as hl from '@nktkas/hyperliquid';
 import { useAppKitAccount } from '@reown/appkit-ethers-react-native';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, RefreshControl } from 'react-native';
-import { Button, ScrollView, Spinner, Text, XStack, YStack } from 'tamagui';
+import { RefreshControl } from 'react-native';
+import { ScrollView, Spinner, Text, XStack, YStack } from 'tamagui';
 
 const formatNumber = (value: number | string, decimals = 4) => {
   const numericValue = typeof value === 'string' ? parseFloat(value) : value;
@@ -43,16 +46,9 @@ const formatSide = (side: string) => {
   return side;
 };
 
-export default function OrdersTab() {
+export function OrdersTabContent() {
   const { address, isConnected } = useAppKitAccount();
-  const {
-    walletProvider,
-    infoClient,
-    requiresAgentApproval,
-    refreshApprovalStatus,
-    ensureAgentApproved,
-    getAgentClients,
-  } = useHyperliquidAgent();
+  const { infoClient, walletProvider } = useApprovalGate();
 
   const [orders, setOrders] = useState<hl.OpenOrdersResponse>([]);
   const [loading, setLoading] = useState(true);
@@ -127,10 +123,6 @@ export default function OrdersTab() {
     fetchOpenOrders(true);
   }, [fetchOpenOrders]);
 
-  useEffect(() => {
-    void refreshApprovalStatus();
-  }, [refreshApprovalStatus]);
-
   const sortedOrders = useMemo(() => {
     return [...orders].sort((a, b) => b.timestamp - a.timestamp);
   }, [orders]);
@@ -138,100 +130,6 @@ export default function OrdersTab() {
   const normalizeAssetName = useCallback((value: string) => {
     return value.replace(/[^a-z0-9]/gi, '').toLowerCase();
   }, []);
-
-  const handleCancelOrder = useCallback(
-    async (order: hl.OpenOrdersResponse[number]) => {
-      if (!walletProvider) {
-        setCancelError('Wallet provider not available. Please reconnect.');
-        return;
-      }
-
-      if (cancelingOrderIds[order.oid]) {
-        return;
-      }
-
-      setCancelError(undefined);
-
-      const performCancel = async (context: AgentClientContext) => {
-        setCancelingOrderIds(prev => ({ ...prev, [order.oid]: true }));
-
-        try {
-          let universe = metaUniverse;
-          if (!universe) {
-            const meta = await infoClient.meta();
-            universe = meta.universe;
-            setMetaUniverse(universe);
-          }
-
-          const normalizedCoin = normalizeAssetName(order.coin);
-          const assetIndex = universe.findIndex(
-            asset => normalizeAssetName(asset.name) === normalizedCoin,
-          );
-
-          if (assetIndex === -1) {
-            throw new Error(`Unable to determine asset index for ${order.coin}`);
-          }
-
-          await context.agentExchangeClient.cancel({
-            cancels: [
-              {
-                a: assetIndex,
-                o: order.oid,
-              },
-            ],
-          });
-
-          await fetchOpenOrders();
-        } finally {
-          setCancelingOrderIds(prev => {
-            const next = { ...prev };
-            delete next[order.oid];
-            return next;
-          });
-        }
-      };
-
-      try {
-        const context = await getAgentClients(false);
-
-        if (!context.isAgentApproved) {
-          Alert.alert(
-            'Agent approval required',
-            'Canceling an order requires approving the agent first. Confirm to approve now.',
-            [
-              { text: 'Cancel', style: 'cancel' },
-              {
-                text: 'Confirm',
-                onPress: () => {
-                  void ensureAgentApproved().catch(err => {
-                    console.error('Error approving agent:', err);
-                    setCancelError('Failed to initiate agent approval. Please try again.');
-                  });
-                },
-              },
-            ],
-          );
-          return;
-        }
-
-        await performCancel(context);
-      } catch (err) {
-        console.error('Error canceling order:', err);
-        setCancelError('Failed to cancel order. Please try again.');
-      }
-    },
-    [
-      walletProvider,
-      cancelingOrderIds,
-      metaUniverse,
-      normalizeAssetName,
-      fetchOpenOrders,
-      setMetaUniverse,
-      getAgentClients,
-      ensureAgentApproved,
-      infoClient,
-    ],
-  );
 
   if (!isConnected || !address) {
     return (
@@ -343,36 +241,56 @@ export default function OrdersTab() {
                 </YStack>
 
                 <XStack justifyContent="flex-end" marginTop="$2">
-                  <Button
+                  <GateButton
                     size="$3"
-                    disabled={Boolean(cancelingOrderIds[order.oid])}
-                    onPress={() => handleCancelOrder(order)}
-                    backgroundColor={
-                      requiresAgentApproval === false
-                        ? '$green9'
-                        : requiresAgentApproval === true
-                          ? '$gray6'
-                          : '$background'
-                    }
-                    borderColor={
-                      requiresAgentApproval === false
-                        ? '$green10'
-                        : requiresAgentApproval === true
-                          ? '$gray7'
-                          : '$borderColor'
-                    }
-                    color={
-                      requiresAgentApproval === false
-                        ? '$color1'
-                        : requiresAgentApproval === true
-                          ? '$color12'
-                          : '$color'
-                    }
-                    borderWidth={1}
-                    pressStyle={{ opacity: 0.7 }}
-                  >
-                    {cancelingOrderIds[order.oid] ? 'Canceling...' : 'Cancel Order'}
-                  </Button>
+                    disabled={Boolean(cancelingOrderIds[order.oid]) || !walletProvider}
+                    loading={Boolean(cancelingOrderIds[order.oid])}
+                    loadingTitle="Canceling..."
+                    title="Cancel Order"
+                    onPressApproved={async context => {
+                      setCancelError(undefined);
+                      setCancelingOrderIds(prev => ({ ...prev, [order.oid]: true }));
+
+                      try {
+                        let universe = metaUniverse;
+                        if (!universe) {
+                          const meta = await infoClient.meta();
+                          universe = meta.universe;
+                          setMetaUniverse(universe);
+                        }
+
+                        const normalizedCoin = normalizeAssetName(order.coin);
+                        const assetIndex = universe.findIndex(
+                          asset => normalizeAssetName(asset.name) === normalizedCoin,
+                        );
+
+                        if (assetIndex === -1) {
+                          throw new Error(`Unable to determine asset index for ${order.coin}`);
+                        }
+
+                        await context.agentExchangeClient.cancel({
+                          cancels: [
+                            {
+                              a: assetIndex,
+                              o: order.oid,
+                            },
+                          ],
+                        });
+
+                        await fetchOpenOrders();
+                      } catch (err) {
+                        console.error('Error canceling order:', err);
+                        setCancelError('Failed to cancel order. Please try again.');
+                        throw err;
+                      } finally {
+                        setCancelingOrderIds(prev => {
+                          const next = { ...prev };
+                          delete next[order.oid];
+                          return next;
+                        });
+                      }
+                    }}
+                  />
                 </XStack>
               </YStack>
             );
@@ -380,5 +298,13 @@ export default function OrdersTab() {
         </YStack>
       </ScrollView>
     </YStack>
+  );
+}
+
+export default function OrdersTab() {
+  return (
+    <ApprovalGateProvider>
+      <OrdersTabContent />
+    </ApprovalGateProvider>
   );
 }

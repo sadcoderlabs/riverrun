@@ -1,13 +1,17 @@
 import 'event-target-polyfill'; // polyfill for hyperliquid sdk
 import 'fast-text-encoding'; // polyfill for hyperliquid sdk
 
-import OrdersTab from '@/app/(main)/trade/[market]/(tab)/ordersTab';
+import { OrdersTabContent } from '@/app/(main)/trade/[market]/(tab)/ordersTab';
 import PositionsTab from '@/app/(main)/trade/[market]/(tab)/positionsTab';
 import AdaptiveSelect from '@/components/global/adaptive-select';
+import {
+  ApprovalGateProvider,
+  useApprovalGate,
+} from '@/components/hyperliquid/ApprovalGateProvider';
+import { GateButton } from '@/components/hyperliquid/GateButton';
+import type { AgentClientContext } from '@/lib/hyperliquid/agent';
 import { ChevronDown } from '@tamagui/lucide-icons';
-import { useHyperliquidAgent } from '@/hooks/useHyperliquidAgent';
-import { useState } from 'react';
-import { Alert } from 'react-native';
+import { useCallback, useState } from 'react';
 import { Button, Slider, Text, XStack, YStack } from 'tamagui';
 
 interface TradeUIProps {
@@ -15,45 +19,47 @@ interface TradeUIProps {
 }
 
 export function TradeUI({ marketId }: TradeUIProps) {
-  const { infoClient, requiresAgentApproval, ensureAgentApproved, getAgentClients } =
-    useHyperliquidAgent();
-  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  return (
+    <ApprovalGateProvider>
+      <TradeUIView marketId={marketId} />
+    </ApprovalGateProvider>
+  );
+}
 
-  async function placeOrderWithAgentExample() {
-    if (requiresAgentApproval) {
-      Alert.alert(
-        'Agent approval required',
-        'Placing an order requires approving the agent first. Confirm to approve now.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Confirm',
-            onPress: () => {
-              void ensureAgentApproved().catch(error => {
-                console.error('Failed to approve agent for trading', error);
-              });
-            },
-          },
-        ],
-      );
-      return;
-    }
+function TradeUIView({ marketId }: TradeUIProps) {
+  const { infoClient } = useApprovalGate();
 
-    try {
-      setIsPlacingOrder(true);
+  // Mock market data (similar to what's in the index.tsx)
+  const marketData = {
+    id: marketId || 'BTC-USD',
+    price: 28450.75,
+    priceChange: 2.34,
+    fundingRate: 0.0012,
+    annualizedFunding: 10.95,
+  };
 
-      const context = await getAgentClients(false);
+  const [activeTab, setActiveTab] = useState<'trade' | 'positions' | 'orders' | 'history'>('trade');
 
+  // State for the order form
+  const [collateralMode, setCollateralMode] = useState('Cross');
+  const [leverage, setLeverage] = useState('5x');
+  const [orderType, setOrderType] = useState('Market');
+  const [sizeUnit, setSizeUnit] = useState('USDC');
+  const [orderSide, setOrderSide] = useState<'Long' | 'Short'>('Long');
+  const [sizePercentage, setSizePercentage] = useState(0);
+
+  const handlePlaceOrder = useCallback(
+    async (context: AgentClientContext) => {
       const meta = await infoClient.meta();
       console.log('meta', meta.universe);
+
       const btcAssetIndex = meta.universe.findIndex(asset => {
         const assetName = asset.name.toUpperCase();
         return assetName === 'BTC' || assetName === 'BTC-USD' || assetName === 'BTCUSD';
       });
 
       if (btcAssetIndex === -1) {
-        console.error('Unable to locate BTC perpetual market metadata');
-        return;
+        throw new Error('Unable to locate BTC perpetual market metadata');
       }
 
       const btcMeta = meta.universe[btcAssetIndex];
@@ -81,39 +87,9 @@ export function TradeUI({ marketId }: TradeUIProps) {
       });
 
       console.log('Agent order response', orderResponse);
-    } catch (error) {
-      console.error('Failed to place order via agent', error);
-    } finally {
-      setIsPlacingOrder(false);
-    }
-  }
-
-  // Mock market data (similar to what's in the index.tsx)
-  const marketData = {
-    id: marketId || 'BTC-USD',
-    price: 28450.75,
-    priceChange: 2.34,
-    fundingRate: 0.0012,
-    annualizedFunding: 10.95,
-  };
-
-  const [activeTab, setActiveTab] = useState<'trade' | 'positions' | 'orders' | 'history'>('trade');
-
-  // State for the order form
-  const [collateralMode, setCollateralMode] = useState('Cross');
-  const [leverage, setLeverage] = useState('5x');
-  const [orderType, setOrderType] = useState('Market');
-  const [sizeUnit, setSizeUnit] = useState('USDC');
-  const [orderSide, setOrderSide] = useState<'Long' | 'Short'>('Long');
-  const [sizePercentage, setSizePercentage] = useState(0);
-
-  const isPlaceOrderDisabled = !orderSide || isPlacingOrder;
-  const buttonVisuals =
-    requiresAgentApproval === false
-      ? { background: '$green9', border: '$green10', text: '$color1' }
-      : requiresAgentApproval === true
-        ? { background: '$gray6', border: '$gray7', text: '$color12' }
-        : { background: '$accent9', border: '$accent9', text: '$color1' };
+    },
+    [infoClient],
+  );
 
   // Calculate order details
   const accountBalance = 1000; // Mock account balance
@@ -327,30 +303,22 @@ export function TradeUI({ marketId }: TradeUIProps) {
             </YStack>
 
             {/* Fourth Stack: Place Order Button */}
-            <Button
-              backgroundColor={buttonVisuals.background}
-              paddingVertical="$1"
+            <GateButton
+              title="Place Order"
+              loadingTitle="Placing..."
               borderRadius="$4"
+              paddingVertical="$1"
               marginTop="auto"
-              disabled={isPlaceOrderDisabled}
-              opacity={isPlaceOrderDisabled ? 0.7 : 1}
-              borderColor={buttonVisuals.border}
-              borderWidth={1}
-              pressStyle={{ opacity: 0.85 }}
-              onPress={() => {
-                // Show a native confirmation dialog
-                placeOrderWithAgentExample();
+              disabled={!orderSide}
+              onPressApproved={async context => {
+                try {
+                  await handlePlaceOrder(context);
+                } catch (error) {
+                  console.error('Failed to place order via agent', error);
+                  throw error;
+                }
               }}
-            >
-              <Text
-                fontFamily="$interSemiBold"
-                color={buttonVisuals.text}
-                fontSize="$4"
-                textAlign="center"
-              >
-                {isPlacingOrder ? 'Placing...' : 'Place Order'}
-              </Text>
-            </Button>
+            />
           </YStack>
         )}
 
@@ -360,7 +328,7 @@ export function TradeUI({ marketId }: TradeUIProps) {
           </YStack>
         )}
 
-        {activeTab === 'orders' && <OrdersTab />}
+        {activeTab === 'orders' && <OrdersTabContent />}
 
         {activeTab === 'history' && (
           <TabPlaceholder
