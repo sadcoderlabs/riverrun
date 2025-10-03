@@ -1,7 +1,7 @@
 import * as hl from '@nktkas/hyperliquid';
 import React, { useMemo } from 'react';
-import { Text, XStack, YStack } from 'tamagui';
 import type { GetThemeValueForKey } from 'tamagui';
+import { Text, XStack, YStack } from 'tamagui';
 import { Button } from './button';
 
 import { CardContainer, CardContainerProps } from './card-container';
@@ -168,9 +168,9 @@ export function OrderItem({
     switch (agentApprovalState) {
       case 'approved':
         return {
-          background: '$green9' as BackgroundColorToken,
-          border: '$green10' as BorderColorToken,
-          text: '$color1' as ColorToken,
+          background: '$accent9' as BackgroundColorToken,
+          border: '$accent9' as BorderColorToken,
+          text: '$accent1' as ColorToken,
         };
       case 'needsApproval':
         return {
@@ -214,6 +214,7 @@ export function OrderItem({
         <XStack justifyContent="flex-end">
           <Button.Gray
             level="sm"
+            fontSize="$2"
             borderRadius="$10"
             borderColor={cancelColors.border}
             color={cancelColors.text}

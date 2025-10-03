@@ -11,13 +11,16 @@ import { useAppKitProvider } from '@reown/appkit-ethers-react-native';
 import { ChevronDown } from '@tamagui/lucide-icons';
 import { BrowserProvider, Wallet } from 'ethers';
 import { useState } from 'react';
-import { Button, Slider, Text, XStack, YStack } from 'tamagui';
+import { Button, Sheet, Slider, Text, XStack, YStack } from 'tamagui';
 
 interface TradeUIProps {
   marketId?: string;
 }
 
 const AGENT_STORAGE_PREFIX = 'hl-agent:private-key:';
+const LEVERAGE_MIN = 1;
+const LEVERAGE_MAX = 20;
+const LEVERAGE_STEP = 1;
 
 async function getOrCreateAgentSigner(masterAddress: string, provider: BrowserProvider) {
   const storageKey = `${AGENT_STORAGE_PREFIX}${masterAddress.toLowerCase()}`;
@@ -138,7 +141,9 @@ export function TradeUI({ marketId }: TradeUIProps) {
 
   // State for the order form
   const [collateralMode, setCollateralMode] = useState('Cross');
-  const [leverage, setLeverage] = useState('5x');
+  const [leverage, setLeverage] = useState(5);
+  const [leverageSheetOpen, setLeverageSheetOpen] = useState(false);
+  const [leverageSheetPosition, setLeverageSheetPosition] = useState(0);
   const [orderType, setOrderType] = useState('Market');
   const [sizeUnit, setSizeUnit] = useState('USDC');
   const [orderSide, setOrderSide] = useState<'Long' | 'Short'>('Long');
@@ -147,7 +152,7 @@ export function TradeUI({ marketId }: TradeUIProps) {
   // Calculate order details
   const accountBalance = 1000; // Mock account balance
   const margin = accountBalance * (sizePercentage / 100); // Margin is the amount user is willing to risk
-  const leverageFactor = Number(leverage.replace('x', ''));
+  const leverageFactor = leverage;
   const orderSize = margin * leverageFactor; // Total position size including leverage
   const liquidationPrice =
     orderSide === 'Long'
@@ -204,21 +209,14 @@ export function TradeUI({ marketId }: TradeUIProps) {
                   flex={1}
                 />
 
-                {/* Leverage Selector */}
-                <SelectBox
-                  title="Leverage"
-                  value={leverage}
-                  onValueChange={setLeverage}
-                  items={[
-                    { value: '1x', label: '1x' },
-                    { value: '2x', label: '2x' },
-                    { value: '3x', label: '3x' },
-                    { value: '5x', label: '5x' },
-                    { value: '10x', label: '10x' },
-                    { value: '20x', label: '20x' },
-                  ]}
-                  placeholder="5x"
+                {/* Leverage Picker */}
+                <LeveragePicker
                   flex={1}
+                  value={leverage}
+                  onPress={() => {
+                    setLeverageSheetPosition(0);
+                    setLeverageSheetOpen(true);
+                  }}
                 />
               </XStack>
 
@@ -372,6 +370,96 @@ export function TradeUI({ marketId }: TradeUIProps) {
                 Place Order
               </Text>
             </Button>
+
+            <Sheet
+              modal
+              open={leverageSheetOpen}
+              onOpenChange={setLeverageSheetOpen}
+              snapPointsMode="percent"
+              snapPoints={[25]}
+              position={leverageSheetPosition}
+              onPositionChange={setLeverageSheetPosition}
+              dismissOnSnapToBottom
+            >
+              <Sheet.Overlay
+                animation="quick"
+                enterStyle={{ opacity: 0 }}
+                exitStyle={{ opacity: 0 }}
+              />
+              <Sheet.Handle />
+              <Sheet.Frame
+                padding="$4"
+                gap="$4"
+                backgroundColor="$background"
+                borderTopLeftRadius="$6"
+                borderTopRightRadius="$6"
+                height="25%"
+                minHeight="25%"
+              >
+                <XStack alignItems="center" justifyContent="space-between">
+                  <Text fontFamily="$interSemiBold" fontSize="$4" color="$color">
+                    Adjust Leverage
+                  </Text>
+                  <Button
+                    size="$2"
+                    backgroundColor="$gray3"
+                    borderColor="$gray6"
+                    borderWidth={1}
+                    borderRadius="$4"
+                    paddingHorizontal="$3"
+                    onPress={() => setLeverageSheetOpen(false)}
+                  >
+                    <Text fontFamily="$interMedium" fontSize="$2" color="$color">
+                      Done
+                    </Text>
+                  </Button>
+                </XStack>
+
+                <YStack gap="$3">
+                  <Text fontFamily="$interSemiBold" fontSize="$6" textAlign="center" color="$color">
+                    {leverage}x
+                  </Text>
+                  <Slider
+                    value={[leverage]}
+                    min={LEVERAGE_MIN}
+                    max={LEVERAGE_MAX}
+                    step={LEVERAGE_STEP}
+                    onValueChange={values => {
+                      const [next] = values;
+                      if (typeof next !== 'number') {
+                        return;
+                      }
+
+                      const clampedValue = Math.max(
+                        LEVERAGE_MIN,
+                        Math.min(LEVERAGE_MAX, Math.round(next)),
+                      );
+                      setLeverage(clampedValue);
+                    }}
+                  >
+                    <Slider.Track backgroundColor="$accent1">
+                      <Slider.TrackActive backgroundColor="$accent9" />
+                    </Slider.Track>
+                    <Slider.Thumb
+                      index={0}
+                      size="$1"
+                      backgroundColor="$accent1"
+                      borderWidth={1}
+                      borderColor="$accent9"
+                      circular
+                    />
+                  </Slider>
+                  <XStack justifyContent="space-between" alignItems="center">
+                    <Text fontSize="$2" color="$color">
+                      {LEVERAGE_MIN}x
+                    </Text>
+                    <Text fontSize="$2" color="$color">
+                      {LEVERAGE_MAX}x
+                    </Text>
+                  </XStack>
+                </YStack>
+              </Sheet.Frame>
+            </Sheet>
           </YStack>
         )}
 
@@ -439,6 +527,35 @@ function TabPlaceholder({ title, message }: TabPlaceholderProps) {
         {message}
       </Text>
     </YStack>
+  );
+}
+
+interface LeveragePickerProps {
+  value: number;
+  onPress: () => void;
+  flex?: number;
+}
+
+function LeveragePicker({ value, onPress, flex }: LeveragePickerProps) {
+  return (
+    <XStack
+      flex={flex}
+      backgroundColor="$gray3"
+      borderRadius="$4"
+      paddingVertical="$3"
+      paddingHorizontal="$3"
+      borderColor="$gray8"
+      borderWidth={1}
+      alignItems="center"
+      justifyContent="space-between"
+      onPress={onPress}
+      pressStyle={{ opacity: 0.7 }}
+    >
+      <Text color="$color" fontSize="$3" fontFamily="$interRegular">
+        {value}x
+      </Text>
+      <ChevronDown size="$1" color="$color" />
+    </XStack>
   );
 }
 
