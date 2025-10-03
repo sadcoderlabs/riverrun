@@ -16,6 +16,9 @@ export default function OrdersTab() {
   const [error, setError] = useState<string | undefined>(undefined);
   const [cancelError, setCancelError] = useState<string | undefined>(undefined);
   const [cancelingOrderIds, setCancelingOrderIds] = useState<Record<number, boolean>>({});
+  const [requiresAgentApproval, setRequiresAgentApproval] = useState<boolean | undefined>(
+    undefined,
+  );
 
   type MetaUniverse = Awaited<ReturnType<hl.InfoClient['meta']>>['universe'];
   const [metaUniverse, setMetaUniverse] = useState<MetaUniverse | undefined>(undefined);
@@ -102,6 +105,38 @@ export default function OrdersTab() {
     fetchOpenOrders(true);
   }, [fetchOpenOrders]);
 
+  const updateAgentApprovalStatus = useCallback(async () => {
+    if (!walletProvider || !address) {
+      setRequiresAgentApproval(undefined);
+      return;
+    }
+
+    const transport = transportRef.current;
+    const infoClient = infoClientRef.current;
+
+    if (!transport || !infoClient) {
+      return;
+    }
+
+    try {
+      const { isAgentApproved } = await setupAgentClients({
+        walletProvider,
+        transport,
+        infoClient,
+        autoApprove: false,
+      });
+
+      setRequiresAgentApproval(!isAgentApproved);
+    } catch (err) {
+      console.error('Error checking agent approval status:', err);
+      setRequiresAgentApproval(undefined);
+    }
+  }, [walletProvider, address]);
+
+  useEffect(() => {
+    void updateAgentApprovalStatus();
+  }, [updateAgentApprovalStatus]);
+
   const sortedOrders = useMemo(() => {
     return [...orders].sort((a, b) => b.timestamp - a.timestamp);
   }, [orders]);
@@ -144,6 +179,8 @@ export default function OrdersTab() {
           autoApprove: false,
         });
 
+        setRequiresAgentApproval(!isAgentApproved);
+
         if (!isAgentApproved) {
           const handleAgentApproval = async () => {
             try {
@@ -151,6 +188,7 @@ export default function OrdersTab() {
                 agentAddress,
                 agentName,
               });
+              setRequiresAgentApproval(false);
             } catch (approveErr) {
               console.error('Error approving agent:', approveErr);
               setCancelError('Failed to initiate agent approval. Please try again.');
@@ -281,8 +319,16 @@ export default function OrdersTab() {
             <OrderItem
               key={order.oid}
               order={order}
-              isCanceling={Boolean(cancelingOrderIds[order.oid])}
               onCancel={handleCancelOrder}
+              isCanceling={Boolean(cancelingOrderIds[order.oid])}
+              cancelDisabled={Boolean(cancelingOrderIds[order.oid])}
+              agentApprovalState={
+                requiresAgentApproval === false
+                  ? 'approved'
+                  : requiresAgentApproval === true
+                    ? 'needsApproval'
+                    : 'unknown'
+              }
             />
           ))}
         </YStack>

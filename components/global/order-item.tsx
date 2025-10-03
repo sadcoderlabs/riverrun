@@ -1,15 +1,18 @@
 import * as hl from '@nktkas/hyperliquid';
 import React, { useMemo } from 'react';
 import { Text, XStack, YStack } from 'tamagui';
+import type { GetThemeValueForKey } from 'tamagui';
 import { Button } from './button';
 
 import { CardContainer, CardContainerProps } from './card-container';
+
+type ColorToken = GetThemeValueForKey<'color'>;
 
 interface LabelValueProps {
   label: string;
   value: string;
   emphasize?: boolean;
-  valueColor?: string;
+  valueColor?: ColorToken;
 }
 
 const LabelValue = ({ label, value, emphasize = false, valueColor }: LabelValueProps) => {
@@ -18,7 +21,11 @@ const LabelValue = ({ label, value, emphasize = false, valueColor }: LabelValueP
       <Text color="$color9" fontSize="$2">
         {label}
       </Text>
-      <Text fontSize="$2" fontFamily={emphasize ? '$interSemiBold' : '$interMedium'} color="$color">
+      <Text
+        fontSize="$2"
+        fontFamily={emphasize ? '$interSemiBold' : '$interMedium'}
+        color={valueColor ?? '$color'}
+      >
         {value}
       </Text>
     </XStack>
@@ -92,12 +99,16 @@ const formatSide = (side: string | undefined) => {
   return side ?? '-';
 };
 
+type BorderColorToken = GetThemeValueForKey<'borderColor'>;
+type BackgroundColorToken = GetThemeValueForKey<'backgroundColor'>;
+
 export interface OrderItemProps extends Omit<CardContainerProps, 'children'> {
   order: hl.OpenOrdersResponse[number];
   onCancel?: (order: hl.OpenOrdersResponse[number]) => void;
   isCanceling?: boolean;
   cancelDisabled?: boolean;
   cancelLabel?: string;
+  agentApprovalState?: 'approved' | 'needsApproval' | 'unknown';
 }
 
 export function OrderItem({
@@ -106,6 +117,7 @@ export function OrderItem({
   isCanceling = false,
   cancelDisabled = false,
   cancelLabel = 'Cancel Order',
+  agentApprovalState = 'unknown',
   ...cardProps
 }: OrderItemProps) {
   const {
@@ -145,8 +157,35 @@ export function OrderItem({
     };
   }, [order.limitPx, order.side, order.sz, order.timestamp]);
 
-  const accentColor = isBuy ? '$green10' : '$red10';
+  const accentColor = (isBuy ? '$green10' : '$red10') as ColorToken;
   const disableCancel = cancelDisabled || isCanceling || !onCancel;
+
+  const cancelColors = useMemo<{
+    background: BackgroundColorToken | undefined;
+    border: BorderColorToken | undefined;
+    text: ColorToken | undefined;
+  }>(() => {
+    switch (agentApprovalState) {
+      case 'approved':
+        return {
+          background: '$green9' as BackgroundColorToken,
+          border: '$green10' as BorderColorToken,
+          text: '$color1' as ColorToken,
+        };
+      case 'needsApproval':
+        return {
+          background: '$gray6' as BackgroundColorToken,
+          border: '$gray7' as BorderColorToken,
+          text: '$color12' as ColorToken,
+        };
+      default:
+        return {
+          background: '$background' as BackgroundColorToken,
+          border: '$borderColor' as BorderColorToken,
+          text: '$color' as ColorToken,
+        };
+    }
+  }, [agentApprovalState]);
 
   return (
     <CardContainer gap="$4" {...cardProps}>
@@ -173,23 +212,21 @@ export function OrderItem({
 
       {onCancel ? (
         <XStack justifyContent="flex-end">
-          <Button.Inline
+          <Button.Gray
             level="sm"
-            color="$color"
-            paddingLeft="$3"
-            paddingRight="$3"
-            paddingTop="$2"
-            paddingBottom="$2"
             borderRadius="$10"
-            backgroundColor="$gray3"
-            fontSize="$2"
+            borderColor={cancelColors.border}
+            color={cancelColors.text}
+            backgroundColor={cancelColors.background}
+            borderWidth={1}
             disabled={disableCancel}
             onPress={() => {
               onCancel(order);
             }}
+            pressStyle={{ opacity: 0.7 }}
           >
             {isCanceling ? 'Canceling...' : cancelLabel}
-          </Button.Inline>
+          </Button.Gray>
         </XStack>
       ) : null}
     </CardContainer>

@@ -1,9 +1,8 @@
 import * as hl from '@nktkas/hyperliquid';
 import { useAppKitAccount } from '@reown/appkit-ethers-react-native';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ScrollView, Spinner, Text, View, YStack } from 'tamagui';
 import { PositionItem } from '../../../../../components/home/position-item';
-
 type Position = hl.ClearinghouseStateResponse['assetPositions'][number]['position'];
 
 export default function PositionsTab() {
@@ -51,17 +50,17 @@ export default function PositionsTab() {
     fetchPositions();
   }, [address, isConnected]);
 
-  const handleTogglePosition = (coin: string) => {
+  const handleTogglePosition = useCallback((coin: string) => {
     setExpandedPositions(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(coin)) {
-        newSet.delete(coin);
+      const next = new Set(prev);
+      if (next.has(coin)) {
+        next.delete(coin);
       } else {
-        newSet.add(coin);
+        next.add(coin);
       }
-      return newSet;
+      return next;
     });
-  };
+  }, []);
 
   if (!isConnected || !address) {
     return (
@@ -97,7 +96,7 @@ export default function PositionsTab() {
   }
 
   return (
-    <ScrollView flex={1}>
+    <ScrollView flex={1} padding="$2">
       <YStack>
         {positions.map((position, index) => (
           <PositionItem
