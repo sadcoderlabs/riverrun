@@ -1,3 +1,4 @@
+import { OrderItem } from '@/components/global/order-item';
 import {
   ApprovalGateProvider,
   useApprovalGate,

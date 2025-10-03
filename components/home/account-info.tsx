@@ -1,55 +1,15 @@
+import * as hl from '@nktkas/hyperliquid';
+import { useAppKitAccount } from '@reown/appkit-ethers-react-native';
 import { Ban } from '@tamagui/lucide-icons';
-import React, { useState } from 'react';
-import { Separator, Text, useTheme, View, XStack, YStack } from 'tamagui';
+import React, { useEffect, useRef, useState } from 'react';
+import { Separator, Spinner, Text, useTheme, View, XStack, YStack } from 'tamagui';
 import { CardContainer } from '../global/card-container';
 import { HistoryData, HistoryItem } from './history-item';
-import { PositionData, PositionItem } from './position-item';
+import { PositionItem } from './position-item';
 
 type Tab = 'positions' | 'history';
 
-// Mock position data for UI rendering
-export const positionsData: PositionData[] = [
-  {
-    id: '1',
-    symbol: 'BTC-USD',
-    type: 'Long',
-    leverage: '5x',
-    crossMode: 'Cross',
-    size: '110.13',
-    sizeUnit: 'USDC',
-    margin: '22.02',
-    marginUnit: 'USDC',
-    qty: '0.0248',
-    qtyUnit: 'BTC',
-    avgEntry: '4440.6',
-    markPrice: '4440.9',
-    liqPrice: '3618',
-    pnl: '+0.01',
-    pnlPercentage: '0.1%',
-    funding: '+0.05',
-    fundingPercentage: '0.02%',
-  },
-  {
-    id: '2',
-    symbol: 'ETH-USD',
-    type: 'Short',
-    leverage: '10x',
-    crossMode: 'Isolated',
-    size: '500.25',
-    sizeUnit: 'USDC',
-    margin: '50.03',
-    marginUnit: 'USDC',
-    qty: '0.1245',
-    qtyUnit: 'ETH',
-    avgEntry: '4015.2',
-    markPrice: '4040.5',
-    liqPrice: '4350.8',
-    pnl: '-3.15',
-    pnlPercentage: '-0.63%',
-    funding: '-0.12',
-    fundingPercentage: '-0.04%',
-  },
-];
+type Position = hl.ClearinghouseStateResponse['assetPositions'][number]['position'];
 
 // Mock history data for UI rendering
 export const historyData: HistoryData[] = [
@@ -92,20 +52,65 @@ export const historyData: HistoryData[] = [
 ];
 
 export function AccountInfo() {
+  const { address, isConnected } = useAppKitAccount();
   const [activeTab, setActiveTab] = useState<Tab>('positions');
-  const [expandedPositionId, setExpandedPositionId] = useState<string | null>(null);
+  const [expandedPositionCoin, setExpandedPositionCoin] = useState<string | null>(null);
+  const [positions, setPositions] = useState<Position[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const theme = useTheme();
+  const infoClientRef = useRef<hl.InfoClient | null>(null);
+
+  useEffect(() => {
+    const fetchPositions = async () => {
+      if (!address || !isConnected) {
+        setPositions([]);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        if (infoClientRef.current === null) {
+          infoClientRef.current = new hl.InfoClient({ transport: new hl.HttpTransport() });
+        }
+
+        const client = infoClientRef.current;
+        const clearinghouseState = await client.clearinghouseState({ user: address });
+
+        const userPositions = clearinghouseState.assetPositions
+          .filter(asset => asset.position && Number(asset.position.szi) !== 0)
+          .map(asset => asset.position);
+
+        setPositions(userPositions);
+      } catch (err) {
+        console.error('Error fetching positions:', err);
+        setError('Failed to fetch positions');
+        setPositions([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPositions();
+  }, [address, isConnected]);
+
+  useEffect(() => {
+    if (expandedPositionCoin && positions.every(position => position.coin !== expandedPositionCoin)) {
+      setExpandedPositionCoin(null);
+    }
+  }, [positions, expandedPositionCoin]);
 
   const handleTabPress = (tab: Tab) => {
     setActiveTab(tab);
     // Close any expanded position when switching tabs
-    setExpandedPositionId(null);
+    setExpandedPositionCoin(null);
   };
 
-  const handlePositionToggle = (id: string) => {
-    // If the position is already expanded, collapse it
-    // Otherwise, expand the clicked position and collapse any other
-    setExpandedPositionId(expandedPositionId === id ? null : id);
+  const handlePositionToggle = (coin: string) => {
+    setExpandedPositionCoin(prev => (prev === coin ? null : coin));
   };
 
   return (
@@ -125,32 +130,43 @@ export function AccountInfo() {
       <Separator />
 
       {activeTab === 'positions' ? (
-        positionsData.length > 0 ? (
+        !isConnected || !address ? (
+          <EmptyState
+            iconColor={theme.color8}
+            message="connect your wallet to view positions"
+            minHeight={200}
+          />
+        ) : loading ? (
+          <YStack height={200} justifyContent="center" alignItems="center" gap="$2">
+            <Spinner size="large" />
+            <Text color="$color9" fontFamily="$interMedium">
+              Loading positions...
+            </Text>
+          </YStack>
+        ) : error ? (
+          <EmptyState
+            iconColor="$red9"
+            message={error}
+            minHeight={200}
+            textColor="$red9"
+          />
+        ) : positions.length > 0 ? (
           <View>
-            {positionsData.map(position => (
+            {positions.map((position, index) => (
               <PositionItem
-                key={position.id}
+                key={`${position.coin}-${index}`}
                 position={position}
-                isExpanded={expandedPositionId === position.id}
+                isExpanded={expandedPositionCoin === position.coin}
                 onToggle={handlePositionToggle}
               />
             ))}
           </View>
         ) : (
-          <YStack
-            height={200}
-            justifyContent="center"
-            alignItems="center"
-            padding="$4"
-            bg="$background02"
-          >
-            <YStack alignItems="center" gap="$2">
-              <Ban size={24} color={theme.color8} />
-              <Text color="$color9" fontFamily="$interMedium" fontSize="$3" textAlign="center">
-                no open positions yet
-              </Text>
-            </YStack>
-          </YStack>
+          <EmptyState
+            iconColor={theme.color8}
+            message="no open positions yet"
+            minHeight={200}
+          />
         )
       ) : historyData.length > 0 ? (
         <View>
@@ -175,6 +191,26 @@ export function AccountInfo() {
         </YStack>
       )}
     </CardContainer>
+  );
+}
+
+interface EmptyStateProps {
+  iconColor: string;
+  message: string;
+  minHeight: number;
+  textColor?: string;
+}
+
+function EmptyState({ iconColor, message, minHeight, textColor = '$color9' }: EmptyStateProps) {
+  return (
+    <YStack height={minHeight} justifyContent="center" alignItems="center" padding="$4" bg="$background02">
+      <YStack alignItems="center" gap="$2">
+        <Ban size={24} color={iconColor} />
+        <Text color={textColor} fontFamily="$interMedium" fontSize="$3" textAlign="center">
+          {message}
+        </Text>
+      </YStack>
+    </YStack>
   );
 }
 
