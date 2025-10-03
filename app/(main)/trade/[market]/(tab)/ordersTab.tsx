@@ -1,46 +1,10 @@
+import { OrderItem } from '@/components/global/order-item';
 import { setupAgentClients } from '@/lib/hyperliquid/agent';
 import * as hl from '@nktkas/hyperliquid';
 import { useAppKitAccount, useAppKitProvider } from '@reown/appkit-ethers-react-native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, RefreshControl } from 'react-native';
-import { Button, ScrollView, Spinner, Text, XStack, YStack } from 'tamagui';
-
-const formatNumber = (value: number | string, decimals = 4) => {
-  const numericValue = typeof value === 'string' ? parseFloat(value) : value;
-  if (Number.isNaN(numericValue)) {
-    return '-';
-  }
-
-  return numericValue.toFixed(decimals);
-};
-
-const formatTimestamp = (timestamp: number) => {
-  const date = new Date(timestamp);
-  if (Number.isNaN(date.getTime())) {
-    return '-';
-  }
-
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-
-  return `${year}-${month}-${day} ${hours}:${minutes}`;
-};
-
-const formatSide = (side: string) => {
-  const normalized = side?.toUpperCase();
-  if (normalized === 'B' || normalized === 'BUY') {
-    return 'Buy';
-  }
-
-  if (normalized === 'A' || normalized === 'SELL' || normalized === 'S') {
-    return 'Sell';
-  }
-
-  return side;
-};
+import { ScrollView, Spinner, Text, YStack } from 'tamagui';
 
 export default function OrdersTab() {
   const { address, isConnected } = useAppKitAccount();
@@ -313,73 +277,14 @@ export default function OrdersTab() {
               </Text>
             </YStack>
           ) : undefined}
-          {sortedOrders.map(order => {
-            const price = parseFloat(order.limitPx);
-            const size = parseFloat(order.sz);
-            const orderValue = Number.isFinite(price * size) ? (price * size).toFixed(2) : '-';
-            const isBuy = order.side?.toUpperCase() === 'B' || order.side?.toUpperCase() === 'BUY';
-
-            return (
-              <YStack
-                key={order.oid}
-                backgroundColor="$background"
-                borderWidth={1}
-                borderColor="$borderColor"
-                borderRadius="$2"
-                padding="$3"
-                gap="$2"
-              >
-                <XStack justifyContent="space-between" alignItems="center">
-                  <Text fontSize="$5" fontFamily="$interSemiBold">
-                    {order.coin}
-                  </Text>
-                  <Text color={isBuy ? '$green10' : '$red10'} fontFamily="$interSemiBold">
-                    {formatSide(order.side)}
-                  </Text>
-                </XStack>
-
-                <YStack gap="$1">
-                  <XStack justifyContent="space-between">
-                    <Text color="$color11">Order ID</Text>
-                    <Text fontFamily="$interMedium">{order.oid}</Text>
-                  </XStack>
-
-                  <XStack justifyContent="space-between">
-                    <Text color="$color11">Price</Text>
-                    <Text fontFamily="$interMedium">${formatNumber(order.limitPx)}</Text>
-                  </XStack>
-
-                  <XStack justifyContent="space-between">
-                    <Text color="$color11">Size</Text>
-                    <Text fontFamily="$interMedium">{formatNumber(order.sz)}</Text>
-                  </XStack>
-
-                  <XStack justifyContent="space-between">
-                    <Text color="$color11">Value</Text>
-                    <Text fontFamily="$interMedium">
-                      {orderValue === '-' ? '-' : `$${orderValue}`}
-                    </Text>
-                  </XStack>
-
-                  <XStack justifyContent="space-between">
-                    <Text color="$color11">Created</Text>
-                    <Text fontFamily="$interMedium">{formatTimestamp(order.timestamp)}</Text>
-                  </XStack>
-                </YStack>
-
-                <XStack justifyContent="flex-end" marginTop="$2">
-                  <Button
-                    size="$3"
-                    variant="outlined"
-                    disabled={Boolean(cancelingOrderIds[order.oid])}
-                    onPress={() => handleCancelOrder(order)}
-                  >
-                    {cancelingOrderIds[order.oid] ? 'Canceling...' : 'Cancel Order'}
-                  </Button>
-                </XStack>
-              </YStack>
-            );
-          })}
+          {sortedOrders.map(order => (
+            <OrderItem
+              key={order.oid}
+              order={order}
+              isCanceling={Boolean(cancelingOrderIds[order.oid])}
+              onCancel={handleCancelOrder}
+            />
+          ))}
         </YStack>
       </ScrollView>
     </YStack>
