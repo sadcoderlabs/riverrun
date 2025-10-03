@@ -36,33 +36,6 @@ export function useHyperliquidAgent(): UseHyperliquidAgentResult {
   );
   const [isCheckingApproval, setIsCheckingApproval] = useState(false);
 
-  const refreshApprovalStatus = useCallback(async () => {
-    if (!walletProvider) {
-      setRequiresAgentApproval(undefined);
-      return;
-    }
-
-    setIsCheckingApproval(true);
-    try {
-      const { isAgentApproved } = await setupAgentClients({
-        walletProvider,
-        transport,
-        infoClient,
-      });
-
-      setRequiresAgentApproval(!isAgentApproved);
-    } catch (error) {
-      console.error('Error checking agent approval status', error);
-      setRequiresAgentApproval(undefined);
-    } finally {
-      setIsCheckingApproval(false);
-    }
-  }, [walletProvider, transport, infoClient]);
-
-  useEffect(() => {
-    void refreshApprovalStatus();
-  }, [refreshApprovalStatus]);
-
   const getAgentContext = useCallback(async () => {
     if (!walletProvider) {
       throw new Error('Wallet provider not available');
@@ -77,6 +50,27 @@ export function useHyperliquidAgent(): UseHyperliquidAgentResult {
     setRequiresAgentApproval(!context.isAgentApproved);
     return context;
   }, [walletProvider, transport, infoClient]);
+
+  const refreshApprovalStatus = useCallback(async () => {
+    if (!walletProvider) {
+      setRequiresAgentApproval(undefined);
+      return;
+    }
+
+    setIsCheckingApproval(true);
+    try {
+      await getAgentContext();
+    } catch (error) {
+      console.error('Error checking agent approval status', error);
+      setRequiresAgentApproval(undefined);
+    } finally {
+      setIsCheckingApproval(false);
+    }
+  }, [walletProvider, getAgentContext]);
+
+  useEffect(() => {
+    void refreshApprovalStatus();
+  }, [refreshApprovalStatus]);
 
   return useMemo(
     () => ({
