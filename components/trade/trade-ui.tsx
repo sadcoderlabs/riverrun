@@ -325,15 +325,17 @@ function TradeUIView({ marketId }: TradeUIProps) {
               open={leverageSheetOpen}
               onOpenChange={setLeverageSheetOpen}
               snapPointsMode="percent"
-              snapPoints={[25]}
+              snapPoints={[30]}
               position={leverageSheetPosition}
               onPositionChange={setLeverageSheetPosition}
               dismissOnSnapToBottom
+              dismissOnOverlayPress
             >
               <Sheet.Overlay
                 animation="quick"
                 enterStyle={{ opacity: 0 }}
                 exitStyle={{ opacity: 0 }}
+                backgroundColor="rgba(0, 0, 0, 0.5)"
               />
               <Sheet.Handle />
               <Sheet.Frame
@@ -342,30 +344,21 @@ function TradeUIView({ marketId }: TradeUIProps) {
                 backgroundColor="$background"
                 borderTopLeftRadius="$6"
                 borderTopRightRadius="$6"
-                height="25%"
-                minHeight="25%"
               >
-                <XStack alignItems="center" justifyContent="space-between">
-                  <Text fontFamily="$interSemiBold" fontSize="$4" color="$color">
-                    Adjust Leverage
+                <XStack alignItems="center" justifyContent="center">
+                  <Text fontFamily="$interSemiBold" fontSize="$3" color="$color">
+                    Leverage
                   </Text>
-                  <Button
-                    size="$2"
-                    backgroundColor="$gray3"
-                    borderColor="$gray6"
-                    borderWidth={1}
-                    borderRadius="$4"
-                    paddingHorizontal="$3"
-                    onPress={() => setLeverageSheetOpen(false)}
-                  >
-                    <Text fontFamily="$interMedium" fontSize="$2" color="$color">
-                      Done
-                    </Text>
-                  </Button>
                 </XStack>
 
                 <YStack gap="$3">
-                  <Text fontFamily="$interSemiBold" fontSize="$6" textAlign="center" color="$color">
+                  <Text
+                    fontFamily="$interSemiBold"
+                    fontSize="$4"
+                    fontWeight={400}
+                    textAlign="center"
+                    color="$color"
+                  >
                     {leverage}x
                   </Text>
                   <Slider
@@ -386,7 +379,7 @@ function TradeUIView({ marketId }: TradeUIProps) {
                       setLeverage(clampedValue);
                     }}
                   >
-                    <Slider.Track backgroundColor="$accent1">
+                    <Slider.Track backgroundColor="$gray5">
                       <Slider.TrackActive backgroundColor="$accent9" />
                     </Slider.Track>
                     <Slider.Thumb
@@ -398,7 +391,7 @@ function TradeUIView({ marketId }: TradeUIProps) {
                       circular
                     />
                   </Slider>
-                  <XStack justifyContent="space-between" alignItems="center">
+                  <XStack justifyContent="space-between" alignItems="center" paddingVertical="$2">
                     <Text fontSize="$2" color="$color">
                       {LEVERAGE_MIN}x
                     </Text>
@@ -406,6 +399,21 @@ function TradeUIView({ marketId }: TradeUIProps) {
                       {LEVERAGE_MAX}x
                     </Text>
                   </XStack>
+                  <Button
+                    width="100%"
+                    height="$4"
+                    size="$2"
+                    backgroundColor="$accent9"
+                    borderColor="$accent1"
+                    borderWidth={1}
+                    borderRadius="$10"
+                    paddingHorizontal="$3"
+                    onPress={() => setLeverageSheetOpen(false)}
+                  >
+                    <Text fontFamily="$interMedium" fontSize="$3" color="$accent1">
+                      Done
+                    </Text>
+                  </Button>
                 </YStack>
               </Sheet.Frame>
             </Sheet>
