@@ -258,7 +258,7 @@ function TradeUIView({ marketId }: TradeUIProps) {
                 step={1}
                 onValueChange={values => setSizePercentage(values[0])}
               >
-                <Slider.Track backgroundColor="$accent1">
+                <Slider.Track backgroundColor="$gray5">
                   <Slider.TrackActive backgroundColor="$accent9" />
                 </Slider.Track>
                 <Slider.Thumb
@@ -306,7 +306,7 @@ function TradeUIView({ marketId }: TradeUIProps) {
             <GateButton
               title="Place Order"
               loadingTitle="Placing..."
-              borderRadius="$4"
+              buttonSize="lg"
               paddingVertical="$1"
               marginTop="auto"
               disabled={!orderSide}

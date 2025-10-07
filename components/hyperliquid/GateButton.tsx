@@ -9,6 +9,7 @@ interface GateButtonProps extends Omit<ButtonProps, 'onPress'> {
   title?: string;
   loadingTitle?: string;
   loading?: boolean;
+  buttonSize?: 'sm' | 'md' | 'lg';
   onPressApproved: (context: AgentClientContext) => Promise<void> | void;
 }
 
@@ -16,6 +17,7 @@ export function GateButton({
   title,
   loadingTitle = 'Processing...',
   loading = false,
+  buttonSize = 'md',
   onPressApproved,
   disabled,
   children,
@@ -83,7 +85,7 @@ export function GateButton({
   return (
     <Button
       {...buttonProps}
-      level="md"
+      level={buttonSize}
       disabled={effectiveDisabled}
       backgroundColor={buttonVisuals.backgroundColor}
       borderColor={buttonVisuals.borderColor}
