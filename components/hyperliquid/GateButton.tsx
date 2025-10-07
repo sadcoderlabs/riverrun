@@ -1,6 +1,7 @@
 import type { AgentClientContext } from '@/lib/hyperliquid/agent';
 import { useCallback, useMemo, useState } from 'react';
-import { Button, ButtonProps, Text } from 'tamagui';
+import { ButtonProps, Text } from 'tamagui';
+import { Button } from '../global/button';
 
 import { useApprovalGate } from './ApprovalGateProvider';
 
@@ -8,6 +9,7 @@ interface GateButtonProps extends Omit<ButtonProps, 'onPress'> {
   title?: string;
   loadingTitle?: string;
   loading?: boolean;
+  buttonSize?: 'sm' | 'md' | 'lg';
   onPressApproved: (context: AgentClientContext) => Promise<void> | void;
 }
 
@@ -15,6 +17,7 @@ export function GateButton({
   title,
   loadingTitle = 'Processing...',
   loading = false,
+  buttonSize = 'md',
   onPressApproved,
   disabled,
   children,
@@ -82,6 +85,7 @@ export function GateButton({
   return (
     <Button
       {...buttonProps}
+      level={buttonSize}
       disabled={effectiveDisabled}
       backgroundColor={buttonVisuals.backgroundColor}
       borderColor={buttonVisuals.borderColor}
@@ -90,7 +94,7 @@ export function GateButton({
       onPress={handlePress}
     >
       {children ?? (
-        <Text fontFamily="$interSemiBold" fontSize="$4" color={buttonVisuals.textColor}>
+        <Text fontFamily="$interSemiBold" fontSize="$2" color={buttonVisuals.textColor}>
           {label}
         </Text>
       )}

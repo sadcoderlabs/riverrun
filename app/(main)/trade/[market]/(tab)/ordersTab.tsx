@@ -1,4 +1,3 @@
-import { OrderItem } from '@/components/global/order-item';
 import {
   ApprovalGateProvider,
   useApprovalGate,
@@ -166,21 +165,24 @@ export function OrdersTabContent() {
   }
 
   return (
-    <YStack flex={1} padding="$3" gap="$3">
+    <YStack flex={1}>
       <ScrollView
         flex={1}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#999" />
         }
       >
-        <YStack gap="$3" paddingBottom="$4">
+        <YStack paddingBottom="$4">
           {cancelError ? (
             <YStack
               borderRadius="$2"
               backgroundColor="$red4"
               borderColor="$red8"
               borderWidth={1}
-              padding="$2"
+              padding="$3"
+              mx="$4"
+              mt="$4"
+              mb="$2"
             >
               <Text color="$red10" fontFamily="$interMedium">
                 {cancelError}
@@ -193,54 +195,91 @@ export function OrdersTabContent() {
             const orderValue = Number.isFinite(price * size) ? (price * size).toFixed(2) : '-';
             const isBuy = order.side?.toUpperCase() === 'B' || order.side?.toUpperCase() === 'BUY';
 
+            // Pill badge for order side
+            const PillBadge = ({ text, type }: { text: string; type: 'buy' | 'sell' }) => {
+              return (
+                <XStack
+                  px="$2"
+                  py="$1"
+                  borderRadius="$5"
+                  alignItems="center"
+                  borderWidth={1}
+                  borderColor={type === 'buy' ? '$green9' : '$red9'}
+                  backgroundColor={type === 'buy' ? '$green2' : '$red2'}
+                >
+                  <Text fontSize="$1" color={type === 'buy' ? '$green9' : '$red9'}>
+                    {text}
+                  </Text>
+                </XStack>
+              );
+            };
+
             return (
               <YStack
                 key={order.oid}
-                backgroundColor="$background"
-                borderWidth={1}
-                borderColor="$borderColor"
-                borderRadius="$2"
-                padding="$3"
-                gap="$2"
+                borderBottomWidth={1}
+                borderBottomColor="$borderColor"
+                px="$6"
+                py="$6"
               >
-                <XStack justifyContent="space-between" alignItems="center">
-                  <Text fontSize="$5" fontFamily="$interSemiBold">
-                    {order.coin}
-                  </Text>
-                  <Text color={isBuy ? '$green10' : '$red10'} fontFamily="$interSemiBold">
-                    {formatSide(order.side)}
+                {/* First row: Symbol, Side badge and Timestamp */}
+                <XStack justifyContent="space-between" alignItems="center" mb="$3">
+                  <XStack gap="$2" alignItems="center">
+                    <Text fontFamily="$interBold" fontSize="$3">
+                      {order.coin}
+                    </Text>
+                    <PillBadge text={formatSide(order.side)} type={isBuy ? 'buy' : 'sell'} />
+                  </XStack>
+                  <Text color="$color9" fontSize="$1">
+                    {formatTimestamp(order.timestamp)}
                   </Text>
                 </XStack>
 
-                <YStack gap="$1">
-                  <XStack justifyContent="space-between">
-                    <Text color="$color11">Order ID</Text>
-                    <Text fontFamily="$interMedium">{order.oid}</Text>
-                  </XStack>
+                {/* Second row: Order ID */}
+                <XStack justifyContent="space-between" alignItems="center" mb="$2">
+                  <Text color="$color9" fontSize="$2">
+                    Order ID
+                  </Text>
+                  <Text fontSize="$2" fontFamily="$interMedium">
+                    {order.oid}
+                  </Text>
+                </XStack>
 
-                  <XStack justifyContent="space-between">
-                    <Text color="$color11">Price</Text>
-                    <Text fontFamily="$interMedium">${formatNumber(order.limitPx)}</Text>
-                  </XStack>
+                {/* Third row: Price */}
+                <XStack justifyContent="space-between" alignItems="center" mb="$2">
+                  <Text color="$color9" fontSize="$2">
+                    Price
+                  </Text>
+                  <Text fontSize="$2" fontFamily="$interMedium">
+                    ${formatNumber(order.limitPx)}
+                  </Text>
+                </XStack>
 
-                  <XStack justifyContent="space-between">
-                    <Text color="$color11">Size</Text>
-                    <Text fontFamily="$interMedium">{formatNumber(order.sz)}</Text>
-                  </XStack>
-
-                  <XStack justifyContent="space-between">
-                    <Text color="$color11">Value</Text>
-                    <Text fontFamily="$interMedium">
-                      {orderValue === '-' ? '-' : `$${orderValue}`}
+                {/* Fourth row: Size - only show if size > 0 */}
+                {size > 0 && (
+                  <XStack justifyContent="space-between" alignItems="center" mb="$2">
+                    <Text color="$color9" fontSize="$2">
+                      Size
+                    </Text>
+                    <Text fontSize="$2" fontFamily="$interMedium">
+                      {formatNumber(order.sz)}
                     </Text>
                   </XStack>
+                )}
 
-                  <XStack justifyContent="space-between">
-                    <Text color="$color11">Created</Text>
-                    <Text fontFamily="$interMedium">{formatTimestamp(order.timestamp)}</Text>
+                {/* Fifth row: Value - only show if value > 0 */}
+                {orderValue !== '-' && parseFloat(orderValue) > 0 && (
+                  <XStack justifyContent="space-between" alignItems="center" mb="$2">
+                    <Text color="$color9" fontSize="$2">
+                      Value
+                    </Text>
+                    <Text fontSize="$2" fontFamily="$interMedium">
+                      ${orderValue}
+                    </Text>
                   </XStack>
-                </YStack>
+                )}
 
+                {/* Fourth row: Cancel button */}
                 <XStack justifyContent="flex-end" marginTop="$2">
                   <GateButton
                     size="$3"

@@ -96,7 +96,7 @@ export default function PositionsTab() {
   }
 
   return (
-    <ScrollView flex={1} padding="$2">
+    <ScrollView flex={1}>
       <YStack>
         {positions.map((position, index) => (
           <PositionItem
