@@ -452,7 +452,7 @@ function TabItem({ label, isActive, onPress }: TabItemProps) {
     >
       <Text
         fontFamily={isActive ? '$interSemiBold' : '$interRegular'}
-        fontSize="$4"
+        fontSize="$3"
         color={isActive ? '$accent9' : '$color'}
       >
         {label}
