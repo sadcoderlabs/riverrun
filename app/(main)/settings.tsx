@@ -1,8 +1,12 @@
+import { ListButton, ListItem } from '@/components/global/list-item';
+import { ListSection } from '@/components/global/list-section';
 import { clearAgentSigner } from '@/lib/hyperliquid/agent';
 import { useAppKit, useAppKitAccount } from '@reown/appkit-ethers-react-native';
+import { ArrowUpRight } from '@tamagui/lucide-icons';
+import { Link } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Alert } from 'react-native';
-import { Button, Text, YStack } from 'tamagui';
+import { PortalProvider, ScrollView, View, YStack } from 'tamagui';
 
 type RevokeStatus = {
   type: 'success' | 'error';
@@ -14,6 +18,8 @@ export default function Index() {
   const { address } = useAppKitAccount();
   const [revoking, setRevoking] = useState(false);
   const [status, setStatus] = useState<RevokeStatus | null>(null);
+
+  const displayAddress = '0x123456789';
 
   const performRevoke = useCallback(async () => {
     if (!address) {
@@ -64,19 +70,90 @@ export default function Index() {
   }, [address, performRevoke]);
 
   return (
-    <YStack flex={1} justifyContent="center" alignItems="center" padding="$4" gap="$3">
-      <Text fontSize="$6" fontFamily="$interSemiBold">
-        Settings
-      </Text>
-      {status ? (
-        <Text color={status.type === 'success' ? '$green10' : '$red10'} textAlign="center">
-          {status.message}
-        </Text>
-      ) : undefined}
-      <Button onPress={handleRevokePress} disabled={!address || revoking} variant="outlined">
-        {revoking ? 'Revoking...' : 'Revoke Agent'}
-      </Button>
-      <Button onPress={() => open()}>Disconnect Wallet</Button>
-    </YStack>
+    <PortalProvider>
+      <ScrollView contentInsetAdjustmentBehavior="automatic">
+        <YStack style={{ backgroundColor: '$gray3' }}>
+          {/* Account Section */}
+          <YStack>
+            <ListSection label="Account">
+              <ListItem title={displayAddress} />
+              <ListItem
+                title="Status"
+                subTitle={status?.type === 'success' ? status.message : 'Unknown'}
+              />
+            </ListSection>
+          </YStack>
+          {/* Theme Section */}
+          <YStack>
+            <ListSection label="Preferences">
+              <Link href="/(main)/theme-options" asChild>
+                <ListItem title="Theme" subTitle="Light" showIosChevron={true} />
+              </Link>
+              <ListItem
+                title="Allow Notifications"
+                subTitle="Permission Unset"
+                showIosChevron={true}
+              />
+            </ListSection>
+          </YStack>
+          {/* Support Section */}
+          <YStack>
+            <ListSection label="Support">
+              <ListItem
+                title="FAQ"
+                iconAfter={
+                  <View marginRight={'$1.5'}>
+                    <ArrowUpRight size={18} color={'$color04'} />
+                  </View>
+                }
+              />
+              <ListItem
+                title="Documents"
+                iconAfter={
+                  <View marginRight={'$1.5'}>
+                    <ArrowUpRight size={18} color={'$color04'} />
+                  </View>
+                }
+              />
+            </ListSection>
+          </YStack>
+          {/* Socials Section */}
+          <YStack>
+            <ListSection label="Socials">
+              <ListItem
+                title="X / Twitter"
+                subTitle="@riverrun"
+                iconAfter={
+                  <View marginRight={'$1.5'}>
+                    <ArrowUpRight size={18} color={'$color04'} fontWeight={'bold'} />
+                  </View>
+                }
+              />
+            </ListSection>
+          </YStack>
+          {/* Revoke Agent */}
+          <ListSection>
+            <ListButton
+              justifyContent="center"
+              onPress={handleRevokePress}
+              disabled={!address || revoking}
+            >
+              {revoking ? 'Revoking...' : 'Revoke Agent'}
+            </ListButton>
+          </ListSection>
+          {/* Logout Button */}
+          <ListSection>
+            <ListButton
+              justifyContent="center"
+              onPress={() => {
+                open();
+              }}
+            >
+              Disconnect Wallet
+            </ListButton>
+          </ListSection>
+        </YStack>
+      </ScrollView>
+    </PortalProvider>
   );
 }
