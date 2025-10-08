@@ -3,6 +3,7 @@ import { ListSection } from '@/components/global/list-section';
 import { clearAgentSigner } from '@/lib/hyperliquid/agent';
 import { useAppKit, useAppKitAccount } from '@reown/appkit-ethers-react-native';
 import { ArrowUpRight } from '@tamagui/lucide-icons';
+import { Link } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Alert } from 'react-native';
 import { PortalProvider, ScrollView, View, YStack } from 'tamagui';
@@ -85,7 +86,9 @@ export default function Index() {
           {/* Theme Section */}
           <YStack>
             <ListSection label="Preferences">
-              <ListItem title="Theme" subTitle="Light" showIosChevron={true} />
+              <Link href="/(main)/theme-options" asChild>
+                <ListItem title="Theme" subTitle="Light" showIosChevron={true} />
+              </Link>
               <ListItem
                 title="Allow Notifications"
                 subTitle="Permission Unset"
