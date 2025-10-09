@@ -69,7 +69,8 @@
     "react-native-worklets": "0.5.1",
     "tamagui": "1.132.24",
     "viem": "2.37.6",
-    "wagmi": "2.16.9"
+    "wagmi": "2.16.9",
+    "zustand": "^5.0.8"
   },
   "devDependencies": {
     "@types/react": "19.1.13",

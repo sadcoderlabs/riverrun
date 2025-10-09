@@ -1,5 +1,6 @@
 import { ListButton, ListItem } from '@/components/global/list-item';
 import { ListSection } from '@/components/global/list-section';
+import { useThemePreference } from '@/hooks/useThemePreference';
 import { clearAgentSigner } from '@/lib/hyperliquid/agent';
 import { useAppKit, useAppKitAccount } from '@reown/appkit-ethers-react-native';
 import { ArrowUpRight } from '@tamagui/lucide-icons';
@@ -18,6 +19,7 @@ export default function Index() {
   const { address } = useAppKitAccount();
   const [revoking, setRevoking] = useState(false);
   const [status, setStatus] = useState<RevokeStatus | null>(null);
+  const { preference } = useThemePreference();
 
   const displayAddress = '0x123456789';
 
@@ -87,7 +89,13 @@ export default function Index() {
           <YStack>
             <ListSection label="Preferences">
               <Link href="/(main)/theme-options" asChild>
-                <ListItem title="Theme" subTitle="Light" showIosChevron={true} />
+                <ListItem
+                  title="Theme"
+                  subTitle={
+                    preference ? preference.charAt(0).toUpperCase() + preference.slice(1) : 'System'
+                  }
+                  showIosChevron={true}
+                />
               </Link>
               <ListItem
                 title="Allow Notifications"

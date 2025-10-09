@@ -19,6 +19,7 @@ import { SplashScreen, Stack } from 'expo-router';
 import { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { TamaguiProvider, View } from 'tamagui';
+import { useThemePreference } from '@/hooks/useThemePreference';
 
 // 1. Get projectId at https://dashboard.reown.com
 const projectId = 'REOWN_PROJECT_ID_REMOVED';
@@ -97,6 +98,9 @@ export default function RootLayout() {
     Inter_700Bold,
   });
 
+  // Get the effective theme from user preference
+  const { effectiveTheme } = useThemePreference();
+
   // Hide the splash screen once the fonts have loaded
   useEffect(() => {
     if (fontsLoaded || fontError) {
@@ -111,7 +115,7 @@ export default function RootLayout() {
 
   return (
     <>
-      <TamaguiProvider config={tamaguiConfig}>
+      <TamaguiProvider config={tamaguiConfig} defaultTheme={effectiveTheme}>
         <SafeAreaProvider>
           <ActionSheetProvider>
             <View style={{ flex: 1 }}>
