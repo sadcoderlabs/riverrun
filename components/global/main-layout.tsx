@@ -13,6 +13,7 @@ interface MainLayoutProps {
 
 const MainContainer = styled(YStack, {
   flex: 1,
+  backgroundColor: '$gray3',
 });
 
 export function MainLayout({

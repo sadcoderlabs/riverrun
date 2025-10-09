@@ -98,7 +98,10 @@ export function AccountInfo() {
   }, [address, isConnected]);
 
   useEffect(() => {
-    if (expandedPositionCoin && positions.every(position => position.coin !== expandedPositionCoin)) {
+    if (
+      expandedPositionCoin &&
+      positions.every(position => position.coin !== expandedPositionCoin)
+    ) {
       setExpandedPositionCoin(null);
     }
   }, [positions, expandedPositionCoin]);
@@ -144,12 +147,7 @@ export function AccountInfo() {
             </Text>
           </YStack>
         ) : error ? (
-          <EmptyState
-            iconColor="$red9"
-            message={error}
-            minHeight={200}
-            textColor="$red9"
-          />
+          <EmptyState iconColor="$red9" message={error} minHeight={200} textColor="$red9" />
         ) : positions.length > 0 ? (
           <View>
             {positions.map((position, index) => (
@@ -162,11 +160,7 @@ export function AccountInfo() {
             ))}
           </View>
         ) : (
-          <EmptyState
-            iconColor={theme.color8}
-            message="no open positions yet"
-            minHeight={200}
-          />
+          <EmptyState iconColor={theme.color8} message="no open positions yet" minHeight={200} />
         )
       ) : historyData.length > 0 ? (
         <View>
@@ -203,7 +197,13 @@ interface EmptyStateProps {
 
 function EmptyState({ iconColor, message, minHeight, textColor = '$color9' }: EmptyStateProps) {
   return (
-    <YStack height={minHeight} justifyContent="center" alignItems="center" padding="$4" bg="$background02">
+    <YStack
+      height={minHeight}
+      justifyContent="center"
+      alignItems="center"
+      padding="$4"
+      bg="$background02"
+    >
       <YStack alignItems="center" gap="$2">
         <Ban size={24} color={iconColor} />
         <Text color={textColor} fontFamily="$interMedium" fontSize="$3" textAlign="center">

@@ -8,7 +8,7 @@ interface CleanLayoutProps {
 
 const CleanContainer = styled(YStack, {
   flex: 1,
-  backgroundColor: '$background',
+  backgroundColor: '$gray3',
 });
 
 /**

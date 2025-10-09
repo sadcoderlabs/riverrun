@@ -40,7 +40,7 @@ export default function TradeIndex() {
 
   return (
     <MainLayout>
-      <YStack flex={1}>
+      <YStack flex={1} backgroundColor="$gray3">
         {/* Custom Header with safe area insets */}
         <XStack
           justifyContent="space-between"
