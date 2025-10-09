@@ -10,9 +10,9 @@ export default function Index() {
   return (
     <MainLayout noHeader={true} showTopBar={true}>
       {/* Add a spacer that's exactly the height of the TopBar */}
-      <View height={insets.top + 12} />
-      <ScrollView flex={1} contentContainerStyle={{ paddingBottom: 20 }}>
-        <YStack padding="$4" gap="$4">
+      <View height={insets.top + 12} backgroundColor="$gray3" />
+      <ScrollView flex={1} backgroundColor="$gray3" contentContainerStyle={{ paddingBottom: 20 }}>
+        <YStack padding="$4" gap="$4" backgroundColor="$gray3">
           <AccountValue value={567.89} />
           <AccountInfo />
         </YStack>

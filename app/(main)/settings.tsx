@@ -73,8 +73,8 @@ export default function Index() {
 
   return (
     <PortalProvider>
-      <ScrollView contentInsetAdjustmentBehavior="automatic">
-        <YStack style={{ backgroundColor: '$gray3' }}>
+      <ScrollView contentInsetAdjustmentBehavior="automatic" backgroundColor="$gray3">
+        <YStack backgroundColor="$gray3">
           {/* Account Section */}
           <YStack>
             <ListSection label="Account">

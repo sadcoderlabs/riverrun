@@ -14,7 +14,7 @@ export default function ThemeOptions() {
   ];
 
   return (
-    <YStack>
+    <YStack backgroundColor="$gray3" flex={1}>
       <ListSection label="Theme">
         {themeOptions.map(theme => (
           <ListItem
