@@ -1,6 +1,6 @@
 import * as hl from '@nktkas/hyperliquid';
 import { ChevronDown, ChevronUp } from '@tamagui/lucide-icons';
-import { useRouter } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import React from 'react';
 import { Text, XStack, YStack, useTheme } from 'tamagui';
 import { Button } from '../global/button';
@@ -216,9 +216,11 @@ export function PositionItem({ position, isExpanded, onToggle }: PositionItemPro
             <Button.Filled flex={1} level="lg" fontSize="$3">
               Set TP/SL
             </Button.Filled>
-            <Button.Filled flex={1} level="lg" fontSize="$3">
-              Close Position
-            </Button.Filled>
+            <Link href="/(main)/close-position" asChild>
+              <Button.Filled flex={1} level="lg" fontSize="$3">
+                Close Position
+              </Button.Filled>
+            </Link>
           </XStack>
         </YStack>
       )}

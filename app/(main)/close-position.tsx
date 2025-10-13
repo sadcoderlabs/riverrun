@@ -1,5 +1,6 @@
+import { Button } from '@/components/global/button';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Button, Text, View, YStack } from 'tamagui';
+import { Text, View, YStack } from 'tamagui';
 
 export default function ClosePositionScreen() {
   const { positionId } = useLocalSearchParams<{ positionId: string }>();
@@ -23,15 +24,15 @@ export default function ClosePositionScreen() {
         padding: 16,
       }}
     >
-      <YStack space="$4" width="100%" maxWidth={400} alignItems="center">
+      <YStack gap="$4" width="100%" maxWidth={400} alignItems="center">
         <Text fontFamily="$interSemiBold" style={{ fontSize: 18 }}>
-          Close Position
+          Market Close Position
         </Text>
         <Text>Are you sure you want to close position {positionId}?</Text>
-        <YStack space="$2" width="100%">
-          <Button backgroundColor="$red9" onPress={handleClose}>
+        <YStack gap="$2" width="100%">
+          <Button.Filled onPress={handleClose}>
             <Text color="white">Close Position</Text>
-          </Button>
+          </Button.Filled>
           <Button variant="outlined" onPress={handleCancel}>
             <Text>Cancel</Text>
           </Button>

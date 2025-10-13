@@ -14,12 +14,12 @@ import {
   useFonts,
 } from '@expo-google-fonts/inter';
 
+import { useThemePreference } from '@/hooks/useThemePreference';
 import { ActionSheetProvider } from '@expo/react-native-action-sheet';
 import { SplashScreen, Stack } from 'expo-router';
 import { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { TamaguiProvider, View } from 'tamagui';
-import { useThemePreference } from '@/hooks/useThemePreference';
 
 // 1. Get projectId at https://dashboard.reown.com
 const projectId = 'REOWN_PROJECT_ID_REMOVED';
@@ -83,6 +83,10 @@ function WalletInfoDisplay() {
           <Stack.Screen name="(main)/theme-options" options={{ title: 'Theme Options' }} />
           <Stack.Screen name="(main)/trade/market-list" options={{ headerShown: false }} />
           <Stack.Screen name="(main)/trade/[market]" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="(main)/close-position"
+            options={{ headerShown: false, presentation: 'modal' }}
+          />
         </Stack.Protected>
       </Stack>
     </>
