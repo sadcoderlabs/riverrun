@@ -216,7 +216,13 @@ export function PositionItem({ position, isExpanded, onToggle }: PositionItemPro
             <Button.Filled flex={1} level="lg" fontSize="$3">
               Set TP/SL
             </Button.Filled>
-            <Link href="/(main)/close-position" asChild>
+            <Link
+              href={{
+                pathname: '/(main)/close-position',
+                params: { positionId: position.coin },
+              }}
+              asChild
+            >
               <Button.Filled flex={1} level="lg" fontSize="$3">
                 Close Position
               </Button.Filled>
