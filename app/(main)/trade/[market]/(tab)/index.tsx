@@ -1,6 +1,7 @@
 import { MainLayout } from '@/components/global/main-layout';
 import { ChartUI } from '@/components/trade/chart-ui';
 import { TradeUI } from '@/components/trade/trade-ui';
+import { useThemePreference } from '@/hooks/useThemePreference';
 import { CandlestickChart, ChevronUp, Menu } from '@tamagui/lucide-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
@@ -13,6 +14,7 @@ export default function TradeIndex() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const [isChart, setIsChart] = useState(false);
+  const { effectiveTheme } = useThemePreference();
 
   const navigateToMarketList = () => {
     router.push('/(main)/trade/market-list');
@@ -55,7 +57,11 @@ export default function TradeIndex() {
             Futures
           </Text>
           <Image
-            source={require('@/assets/images/PoweredByHL-dark.png')}
+            source={
+              effectiveTheme === 'dark'
+                ? require('@/assets/images/PoweredByHL-light.png')
+                : require('@/assets/images/PoweredByHL-dark.png')
+            }
             style={{ width: 160, height: 27, resizeMode: 'contain' }}
           />
         </XStack>
