@@ -1,4 +1,5 @@
 import { Button } from '@/components/global/button';
+import * as Burnt from 'burnt';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Text, View, YStack } from 'tamagui';
 
@@ -8,7 +9,13 @@ export default function ClosePositionScreen() {
 
   const handleClose = () => {
     // Logic to close position would go here
-    router.back();
+    Burnt.toast({
+      title: 'Position Closed',
+      preset: 'done',
+      duration: 2,
+      shouldDismissByDrag: true,
+      from: 'top',
+    });
   };
 
   const handleCancel = () => {
