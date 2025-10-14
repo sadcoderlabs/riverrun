@@ -1,4 +1,5 @@
 import { Button } from '@/components/global/button';
+import { H5 } from '@/components/global/heading';
 import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Alert } from 'react-native';
@@ -33,9 +34,7 @@ export default function ClosePositionScreen() {
     <View flex={1} backgroundColor="$background">
       {/* First box: Title at the top */}
       <YStack padding="$4" borderBottomWidth={1} borderBottomColor="$borderColor">
-        <Text fontFamily="$interSemiBold" fontSize="$4" textAlign="center">
-          Market Close {positionId}
-        </Text>
+        <H5 textAlign="center">Market Close {positionId}</H5>
       </YStack>
 
       {/* Center content: Second and third boxes */}
@@ -81,7 +80,7 @@ export default function ClosePositionScreen() {
           {/* Third box: Action buttons */}
           <YStack gap="$2" width="100%">
             <Button.Filled onPress={handleClose} level="lg">
-              Close Position
+              Confirm
             </Button.Filled>
             <Button variant="outlined" onPress={handleCancel} level="lg">
               Cancel
