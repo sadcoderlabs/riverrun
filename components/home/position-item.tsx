@@ -219,7 +219,12 @@ export function PositionItem({ position, isExpanded, onToggle }: PositionItemPro
             <Link
               href={{
                 pathname: '/(main)/close-position',
-                params: { positionId: position.coin },
+                params: {
+                  positionId: position.coin,
+                  marginUsed: position.marginUsed,
+                  entryPx: entryPx.toString(),
+                  markPrice: currentPrice.toString(),
+                },
               }}
               asChild
             >
