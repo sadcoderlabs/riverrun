@@ -29,10 +29,10 @@ export function useThemePreference(): ThemePreferenceResult {
   const systemColorScheme = useColorScheme(); // Get system theme
   const isLoading = !isHydrated;
 
-  // Initialize if undefined after hydration
+  // Initialize if undefined after hydration - default to dark theme
   useEffect(() => {
     if (!isLoading && preference === undefined) {
-      setPreference('system');
+      setPreference('dark');
     }
   }, [isLoading, preference, setPreference]);
 
@@ -48,7 +48,7 @@ export function useThemePreference(): ThemePreferenceResult {
   }, [preference]);
 
   const effectiveTheme =
-    preference === 'system' ? (systemColorScheme ?? 'light') : (preference ?? 'light');
+    preference === 'system' ? (systemColorScheme ?? 'dark') : (preference ?? 'dark');
 
   const appBg =
     effectiveTheme === 'dark'

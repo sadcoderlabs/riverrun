@@ -1,5 +1,6 @@
 import { Button } from '@/components/global/button';
 import { Heading } from '@/components/global/heading';
+import { useThemePreference } from '@/hooks/useThemePreference';
 import { useAppKit, useAppKitAccount } from '@reown/appkit-ethers-react-native';
 import { Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,6 +9,7 @@ import { Text, View, YStack } from 'tamagui';
 export default function Login() {
   const { open } = useAppKit();
   const insets = useSafeAreaInsets();
+  const { effectiveTheme } = useThemePreference();
 
   const { address, isConnected, chainId } = useAppKitAccount();
 
@@ -52,7 +54,11 @@ export default function Login() {
       {/* Powered by logo at bottom */}
       <YStack paddingBottom="$4" alignItems="center" width="100%" padding="$2">
         <Image
-          source={require('@/assets/images/PoweredByHL-dark.png')}
+          source={
+            effectiveTheme === 'dark'
+              ? require('@/assets/images/PoweredByHL-light.png')
+              : require('@/assets/images/PoweredByHL-dark.png')
+          }
           style={{ width: 200 }}
           resizeMode="contain"
         />

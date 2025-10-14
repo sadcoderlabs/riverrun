@@ -1,6 +1,6 @@
 import * as hl from '@nktkas/hyperliquid';
 import { ChevronDown, ChevronUp } from '@tamagui/lucide-icons';
-import { useRouter } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import React from 'react';
 import { Text, XStack, YStack, useTheme } from 'tamagui';
 import { Button } from '../global/button';
@@ -213,12 +213,39 @@ export function PositionItem({ position, isExpanded, onToggle }: PositionItemPro
 
           {/* Action buttons */}
           <XStack gap="$4" pt="$6">
-            <Button.Filled flex={1} level="lg" fontSize="$3">
-              Set TP/SL
-            </Button.Filled>
-            <Button.Filled flex={1} level="lg" fontSize="$3">
-              Close Position
-            </Button.Filled>
+            <Link
+              href={{
+                pathname: '/(main)/set-tp-sl',
+                params: {
+                  positionId: position.coin,
+                  entryPx: entryPx.toString(),
+                  markPrice: currentPrice.toString(),
+                  liquidationPx: position.liquidationPx || '',
+                  szi: szi.toString(),
+                },
+              }}
+              asChild
+            >
+              <Button.Filled flex={1} level="lg" fontSize="$3">
+                Set TP/SL
+              </Button.Filled>
+            </Link>
+            <Link
+              href={{
+                pathname: '/(main)/close-position',
+                params: {
+                  positionId: position.coin,
+                  marginUsed: position.marginUsed,
+                  entryPx: entryPx.toString(),
+                  markPrice: currentPrice.toString(),
+                },
+              }}
+              asChild
+            >
+              <Button.Filled flex={1} level="lg" fontSize="$3">
+                Close Position
+              </Button.Filled>
+            </Link>
           </XStack>
         </YStack>
       )}

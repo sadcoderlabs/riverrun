@@ -40,8 +40,8 @@ export function GateButton({
 
     if (requiresAgentApproval === false) {
       return {
-        backgroundColor: '$green9',
-        borderColor: '$green10',
+        backgroundColor: '$accent9',
+        borderColor: '$accent9',
         textColor: '$color1',
       } as const;
     }
@@ -94,7 +94,11 @@ export function GateButton({
       onPress={handlePress}
     >
       {children ?? (
-        <Text fontFamily="$interSemiBold" fontSize="$2" color={buttonVisuals.textColor}>
+        <Text
+          fontFamily="$interSemiBold"
+          fontSize={buttonSize === 'sm' ? '$2' : '$3'}
+          color={buttonVisuals.textColor}
+        >
           {label}
         </Text>
       )}
