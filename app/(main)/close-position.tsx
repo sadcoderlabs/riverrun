@@ -1,6 +1,7 @@
 import { Button } from '@/components/global/button';
-import * as Burnt from 'burnt';
+import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Alert } from 'react-native';
 import { Text, View, YStack } from 'tamagui';
 
 export default function ClosePositionScreen() {
@@ -9,13 +10,8 @@ export default function ClosePositionScreen() {
 
   const handleClose = () => {
     // Logic to close position would go here
-    Burnt.toast({
-      title: 'Position Closed',
-      preset: 'done',
-      duration: 2,
-      shouldDismissByDrag: true,
-      from: 'top',
-    });
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    Alert.alert('Success', 'Position Closed', [{ text: 'OK', onPress: () => router.back() }]);
   };
 
   const handleCancel = () => {

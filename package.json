@@ -34,7 +34,6 @@
     "@wagmi/core": "2.20.3",
     "@walletconnect/react-native-compat": "2.21.8",
     "@walletconnect/universal-provider": "2.21.8",
-    "burnt": "^0.13.0",
     "ethers": "6.15.0",
     "event-target-polyfill": "0.0.4",
     "expo": "54.0.8",
