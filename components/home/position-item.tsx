@@ -213,9 +213,23 @@ export function PositionItem({ position, isExpanded, onToggle }: PositionItemPro
 
           {/* Action buttons */}
           <XStack gap="$4" pt="$6">
-            <Button.Filled flex={1} level="lg" fontSize="$3">
-              Set TP/SL
-            </Button.Filled>
+            <Link
+              href={{
+                pathname: '/(main)/set-tp-sl',
+                params: {
+                  positionId: position.coin,
+                  entryPx: entryPx.toString(),
+                  markPrice: currentPrice.toString(),
+                  liquidationPx: position.liquidationPx || '',
+                  szi: szi.toString(),
+                },
+              }}
+              asChild
+            >
+              <Button.Filled flex={1} level="lg" fontSize="$3">
+                Set TP/SL
+              </Button.Filled>
+            </Link>
             <Link
               href={{
                 pathname: '/(main)/close-position',

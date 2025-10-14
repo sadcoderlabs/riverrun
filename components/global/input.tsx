@@ -1,6 +1,6 @@
-import { Input as TamaguiInput, styled, GetProps } from 'tamagui';
 import React, { forwardRef } from 'react';
 import { Platform, TextInput } from 'react-native';
+import { GetProps, Input as TamaguiInput, styled } from 'tamagui';
 
 // Base Input - Standard input with default styling
 const StyledBaseInput = styled(TamaguiInput, {
@@ -9,7 +9,6 @@ const StyledBaseInput = styled(TamaguiInput, {
   color: '$color',
   paddingHorizontal: '$3',
   backgroundColor: 'transparent',
-  paddingVertical: '$2',
   fontSize: '$4',
   fontWeight: '400',
   fontFamily: Platform.OS === 'android' ? '$interRegular' : undefined,

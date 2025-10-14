@@ -87,6 +87,10 @@ function WalletInfoDisplay() {
             name="(main)/close-position"
             options={{ headerShown: false, presentation: 'modal' }}
           />
+          <Stack.Screen
+            name="(main)/set-tp-sl"
+            options={{ headerShown: false, presentation: 'modal' }}
+          />
         </Stack.Protected>
       </Stack>
     </>
