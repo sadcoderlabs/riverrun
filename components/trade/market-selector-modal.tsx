@@ -1,6 +1,6 @@
 import { MarketListItem } from '@/components/trade/market-list-item';
 import { useMarketsStore } from '@/lib/store/use-markets-store';
-import { Search, X } from '@tamagui/lucide-icons';
+import { Search } from '@tamagui/lucide-icons';
 import { Sheet } from '@tamagui/sheet';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -122,24 +122,23 @@ export function MarketSelectorModal({ open, onOpenChange }: MarketSelectorModalP
         opacity={0.5}
         backgroundColor="$background"
       />
-      <Sheet.Handle />
       <Sheet.Frame
         padding="$4"
-        gap="$4"
+        paddingTop="$2"
+        gap="$3"
         backgroundColor="$background"
         borderTopLeftRadius="$6"
         borderTopRightRadius="$6"
       >
-        {/* Header */}
-        <XStack justifyContent="space-between" alignItems="center">
-          <Text fontFamily="$interSemiBold" fontSize="$6" color="$color">
-            Select Market
-          </Text>
-          <XStack onPress={() => onOpenChange(false)} pressStyle={{ opacity: 0.7 }} padding="$2">
-            <X size="$1.5" color="$color" />
-          </XStack>
-        </XStack>
-
+        <Sheet.Handle
+          opacity={0.5}
+          backgroundColor="$gray9"
+          height={3}
+          width={32}
+          alignSelf="center"
+          marginBottom="$1"
+          borderRadius="$12"
+        />
         {/* Search Box */}
         <XStack
           backgroundColor="$gray3"
