@@ -32,6 +32,23 @@ export function MarketListItem({
     onToggleFavorite?.(id);
   };
 
+  // Format price with at least 5 significant digits total
+  // Rule: Show all integer digits + decimal digits to reach minimum 5 significant figures
+  const formatPrice = (price: number): string => {
+    // Get the integer part to count its digits
+    const integerPart = Math.floor(Math.abs(price));
+    const integerDigits = integerPart === 0 ? 0 : integerPart.toString().length;
+
+    // Calculate how many decimal places we need to reach 5 significant figures
+    const minSignificantDigits = 5;
+    const decimalPlaces = Math.max(0, minSignificantDigits - integerDigits);
+
+    return price.toLocaleString(undefined, {
+      minimumFractionDigits: decimalPlaces,
+      maximumFractionDigits: decimalPlaces,
+    });
+  };
+
   return (
     <YStack
       paddingVertical="$3"
@@ -56,7 +73,7 @@ export function MarketListItem({
           </Text>
         </XStack>
         <Text fontFamily="$interRegular" fontSize="$4" color="$color" fontWeight="500">
-          ${price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          ${formatPrice(price)}
         </Text>
       </XStack>
 
