@@ -26,11 +26,13 @@ interface MarketsState {
   favorites: string[];
   isInitialized: boolean;
   isLoading: boolean;
+  isMarketSelectorOpen: boolean;
 
   // Actions
   initialize: () => Promise<void>;
   refreshMarkets: () => Promise<void>;
   toggleFavorite: (marketId: string) => Promise<void>;
+  setMarketSelectorOpen: (open: boolean) => void;
   clear: () => void;
 }
 
@@ -40,6 +42,7 @@ export const useMarketsStore = create<MarketsState>((set, get) => ({
   favorites: [],
   isInitialized: false,
   isLoading: false,
+  isMarketSelectorOpen: false,
 
   /**
    * Initialize the store
@@ -47,7 +50,7 @@ export const useMarketsStore = create<MarketsState>((set, get) => ({
    * - If cache exists, displays it immediately and updates in background
    * - If no cache, shows loading and fetches from API
    *
-   * This should be called once when market-list mounts
+   * This should be called once when the trade page mounts
    */
   initialize: async () => {
     const { isInitialized } = get();
@@ -139,6 +142,13 @@ export const useMarketsStore = create<MarketsState>((set, get) => ({
   },
 
   /**
+   * Set market selector modal open state
+   */
+  setMarketSelectorOpen: (open: boolean) => {
+    set({ isMarketSelectorOpen: open });
+  },
+
+  /**
    * Clear all data (both memory and cache)
    */
   clear: () => {
@@ -147,6 +157,7 @@ export const useMarketsStore = create<MarketsState>((set, get) => ({
       favorites: [],
       isInitialized: false,
       isLoading: false,
+      isMarketSelectorOpen: false,
     });
 
     // Clear AsyncStorage in background

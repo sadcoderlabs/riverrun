@@ -9,7 +9,6 @@ const filesToFix = [
   'app/(main)/trade/[market]/(tab)/history.tsx',
   'app/(main)/trade/[market]/(tab)/orders.tsx',
   'app/(main)/trade/[market]/(tab)/positions.tsx',
-  'app/(main)/trade/market-list.tsx',
   'app/close-position.tsx',
 ];
 
@@ -61,9 +60,6 @@ function generateComponentName(filePath) {
   }
 
   if (filePath.includes('trade')) {
-    if (fileName === 'market-list') {
-      return 'MarketListScreen';
-    }
     return `Market${fileName.charAt(0).toUpperCase() + fileName.slice(1)}Screen`;
   }
 

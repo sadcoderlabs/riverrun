@@ -59,7 +59,6 @@ function TradeUIView({ marketId }: TradeUIProps) {
   const handlePlaceOrder = useCallback(
     async (context: AgentClientContext) => {
       const meta = await infoClient.meta();
-      console.log('meta', meta.universe);
 
       // Parse marketId (e.g., "BTC-USD") to get the asset name (e.g., "BTC")
       const { assetName } = parseMarketId(marketId || 'BTC-USD');
@@ -78,7 +77,7 @@ function TradeUIView({ marketId }: TradeUIProps) {
       const baseSizeNumber = notionalUsd / Number(limitPrice);
       const baseSize = baseSizeNumber.toFixed(sizeDecimals);
 
-      const orderResponse = await context.agentExchangeClient.order({
+      await context.agentExchangeClient.order({
         orders: [
           {
             a: assetIndex,
@@ -94,8 +93,6 @@ function TradeUIView({ marketId }: TradeUIProps) {
           },
         ],
       });
-
-      console.log('Agent order response', orderResponse);
     },
     [infoClient, marketId],
   );

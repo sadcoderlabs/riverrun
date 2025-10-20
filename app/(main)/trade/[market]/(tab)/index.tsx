@@ -1,9 +1,11 @@
 import { MainLayout } from '@/components/global/main-layout';
 import { ChartUI } from '@/components/trade/chart-ui';
+import { MarketSelectorModal } from '@/components/trade/market-selector-modal';
 import { TradeUI } from '@/components/trade/trade-ui';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { useMarketsStore } from '@/lib/store/use-markets-store';
 import { CandlestickChart, ChevronUp, Menu } from '@tamagui/lucide-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,13 +14,11 @@ import { AnimatePresence, Text, XStack, YStack } from 'tamagui';
 export default function TradeIndex() {
   const { market } = useLocalSearchParams<{ market: string }>();
   const insets = useSafeAreaInsets();
-  const router = useRouter();
   const [isChart, setIsChart] = useState(false);
   const { effectiveTheme } = useThemePreference();
 
-  const navigateToMarketList = () => {
-    router.back();
-  };
+  // Use modal state from Zustand store instead of local state
+  const { isMarketSelectorOpen, setMarketSelectorOpen } = useMarketsStore();
 
   // Hard-coded market data for rendering purposes
   const marketData = {
@@ -73,7 +73,7 @@ export default function TradeIndex() {
             <XStack
               alignItems="center"
               gap="$2"
-              onPress={navigateToMarketList}
+              onPress={() => setMarketSelectorOpen(true)}
               pressStyle={{ opacity: 0.7 }}
               padding="$1"
             >
@@ -147,6 +147,9 @@ export default function TradeIndex() {
 
         <TradeUI marketId={marketData.id} />
       </YStack>
+
+      {/* Market Selector Modal */}
+      <MarketSelectorModal open={isMarketSelectorOpen} onOpenChange={setMarketSelectorOpen} />
     </MainLayout>
   );
 }
