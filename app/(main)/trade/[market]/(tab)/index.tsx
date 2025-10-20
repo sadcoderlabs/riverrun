@@ -17,7 +17,7 @@ export default function TradeIndex() {
   const { effectiveTheme } = useThemePreference();
 
   const navigateToMarketList = () => {
-    router.push('/(main)/trade/market-list');
+    router.back();
   };
 
   // Hard-coded market data for rendering purposes
@@ -70,10 +70,14 @@ export default function TradeIndex() {
         <YStack padding="$4" gap="$4">
           {/* First row: Menu icon, Market ID, and Chart icon */}
           <XStack justifyContent="space-between" alignItems="center">
-            <XStack alignItems="center" gap="$2">
-              <XStack onPress={navigateToMarketList} pressStyle={{ opacity: 0.7 }} padding="$1">
-                <Menu size="$1.5" color="$color" />
-              </XStack>
+            <XStack
+              alignItems="center"
+              gap="$2"
+              onPress={navigateToMarketList}
+              pressStyle={{ opacity: 0.7 }}
+              padding="$1"
+            >
+              <Menu size="$1.5" color="$color" />
               <Text fontFamily="$interSemiBold" fontSize="$6" color="$color">
                 {marketData.id}
               </Text>

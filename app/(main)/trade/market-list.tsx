@@ -1,173 +1,135 @@
 import { CleanLayout } from '@/components/global/clean-layout';
 import { MarketListItem } from '@/components/trade/market-list-item';
-import { getFavoriteMarkets, toggleFavoriteMarket } from '@/lib/storage/favorites';
+import { useMarketsStore } from '@/lib/store/use-markets-store';
+import { Market } from '@/lib/types/market';
 import * as hl from '@nktkas/hyperliquid';
 import { ArrowLeft, Search } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { RefreshControl } from 'react-native';
 import { Input, ScrollView, Spinner, Text, XStack, YStack } from 'tamagui';
-
-type Market = {
-  id: string;
-  name: string;
-  price: number;
-  change: number;
-  maxLeverage: number;
-  fundingRate: number;
-  volume: number;
-};
 
 export default function MarketListScreen() {
   const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filteredMarkets, setFilteredMarkets] = useState<Market[]>([]);
-  const [debouncedQuery, setDebouncedQuery] = useState('');
-  const [rawMarkets, setRawMarkets] = useState<Market[]>([]); // Raw unsorted markets from API
-  const [markets, setMarkets] = useState<Market[]>([]); // Sorted markets for display
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | undefined>(undefined);
-  const [favoriteMarkets, setFavoriteMarkets] = useState<string[]>([]);
 
-  // Create InfoClient ref (no wallet needed for public data)
+  // Get state and actions from store
+  const { markets, favorites, isLoading, loadInitialData, fetchAndCacheMarkets, toggleFavorite } =
+    useMarketsStore();
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | undefined>(undefined);
+
+  // Compute sorted and filtered markets (instant from memory!)
+  const filteredMarkets = useMemo(() => {
+    if (markets.length === 0) return [];
+
+    // Sort by favorites first, then volume
+    const sorted = [...markets].sort((a, b) => {
+      const aIsFavorite = favorites.includes(a.id);
+      const bIsFavorite = favorites.includes(b.id);
+      if (aIsFavorite && !bIsFavorite) return -1;
+      if (!aIsFavorite && bIsFavorite) return 1;
+      return b.volume - a.volume;
+    });
+
+    // Filter by search query
+    if (!debouncedQuery) return sorted;
+
+    const query = debouncedQuery.toLowerCase();
+    const startsWithMatches = sorted.filter(
+      m => m.id.toLowerCase().startsWith(query) || m.name.toLowerCase().startsWith(query),
+    );
+    const includesMatches = sorted.filter(
+      m =>
+        !m.id.toLowerCase().startsWith(query) &&
+        !m.name.toLowerCase().startsWith(query) &&
+        (m.id.toLowerCase().includes(query) || m.name.toLowerCase().includes(query)),
+    );
+
+    return [...startsWithMatches, ...includesMatches];
+  }, [markets, favorites, debouncedQuery]);
+
+  // InfoClient for Hyperliquid API
   const infoClientRef = useRef<hl.InfoClient | null>(null);
   if (!infoClientRef.current) {
     const transport = new hl.HttpTransport();
     infoClientRef.current = new hl.InfoClient({ transport });
   }
 
-  // Load favorite markets from storage
-  useEffect(() => {
-    const loadFavorites = async () => {
-      const favorites = await getFavoriteMarkets();
-      setFavoriteMarkets(favorites);
-    };
-    loadFavorites();
+  // Fetch markets from Hyperliquid API
+  const fetchMarketsFromAPI = useCallback(async (): Promise<Market[]> => {
+    const infoClient = infoClientRef.current!;
+    const [meta, assetCtxs] = await infoClient.metaAndAssetCtxs();
+
+    return meta.universe.map((asset: any, index: number) => {
+      const assetName = asset.name;
+      const ctx = assetCtxs[index];
+
+      const currentPrice = parseFloat(ctx.markPx);
+      const prevDayPrice = parseFloat(ctx.prevDayPx);
+      const priceChange =
+        prevDayPrice > 0 ? ((currentPrice - prevDayPrice) / prevDayPrice) * 100 : 0;
+      const fundingRate = parseFloat(ctx.funding) * 100;
+      const volume = parseFloat(ctx.dayNtlVlm || '0');
+      const marketId = `${assetName}-USD`;
+
+      return {
+        id: marketId,
+        name: marketId,
+        price: currentPrice,
+        change: priceChange,
+        maxLeverage: asset.maxLeverage || 1,
+        fundingRate,
+        volume,
+      };
+    });
   }, []);
 
-  // Fetch market data from Hyperliquid
+  // Load initial data on mount
   useEffect(() => {
-    const fetchMarkets = async () => {
-      try {
-        setLoading(true);
-        setError(undefined);
+    let isMounted = true;
 
-        const infoClient = infoClientRef.current!;
+    const initialize = async () => {
+      await loadInitialData();
 
-        // Fetch meta data and asset contexts (includes price, funding, etc.)
-        const [meta, assetCtxs] = await infoClient.metaAndAssetCtxs();
+      if (!isMounted) return;
 
-        // Debug: log all market names
-        console.log('=== Hyperliquid Markets ===');
-        console.log('Total markets:', meta.universe.length);
-        console.log('Market names:', meta.universe.map((a: any) => a.name).join(', '));
+      // Check if we have cached data in store
+      const currentMarkets = useMarketsStore.getState().markets;
 
-        // All assets in meta.universe are perpetual markets
-        // (spot markets are in a separate spotMeta endpoint)
-        // Note: some perps have onlyIsolated:true meaning isolated margin only
-        const perpMarkets = meta.universe;
-
-        // Map to our Market type
-        const marketData: Market[] = perpMarkets.map((asset: any, index: number) => {
-          const assetName = asset.name;
-          const ctx = assetCtxs[index];
-
-          // Calculate 24h price change percentage
-          const currentPrice = parseFloat(ctx.markPx);
-          const prevDayPrice = parseFloat(ctx.prevDayPx);
-          const priceChange =
-            prevDayPrice > 0 ? ((currentPrice - prevDayPrice) / prevDayPrice) * 100 : 0;
-
-          // Funding rate (convert to percentage)
-          const fundingRate = parseFloat(ctx.funding) * 100;
-
-          // 24h volume (dayNtlVlm = daily notional volume in USD)
-          const volume = parseFloat(ctx.dayNtlVlm || '0');
-
-          // Market ID for both routing and display: "BTC-USD" format for perps
-          // (future: spot will use "BTC/USDC" with slash to differentiate)
-          const marketId = `${assetName}-USD`;
-
-          return {
-            id: marketId,
-            name: marketId,
-            price: currentPrice,
-            change: priceChange,
-            maxLeverage: asset.maxLeverage || 1,
-            fundingRate: fundingRate,
-            volume: volume,
-          };
+      if (currentMarkets.length === 0) {
+        // No cached data, fetch from API with loading state
+        fetchAndCacheMarkets(fetchMarketsFromAPI, false).catch(err => {
+          if (isMounted) {
+            console.error('Error fetching markets:', err);
+            setError('Failed to load markets');
+          }
         });
-
-        // Save raw markets data (before sorting)
-        setRawMarkets(marketData);
-      } catch (err) {
-        console.error('Error fetching markets:', err);
-        setError('Failed to load markets');
-      } finally {
-        setLoading(false);
+      } else {
+        // Have cached data, fetch fresh data silently in background
+        fetchAndCacheMarkets(fetchMarketsFromAPI, true).catch(err => {
+          console.error('Error updating markets:', err);
+        });
       }
     };
 
-    fetchMarkets();
+    initialize();
+
+    return () => {
+      isMounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Sort markets by favorites and volume whenever favorites or rawMarkets change
-  useEffect(() => {
-    if (rawMarkets.length === 0) return;
-
-    const sortedMarkets = [...rawMarkets].sort((a, b) => {
-      const aIsFavorite = favoriteMarkets.includes(a.id);
-      const bIsFavorite = favoriteMarkets.includes(b.id);
-
-      // Favorites go first
-      if (aIsFavorite && !bIsFavorite) return -1;
-      if (!aIsFavorite && bIsFavorite) return 1;
-
-      // Within same favorite status, sort by volume
-      return b.volume - a.volume;
-    });
-
-    setMarkets(sortedMarkets);
-  }, [favoriteMarkets, rawMarkets]);
 
   // Debounce search query
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedQuery(searchQuery);
     }, 300);
-
     return () => clearTimeout(timer);
   }, [searchQuery]);
-
-  // Filter markets based on debounced query
-  useEffect(() => {
-    if (debouncedQuery === '') {
-      setFilteredMarkets(markets);
-      return;
-    }
-
-    // First, find markets that start with the query (higher priority matches)
-    const startsWithMatches = markets.filter(
-      market =>
-        market.id.toLowerCase().startsWith(debouncedQuery.toLowerCase()) ||
-        market.name.toLowerCase().startsWith(debouncedQuery.toLowerCase()),
-    );
-
-    // Then, find markets that include the query but don't start with it (lower priority matches)
-    const includesMatches = markets.filter(market => {
-      const lowerCaseId = market.id.toLowerCase();
-      const lowerCaseName = market.name.toLowerCase();
-      const lowerCaseQuery = debouncedQuery.toLowerCase();
-
-      return (
-        (lowerCaseId.includes(lowerCaseQuery) && !lowerCaseId.startsWith(lowerCaseQuery)) ||
-        (lowerCaseName.includes(lowerCaseQuery) && !lowerCaseName.startsWith(lowerCaseQuery))
-      );
-    });
-
-    // Combine the results with priority matches first
-    setFilteredMarkets([...startsWithMatches, ...includesMatches]);
-  }, [debouncedQuery, markets]);
 
   const navigateToMarket = useCallback(
     (marketId: string) => {
@@ -176,19 +138,31 @@ export default function MarketListScreen() {
     [router],
   );
 
-  const handleToggleFavorite = useCallback(async (marketId: string) => {
-    const newIsFavorite = await toggleFavoriteMarket(marketId);
-    // Update local state immediately for UI responsiveness
-    setFavoriteMarkets(prev =>
-      newIsFavorite ? [...prev, marketId] : prev.filter(id => id !== marketId),
-    );
-  }, []);
+  const handleToggleFavorite = useCallback(
+    (marketId: string) => {
+      toggleFavorite(marketId);
+    },
+    [toggleFavorite],
+  );
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    setError(undefined);
+    try {
+      await fetchAndCacheMarkets(fetchMarketsFromAPI, false);
+    } catch (err) {
+      console.error('Error refreshing markets:', err);
+      setError('Failed to refresh markets');
+    } finally {
+      setRefreshing(false);
+    }
+  }, [fetchAndCacheMarkets, fetchMarketsFromAPI]);
 
   const handleGoBack = () => {
     router.back();
   };
 
-  if (loading) {
+  if (isLoading && markets.length === 0) {
     return (
       <CleanLayout>
         <YStack flex={1} justifyContent="center" alignItems="center">
@@ -199,7 +173,7 @@ export default function MarketListScreen() {
     );
   }
 
-  if (error) {
+  if (error && markets.length === 0) {
     return (
       <CleanLayout>
         <YStack flex={1} justifyContent="center" alignItems="center" padding="$4">
@@ -244,7 +218,10 @@ export default function MarketListScreen() {
         </XStack>
 
         {/* Market List */}
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
+        >
           <YStack gap="$2">
             {filteredMarkets.map(market => (
               <MarketListItem
@@ -254,12 +231,12 @@ export default function MarketListScreen() {
                 price={market.price}
                 change={market.change}
                 maxLeverage={market.maxLeverage}
-                isFavorite={favoriteMarkets.includes(market.id)}
+                isFavorite={favorites.includes(market.id)}
                 onPress={() => navigateToMarket(market.id)}
                 onToggleFavorite={handleToggleFavorite}
               />
             ))}
-            {filteredMarkets.length === 0 && (
+            {filteredMarkets.length === 0 && markets.length > 0 && (
               <Text textAlign="center" color="$gray9" padding="$4">
                 No markets found
               </Text>
