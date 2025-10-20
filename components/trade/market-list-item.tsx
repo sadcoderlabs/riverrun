@@ -34,6 +34,16 @@ export function MarketListItem({
 
   // Format price with at least 5 significant digits total
   // Rule: Show all integer digits + decimal digits to reach minimum 5 significant figures
+  // Trailing zeros in decimals can be omitted
+  //
+  // Examples:
+  // 12345 → 12345
+  // 12345.67 → 12345
+  // 1234500 → 1,234,500
+  // 312.345 → 312.35
+  // 23.45 → 23.45
+  // 0.00123 → 0.00123
+  // 0.001234567 → 0.00123
   const formatPrice = (price: number): string => {
     // Get the integer part to count its digits
     const integerPart = Math.floor(Math.abs(price));
@@ -44,7 +54,7 @@ export function MarketListItem({
     const decimalPlaces = Math.max(0, minSignificantDigits - integerDigits);
 
     return price.toLocaleString(undefined, {
-      minimumFractionDigits: decimalPlaces,
+      minimumFractionDigits: 0, // Allow trailing zeros to be omitted
       maximumFractionDigits: decimalPlaces,
     });
   };
