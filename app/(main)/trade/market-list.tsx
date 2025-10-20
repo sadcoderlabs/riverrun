@@ -1,11 +1,9 @@
 import { CleanLayout } from '@/components/global/clean-layout';
 import { MarketListItem } from '@/components/trade/market-list-item';
 import { useMarketsStore } from '@/lib/store/use-markets-store';
-import { Market } from '@/lib/types/market';
-import * as hl from '@nktkas/hyperliquid';
 import { ArrowLeft, Search } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshControl } from 'react-native';
 import { Input, ScrollView, Spinner, Text, XStack, YStack } from 'tamagui';
 
@@ -13,11 +11,10 @@ export default function MarketListScreen() {
   const router = useRouter();
 
   // Get state and actions from store
-  const { markets, favorites, isLoading, loadInitialData, fetchAndCacheMarkets, toggleFavorite } =
+  const { markets, favorites, isLoading, initialize, refreshMarkets, toggleFavorite } =
     useMarketsStore();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedQuery, setDebouncedQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | undefined>(undefined);
 
@@ -35,9 +32,9 @@ export default function MarketListScreen() {
     });
 
     // Filter by search query
-    if (!debouncedQuery) return sorted;
+    if (!searchQuery) return sorted;
 
-    const query = debouncedQuery.toLowerCase();
+    const query = searchQuery.toLowerCase();
     const startsWithMatches = sorted.filter(
       m => m.id.toLowerCase().startsWith(query) || m.name.toLowerCase().startsWith(query),
     );
@@ -49,87 +46,15 @@ export default function MarketListScreen() {
     );
 
     return [...startsWithMatches, ...includesMatches];
-  }, [markets, favorites, debouncedQuery]);
+  }, [markets, favorites, searchQuery]);
 
-  // InfoClient for Hyperliquid API
-  const infoClientRef = useRef<hl.InfoClient | null>(null);
-  if (!infoClientRef.current) {
-    const transport = new hl.HttpTransport();
-    infoClientRef.current = new hl.InfoClient({ transport });
-  }
-
-  // Fetch markets from Hyperliquid API
-  const fetchMarketsFromAPI = useCallback(async (): Promise<Market[]> => {
-    const infoClient = infoClientRef.current!;
-    const [meta, assetCtxs] = await infoClient.metaAndAssetCtxs();
-
-    return meta.universe.map((asset: any, index: number) => {
-      const assetName = asset.name;
-      const ctx = assetCtxs[index];
-
-      const currentPrice = parseFloat(ctx.markPx);
-      const prevDayPrice = parseFloat(ctx.prevDayPx);
-      const priceChange =
-        prevDayPrice > 0 ? ((currentPrice - prevDayPrice) / prevDayPrice) * 100 : 0;
-      const fundingRate = parseFloat(ctx.funding) * 100;
-      const volume = parseFloat(ctx.dayNtlVlm || '0');
-      const marketId = `${assetName}-USD`;
-
-      return {
-        id: marketId,
-        name: marketId,
-        price: currentPrice,
-        change: priceChange,
-        maxLeverage: asset.maxLeverage || 1,
-        fundingRate,
-        volume,
-      };
+  // Initialize store on mount
+  useEffect(() => {
+    initialize().catch(err => {
+      console.error('Error initializing markets:', err);
+      setError('Failed to load markets');
     });
-  }, []);
-
-  // Load initial data on mount
-  useEffect(() => {
-    let isMounted = true;
-
-    const initialize = async () => {
-      await loadInitialData();
-
-      if (!isMounted) return;
-
-      // Check if we have cached data in store
-      const currentMarkets = useMarketsStore.getState().markets;
-
-      if (currentMarkets.length === 0) {
-        // No cached data, fetch from API with loading state
-        fetchAndCacheMarkets(fetchMarketsFromAPI, false).catch(err => {
-          if (isMounted) {
-            console.error('Error fetching markets:', err);
-            setError('Failed to load markets');
-          }
-        });
-      } else {
-        // Have cached data, fetch fresh data silently in background
-        fetchAndCacheMarkets(fetchMarketsFromAPI, true).catch(err => {
-          console.error('Error updating markets:', err);
-        });
-      }
-    };
-
-    initialize();
-
-    return () => {
-      isMounted = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Debounce search query
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedQuery(searchQuery);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
+  }, [initialize]);
 
   const navigateToMarket = useCallback(
     (marketId: string) => {
@@ -149,14 +74,14 @@ export default function MarketListScreen() {
     setRefreshing(true);
     setError(undefined);
     try {
-      await fetchAndCacheMarkets(fetchMarketsFromAPI, false);
+      await refreshMarkets();
     } catch (err) {
       console.error('Error refreshing markets:', err);
       setError('Failed to refresh markets');
     } finally {
       setRefreshing(false);
     }
-  }, [fetchAndCacheMarkets, fetchMarketsFromAPI]);
+  }, [refreshMarkets]);
 
   const handleGoBack = () => {
     router.back();

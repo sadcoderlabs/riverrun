@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as hl from '@nktkas/hyperliquid';
 import { create } from 'zustand';
 import { Market } from '@/lib/types/market';
 
@@ -8,6 +9,17 @@ const CACHE_EXPIRY_KEY = '@riverrun:markets_cache_expiry';
 const FAVORITES_KEY = '@riverrun:favorite_markets';
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
+// Hyperliquid API client (singleton)
+let infoClient: hl.InfoClient | null = null;
+
+function getInfoClient(): hl.InfoClient {
+  if (!infoClient) {
+    const transport = new hl.HttpTransport();
+    infoClient = new hl.InfoClient({ transport });
+  }
+  return infoClient;
+}
+
 interface MarketsState {
   // State
   markets: Market[];
@@ -16,8 +28,8 @@ interface MarketsState {
   isLoading: boolean;
 
   // Actions
-  loadInitialData: () => Promise<void>;
-  fetchAndCacheMarkets: (fetchFn: () => Promise<Market[]>, silent?: boolean) => Promise<void>;
+  initialize: () => Promise<void>;
+  refreshMarkets: () => Promise<void>;
   toggleFavorite: (marketId: string) => Promise<void>;
   clear: () => void;
 }
@@ -30,19 +42,23 @@ export const useMarketsStore = create<MarketsState>((set, get) => ({
   isLoading: false,
 
   /**
-   * Load initial data from AsyncStorage (favorites + cached markets)
-   * This should be called once when the app starts or when market-list mounts
+   * Initialize the store
+   * - Loads favorites and cached markets from AsyncStorage
+   * - If cache exists, displays it immediately and updates in background
+   * - If no cache, shows loading and fetches from API
+   *
+   * This should be called once when market-list mounts
    */
-  loadInitialData: async () => {
+  initialize: async () => {
     const { isInitialized } = get();
 
-    // If already initialized (data in memory), skip loading
+    // If already initialized (data in memory), skip
     if (isInitialized) {
       return;
     }
 
     try {
-      // Load favorites and cached markets in parallel
+      // Load favorites and cached markets from AsyncStorage
       const [favoritesJson, cachedMarketsJson, expiryTime] = await Promise.all([
         AsyncStorage.getItem(FAVORITES_KEY),
         AsyncStorage.getItem(MARKETS_CACHE_KEY),
@@ -51,7 +67,7 @@ export const useMarketsStore = create<MarketsState>((set, get) => ({
 
       const favorites = favoritesJson ? JSON.parse(favoritesJson) : [];
 
-      // Check if cache is valid
+      // Check if cache is valid (not expired)
       let cachedMarkets: Market[] | null = null;
       if (cachedMarketsJson && expiryTime) {
         const now = Date.now();
@@ -62,49 +78,40 @@ export const useMarketsStore = create<MarketsState>((set, get) => ({
         }
       }
 
-      // Update store
-      set({
-        favorites,
-        markets: cachedMarkets || [],
-        isInitialized: true,
-      });
+      // Update favorites immediately
+      set({ favorites });
+
+      // Decide how to fetch markets based on cache
+      if (cachedMarkets && cachedMarkets.length > 0) {
+        // Have valid cache - show it immediately, then update in background
+        set({
+          markets: cachedMarkets,
+          isInitialized: true,
+        });
+
+        // Fetch fresh data silently in background
+        fetchFromAPI(true);
+      } else {
+        // No cache - show loading and fetch from API
+        set({
+          isInitialized: true,
+          isLoading: true,
+        });
+
+        await fetchFromAPI(false);
+      }
     } catch (error) {
-      console.error('Error loading initial data:', error);
-      set({ isInitialized: true });
+      console.error('Error initializing markets store:', error);
+      set({ isInitialized: true, isLoading: false });
     }
   },
 
   /**
-   * Fetch fresh markets data and cache it
-   * @param fetchFn - Function that fetches markets from API
-   * @param silent - If true, don't show loading state
+   * Refresh markets from API
+   * Used for pull-to-refresh
    */
-  fetchAndCacheMarkets: async (fetchFn: () => Promise<Market[]>, silent = false) => {
-    try {
-      if (!silent) {
-        set({ isLoading: true });
-      }
-
-      // Fetch from API
-      const markets = await fetchFn();
-
-      // Save to cache and update store
-      const now = Date.now();
-      await Promise.all([
-        AsyncStorage.setItem(MARKETS_CACHE_KEY, JSON.stringify(markets)),
-        AsyncStorage.setItem(CACHE_EXPIRY_KEY, now.toString()),
-      ]);
-
-      set({
-        markets,
-        isInitialized: true,
-        isLoading: false,
-      });
-    } catch (error) {
-      console.error('Error fetching and caching markets:', error);
-      set({ isLoading: false });
-      throw error;
-    }
+  refreshMarkets: async () => {
+    await fetchFromAPI(false);
   },
 
   /**
@@ -152,3 +159,63 @@ export const useMarketsStore = create<MarketsState>((set, get) => ({
     });
   },
 }));
+
+/**
+ * Internal helper: Fetch markets from Hyperliquid API and cache them
+ * @param silent - If true, don't show loading state (for background refresh)
+ */
+async function fetchFromAPI(silent: boolean) {
+  const setState = useMarketsStore.setState;
+
+  try {
+    if (!silent) {
+      setState({ isLoading: true });
+    }
+
+    // Fetch from Hyperliquid API
+    const client = getInfoClient();
+    const [meta, assetCtxs] = await client.metaAndAssetCtxs();
+
+    // Map to Market type
+    const markets: Market[] = meta.universe.map((asset: any, index: number) => {
+      const assetName = asset.name;
+      const ctx = assetCtxs[index];
+
+      const currentPrice = parseFloat(ctx.markPx);
+      const prevDayPrice = parseFloat(ctx.prevDayPx);
+      const priceChange =
+        prevDayPrice > 0 ? ((currentPrice - prevDayPrice) / prevDayPrice) * 100 : 0;
+      const fundingRate = parseFloat(ctx.funding) * 100;
+      const volume = parseFloat(ctx.dayNtlVlm || '0');
+      const marketId = `${assetName}-USD`;
+
+      return {
+        id: marketId,
+        name: marketId,
+        price: currentPrice,
+        change: priceChange,
+        maxLeverage: asset.maxLeverage || 1,
+        fundingRate,
+        volume,
+      };
+    });
+
+    // Save to cache
+    const now = Date.now();
+    await Promise.all([
+      AsyncStorage.setItem(MARKETS_CACHE_KEY, JSON.stringify(markets)),
+      AsyncStorage.setItem(CACHE_EXPIRY_KEY, now.toString()),
+    ]);
+
+    // Update store
+    setState({
+      markets,
+      isInitialized: true,
+      isLoading: false,
+    });
+  } catch (error) {
+    console.error('Error fetching markets from API:', error);
+    setState({ isLoading: false });
+    throw error;
+  }
+}
