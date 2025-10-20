@@ -9,8 +9,8 @@ export default function MarketLayout() {
         name="(tab)/index"
         options={{ title: market || 'Market', headerShown: false }}
       />
-      <Stack.Screen name="(tab)/positions" options={{ title: 'Positions' }} />
-      <Stack.Screen name="(tab)/orders" options={{ title: 'Orders' }} />
+      <Stack.Screen name="(tab)/positionsTab" options={{ title: 'Positions' }} />
+      <Stack.Screen name="(tab)/ordersTab" options={{ title: 'Orders' }} />
       <Stack.Screen name="(tab)/history" options={{ title: 'History' }} />
     </Stack>
   );
