@@ -44,3 +44,5 @@ app-example
 
 .idea/
 .vscode/
+
+.claude/settings.local.json
