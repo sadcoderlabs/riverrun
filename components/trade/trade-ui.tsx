@@ -10,6 +10,7 @@ import {
 } from '@/components/hyperliquid/ApprovalGateProvider';
 import { GateButton } from '@/components/hyperliquid/GateButton';
 import type { AgentClientContext } from '@/lib/hyperliquid/agent';
+import { findAssetIndex, parseMarketId } from '@/lib/hyperliquid/market-utils';
 import { ChevronDown } from '@tamagui/lucide-icons';
 import { useCallback, useState } from 'react';
 import { Button, Sheet, Slider, Text, XStack, YStack } from 'tamagui';
@@ -60,26 +61,27 @@ function TradeUIView({ marketId }: TradeUIProps) {
       const meta = await infoClient.meta();
       console.log('meta', meta.universe);
 
-      const btcAssetIndex = meta.universe.findIndex(asset => {
-        const assetName = asset.name.toUpperCase();
-        return assetName === 'BTC' || assetName === 'BTC-USD' || assetName === 'BTCUSD';
-      });
+      // Parse marketId (e.g., "BTC-USD") to get the asset name (e.g., "BTC")
+      const { assetName } = parseMarketId(marketId || 'BTC-USD');
 
-      if (btcAssetIndex === -1) {
-        throw new Error('Unable to locate BTC perpetual market metadata');
+      // Find the asset index in the universe
+      const assetIndex = findAssetIndex(assetName, meta.universe);
+
+      if (assetIndex === -1) {
+        throw new Error(`Unable to locate ${assetName} perpetual market metadata`);
       }
 
-      const btcMeta = meta.universe[btcAssetIndex];
+      const assetMeta = meta.universe[assetIndex];
       const limitPrice = '99999';
       const notionalUsd = 100;
-      const sizeDecimals = btcMeta.szDecimals ?? 4;
+      const sizeDecimals = assetMeta.szDecimals ?? 4;
       const baseSizeNumber = notionalUsd / Number(limitPrice);
       const baseSize = baseSizeNumber.toFixed(sizeDecimals);
 
       const orderResponse = await context.agentExchangeClient.order({
         orders: [
           {
-            a: btcAssetIndex,
+            a: assetIndex,
             b: true,
             p: limitPrice,
             s: baseSize,
@@ -95,7 +97,7 @@ function TradeUIView({ marketId }: TradeUIProps) {
 
       console.log('Agent order response', orderResponse);
     },
-    [infoClient],
+    [infoClient, marketId],
   );
 
   // Calculate order details

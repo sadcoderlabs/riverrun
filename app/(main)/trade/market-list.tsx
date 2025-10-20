@@ -1,9 +1,11 @@
 import { CleanLayout } from '@/components/global/clean-layout';
 import { MarketListItem } from '@/components/trade/market-list-item';
+import { getFavoriteMarkets, toggleFavoriteMarket } from '@/lib/storage/favorites';
+import * as hl from '@nktkas/hyperliquid';
 import { ArrowLeft, Search } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Input, ScrollView, Text, XStack, YStack } from 'tamagui';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Input, ScrollView, Spinner, Text, XStack, YStack } from 'tamagui';
 
 type Market = {
   id: string;
@@ -12,6 +14,7 @@ type Market = {
   change: number;
   maxLeverage: number;
   fundingRate: number;
+  volume: number;
 };
 
 export default function MarketListScreen() {
@@ -19,92 +22,113 @@ export default function MarketListScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredMarkets, setFilteredMarkets] = useState<Market[]>([]);
   const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [rawMarkets, setRawMarkets] = useState<Market[]>([]); // Raw unsorted markets from API
+  const [markets, setMarkets] = useState<Market[]>([]); // Sorted markets for display
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | undefined>(undefined);
+  const [favoriteMarkets, setFavoriteMarkets] = useState<string[]>([]);
 
-  const markets = useMemo<Market[]>(
-    () => [
-      {
-        id: 'BTC-USD',
-        name: 'Bitcoin',
-        price: 28450.75,
-        change: 2.34,
-        maxLeverage: 40,
-        fundingRate: 0.0012,
-      },
-      {
-        id: 'ETH-USD',
-        name: 'Ethereum',
-        price: 1875.25,
-        change: -0.87,
-        maxLeverage: 20,
-        fundingRate: -0.0008,
-      },
-      {
-        id: 'SOL-USD',
-        name: 'Solana',
-        price: 42.18,
-        change: 3.65,
-        maxLeverage: 10,
-        fundingRate: 0.0025,
-      },
-      {
-        id: 'AVAX-USD',
-        name: 'Avalanche',
-        price: 32.47,
-        change: 1.23,
-        maxLeverage: 10,
-        fundingRate: 0.0018,
-      },
-      {
-        id: 'MATIC-USD',
-        name: 'Polygon',
-        price: 0.85,
-        change: -1.45,
-        maxLeverage: 5,
-        fundingRate: -0.0015,
-      },
-      {
-        id: 'DOT-USD',
-        name: 'Polkadot',
-        price: 7.92,
-        change: 0.78,
-        maxLeverage: 10,
-        fundingRate: 0.0009,
-      },
-      {
-        id: 'LINK-USD',
-        name: 'Chainlink',
-        price: 14.36,
-        change: 4.21,
-        maxLeverage: 10,
-        fundingRate: 0.0031,
-      },
-      {
-        id: 'ADA-USD',
-        name: 'Cardano',
-        price: 0.52,
-        change: -0.34,
-        maxLeverage: 5,
-        fundingRate: -0.0005,
-      },
-      {
-        id: 'DOGE-USD',
-        name: 'Dogecoin',
-        price: 0.078,
-        change: 5.67,
-        maxLeverage: 5,
-        fundingRate: 0.0042,
-      },
-      {
-        id: 'XRP-USD',
-        name: 'Ripple',
-        price: 0.63,
-        change: 1.89,
-        maxLeverage: 5,
-        fundingRate: 0.0016,
-      },
-    ],
-    [],
-  );
+  // Create InfoClient ref (no wallet needed for public data)
+  const infoClientRef = useRef<hl.InfoClient | null>(null);
+  if (!infoClientRef.current) {
+    const transport = new hl.HttpTransport();
+    infoClientRef.current = new hl.InfoClient({ transport });
+  }
+
+  // Load favorite markets from storage
+  useEffect(() => {
+    const loadFavorites = async () => {
+      const favorites = await getFavoriteMarkets();
+      setFavoriteMarkets(favorites);
+    };
+    loadFavorites();
+  }, []);
+
+  // Fetch market data from Hyperliquid
+  useEffect(() => {
+    const fetchMarkets = async () => {
+      try {
+        setLoading(true);
+        setError(undefined);
+
+        const infoClient = infoClientRef.current!;
+
+        // Fetch meta data and asset contexts (includes price, funding, etc.)
+        const [meta, assetCtxs] = await infoClient.metaAndAssetCtxs();
+
+        // Debug: log all market names
+        console.log('=== Hyperliquid Markets ===');
+        console.log('Total markets:', meta.universe.length);
+        console.log('Market names:', meta.universe.map((a: any) => a.name).join(', '));
+
+        // All assets in meta.universe are perpetual markets
+        // (spot markets are in a separate spotMeta endpoint)
+        // Note: some perps have onlyIsolated:true meaning isolated margin only
+        const perpMarkets = meta.universe;
+
+        // Map to our Market type
+        const marketData: Market[] = perpMarkets.map((asset: any, index: number) => {
+          const assetName = asset.name;
+          const ctx = assetCtxs[index];
+
+          // Calculate 24h price change percentage
+          const currentPrice = parseFloat(ctx.markPx);
+          const prevDayPrice = parseFloat(ctx.prevDayPx);
+          const priceChange =
+            prevDayPrice > 0 ? ((currentPrice - prevDayPrice) / prevDayPrice) * 100 : 0;
+
+          // Funding rate (convert to percentage)
+          const fundingRate = parseFloat(ctx.funding) * 100;
+
+          // 24h volume (dayNtlVlm = daily notional volume in USD)
+          const volume = parseFloat(ctx.dayNtlVlm || '0');
+
+          // Market ID for both routing and display: "BTC-USD" format for perps
+          // (future: spot will use "BTC/USDC" with slash to differentiate)
+          const marketId = `${assetName}-USD`;
+
+          return {
+            id: marketId,
+            name: marketId,
+            price: currentPrice,
+            change: priceChange,
+            maxLeverage: asset.maxLeverage || 1,
+            fundingRate: fundingRate,
+            volume: volume,
+          };
+        });
+
+        // Save raw markets data (before sorting)
+        setRawMarkets(marketData);
+      } catch (err) {
+        console.error('Error fetching markets:', err);
+        setError('Failed to load markets');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMarkets();
+  }, []);
+
+  // Sort markets by favorites and volume whenever favorites or rawMarkets change
+  useEffect(() => {
+    if (rawMarkets.length === 0) return;
+
+    const sortedMarkets = [...rawMarkets].sort((a, b) => {
+      const aIsFavorite = favoriteMarkets.includes(a.id);
+      const bIsFavorite = favoriteMarkets.includes(b.id);
+
+      // Favorites go first
+      if (aIsFavorite && !bIsFavorite) return -1;
+      if (!aIsFavorite && bIsFavorite) return 1;
+
+      // Within same favorite status, sort by volume
+      return b.volume - a.volume;
+    });
+
+    setMarkets(sortedMarkets);
+  }, [favoriteMarkets, rawMarkets]);
 
   // Debounce search query
   useEffect(() => {
@@ -145,11 +169,6 @@ export default function MarketListScreen() {
     setFilteredMarkets([...startsWithMatches, ...includesMatches]);
   }, [debouncedQuery, markets]);
 
-  // Initialize filtered markets with all markets
-  useEffect(() => {
-    setFilteredMarkets(markets);
-  }, [markets]);
-
   const navigateToMarket = useCallback(
     (marketId: string) => {
       router.push(`/(main)/trade/${marketId}/(tab)`);
@@ -157,9 +176,38 @@ export default function MarketListScreen() {
     [router],
   );
 
+  const handleToggleFavorite = useCallback(async (marketId: string) => {
+    const newIsFavorite = await toggleFavoriteMarket(marketId);
+    // Update local state immediately for UI responsiveness
+    setFavoriteMarkets(prev =>
+      newIsFavorite ? [...prev, marketId] : prev.filter(id => id !== marketId),
+    );
+  }, []);
+
   const handleGoBack = () => {
     router.back();
   };
+
+  if (loading) {
+    return (
+      <CleanLayout>
+        <YStack flex={1} justifyContent="center" alignItems="center">
+          <Spinner size="large" />
+          <Text marginTop="$2">Loading markets...</Text>
+        </YStack>
+      </CleanLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <CleanLayout>
+        <YStack flex={1} justifyContent="center" alignItems="center" padding="$4">
+          <Text color="$red10">{error}</Text>
+        </YStack>
+      </CleanLayout>
+    );
+  }
 
   return (
     <CleanLayout>
@@ -202,10 +250,13 @@ export default function MarketListScreen() {
               <MarketListItem
                 key={market.id}
                 id={market.id}
+                name={market.name}
                 price={market.price}
                 change={market.change}
                 maxLeverage={market.maxLeverage}
+                isFavorite={favoriteMarkets.includes(market.id)}
                 onPress={() => navigateToMarket(market.id)}
+                onToggleFavorite={handleToggleFavorite}
               />
             ))}
             {filteredMarkets.length === 0 && (

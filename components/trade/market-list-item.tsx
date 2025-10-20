@@ -1,18 +1,36 @@
+import { Star } from '@tamagui/lucide-icons';
 import { Text, XStack, YStack } from 'tamagui';
 
 type Market = {
   id: string;
+  name: string;
   price: number;
   change: number;
   maxLeverage: number;
 };
 
 interface MarketListItemProps extends Market {
+  isFavorite?: boolean;
   onPress: () => void;
+  onToggleFavorite?: (marketId: string) => void;
 }
 
-export function MarketListItem({ id, price, change, maxLeverage, onPress }: MarketListItemProps) {
+export function MarketListItem({
+  id,
+  name,
+  price,
+  change,
+  maxLeverage,
+  isFavorite = false,
+  onPress,
+  onToggleFavorite,
+}: MarketListItemProps) {
   const isPriceUp = change >= 0;
+
+  const handleStarPress = (e: any) => {
+    e.stopPropagation();
+    onToggleFavorite?.(id);
+  };
 
   return (
     <YStack
@@ -23,13 +41,20 @@ export function MarketListItem({ id, price, change, maxLeverage, onPress }: Mark
       backgroundColor="$background"
       borderRadius="$2"
     >
-      {/* First row: Market ID and Price */}
+      {/* First row: Star, Market Name and Price */}
       <XStack justifyContent="space-between" alignItems="center" marginBottom="$2">
-        <YStack>
+        <XStack alignItems="center" gap="$2">
+          <XStack onPress={handleStarPress} pressStyle={{ opacity: 0.7 }} padding="$1">
+            <Star
+              size="$1"
+              color={isFavorite ? '#FDB022' : '$gray9'}
+              fill={isFavorite ? '#FDB022' : 'transparent'}
+            />
+          </XStack>
           <Text fontFamily="$interSemiBold" fontSize="$4" color="$color">
-            {id}
+            {name}
           </Text>
-        </YStack>
+        </XStack>
         <Text fontFamily="$interRegular" fontSize="$4" color="$color" fontWeight="500">
           ${price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </Text>
@@ -38,20 +63,20 @@ export function MarketListItem({ id, price, change, maxLeverage, onPress }: Mark
       {/* Second row: Max Leverage and Price Change */}
       <XStack justifyContent="space-between" alignItems="center">
         <XStack
-          backgroundColor="$gray3"
+          backgroundColor="rgba(20, 80, 70, 0.8)"
           paddingHorizontal="$2"
           paddingVertical="$1"
-          borderRadius="$1"
+          borderRadius="$2"
           alignItems="center"
         >
-          <Text fontSize="$1" color="$gray11" fontFamily="$interMedium">
-            {maxLeverage}x Max
+          <Text fontSize="$1" color="rgba(100, 220, 180, 1)" fontFamily="$interMedium">
+            {maxLeverage}x
           </Text>
         </XStack>
 
         <Text fontFamily="$interMedium" fontSize="$3" color={isPriceUp ? '$green9' : '$red9'}>
           {isPriceUp ? '+' : ''}
-          {change}%
+          {change.toFixed(2)}%
         </Text>
       </XStack>
     </YStack>
