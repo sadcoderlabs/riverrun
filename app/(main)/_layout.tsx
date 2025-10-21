@@ -25,7 +25,7 @@ export default function MainLayout() {
         <Stack
           screenOptions={{
             headerShown: false,
-            animation: 'default',
+            animation: 'none',
           }}
         >
           <Stack.Screen name="index" />
@@ -34,7 +34,7 @@ export default function MainLayout() {
             name="theme-options"
             options={{ headerShown: true, title: 'Theme Options' }}
           />
-          <Stack.Screen name="trade" options={{ animation: 'none' }} />
+          <Stack.Screen name="trade" />
           <Stack.Screen name="close-position" options={{ presentation: 'modal' }} />
           <Stack.Screen name="set-tp-sl" options={{ presentation: 'modal' }} />
         </Stack>

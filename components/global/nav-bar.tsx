@@ -1,7 +1,7 @@
 import { Home, TrendingUp } from '@tamagui/lucide-icons';
 import { usePathname, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { AnimatePresence, styled, Text, useTheme, XStack, YStack } from 'tamagui';
+import { styled, Text, useTheme, XStack, YStack } from 'tamagui';
 
 const NavBarContainer = styled(XStack, {
   backgroundColor: '$background',
@@ -29,8 +29,6 @@ const NavItem = styled(YStack, {
   justifyContent: 'center',
   paddingVertical: '$2',
   flex: 1,
-  animation: 'bouncy',
-  pressStyle: { scale: 0.9 },
   variants: {
     active: {
       true: {
@@ -92,17 +90,15 @@ export function NavBar() {
         height: 60 + (insets.bottom > 0 ? insets.bottom : 0),
       }}
     >
-      <AnimatePresence>
-        <NavItem key="home" active={isHomeActive} onPress={navigateToHome}>
-          <Home size={24} color={isHomeActive ? theme.accent9 : theme.color9} />
-          <NavText active={isHomeActive}>Home</NavText>
-        </NavItem>
+      <NavItem key="home" active={isHomeActive} onPress={navigateToHome}>
+        <Home size={24} color={isHomeActive ? theme.accent9 : theme.color9} />
+        <NavText active={isHomeActive}>Home</NavText>
+      </NavItem>
 
-        <NavItem key="trade" active={isTradeActive} onPress={navigateToTrade}>
-          <TrendingUp size={24} color={isTradeActive ? theme.accent9 : theme.color9} />
-          <NavText active={isTradeActive}>Trade</NavText>
-        </NavItem>
-      </AnimatePresence>
+      <NavItem key="trade" active={isTradeActive} onPress={navigateToTrade}>
+        <TrendingUp size={24} color={isTradeActive ? theme.accent9 : theme.color9} />
+        <NavText active={isTradeActive}>Trade</NavText>
+      </NavItem>
     </NavBarContainer>
   );
 }
