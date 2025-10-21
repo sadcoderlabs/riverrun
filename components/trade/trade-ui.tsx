@@ -13,7 +13,7 @@ import type { AgentClientContext } from '@/lib/hyperliquid/agent';
 import { findAssetIndex, parseMarketId } from '@/lib/hyperliquid/market-utils';
 import { ChevronDown } from '@tamagui/lucide-icons';
 import { useCallback, useState } from 'react';
-import { Button, ScrollView, Sheet, Slider, Text, XStack, YStack } from 'tamagui';
+import { Button, Checkbox, ScrollView, Sheet, Slider, Text, XStack, YStack } from 'tamagui';
 
 const AGENT_STORAGE_PREFIX = 'hl-agent:private-key:';
 const LEVERAGE_MIN = 1;
@@ -55,6 +55,8 @@ function TradeUIView({ marketId }: TradeUIProps) {
   const [sizeUnit, setSizeUnit] = useState('USDC');
   const [orderSide, setOrderSide] = useState<'Long' | 'Short'>('Long');
   const [sizePercentage, setSizePercentage] = useState(0);
+  const [tpSlEnabled, setTpSlEnabled] = useState(false);
+  const [reduceOnlyEnabled, setReduceOnlyEnabled] = useState(false);
 
   const handlePlaceOrder = useCallback(
     async (context: AgentClientContext) => {
@@ -134,129 +136,190 @@ function TradeUIView({ marketId }: TradeUIProps) {
           {/* Right Side - Trading Panel */}
           <YStack flex={7} backgroundColor="$background">
             {/* Trading Form */}
-            <YStack padding="$4" gap="$4">
-              {/* First Stack: 2x3 Grid */}
-              <YStack gap="$3">
-                <XStack gap="$3">
-                  {/* Margin Type */}
-                  <SelectBox
-                    title="Margin Type"
-                    value={collateralMode}
-                    onValueChange={setCollateralMode}
-                    items={[
-                      { value: 'Cross', label: 'Cross' },
-                      { value: 'Isolated', label: 'Isolated' },
-                    ]}
-                    placeholder="Cross"
-                    flex={1}
-                  />
+            <YStack padding="$3" gap="$2.5">
+              {/* Leverage & Margin Type Combined Selector */}
+              <SelectBox
+                title="Leverage & Margin"
+                value={`${leverage}x ${collateralMode}`}
+                onValueChange={value => {
+                  const [lev, margin] = value.split(' ');
+                  setLeverage(Number(lev.replace('x', '')));
+                  setCollateralMode(margin);
+                }}
+                items={[
+                  { value: '1x Cross', label: '1x CROSS' },
+                  { value: '5x Cross', label: '5x CROSS' },
+                  { value: '10x Cross', label: '10x CROSS' },
+                  { value: '15x Cross', label: '15x CROSS' },
+                  { value: '20x Cross', label: '20x CROSS' },
+                  { value: '1x Isolated', label: '1x ISOLATED' },
+                  { value: '5x Isolated', label: '5x ISOLATED' },
+                  { value: '10x Isolated', label: '10x ISOLATED' },
+                  { value: '15x Isolated', label: '15x ISOLATED' },
+                  { value: '20x Isolated', label: '20x ISOLATED' },
+                ]}
+                placeholder="15x CROSS"
+              />
 
-                  {/* Leverage Picker */}
-                  <LeveragePicker
-                    flex={1}
-                    value={leverage}
-                    onPress={() => {
-                      setLeverageSheetPosition(0);
-                      setLeverageSheetOpen(true);
-                    }}
-                  />
-                </XStack>
+              {/* Available Balance */}
+              <YStack gap="$0.5">
+                <Text fontFamily="$interRegular" fontSize="$2" color="$gray10">
+                  Available
+                </Text>
+                <Text fontFamily="$interSemiBold" fontSize="$4" color="$color">
+                  ${formatNumber(accountBalance)}
+                </Text>
+              </YStack>
 
-                <XStack gap="$3">
-                  {/* Long Button */}
-                  <Button
-                    flex={1}
-                    backgroundColor={orderSide === 'Long' ? '$green9' : 'transparent'}
-                    borderColor={orderSide === 'Long' ? 'transparent' : '$green9'}
-                    borderWidth={1}
-                    paddingVertical="$1"
-                    onPress={() => setOrderSide('Long')}
-                    borderRadius="$4"
-                    opacity={orderSide === 'Long' ? 1 : 0.4}
+              {/* Current Position */}
+              <YStack gap="$0.5">
+                <Text fontFamily="$interRegular" fontSize="$2" color="$gray10">
+                  Current Position
+                </Text>
+              </YStack>
+
+              {/* Order Type Selector */}
+              <SelectBox
+                title="Order Type"
+                value={orderType}
+                onValueChange={setOrderType}
+                items={[
+                  { value: 'Limit', label: 'Limit' },
+                  { value: 'Market', label: 'Market' },
+                ]}
+                placeholder="Limit"
+              />
+
+              {/* Long/Short Buttons */}
+              <XStack gap="$2">
+                <Button
+                  flex={1}
+                  backgroundColor={orderSide === 'Long' ? '$green9' : 'transparent'}
+                  borderColor={orderSide === 'Long' ? 'transparent' : '$gray8'}
+                  borderWidth={1}
+                  paddingVertical="$2"
+                  onPress={() => setOrderSide('Long')}
+                  borderRadius="$3"
+                  height="$3"
+                >
+                  <Text
+                    fontFamily="$interSemiBold"
+                    fontSize="$3"
+                    color={orderSide === 'Long' ? '$green1' : '$color'}
                   >
-                    <Text
-                      fontFamily="$interSemiBold"
-                      fontSize="$3"
-                      color={orderSide === 'Long' ? '$green1' : '$green9'}
-                      textAlign="center"
-                    >
-                      Long
-                    </Text>
-                  </Button>
+                    LONG
+                  </Text>
+                </Button>
 
-                  {/* Short Button */}
-                  <Button
-                    flex={1}
-                    backgroundColor={orderSide === 'Short' ? '$red9' : 'transparent'}
-                    borderColor={orderSide === 'Short' ? 'transparent' : '$red9'}
-                    borderWidth={1}
-                    paddingVertical="$1"
-                    onPress={() => setOrderSide('Short')}
-                    borderRadius="$4"
-                    opacity={orderSide === 'Short' ? 1 : 0.4}
+                <Button
+                  flex={1}
+                  backgroundColor={orderSide === 'Short' ? '$red9' : 'transparent'}
+                  borderColor={orderSide === 'Short' ? 'transparent' : '$gray8'}
+                  borderWidth={1}
+                  paddingVertical="$2"
+                  onPress={() => setOrderSide('Short')}
+                  borderRadius="$3"
+                  height="$3"
+                >
+                  <Text
+                    fontFamily="$interSemiBold"
+                    fontSize="$3"
+                    color={orderSide === 'Short' ? '$red1' : '$color'}
                   >
-                    <Text
-                      fontFamily="$interSemiBold"
-                      fontSize="$3"
-                      color={orderSide === 'Short' ? '$red1' : '$red9'}
-                      textAlign="center"
-                    >
-                      Short
-                    </Text>
-                  </Button>
+                    SHORT
+                  </Text>
+                </Button>
+              </XStack>
+
+              {/* Limit Price */}
+              <YStack gap="$1.5">
+                <XStack justifyContent="space-between" alignItems="center">
+                  <Text fontFamily="$interRegular" fontSize="$2" color="$gray10">
+                    Limit Price
+                  </Text>
+                  <Text fontFamily="$interRegular" fontSize="$2" color="$gray10">
+                    Mid
+                  </Text>
                 </XStack>
-
-                <XStack gap="$3">
-                  {/* Order Type Selector */}
-                  <SelectBox
-                    title="Order Type"
-                    value={orderType}
-                    onValueChange={setOrderType}
-                    items={[
-                      { value: 'Market', label: 'Market' },
-                      { value: 'Limit', label: 'Limit' },
-                    ]}
-                    placeholder="Market"
-                    flex={1}
-                  />
-
-                  {/* Order Size Preference */}
-                  <SelectBox
-                    title="Order Size"
-                    value={sizeUnit}
-                    onValueChange={setSizeUnit}
-                    items={[
-                      { value: 'USDC', label: 'USDC' },
-                      { value: marketData.id.split('-')[0], label: marketData.id.split('-')[0] },
-                    ]}
-                    placeholder="USDC"
-                    flex={1}
-                  />
+                <XStack
+                  backgroundColor="$gray3"
+                  borderRadius="$3"
+                  paddingVertical="$2"
+                  paddingHorizontal="$2.5"
+                  borderColor="$gray8"
+                  borderWidth={1}
+                >
+                  <Text fontFamily="$interRegular" fontSize="$3" color="$color">
+                    {marketData.price.toFixed(1)}
+                  </Text>
                 </XStack>
               </YStack>
 
-              {/* Second Stack: Size Slider */}
-              <YStack gap="$2" py="$2">
-                <XStack alignItems="center" justifyContent="space-between">
-                  <Text>{sizePercentage === 0 ? '0' : Math.round(sizePercentage)}% </Text>
-                  <Text fontSize="$3" color="$color" textAlign="center" paddingBottom="$2">
+              {/* Size (USD) */}
+              <YStack gap="$1.5">
+                <Text fontFamily="$interRegular" fontSize="$2" color="$gray10">
+                  Size (USD)
+                </Text>
+                <XStack
+                  backgroundColor="$gray3"
+                  borderRadius="$3"
+                  paddingVertical="$2"
+                  paddingHorizontal="$2.5"
+                  borderColor="$gray8"
+                  borderWidth={1}
+                  justifyContent="space-between"
+                  alignItems="center"
+                >
+                  <Text fontFamily="$interRegular" fontSize="$3" color="$color">
                     {sizePercentage === 0
-                      ? `Available: ${formatNumber(accountBalance)} USDC`
-                      : `${formatNumber(accountBalance * (sizePercentage / 100))} USDC`}
+                      ? ''
+                      : formatNumber(accountBalance * (sizePercentage / 100))}
+                  </Text>
+                  <Text fontFamily="$interSemiBold" fontSize="$2" color="$color">
+                    USD
+                  </Text>
+                </XStack>
+              </YStack>
+
+              {/* Percentage Buttons */}
+              <XStack gap="$1.5" justifyContent="space-between">
+                {[25, 50, 75, 100].map(percent => (
+                  <Button
+                    key={percent}
+                    flex={1}
+                    backgroundColor="$gray5"
+                    borderRadius="$3"
+                    paddingVertical="$2"
+                    paddingHorizontal="$1"
+                    onPress={() => setSizePercentage(percent)}
+                    opacity={sizePercentage === percent ? 1 : 0.6}
+                  >
+                    <Text fontFamily="$interRegular" fontSize="$2" color="$color">
+                      {percent}%
+                    </Text>
+                  </Button>
+                ))}
+              </XStack>
+
+              {/* Size Slider */}
+              <YStack gap="$1.5">
+                <XStack justifyContent="space-between" alignItems="center">
+                  <Text fontFamily="$interRegular" fontSize="$2" color="$color">
+                    {sizePercentage === 0 ? '0' : Math.round(sizePercentage)}%
                   </Text>
                 </XStack>
                 <Slider
-                  defaultValue={[0]}
+                  value={[sizePercentage]}
                   max={100}
                   step={1}
                   onValueChange={values => setSizePercentage(values[0])}
                 >
-                  <Slider.Track backgroundColor="$gray5">
+                  <Slider.Track backgroundColor="$gray5" height="$0.5">
                     <Slider.TrackActive backgroundColor="$accent9" />
                   </Slider.Track>
                   <Slider.Thumb
                     index={0}
-                    size="$1"
+                    size="$0.75"
                     backgroundColor="$accent1"
                     borderWidth={1}
                     borderColor="$accent9"
@@ -265,43 +328,42 @@ function TradeUIView({ marketId }: TradeUIProps) {
                 </Slider>
               </YStack>
 
-              {/* Third Stack: Order Information */}
-              <YStack backgroundColor="$gray3" padding="$2" borderRadius="$4" gap="$3">
-                <XStack justifyContent="space-between">
-                  <Text color="$color" fontSize="$4">
-                    Margin
+              {/* TP/SL and Reduce-Only */}
+              <YStack gap="$1.5">
+                <XStack justifyContent="space-between" alignItems="center">
+                  <Text fontFamily="$interRegular" fontSize="$2" color="$color">
+                    TP/SL
                   </Text>
-                  <Text color="$color" fontSize="$4" fontFamily="$interSemiBold">
-                    {formatNumber(margin)} USDC
-                  </Text>
+                  <Checkbox
+                    size="$3"
+                    checked={tpSlEnabled}
+                    onCheckedChange={checked => setTpSlEnabled(checked === true)}
+                  >
+                    <Checkbox.Indicator />
+                  </Checkbox>
                 </XStack>
-
-                <XStack justifyContent="space-between">
-                  <Text color="$color" fontSize="$4">
-                    Order Size
+                <XStack justifyContent="space-between" alignItems="center">
+                  <Text fontFamily="$interRegular" fontSize="$2" color="$color">
+                    Reduce-Only
                   </Text>
-                  <Text color="$color" fontSize="$4" fontFamily="$interSemiBold">
-                    {formatNumber(orderSize)} USDC
-                  </Text>
-                </XStack>
-
-                <XStack justifyContent="space-between">
-                  <Text color="$color" fontSize="$4">
-                    Liq. Price
-                  </Text>
-                  <Text color="$color" fontSize="$4" fontFamily="$interSemiBold">
-                    {orderSide ? `${formatNumber(liquidationPrice)} USDC` : '--'}
-                  </Text>
+                  <Checkbox
+                    size="$3"
+                    checked={reduceOnlyEnabled}
+                    onCheckedChange={checked => setReduceOnlyEnabled(checked === true)}
+                  >
+                    <Checkbox.Indicator />
+                  </Checkbox>
                 </XStack>
               </YStack>
 
-              {/* Fourth Stack: Place Order Button */}
+              {/* Place Order Button */}
               <GateButton
                 title="Place Order"
                 loadingTitle="Placing..."
                 buttonSize="lg"
-                paddingVertical="$1"
-                marginTop="auto"
+                paddingVertical="$2.5"
+                marginTop="$1"
+                style={{ borderRadius: 8 }}
                 disabled={!orderSide}
                 onPressApproved={async context => {
                   try {
@@ -555,18 +617,18 @@ function SelectBox({ title, value, onValueChange, items, placeholder, flex }: Se
         <XStack
           flex={flex}
           backgroundColor="$gray3"
-          borderRadius="$4"
-          paddingVertical="$3"
-          paddingHorizontal="$3"
+          borderRadius="$3"
+          paddingVertical="$2"
+          paddingHorizontal="$2.5"
           borderColor="$gray8"
           borderWidth={1}
           alignItems="center"
           justifyContent="space-between"
         >
-          <Text color="$color" fontSize="$3" fontFamily="$interRegular">
+          <Text color="$color" fontSize="$2" fontFamily="$interRegular">
             {displayText}
           </Text>
-          <ChevronDown size="$1" color="$color" />
+          <ChevronDown size="$0.75" color="$color" />
         </XStack>
       </AdaptiveSelect.Trigger>
 
