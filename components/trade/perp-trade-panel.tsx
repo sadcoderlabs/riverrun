@@ -16,11 +16,13 @@ import {
   LimitOrderForm,
   ScaleOrderForm,
 } from '@/components/trade/order-forms';
+import { TpSlInput } from '@/components/trade/tp-sl-input';
 import type { AgentClientContext } from '@/lib/hyperliquid/agent';
 import { findAssetIndex, parseMarketId } from '@/lib/hyperliquid/market-utils';
-import { ChevronDown } from '@tamagui/lucide-icons';
+import { Check, ChevronDown } from '@tamagui/lucide-icons';
 import { useCallback, useState } from 'react';
-import { Button, Checkbox, ScrollView, Slider, Text, XStack, YStack } from 'tamagui';
+import { Checkbox } from '@tamagui/checkbox';
+import { Button, ScrollView, Slider, Text, XStack, YStack } from 'tamagui';
 
 const AGENT_STORAGE_PREFIX = 'hl-agent:private-key:';
 
@@ -67,6 +69,10 @@ function PerpTradePanelView({ marketId }: PerpTradePanelProps) {
   const [scaleUpperPrice, setScaleUpperPrice] = useState(marketData.price.toFixed(1));
   const [scaleOrderCount, setScaleOrderCount] = useState('5');
   const [scaleSizeSkew, setScaleSizeSkew] = useState('1.0');
+
+  // TP/SL states
+  const [tpValue, setTpValue] = useState('');
+  const [slValue, setSlValue] = useState('');
 
   const handlePlaceOrder = useCallback(
     async (context: AgentClientContext) => {
@@ -320,33 +326,31 @@ function PerpTradePanelView({ marketId }: PerpTradePanelProps) {
                 </Slider>
               </YStack>
 
-              {/* TP/SL and Reduce-Only */}
-              <YStack gap="$1.5">
-                <XStack justifyContent="space-between" alignItems="center">
-                  <Text fontFamily="$interRegular" fontSize="$2" color="$color">
-                    TP/SL
-                  </Text>
-                  <Checkbox
-                    size="$3"
-                    checked={tpSlEnabled}
-                    onCheckedChange={checked => setTpSlEnabled(checked === true)}
-                  >
-                    <Checkbox.Indicator />
-                  </Checkbox>
-                </XStack>
-                <XStack justifyContent="space-between" alignItems="center">
-                  <Text fontFamily="$interRegular" fontSize="$2" color="$color">
-                    Reduce-Only
-                  </Text>
-                  <Checkbox
-                    size="$3"
-                    checked={reduceOnlyEnabled}
-                    onCheckedChange={checked => setReduceOnlyEnabled(checked === true)}
-                  >
-                    <Checkbox.Indicator />
-                  </Checkbox>
-                </XStack>
-              </YStack>
+              {/* TP/SL */}
+              <TpSlInput
+                enabled={tpSlEnabled}
+                onEnabledChange={setTpSlEnabled}
+                tpValue={tpValue}
+                onTpValueChange={setTpValue}
+                slValue={slValue}
+                onSlValueChange={setSlValue}
+              />
+
+              {/* Reduce-Only */}
+              <XStack justifyContent="space-between" alignItems="center">
+                <Text fontFamily="$interRegular" fontSize="$2" color="$color">
+                  Reduce-Only
+                </Text>
+                <Checkbox
+                  size="$4"
+                  checked={reduceOnlyEnabled}
+                  onCheckedChange={checked => setReduceOnlyEnabled(checked === true)}
+                >
+                  <Checkbox.Indicator>
+                    <Check />
+                  </Checkbox.Indicator>
+                </Checkbox>
+              </XStack>
 
               {/* Place Order Button */}
               <GateButton
