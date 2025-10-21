@@ -13,7 +13,7 @@ import type { AgentClientContext } from '@/lib/hyperliquid/agent';
 import { findAssetIndex, parseMarketId } from '@/lib/hyperliquid/market-utils';
 import { ChevronDown } from '@tamagui/lucide-icons';
 import { useCallback, useState } from 'react';
-import { Button, Sheet, Slider, Text, XStack, YStack } from 'tamagui';
+import { Button, ScrollView, Sheet, Slider, Text, XStack, YStack } from 'tamagui';
 
 const AGENT_STORAGE_PREFIX = 'hl-agent:private-key:';
 const LEVERAGE_MIN = 1;
@@ -44,7 +44,7 @@ function TradeUIView({ marketId }: TradeUIProps) {
     annualizedFunding: 10.95,
   };
 
-  const [activeTab, setActiveTab] = useState<'trade' | 'positions' | 'orders' | 'history'>('trade');
+  const [activeTab, setActiveTab] = useState<'positions' | 'orders' | 'history'>('orders');
 
   // State for the order form
   const [collateralMode, setCollateralMode] = useState('Cross');
@@ -113,328 +113,347 @@ function TradeUIView({ marketId }: TradeUIProps) {
   };
 
   return (
-    <YStack flex={1} padding="$0">
-      {/* Tab Navigation */}
-      <XStack borderBottomWidth={1} borderBottomColor="$borderColor">
-        <TabItem
-          label="Trade"
-          isActive={activeTab === 'trade'}
-          onPress={() => setActiveTab('trade')}
-        />
-        <TabItem
-          label="Positions"
-          isActive={activeTab === 'positions'}
-          onPress={() => setActiveTab('positions')}
-        />
-        <TabItem
-          label="Orders"
-          isActive={activeTab === 'orders'}
-          onPress={() => setActiveTab('orders')}
-        />
-        <TabItem
-          label="History"
-          isActive={activeTab === 'history'}
-          onPress={() => setActiveTab('history')}
-        />
-      </XStack>
+    <ScrollView flex={1}>
+      <YStack>
+        {/* Main Content - Split Layout */}
+        <XStack>
+          {/* Left Side - Order Book Placeholder */}
+          <YStack
+            flex={5}
+            backgroundColor="$background"
+            borderRightWidth={1}
+            borderRightColor="$gray8"
+          >
+            <YStack justifyContent="center" alignItems="center" padding="$4" minHeight={200}>
+              <Text fontFamily="$interRegular" fontSize="$3" color="$gray10">
+                Order Book
+              </Text>
+            </YStack>
+          </YStack>
 
-      <YStack flex={1}>
-        {activeTab === 'trade' && (
-          <YStack flex={1} padding="$4" gap="$4">
-            {/* First Stack: 2x3 Grid */}
-            <YStack gap="$3">
-              <XStack gap="$3">
-                {/* Margin Type */}
-                <SelectBox
-                  title="Margin Type"
-                  value={collateralMode}
-                  onValueChange={setCollateralMode}
-                  items={[
-                    { value: 'Cross', label: 'Cross' },
-                    { value: 'Isolated', label: 'Isolated' },
-                  ]}
-                  placeholder="Cross"
-                  flex={1}
-                />
+          {/* Right Side - Trading Panel */}
+          <YStack flex={7} backgroundColor="$background">
+            {/* Trading Form */}
+            <YStack padding="$4" gap="$4">
+              {/* First Stack: 2x3 Grid */}
+              <YStack gap="$3">
+                <XStack gap="$3">
+                  {/* Margin Type */}
+                  <SelectBox
+                    title="Margin Type"
+                    value={collateralMode}
+                    onValueChange={setCollateralMode}
+                    items={[
+                      { value: 'Cross', label: 'Cross' },
+                      { value: 'Isolated', label: 'Isolated' },
+                    ]}
+                    placeholder="Cross"
+                    flex={1}
+                  />
 
-                {/* Leverage Picker */}
-                <LeveragePicker
-                  flex={1}
-                  value={leverage}
-                  onPress={() => {
-                    setLeverageSheetPosition(0);
-                    setLeverageSheetOpen(true);
-                  }}
-                />
-              </XStack>
+                  {/* Leverage Picker */}
+                  <LeveragePicker
+                    flex={1}
+                    value={leverage}
+                    onPress={() => {
+                      setLeverageSheetPosition(0);
+                      setLeverageSheetOpen(true);
+                    }}
+                  />
+                </XStack>
 
-              <XStack gap="$3">
-                {/* Long Button */}
-                <Button
-                  flex={1}
-                  backgroundColor={orderSide === 'Long' ? '$green9' : 'transparent'}
-                  borderColor={orderSide === 'Long' ? 'transparent' : '$green9'}
-                  borderWidth={1}
-                  paddingVertical="$1"
-                  onPress={() => setOrderSide('Long')}
-                  borderRadius="$4"
-                  opacity={orderSide === 'Long' ? 1 : 0.4}
-                >
-                  <Text
-                    fontFamily="$interSemiBold"
-                    fontSize="$3"
-                    color={orderSide === 'Long' ? '$green1' : '$green9'}
-                    textAlign="center"
+                <XStack gap="$3">
+                  {/* Long Button */}
+                  <Button
+                    flex={1}
+                    backgroundColor={orderSide === 'Long' ? '$green9' : 'transparent'}
+                    borderColor={orderSide === 'Long' ? 'transparent' : '$green9'}
+                    borderWidth={1}
+                    paddingVertical="$1"
+                    onPress={() => setOrderSide('Long')}
+                    borderRadius="$4"
+                    opacity={orderSide === 'Long' ? 1 : 0.4}
                   >
-                    Long
-                  </Text>
-                </Button>
+                    <Text
+                      fontFamily="$interSemiBold"
+                      fontSize="$3"
+                      color={orderSide === 'Long' ? '$green1' : '$green9'}
+                      textAlign="center"
+                    >
+                      Long
+                    </Text>
+                  </Button>
 
-                {/* Short Button */}
-                <Button
-                  flex={1}
-                  backgroundColor={orderSide === 'Short' ? '$red9' : 'transparent'}
-                  borderColor={orderSide === 'Short' ? 'transparent' : '$red9'}
-                  borderWidth={1}
-                  paddingVertical="$1"
-                  onPress={() => setOrderSide('Short')}
-                  borderRadius="$4"
-                  opacity={orderSide === 'Short' ? 1 : 0.4}
-                >
-                  <Text
-                    fontFamily="$interSemiBold"
-                    fontSize="$3"
-                    color={orderSide === 'Short' ? '$red1' : '$red9'}
-                    textAlign="center"
+                  {/* Short Button */}
+                  <Button
+                    flex={1}
+                    backgroundColor={orderSide === 'Short' ? '$red9' : 'transparent'}
+                    borderColor={orderSide === 'Short' ? 'transparent' : '$red9'}
+                    borderWidth={1}
+                    paddingVertical="$1"
+                    onPress={() => setOrderSide('Short')}
+                    borderRadius="$4"
+                    opacity={orderSide === 'Short' ? 1 : 0.4}
                   >
-                    Short
+                    <Text
+                      fontFamily="$interSemiBold"
+                      fontSize="$3"
+                      color={orderSide === 'Short' ? '$red1' : '$red9'}
+                      textAlign="center"
+                    >
+                      Short
+                    </Text>
+                  </Button>
+                </XStack>
+
+                <XStack gap="$3">
+                  {/* Order Type Selector */}
+                  <SelectBox
+                    title="Order Type"
+                    value={orderType}
+                    onValueChange={setOrderType}
+                    items={[
+                      { value: 'Market', label: 'Market' },
+                      { value: 'Limit', label: 'Limit' },
+                    ]}
+                    placeholder="Market"
+                    flex={1}
+                  />
+
+                  {/* Order Size Preference */}
+                  <SelectBox
+                    title="Order Size"
+                    value={sizeUnit}
+                    onValueChange={setSizeUnit}
+                    items={[
+                      { value: 'USDC', label: 'USDC' },
+                      { value: marketData.id.split('-')[0], label: marketData.id.split('-')[0] },
+                    ]}
+                    placeholder="USDC"
+                    flex={1}
+                  />
+                </XStack>
+              </YStack>
+
+              {/* Second Stack: Size Slider */}
+              <YStack gap="$2" py="$2">
+                <XStack alignItems="center" justifyContent="space-between">
+                  <Text>{sizePercentage === 0 ? '0' : Math.round(sizePercentage)}% </Text>
+                  <Text fontSize="$3" color="$color" textAlign="center" paddingBottom="$2">
+                    {sizePercentage === 0
+                      ? `Available: ${formatNumber(accountBalance)} USDC`
+                      : `${formatNumber(accountBalance * (sizePercentage / 100))} USDC`}
                   </Text>
-                </Button>
-              </XStack>
+                </XStack>
+                <Slider
+                  defaultValue={[0]}
+                  max={100}
+                  step={1}
+                  onValueChange={values => setSizePercentage(values[0])}
+                >
+                  <Slider.Track backgroundColor="$gray5">
+                    <Slider.TrackActive backgroundColor="$accent9" />
+                  </Slider.Track>
+                  <Slider.Thumb
+                    index={0}
+                    size="$1"
+                    backgroundColor="$accent1"
+                    borderWidth={1}
+                    borderColor="$accent9"
+                    circular
+                  />
+                </Slider>
+              </YStack>
 
-              <XStack gap="$3">
-                {/* Order Type Selector */}
-                <SelectBox
-                  title="Order Type"
-                  value={orderType}
-                  onValueChange={setOrderType}
-                  items={[
-                    { value: 'Market', label: 'Market' },
-                    { value: 'Limit', label: 'Limit' },
-                  ]}
-                  placeholder="Market"
-                  flex={1}
-                />
-
-                {/* Order Size Preference */}
-                <SelectBox
-                  title="Order Size"
-                  value={sizeUnit}
-                  onValueChange={setSizeUnit}
-                  items={[
-                    { value: 'USDC', label: 'USDC' },
-                    { value: marketData.id.split('-')[0], label: marketData.id.split('-')[0] },
-                  ]}
-                  placeholder="USDC"
-                  flex={1}
-                />
-              </XStack>
-            </YStack>
-
-            {/* Second Stack: Size Slider */}
-            <YStack gap="$2" py="$2">
-              <XStack alignItems="center" justifyContent="space-between">
-                <Text>{sizePercentage === 0 ? '0' : Math.round(sizePercentage)}% </Text>
-                <Text fontSize="$3" color="$color" textAlign="center" paddingBottom="$2">
-                  {sizePercentage === 0
-                    ? `Available: ${formatNumber(accountBalance)} USDC`
-                    : `${formatNumber(accountBalance * (sizePercentage / 100))} USDC`}
-                </Text>
-              </XStack>
-              <Slider
-                defaultValue={[0]}
-                max={100}
-                step={1}
-                onValueChange={values => setSizePercentage(values[0])}
-              >
-                <Slider.Track backgroundColor="$gray5">
-                  <Slider.TrackActive backgroundColor="$accent9" />
-                </Slider.Track>
-                <Slider.Thumb
-                  index={0}
-                  size="$1"
-                  backgroundColor="$accent1"
-                  borderWidth={1}
-                  borderColor="$accent9"
-                  circular
-                />
-              </Slider>
-            </YStack>
-
-            {/* Third Stack: Order Information */}
-            <YStack backgroundColor="$gray3" padding="$2" borderRadius="$4" gap="$3">
-              <XStack justifyContent="space-between">
-                <Text color="$color" fontSize="$4">
-                  Margin
-                </Text>
-                <Text color="$color" fontSize="$4" fontFamily="$interSemiBold">
-                  {formatNumber(margin)} USDC
-                </Text>
-              </XStack>
-
-              <XStack justifyContent="space-between">
-                <Text color="$color" fontSize="$4">
-                  Order Size
-                </Text>
-                <Text color="$color" fontSize="$4" fontFamily="$interSemiBold">
-                  {formatNumber(orderSize)} USDC
-                </Text>
-              </XStack>
-
-              <XStack justifyContent="space-between">
-                <Text color="$color" fontSize="$4">
-                  Liq. Price
-                </Text>
-                <Text color="$color" fontSize="$4" fontFamily="$interSemiBold">
-                  {orderSide ? `${formatNumber(liquidationPrice)} USDC` : '--'}
-                </Text>
-              </XStack>
-            </YStack>
-
-            {/* Fourth Stack: Place Order Button */}
-            <GateButton
-              title="Place Order"
-              loadingTitle="Placing..."
-              buttonSize="lg"
-              paddingVertical="$1"
-              marginTop="auto"
-              disabled={!orderSide}
-              onPressApproved={async context => {
-                try {
-                  await handlePlaceOrder(context);
-                } catch (error) {
-                  console.error('Failed to place order via agent', error);
-                  throw error;
-                }
-              }}
-            />
-
-            <Sheet
-              modal
-              open={leverageSheetOpen}
-              onOpenChange={setLeverageSheetOpen}
-              snapPointsMode="percent"
-              snapPoints={[30]}
-              position={leverageSheetPosition}
-              onPositionChange={setLeverageSheetPosition}
-              dismissOnSnapToBottom
-              dismissOnOverlayPress
-            >
-              <Sheet.Overlay
-                animation="quick"
-                enterStyle={{ opacity: 0 }}
-                exitStyle={{ opacity: 0 }}
-                backgroundColor="rgba(0, 0, 0, 0.5)"
-              />
-              <Sheet.Handle />
-              <Sheet.Frame
-                padding="$4"
-                gap="$4"
-                backgroundColor="$background"
-                borderTopLeftRadius="$6"
-                borderTopRightRadius="$6"
-              >
-                <XStack alignItems="center" justifyContent="center">
-                  <Text fontFamily="$interSemiBold" fontSize="$3" color="$color">
-                    Leverage
+              {/* Third Stack: Order Information */}
+              <YStack backgroundColor="$gray3" padding="$2" borderRadius="$4" gap="$3">
+                <XStack justifyContent="space-between">
+                  <Text color="$color" fontSize="$4">
+                    Margin
+                  </Text>
+                  <Text color="$color" fontSize="$4" fontFamily="$interSemiBold">
+                    {formatNumber(margin)} USDC
                   </Text>
                 </XStack>
 
-                <YStack gap="$3">
-                  <Text
-                    fontFamily="$interSemiBold"
-                    fontSize="$4"
-                    fontWeight={400}
-                    textAlign="center"
-                    color="$color"
-                  >
-                    {leverage}x
+                <XStack justifyContent="space-between">
+                  <Text color="$color" fontSize="$4">
+                    Order Size
                   </Text>
-                  <Slider
-                    value={[leverage]}
-                    min={LEVERAGE_MIN}
-                    max={LEVERAGE_MAX}
-                    step={LEVERAGE_STEP}
-                    onValueChange={values => {
-                      const [next] = values;
-                      if (typeof next !== 'number') {
-                        return;
-                      }
+                  <Text color="$color" fontSize="$4" fontFamily="$interSemiBold">
+                    {formatNumber(orderSize)} USDC
+                  </Text>
+                </XStack>
 
-                      const clampedValue = Math.max(
-                        LEVERAGE_MIN,
-                        Math.min(LEVERAGE_MAX, Math.round(next)),
-                      );
-                      setLeverage(clampedValue);
-                    }}
-                  >
-                    <Slider.Track backgroundColor="$gray5">
-                      <Slider.TrackActive backgroundColor="$accent9" />
-                    </Slider.Track>
-                    <Slider.Thumb
-                      index={0}
-                      size="$1"
-                      backgroundColor="$accent1"
-                      borderWidth={1}
-                      borderColor="$accent9"
-                      circular
-                    />
-                  </Slider>
-                  <XStack justifyContent="space-between" alignItems="center" paddingVertical="$2">
-                    <Text fontSize="$2" color="$color">
-                      {LEVERAGE_MIN}x
-                    </Text>
-                    <Text fontSize="$2" color="$color">
-                      {LEVERAGE_MAX}x
+                <XStack justifyContent="space-between">
+                  <Text color="$color" fontSize="$4">
+                    Liq. Price
+                  </Text>
+                  <Text color="$color" fontSize="$4" fontFamily="$interSemiBold">
+                    {orderSide ? `${formatNumber(liquidationPrice)} USDC` : '--'}
+                  </Text>
+                </XStack>
+              </YStack>
+
+              {/* Fourth Stack: Place Order Button */}
+              <GateButton
+                title="Place Order"
+                loadingTitle="Placing..."
+                buttonSize="lg"
+                paddingVertical="$1"
+                marginTop="auto"
+                disabled={!orderSide}
+                onPressApproved={async context => {
+                  try {
+                    await handlePlaceOrder(context);
+                  } catch (error) {
+                    console.error('Failed to place order via agent', error);
+                    throw error;
+                  }
+                }}
+              />
+
+              <Sheet
+                modal
+                open={leverageSheetOpen}
+                onOpenChange={setLeverageSheetOpen}
+                snapPointsMode="percent"
+                snapPoints={[30]}
+                position={leverageSheetPosition}
+                onPositionChange={setLeverageSheetPosition}
+                dismissOnSnapToBottom
+                dismissOnOverlayPress
+              >
+                <Sheet.Overlay
+                  animation="quick"
+                  enterStyle={{ opacity: 0 }}
+                  exitStyle={{ opacity: 0 }}
+                  backgroundColor="rgba(0, 0, 0, 0.5)"
+                />
+                <Sheet.Handle />
+                <Sheet.Frame
+                  padding="$4"
+                  gap="$4"
+                  backgroundColor="$background"
+                  borderTopLeftRadius="$6"
+                  borderTopRightRadius="$6"
+                >
+                  <XStack alignItems="center" justifyContent="center">
+                    <Text fontFamily="$interSemiBold" fontSize="$3" color="$color">
+                      Leverage
                     </Text>
                   </XStack>
-                  <Button
-                    width="100%"
-                    height="$4"
-                    size="$2"
-                    backgroundColor="$accent9"
-                    borderColor="$accent1"
-                    borderWidth={1}
-                    borderRadius="$10"
-                    paddingHorizontal="$3"
-                    onPress={() => setLeverageSheetOpen(false)}
-                  >
-                    <Text fontFamily="$interMedium" fontSize="$3" color="$accent1">
-                      Done
+
+                  <YStack gap="$3">
+                    <Text
+                      fontFamily="$interSemiBold"
+                      fontSize="$4"
+                      fontWeight={400}
+                      textAlign="center"
+                      color="$color"
+                    >
+                      {leverage}x
                     </Text>
-                  </Button>
-                </YStack>
-              </Sheet.Frame>
-            </Sheet>
+                    <Slider
+                      value={[leverage]}
+                      min={LEVERAGE_MIN}
+                      max={LEVERAGE_MAX}
+                      step={LEVERAGE_STEP}
+                      onValueChange={values => {
+                        const [next] = values;
+                        if (typeof next !== 'number') {
+                          return;
+                        }
+
+                        const clampedValue = Math.max(
+                          LEVERAGE_MIN,
+                          Math.min(LEVERAGE_MAX, Math.round(next)),
+                        );
+                        setLeverage(clampedValue);
+                      }}
+                    >
+                      <Slider.Track backgroundColor="$gray5">
+                        <Slider.TrackActive backgroundColor="$accent9" />
+                      </Slider.Track>
+                      <Slider.Thumb
+                        index={0}
+                        size="$1"
+                        backgroundColor="$accent1"
+                        borderWidth={1}
+                        borderColor="$accent9"
+                        circular
+                      />
+                    </Slider>
+                    <XStack justifyContent="space-between" alignItems="center" paddingVertical="$2">
+                      <Text fontSize="$2" color="$color">
+                        {LEVERAGE_MIN}x
+                      </Text>
+                      <Text fontSize="$2" color="$color">
+                        {LEVERAGE_MAX}x
+                      </Text>
+                    </XStack>
+                    <Button
+                      width="100%"
+                      height="$4"
+                      size="$2"
+                      backgroundColor="$accent9"
+                      borderColor="$accent1"
+                      borderWidth={1}
+                      borderRadius="$10"
+                      paddingHorizontal="$3"
+                      onPress={() => setLeverageSheetOpen(false)}
+                    >
+                      <Text fontFamily="$interMedium" fontSize="$3" color="$accent1">
+                        Done
+                      </Text>
+                    </Button>
+                  </YStack>
+                </Sheet.Frame>
+              </Sheet>
+            </YStack>
           </YStack>
-        )}
+        </XStack>
 
-        {activeTab === 'positions' && (
-          <YStack flex={1} padding="$4">
-            <PositionsTab />
+        {/* Bottom Tabs */}
+        <YStack borderTopWidth={1} borderTopColor="$gray8" backgroundColor="$background">
+          <XStack borderBottomWidth={1} borderBottomColor="$borderColor">
+            <TabItem
+              label="Orders"
+              isActive={activeTab === 'orders'}
+              onPress={() => setActiveTab('orders')}
+            />
+            <TabItem
+              label="Positions"
+              isActive={activeTab === 'positions'}
+              onPress={() => setActiveTab('positions')}
+            />
+            <TabItem
+              label="History"
+              isActive={activeTab === 'history'}
+              onPress={() => setActiveTab('history')}
+            />
+          </XStack>
+
+          {/* Tab Content */}
+          <YStack minHeight={120} padding="$4">
+            {activeTab === 'orders' && <OrdersTabContent />}
+
+            {activeTab === 'positions' && (
+              <YStack flex={1}>
+                <PositionsTab />
+              </YStack>
+            )}
+
+            {activeTab === 'history' && (
+              <TabPlaceholder
+                title={`${marketData.id} History`}
+                message="Your trading history will appear here"
+              />
+            )}
           </YStack>
-        )}
-
-        {activeTab === 'orders' && <OrdersTabContent />}
-
-        {activeTab === 'history' && (
-          <TabPlaceholder
-            title={`${marketData.id} History`}
-            message="Your trading history will appear here"
-          />
-        )}
+        </YStack>
       </YStack>
-    </YStack>
+    </ScrollView>
   );
 }
 
