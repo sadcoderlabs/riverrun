@@ -9,16 +9,14 @@ import {
   useApprovalGate,
 } from '@/components/hyperliquid/ApprovalGateProvider';
 import { GateButton } from '@/components/hyperliquid/GateButton';
+import { LeverageAdjustmentModal } from '@/components/trade/leverage-adjustment-modal';
 import type { AgentClientContext } from '@/lib/hyperliquid/agent';
 import { findAssetIndex, parseMarketId } from '@/lib/hyperliquid/market-utils';
 import { ChevronDown } from '@tamagui/lucide-icons';
 import { useCallback, useState } from 'react';
-import { Button, Checkbox, ScrollView, Sheet, Slider, Text, XStack, YStack } from 'tamagui';
+import { Button, Checkbox, ScrollView, Slider, Text, XStack, YStack } from 'tamagui';
 
 const AGENT_STORAGE_PREFIX = 'hl-agent:private-key:';
-const LEVERAGE_MIN = 1;
-const LEVERAGE_MAX = 20;
-const LEVERAGE_STEP = 1;
 
 interface PerpTradePanelProps {
   marketId?: string;
@@ -50,7 +48,6 @@ function PerpTradePanelView({ marketId }: PerpTradePanelProps) {
   const [collateralMode, setCollateralMode] = useState('Cross');
   const [leverage, setLeverage] = useState(5);
   const [leverageSheetOpen, setLeverageSheetOpen] = useState(false);
-  const [leverageSheetPosition, setLeverageSheetPosition] = useState(0);
   const [orderType, setOrderType] = useState('Market');
   const [sizeUnit, setSizeUnit] = useState('USDC');
   const [orderSide, setOrderSide] = useState<'Long' | 'Short'>('Long');
@@ -137,29 +134,24 @@ function PerpTradePanelView({ marketId }: PerpTradePanelProps) {
           <YStack flex={7} backgroundColor="$background">
             {/* Trading Form */}
             <YStack padding="$3" gap="$2.5">
-              {/* Leverage & Margin Type Combined Selector */}
-              <SelectBox
-                title="Leverage & Margin"
-                value={`${leverage}x ${collateralMode}`}
-                onValueChange={value => {
-                  const [lev, margin] = value.split(' ');
-                  setLeverage(Number(lev.replace('x', '')));
-                  setCollateralMode(margin);
-                }}
-                items={[
-                  { value: '1x Cross', label: '1x CROSS' },
-                  { value: '5x Cross', label: '5x CROSS' },
-                  { value: '10x Cross', label: '10x CROSS' },
-                  { value: '15x Cross', label: '15x CROSS' },
-                  { value: '20x Cross', label: '20x CROSS' },
-                  { value: '1x Isolated', label: '1x ISOLATED' },
-                  { value: '5x Isolated', label: '5x ISOLATED' },
-                  { value: '10x Isolated', label: '10x ISOLATED' },
-                  { value: '15x Isolated', label: '15x ISOLATED' },
-                  { value: '20x Isolated', label: '20x ISOLATED' },
-                ]}
-                placeholder="15x CROSS"
-              />
+              {/* Leverage & Margin Type Selector Button */}
+              <XStack
+                backgroundColor="$gray3"
+                borderRadius="$3"
+                paddingVertical="$2"
+                paddingHorizontal="$2.5"
+                borderColor="$gray8"
+                borderWidth={1}
+                alignItems="center"
+                justifyContent="space-between"
+                onPress={() => setLeverageSheetOpen(true)}
+                pressStyle={{ opacity: 0.7 }}
+              >
+                <Text color="$color" fontSize="$2" fontFamily="$interRegular">
+                  {leverage}x {collateralMode.toUpperCase()}
+                </Text>
+                <ChevronDown size="$0.75" color="$color" />
+              </XStack>
 
               {/* Available Balance */}
               <XStack justifyContent="space-between" alignItems="center">
@@ -375,103 +367,14 @@ function PerpTradePanelView({ marketId }: PerpTradePanelProps) {
                 }}
               />
 
-              <Sheet
-                modal
+              <LeverageAdjustmentModal
                 open={leverageSheetOpen}
                 onOpenChange={setLeverageSheetOpen}
-                snapPointsMode="percent"
-                snapPoints={[30]}
-                position={leverageSheetPosition}
-                onPositionChange={setLeverageSheetPosition}
-                dismissOnSnapToBottom
-                dismissOnOverlayPress
-              >
-                <Sheet.Overlay
-                  animation="quick"
-                  enterStyle={{ opacity: 0 }}
-                  exitStyle={{ opacity: 0 }}
-                  backgroundColor="rgba(0, 0, 0, 0.5)"
-                />
-                <Sheet.Handle />
-                <Sheet.Frame
-                  padding="$4"
-                  gap="$4"
-                  backgroundColor="$background"
-                  borderTopLeftRadius="$6"
-                  borderTopRightRadius="$6"
-                >
-                  <XStack alignItems="center" justifyContent="center">
-                    <Text fontFamily="$interSemiBold" fontSize="$3" color="$color">
-                      Leverage
-                    </Text>
-                  </XStack>
-
-                  <YStack gap="$3">
-                    <Text
-                      fontFamily="$interSemiBold"
-                      fontSize="$4"
-                      fontWeight={400}
-                      textAlign="center"
-                      color="$color"
-                    >
-                      {leverage}x
-                    </Text>
-                    <Slider
-                      value={[leverage]}
-                      min={LEVERAGE_MIN}
-                      max={LEVERAGE_MAX}
-                      step={LEVERAGE_STEP}
-                      onValueChange={values => {
-                        const [next] = values;
-                        if (typeof next !== 'number') {
-                          return;
-                        }
-
-                        const clampedValue = Math.max(
-                          LEVERAGE_MIN,
-                          Math.min(LEVERAGE_MAX, Math.round(next)),
-                        );
-                        setLeverage(clampedValue);
-                      }}
-                    >
-                      <Slider.Track backgroundColor="$gray5">
-                        <Slider.TrackActive backgroundColor="$accent9" />
-                      </Slider.Track>
-                      <Slider.Thumb
-                        index={0}
-                        size="$1"
-                        backgroundColor="$accent1"
-                        borderWidth={1}
-                        borderColor="$accent9"
-                        circular
-                      />
-                    </Slider>
-                    <XStack justifyContent="space-between" alignItems="center" paddingVertical="$2">
-                      <Text fontSize="$2" color="$color">
-                        {LEVERAGE_MIN}x
-                      </Text>
-                      <Text fontSize="$2" color="$color">
-                        {LEVERAGE_MAX}x
-                      </Text>
-                    </XStack>
-                    <Button
-                      width="100%"
-                      height="$4"
-                      size="$2"
-                      backgroundColor="$accent9"
-                      borderColor="$accent1"
-                      borderWidth={1}
-                      borderRadius="$10"
-                      paddingHorizontal="$3"
-                      onPress={() => setLeverageSheetOpen(false)}
-                    >
-                      <Text fontFamily="$interMedium" fontSize="$3" color="$accent1">
-                        Done
-                      </Text>
-                    </Button>
-                  </YStack>
-                </Sheet.Frame>
-              </Sheet>
+                leverage={leverage}
+                onLeverageChange={setLeverage}
+                marginMode={collateralMode}
+                onMarginModeChange={setCollateralMode}
+              />
             </YStack>
           </YStack>
         </XStack>
