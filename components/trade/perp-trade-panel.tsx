@@ -20,19 +20,19 @@ const LEVERAGE_MIN = 1;
 const LEVERAGE_MAX = 20;
 const LEVERAGE_STEP = 1;
 
-interface TradeUIProps {
+interface PerpTradePanelProps {
   marketId?: string;
 }
 
-export function TradeUI({ marketId }: TradeUIProps) {
+export function PerpTradePanel({ marketId }: PerpTradePanelProps) {
   return (
     <ApprovalGateProvider>
-      <TradeUIView marketId={marketId} />
+      <PerpTradePanelView marketId={marketId} />
     </ApprovalGateProvider>
   );
 }
 
-function TradeUIView({ marketId }: TradeUIProps) {
+function PerpTradePanelView({ marketId }: PerpTradePanelProps) {
   const { infoClient } = useApprovalGate();
 
   // Mock market data (similar to what's in the index.tsx)
