@@ -1,21 +1,15 @@
-import { MainLayout } from '@/components/global/main-layout';
 import { ChartUI } from '@/components/trade/chart-ui';
 import { MarketSelectorModal } from '@/components/trade/market-selector-modal';
 import { TradeUI } from '@/components/trade/trade-ui';
-import { useThemePreference } from '@/hooks/useThemePreference';
 import { useMarketsStore } from '@/lib/store/use-markets-store';
 import { CandlestickChart, ChevronUp, Menu } from '@tamagui/lucide-icons';
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Image } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AnimatePresence, Text, XStack, YStack } from 'tamagui';
 
-export default function TradeIndex() {
+export default function PerpTradeIndex() {
   const { market } = useLocalSearchParams<{ market: string }>();
-  const insets = useSafeAreaInsets();
   const [isChart, setIsChart] = useState(false);
-  const { effectiveTheme } = useThemePreference();
 
   // Use modal state from Zustand store
   const { isMarketSelectorOpen, setMarketSelectorOpen } = useMarketsStore();
@@ -41,31 +35,7 @@ export default function TradeIndex() {
   const isPriceUp = marketData.priceChange >= 0;
 
   return (
-    <MainLayout>
-      <YStack flex={1} backgroundColor="$gray3">
-        {/* Custom Header with safe area insets */}
-        <XStack
-          justifyContent="space-between"
-          alignItems="center"
-          paddingHorizontal="$4"
-          paddingVertical="$3"
-          paddingTop={insets.top > 0 ? insets.top + 10 : '$3'}
-          borderBottomWidth={1}
-          borderBottomColor="$gray8"
-        >
-          <Text fontFamily="$interSemiBold" fontSize="$5" color="$color" fontWeight={500}>
-            Futures
-          </Text>
-          <Image
-            source={
-              effectiveTheme === 'dark'
-                ? require('@/assets/images/PoweredByHL-light.png')
-                : require('@/assets/images/PoweredByHL-dark.png')
-            }
-            style={{ width: 160, height: 27, resizeMode: 'contain' }}
-          />
-        </XStack>
-
+    <YStack flex={1} backgroundColor="$gray3">
         {/* Market Information Section */}
         <YStack padding="$4" gap="$4">
           {/* First row: Menu icon, Market ID, and Chart icon */}
@@ -145,11 +115,10 @@ export default function TradeIndex() {
           )}
         </AnimatePresence>
 
-        <TradeUI marketId={marketData.id} />
-      </YStack>
+      <TradeUI marketId={marketData.id} />
 
       {/* Market Selector Modal */}
       <MarketSelectorModal open={isMarketSelectorOpen} onOpenChange={setMarketSelectorOpen} />
-    </MainLayout>
+    </YStack>
   );
 }

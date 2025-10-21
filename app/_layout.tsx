@@ -83,23 +83,12 @@ function WalletInfoDisplay() {
           <Stack.Screen name="login" options={{ headerShown: false }} />
         </Stack.Protected>
         <Stack.Protected guard={isConnected}>
-          <Stack.Screen name="(main)/index" options={{ headerShown: false }} />
-          <Stack.Screen name="(main)/settings" options={{ title: 'Settings' }} />
-          <Stack.Screen name="(main)/theme-options" options={{ title: 'Theme Options' }} />
+          {/* Main group - includes bottom navigation layout */}
           <Stack.Screen
-            name="(main)/trade/[market]"
+            name="(main)"
             options={{
               headerShown: false,
-              animation: 'none',
             }}
-          />
-          <Stack.Screen
-            name="(main)/close-position"
-            options={{ headerShown: false, presentation: 'modal' }}
-          />
-          <Stack.Screen
-            name="(main)/set-tp-sl"
-            options={{ headerShown: false, presentation: 'modal' }}
           />
         </Stack.Protected>
       </Stack>

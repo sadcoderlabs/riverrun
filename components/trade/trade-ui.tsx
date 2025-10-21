@@ -1,8 +1,8 @@
 import 'event-target-polyfill'; // polyfill for hyperliquid sdk
 import 'fast-text-encoding'; // polyfill for hyperliquid sdk
 
-import { OrdersTabContent } from '@/app/(main)/trade/[market]/(tab)/ordersTab';
-import PositionsTab from '@/app/(main)/trade/[market]/(tab)/positionsTab';
+import { OrdersTabContent } from '@/components/trade/orders-tab';
+import PositionsTab from '@/components/trade/positions-tab';
 import AdaptiveSelect from '@/components/global/adaptive-select';
 import {
   ApprovalGateProvider,

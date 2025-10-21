@@ -13,25 +13,18 @@ const filesToFix = [
 ];
 
 // Base content for empty files
-const baseContent = componentName => `import { MainLayout } from '@/components/global/main-layout';
-import { Text, View } from 'tamagui';
+const baseContent = componentName => `import { Text, YStack } from 'tamagui';
 
 export default function ${componentName}() {
   return (
-    <MainLayout>
-      <View
-        style={{
-          flex: 1,
-          justifyContent: 'center',
-          alignItems: 'center',
-        }}
-      >
-        <Text fontFamily="$interSemiBold" style={{ fontSize: 16 }}>
-          ${componentName}
-        </Text>
-        <Text marginTop="$4">Content will be implemented here</Text>
-      </View>
-    </MainLayout>
+    <YStack flex={1} justifyContent="center" alignItems="center" backgroundColor="$gray3">
+      <Text fontFamily="$interSemiBold" fontSize="$5">
+        ${componentName}
+      </Text>
+      <Text marginTop="$4" color="$gray10">
+        Content will be implemented here
+      </Text>
+    </YStack>
   );
 }
 `;

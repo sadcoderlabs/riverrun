@@ -1,6 +1,6 @@
 import { Stack, useLocalSearchParams } from 'expo-router';
 
-export default function MarketLayout() {
+export default function PerpMarketLayout() {
   const { market } = useLocalSearchParams<{ market: string }>();
 
   return (

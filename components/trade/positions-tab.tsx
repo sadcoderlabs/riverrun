@@ -2,7 +2,7 @@ import * as hl from '@nktkas/hyperliquid';
 import { useAppKitAccount } from '@reown/appkit-ethers-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ScrollView, Spinner, Text, View, YStack } from 'tamagui';
-import { PositionItem } from '../../../../../components/home/position-item';
+import { PositionItem } from '@/components/home/position-item';
 type Position = hl.ClearinghouseStateResponse['assetPositions'][number]['position'];
 
 export default function PositionsTab() {
