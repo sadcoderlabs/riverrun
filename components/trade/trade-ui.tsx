@@ -162,14 +162,14 @@ function TradeUIView({ marketId }: TradeUIProps) {
               />
 
               {/* Available Balance */}
-              <YStack gap="$0.5">
+              <XStack justifyContent="space-between" alignItems="center">
                 <Text fontFamily="$interRegular" fontSize="$2" color="$gray10">
                   Available
                 </Text>
                 <Text fontFamily="$interSemiBold" fontSize="$4" color="$color">
                   ${formatNumber(accountBalance)}
                 </Text>
-              </YStack>
+              </XStack>
 
               {/* Current Position */}
               <YStack gap="$0.5">

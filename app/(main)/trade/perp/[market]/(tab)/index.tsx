@@ -37,7 +37,7 @@ export default function PerpTradeIndex() {
   return (
     <YStack flex={1} backgroundColor="$gray3">
       {/* Market Information Section */}
-      <YStack padding="$4" gap="$4">
+      <YStack padding="$3" gap="$2">
         {/* First row: Menu icon, Market ID, and Chart icon */}
         <XStack justifyContent="space-between" alignItems="center">
           <XStack
@@ -48,7 +48,7 @@ export default function PerpTradeIndex() {
             padding="$1"
           >
             <Menu size="$1.5" color="$color" />
-            <Text fontFamily="$interSemiBold" fontSize="$6" color="$color">
+            <Text fontFamily="$interSemiBold" fontSize="$4" color="$color">
               {marketData.id}
             </Text>
           </XStack>
@@ -59,20 +59,20 @@ export default function PerpTradeIndex() {
 
         {/* Second row: Price info and Funding Rate */}
         <XStack justifyContent="space-between" alignItems="flex-start">
-          <YStack>
-            <Text fontFamily="$interSemiBold" fontSize="$7" color="$color">
+          <XStack gap="$2" alignItems="baseline">
+            <Text fontFamily="$interSemiBold" fontSize="$5" color="$color">
               ${formatPrice(marketData.price)}
             </Text>
-            <Text fontFamily="$interMedium" fontSize="$4" color={isPriceUp ? '$green9' : '$red9'}>
+            <Text fontFamily="$interMedium" fontSize="$3" color={isPriceUp ? '$green9' : '$red9'}>
               {isPriceUp ? '+' : ''}
               {marketData.priceChange}%
             </Text>
-          </YStack>
+          </XStack>
           <YStack alignItems="flex-end">
-            <Text fontFamily="$interRegular" fontSize="$3" color="$gray10">
+            <Text fontFamily="$interRegular" fontSize="$2" color="$gray10">
               Ann. Funding
             </Text>
-            <Text fontFamily="$interSemiBold" fontSize="$4" color="$color">
+            <Text fontFamily="$interSemiBold" fontSize="$3" color="$color">
               {marketData.annualizedFunding.toFixed(2)}% APR
             </Text>
           </YStack>
