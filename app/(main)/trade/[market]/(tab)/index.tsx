@@ -17,7 +17,7 @@ export default function TradeIndex() {
   const [isChart, setIsChart] = useState(false);
   const { effectiveTheme } = useThemePreference();
 
-  // Use modal state from Zustand store instead of local state
+  // Use modal state from Zustand store
   const { isMarketSelectorOpen, setMarketSelectorOpen } = useMarketsStore();
 
   // Hard-coded market data for rendering purposes

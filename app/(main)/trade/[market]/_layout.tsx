@@ -7,7 +7,11 @@ export default function MarketLayout() {
     <Stack>
       <Stack.Screen
         name="(tab)/index"
-        options={{ title: market || 'Market', headerShown: false }}
+        options={{
+          title: market || 'Market',
+          headerShown: false,
+          animation: 'none', // Disable navigation animation for instant market switching
+        }}
       />
       <Stack.Screen name="(tab)/positionsTab" options={{ title: 'Positions' }} />
       <Stack.Screen name="(tab)/ordersTab" options={{ title: 'Orders' }} />
