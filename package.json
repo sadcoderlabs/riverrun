@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "scripts": {
     "start": "expo start",
+    "start:log": "expo start 2>&1 | tee expo-server.log",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
