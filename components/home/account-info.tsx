@@ -2,7 +2,16 @@ import * as hl from '@nktkas/hyperliquid';
 import { useAppKitAccount } from '@reown/appkit-ethers-react-native';
 import { Ban } from '@tamagui/lucide-icons';
 import React, { useEffect, useRef, useState } from 'react';
-import { Separator, Spinner, Text, useTheme, View, XStack, YStack } from 'tamagui';
+import {
+  Separator,
+  Spinner,
+  Text,
+  useTheme,
+  View,
+  XStack,
+  YStack,
+  type ColorTokens,
+} from 'tamagui';
 import { CardContainer } from '../global/card-container';
 import { HistoryData, HistoryItem } from './history-item';
 import { PositionItem } from './position-item';
@@ -135,7 +144,7 @@ export function AccountInfo() {
       {activeTab === 'positions' ? (
         !isConnected || !address ? (
           <EmptyState
-            iconColor={theme.color8}
+            iconColor="$color8"
             message="connect your wallet to view positions"
             minHeight={200}
           />
@@ -160,7 +169,7 @@ export function AccountInfo() {
             ))}
           </View>
         ) : (
-          <EmptyState iconColor={theme.color8} message="no open positions yet" minHeight={200} />
+          <EmptyState iconColor="$color8" message="no open positions yet" minHeight={200} />
         )
       ) : historyData.length > 0 ? (
         <View>
@@ -177,7 +186,7 @@ export function AccountInfo() {
           bg="$background02"
         >
           <YStack alignItems="center" gap="$2">
-            <Ban size={24} color={theme.color8} />
+            <Ban size={24} color="$color8" />
             <Text color="$color9" fontFamily="$interMedium" fontSize="$3" textAlign="center">
               no transaction history yet
             </Text>
@@ -189,10 +198,10 @@ export function AccountInfo() {
 }
 
 interface EmptyStateProps {
-  iconColor: string;
+  iconColor: ColorTokens | string;
   message: string;
   minHeight: number;
-  textColor?: string;
+  textColor?: ColorTokens | string;
 }
 
 function EmptyState({ iconColor, message, minHeight, textColor = '$color9' }: EmptyStateProps) {
@@ -205,8 +214,8 @@ function EmptyState({ iconColor, message, minHeight, textColor = '$color9' }: Em
       bg="$background02"
     >
       <YStack alignItems="center" gap="$2">
-        <Ban size={24} color={iconColor} />
-        <Text color={textColor} fontFamily="$interMedium" fontSize="$3" textAlign="center">
+        <Ban size={24} color={iconColor as any} />
+        <Text color={textColor as any} fontFamily="$interMedium" fontSize="$3" textAlign="center">
           {message}
         </Text>
       </YStack>
