@@ -3,13 +3,19 @@ import 'fast-text-encoding'; // polyfill for hyperliquid sdk
 
 import { OrdersTabContent } from '@/components/trade/orders-tab';
 import PositionsTab from '@/components/trade/positions-tab';
-import AdaptiveSelect from '@/components/global/adaptive-select';
 import {
   ApprovalGateProvider,
   useApprovalGate,
 } from '@/components/hyperliquid/ApprovalGateProvider';
 import { GateButton } from '@/components/hyperliquid/GateButton';
 import { LeverageAdjustmentModal } from '@/components/trade/leverage-adjustment-modal';
+import {
+  OrderTypeSelector,
+  type OrderType,
+  MarketOrderForm,
+  LimitOrderForm,
+  ScaleOrderForm,
+} from '@/components/trade/order-forms';
 import type { AgentClientContext } from '@/lib/hyperliquid/agent';
 import { findAssetIndex, parseMarketId } from '@/lib/hyperliquid/market-utils';
 import { ChevronDown } from '@tamagui/lucide-icons';
@@ -48,12 +54,19 @@ function PerpTradePanelView({ marketId }: PerpTradePanelProps) {
   const [collateralMode, setCollateralMode] = useState('Cross');
   const [leverage, setLeverage] = useState(5);
   const [leverageSheetOpen, setLeverageSheetOpen] = useState(false);
-  const [orderType, setOrderType] = useState('Market');
+  const [orderType, setOrderType] = useState<OrderType>('Market');
   const [sizeUnit, setSizeUnit] = useState('USDC');
   const [orderSide, setOrderSide] = useState<'Long' | 'Short'>('Long');
   const [sizePercentage, setSizePercentage] = useState(0);
   const [tpSlEnabled, setTpSlEnabled] = useState(false);
   const [reduceOnlyEnabled, setReduceOnlyEnabled] = useState(false);
+
+  // Order type specific states
+  const [limitPrice, setLimitPrice] = useState(marketData.price.toFixed(1));
+  const [scaleLowerPrice, setScaleLowerPrice] = useState(marketData.price.toFixed(1));
+  const [scaleUpperPrice, setScaleUpperPrice] = useState(marketData.price.toFixed(1));
+  const [scaleOrderCount, setScaleOrderCount] = useState('5');
+  const [scaleSizeSkew, setScaleSizeSkew] = useState('1.0');
 
   const handlePlaceOrder = useCallback(
     async (context: AgentClientContext) => {
@@ -171,16 +184,7 @@ function PerpTradePanelView({ marketId }: PerpTradePanelProps) {
               </YStack>
 
               {/* Order Type Selector */}
-              <SelectBox
-                title="Order Type"
-                value={orderType}
-                onValueChange={setOrderType}
-                items={[
-                  { value: 'Limit', label: 'Limit' },
-                  { value: 'Market', label: 'Market' },
-                ]}
-                placeholder="Limit"
-              />
+              <OrderTypeSelector value={orderType} onValueChange={setOrderType} />
 
               {/* Long/Short Buttons */}
               <XStack gap="$2">
@@ -223,55 +227,51 @@ function PerpTradePanelView({ marketId }: PerpTradePanelProps) {
                 </Button>
               </XStack>
 
-              {/* Limit Price */}
-              <YStack gap="$1.5">
-                <XStack justifyContent="space-between" alignItems="center">
-                  <Text fontFamily="$interRegular" fontSize="$2" color="$gray10">
-                    Limit Price
-                  </Text>
-                  <Text fontFamily="$interRegular" fontSize="$2" color="$gray10">
-                    Mid
-                  </Text>
-                </XStack>
-                <XStack
-                  backgroundColor="$gray3"
-                  borderRadius="$3"
-                  paddingVertical="$2"
-                  paddingHorizontal="$2.5"
-                  borderColor="$gray8"
-                  borderWidth={1}
-                >
-                  <Text fontFamily="$interRegular" fontSize="$3" color="$color">
-                    {marketData.price.toFixed(1)}
-                  </Text>
-                </XStack>
-              </YStack>
-
-              {/* Size (USD) */}
-              <YStack gap="$1.5">
-                <Text fontFamily="$interRegular" fontSize="$2" color="$gray10">
-                  Size (USD)
-                </Text>
-                <XStack
-                  backgroundColor="$gray3"
-                  borderRadius="$3"
-                  paddingVertical="$2"
-                  paddingHorizontal="$2.5"
-                  borderColor="$gray8"
-                  borderWidth={1}
-                  justifyContent="space-between"
-                  alignItems="center"
-                >
-                  <Text fontFamily="$interRegular" fontSize="$3" color="$color">
-                    {sizePercentage === 0
+              {/* Order Type Specific Forms */}
+              {orderType === 'Market' && (
+                <MarketOrderForm
+                  sizeUsd={
+                    sizePercentage === 0
                       ? ''
-                      : formatNumber(accountBalance * (sizePercentage / 100))}
-                  </Text>
-                  <Text fontFamily="$interSemiBold" fontSize="$2" color="$color">
-                    USD
-                  </Text>
-                </XStack>
-              </YStack>
+                      : formatNumber(accountBalance * (sizePercentage / 100))
+                  }
+                  onSizeChange={() => {}}
+                />
+              )}
+
+              {orderType === 'Limit' && (
+                <LimitOrderForm
+                  limitPrice={limitPrice}
+                  onLimitPriceChange={setLimitPrice}
+                  sizeUsd={
+                    sizePercentage === 0
+                      ? ''
+                      : formatNumber(accountBalance * (sizePercentage / 100))
+                  }
+                  onSizeChange={() => {}}
+                  marketPrice={marketData.price}
+                />
+              )}
+
+              {orderType === 'Scale' && (
+                <ScaleOrderForm
+                  lowerPrice={scaleLowerPrice}
+                  onLowerPriceChange={setScaleLowerPrice}
+                  upperPrice={scaleUpperPrice}
+                  onUpperPriceChange={setScaleUpperPrice}
+                  orderCount={scaleOrderCount}
+                  onOrderCountChange={setScaleOrderCount}
+                  sizeSkew={scaleSizeSkew}
+                  onSizeSkewChange={setScaleSizeSkew}
+                  sizeUsd={
+                    sizePercentage === 0
+                      ? ''
+                      : formatNumber(accountBalance * (sizePercentage / 100))
+                  }
+                  onSizeChange={() => {}}
+                  marketPrice={marketData.price}
+                />
+              )}
 
               {/* Percentage Buttons */}
               <XStack gap="$1.5" justifyContent="space-between">
@@ -496,50 +496,5 @@ function LeveragePicker({ value, onPress, flex }: LeveragePickerProps) {
       </Text>
       <ChevronDown size="$1" color="$color" />
     </XStack>
-  );
-}
-
-// SelectBox Component for dropdown selectors
-interface SelectBoxProps {
-  title: string;
-  value: string;
-  onValueChange: (value: string) => void;
-  items: { value: string; label: string }[];
-  placeholder: string;
-  flex?: number;
-}
-
-function SelectBox({ title, value, onValueChange, items, placeholder, flex }: SelectBoxProps) {
-  // Find the selected item's label to display
-  const selectedItem = items.find(item => item.value === value);
-  const displayText = selectedItem?.label || placeholder;
-
-  return (
-    <AdaptiveSelect value={value} onValueChange={onValueChange} title={title}>
-      <AdaptiveSelect.Trigger>
-        <XStack
-          flex={flex}
-          backgroundColor="$gray3"
-          borderRadius="$3"
-          paddingVertical="$2"
-          paddingHorizontal="$2.5"
-          borderColor="$gray8"
-          borderWidth={1}
-          alignItems="center"
-          justifyContent="space-between"
-        >
-          <Text color="$color" fontSize="$2" fontFamily="$interRegular">
-            {displayText}
-          </Text>
-          <ChevronDown size="$0.75" color="$color" />
-        </XStack>
-      </AdaptiveSelect.Trigger>
-
-      {items.map((item, index) => (
-        <AdaptiveSelect.Item key={item.value} value={item.value} index={index}>
-          {item.label}
-        </AdaptiveSelect.Item>
-      ))}
-    </AdaptiveSelect>
   );
 }
