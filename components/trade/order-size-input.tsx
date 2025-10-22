@@ -42,10 +42,29 @@ export function OrderSizeInput({
     onSizeChange(calculatedSize);
   };
 
-  // Handle manual size input - reset percentage to 0
+  // Handle manual size input - calculate corresponding percentage
   const handleManualSizeChange = (value: string) => {
-    setSizePercentage(0);
     onSizeChange(value);
+
+    // Calculate the percentage that corresponds to this size
+    if (value && value !== '' && value !== '0') {
+      const sizeInBaseAsset = parseFloat(value);
+      if (!isNaN(sizeInBaseAsset)) {
+        // Reverse calculation: size -> USD value -> margin -> percentage
+        const sizeUsd = sizeInBaseAsset * priceForCalculation;
+        const marginUsd = sizeUsd / leverage;
+        const percentage = (marginUsd / accountBalance) * 100;
+
+        // Clamp percentage between 0 and 100
+        const clampedPercentage = Math.max(0, Math.min(100, percentage));
+        setSizePercentage(clampedPercentage);
+      } else {
+        setSizePercentage(0);
+      }
+    } else {
+      // If input is empty or zero, reset percentage
+      setSizePercentage(0);
+    }
   };
 
   return (
