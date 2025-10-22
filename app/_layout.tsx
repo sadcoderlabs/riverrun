@@ -14,13 +14,13 @@ import {
   useFonts,
 } from '@expo-google-fonts/inter';
 
-import { CurrentToast } from '@/components/global/current-toast';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { ActionSheetProvider } from '@expo/react-native-action-sheet';
-import { ToastProvider, ToastViewport } from '@tamagui/toast';
 import { SplashScreen, Stack } from 'expo-router';
 import { useEffect } from 'react';
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { Toaster } from 'sonner-native';
 import { TamaguiProvider, View } from 'tamagui';
 
 // 1. Get projectId at https://dashboard.reown.com
@@ -98,20 +98,6 @@ function WalletInfoDisplay() {
   );
 }
 
-function ToastViewportWithSafeArea() {
-  const insets = useSafeAreaInsets();
-  return (
-    <ToastViewport
-      top={insets.top + 16}
-      left={0}
-      right={0}
-      flexDirection="column"
-      alignItems="center"
-      multipleToasts={true}
-    />
-  );
-}
-
 export default function RootLayout() {
   // Load the Inter fonts
   const [fontsLoaded, fontError] = useFonts({
@@ -139,17 +125,16 @@ export default function RootLayout() {
   return (
     <>
       <TamaguiProvider config={tamaguiConfig} defaultTheme={effectiveTheme}>
-        <ToastProvider>
+        <GestureHandlerRootView>
           <SafeAreaProvider>
             <ActionSheetProvider>
               <View style={{ flex: 1 }}>
                 <WalletInfoDisplay />
               </View>
             </ActionSheetProvider>
-            <CurrentToast />
-            <ToastViewportWithSafeArea />
+            <Toaster />
           </SafeAreaProvider>
-        </ToastProvider>
+        </GestureHandlerRootView>
       </TamaguiProvider>
       <AppKit />
     </>

@@ -206,7 +206,7 @@ import { AnimatePresence, YStack } from 'tamagui';
   <YStack key="item2" animation="bouncy">
     {/* Content */}
   </YStack>
-</AnimatePresence>
+</AnimatePresence>;
 ```
 
 Missing keys will cause React errors about duplicate keys and may break animations.

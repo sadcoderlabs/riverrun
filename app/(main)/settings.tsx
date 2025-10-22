@@ -4,10 +4,10 @@ import { useThemePreference } from '@/hooks/useThemePreference';
 import { clearAgentSigner } from '@/lib/hyperliquid/agent';
 import { useAppKit, useAppKitAccount } from '@reown/appkit-ethers-react-native';
 import { ArrowUpRight } from '@tamagui/lucide-icons';
-import { useToastController } from '@tamagui/toast';
 import { Link } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Alert } from 'react-native';
+import { toast } from 'sonner-native';
 import { PortalProvider, ScrollView, View, YStack } from 'tamagui';
 
 type RevokeStatus = {
@@ -21,7 +21,6 @@ export default function Index() {
   const [revoking, setRevoking] = useState(false);
   const [status, setStatus] = useState<RevokeStatus | null>(null);
   const { preference } = useThemePreference();
-  const toastController = useToastController();
 
   const displayAddress = '0x123456789';
 
@@ -166,8 +165,14 @@ export default function Index() {
             <ListButton
               justifyContent="center"
               onPress={() => {
-                toastController.show('Test Toast', {
-                  message: 'This is a test toast message',
+                toast.success('success', {
+                  description: 'This is a test toast message',
+                });
+                toast.error('error', {
+                  description: 'This is a test toast message',
+                });
+                toast.warning('warning', {
+                  description: 'This is a test toast message',
                 });
               }}
             >

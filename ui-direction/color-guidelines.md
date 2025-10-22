@@ -81,7 +81,7 @@ When using icon components (like those from @tamagui/lucide-icons):
 
 ```tsx
 // Incorrect: Using string literals with $ prefix
-<Icon color={isActive ? '$accent9' : '$color9'} />
+<Icon color={isActive ? '$accent9' : '$color9'} />;
 
 // Correct: Using theme object properties
 import { useTheme } from 'tamagui';
@@ -114,9 +114,7 @@ const StyledButton = styled(Button, {
 });
 
 // Good: Using semantic variants
-<Text color={isProfitable ? '$success9' : '$error9'}>
-  {value.toFixed(2)}
-</Text>
+<Text color={isProfitable ? '$success9' : '$error9'}>{value.toFixed(2)}</Text>;
 ```
 
 ### Incorrect Usage
@@ -125,11 +123,11 @@ const StyledButton = styled(Button, {
 // Bad: Hardcoded colors
 const StyledButton = styled(Button, {
   backgroundColor: '#00C097', // Don't do this!
-  color: 'white',            // Don't do this!
+  color: 'white', // Don't do this!
 });
 
 // Bad: Inconsistent token usage
-<Icon color={isActive ? '$accent9' : '#797b86'} /> // Don't mix tokens and hex
+<Icon color={isActive ? '$accent9' : '#797b86'} />; // Don't mix tokens and hex
 ```
 
 ## Color Accessibility

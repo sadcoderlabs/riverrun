@@ -109,7 +109,7 @@ const NavItem = styled(YStack, {
 });
 
 // Icon coloring should use the same theme tokens
-<Icon color={isActive ? '$accent9' : '$color9'} />
+<Icon color={isActive ? '$accent9' : '$color9'} />;
 ```
 
 Always use theme tokens like `$accent9` and `$color9` instead of hardcoded hex values to ensure consistency across light and dark modes.
