@@ -1,19 +1,14 @@
 import 'event-target-polyfill'; // polyfill for hyperliquid sdk
 import 'fast-text-encoding'; // polyfill for hyperliquid sdk
 
-import {
-  ApprovalGateProvider,
-  useApprovalGate,
-} from '@/components/hyperliquid/ApprovalGateProvider';
-import { GateButton } from '@/components/hyperliquid/GateButton';
-import { useOrderForm, type OrderFormValues } from '@/components/trade/hooks/use-order-form';
+import { useOrderForm } from '@/components/trade/hooks/use-order-form';
 import { LeverageAdjustmentModal } from '@/components/trade/leverage-adjustment-modal';
 import { LimitOrderForm, MarketOrderForm, OrderTypeSelector } from '@/components/trade/order-forms';
 import { TpSlInput } from '@/components/trade/tp-sl-input';
-import type { AgentClientContext } from '@/lib/hyperliquid/agent';
 import { Checkbox } from '@tamagui/checkbox';
 import { Check, ChevronDown } from '@tamagui/lucide-icons';
 import { useCallback, useState } from 'react';
+import { Alert } from 'react-native';
 import { toast } from 'sonner-native';
 import { Button, Slider, Text, XStack, YStack } from 'tamagui';
 
@@ -22,16 +17,6 @@ interface PerpTradePanelProps {
 }
 
 export function PerpTradePanel({ assetId }: PerpTradePanelProps) {
-  return (
-    <ApprovalGateProvider>
-      <PerpTradePanelView assetId={assetId} />
-    </ApprovalGateProvider>
-  );
-}
-
-function PerpTradePanelView({ assetId }: PerpTradePanelProps) {
-  const { infoClient } = useApprovalGate();
-
   // Mock market data
   const marketData = {
     assetId: assetId ?? 0,
@@ -64,79 +49,39 @@ function PerpTradePanelView({ assetId }: PerpTradePanelProps) {
   const [tpValue, setTpValue] = useState('');
   const [slValue, setSlValue] = useState('');
 
-  // Actual order placement logic
-  const placeOrder = useCallback(
-    async (data: OrderFormValues, context: AgentClientContext) => {
-      try {
-        const meta = await infoClient.meta();
-        const assetIndex = assetId ?? 0;
+  // Simplified handler for Place Order button (without API call)
+  const handlePlaceOrder = useCallback(() => {
+    const data = form.getValues();
 
-        if (assetIndex < 0 || assetIndex >= meta.universe.length) {
-          throw new Error(`Invalid asset index: ${assetIndex}`);
-        }
+    // Check if size is zero
+    if (validation.hasSizeZero) {
+      toast.error('Size Required', {
+        description: 'Please enter an order size',
+      });
+      return;
+    }
 
-        const assetMeta = meta.universe[assetIndex];
-        const sizeDecimals = assetMeta.szDecimals ?? 4;
+    // Check if limit price is invalid for Limit orders
+    if (validation.hasInvalidLimitPrice) {
+      toast.error('Invalid Price', {
+        description: 'Please enter a valid limit price',
+      });
+      return;
+    }
 
-        // Use size from form data (in base asset units)
-        // Format it to match the required decimals
-        const formattedSize = parseFloat(data.size).toFixed(sizeDecimals);
+    // Prepare order data for display
+    const orderData = {
+      orderType: data.orderType,
+      orderSide: data.orderSide,
+      size: data.size,
+      ...(data.orderType === 'Limit' && { limitPrice: data.limitPrice }),
+      reduceOnly: data.reduceOnly,
+      assetId: assetId ?? 0,
+    };
 
-        await context.agentExchangeClient.order({
-          orders: [
-            {
-              a: assetIndex,
-              b: data.orderSide === 'Long',
-              p: data.orderType === 'Limit' ? data.limitPrice : marketData.price.toString(),
-              s: formattedSize,
-              r: data.reduceOnly,
-              t: {
-                limit: {
-                  tif: 'Gtc',
-                },
-              },
-            },
-          ],
-        });
-
-        toast.success('Order Placed', {
-          description: `${data.orderSide} ${data.size} @ ${data.orderType === 'Limit' ? data.limitPrice : marketData.price}`,
-        });
-      } catch (error) {
-        toast.error('Order Failed', {
-          description: error instanceof Error ? error.message : 'Unknown error',
-        });
-        throw error;
-      }
-    },
-    [infoClient, assetId, marketData.price],
-  );
-
-  // Handler for Place Order button (with context)
-  const handlePlaceOrder = useCallback(
-    async (context: AgentClientContext) => {
-      const data = form.getValues();
-
-      // Check if size is zero
-      if (validation.hasSizeZero) {
-        toast.error('Size Required', {
-          description: 'Please enter an order size',
-        });
-        return;
-      }
-
-      // Check if limit price is invalid for Limit orders
-      if (validation.hasInvalidLimitPrice) {
-        toast.error('Invalid Price', {
-          description: 'Please enter a valid limit price',
-        });
-        return;
-      }
-
-      await placeOrder(data, context);
-    },
-    [form, validation.hasSizeZero, validation.hasInvalidLimitPrice, placeOrder],
-  );
+    // Show order data in alert
+    Alert.alert('Order Data', JSON.stringify(orderData, null, 2));
+  }, [form, validation.hasSizeZero, validation.hasInvalidLimitPrice, assetId]);
 
   // Format number with 2 decimal places
   const formatNumber = (num: number) => {
@@ -344,23 +289,23 @@ function PerpTradePanelView({ assetId }: PerpTradePanelProps) {
           </XStack>
 
           {/* Place Order Button */}
-          <GateButton
-            title={validation.buttonText}
-            loadingTitle="Placing..."
-            buttonSize="lg"
+          <Button
+            backgroundColor={orderSide === 'Long' ? '$green9' : '$red9'}
             paddingVertical="$2.5"
             marginTop="$1"
-            style={{ borderRadius: 8 }}
+            borderRadius="$3"
             disabled={validation.buttonDisabled}
-            onPressApproved={async context => {
-              try {
-                await handlePlaceOrder(context);
-              } catch (error) {
-                console.error('Failed to place order via agent', error);
-                throw error;
-              }
-            }}
-          />
+            onPress={handlePlaceOrder}
+            pressStyle={{ opacity: 0.8 }}
+          >
+            <Text
+              fontFamily="$interSemiBold"
+              fontSize="$3"
+              color={orderSide === 'Long' ? '$green1' : '$red1'}
+            >
+              {validation.buttonText}
+            </Text>
+          </Button>
 
           <LeverageAdjustmentModal
             open={leverageSheetOpen}
