@@ -2,7 +2,7 @@ import AdaptiveSelect from '@/components/global/adaptive-select';
 import { ChevronDown } from '@tamagui/lucide-icons';
 import { Text, XStack } from 'tamagui';
 
-export type OrderType = 'Market' | 'Limit' | 'Scale';
+export type OrderType = 'Market' | 'Limit';
 
 interface OrderTypeSelectorProps {
   value: OrderType;
@@ -13,11 +13,14 @@ export function OrderTypeSelector({ value, onValueChange }: OrderTypeSelectorPro
   const orderTypeItems = [
     { value: 'Market', label: 'Market' },
     { value: 'Limit', label: 'Limit' },
-    { value: 'Scale', label: 'Scale' },
   ];
 
   return (
-    <AdaptiveSelect value={value} onValueChange={onValueChange} title="Order Type">
+    <AdaptiveSelect
+      value={value}
+      onValueChange={value => onValueChange(value as OrderType)}
+      title="Order Type"
+    >
       <AdaptiveSelect.Trigger>
         <XStack
           backgroundColor="$gray3"

@@ -6,22 +6,16 @@ import {
   useApprovalGate,
 } from '@/components/hyperliquid/ApprovalGateProvider';
 import { GateButton } from '@/components/hyperliquid/GateButton';
+import { useOrderForm, type OrderFormValues } from '@/components/trade/hooks/use-order-form';
 import { LeverageAdjustmentModal } from '@/components/trade/leverage-adjustment-modal';
-import {
-  OrderTypeSelector,
-  type OrderType,
-  MarketOrderForm,
-  LimitOrderForm,
-  ScaleOrderForm,
-} from '@/components/trade/order-forms';
+import { LimitOrderForm, MarketOrderForm, OrderTypeSelector } from '@/components/trade/order-forms';
 import { TpSlInput } from '@/components/trade/tp-sl-input';
 import type { AgentClientContext } from '@/lib/hyperliquid/agent';
+import { Checkbox } from '@tamagui/checkbox';
 import { Check, ChevronDown } from '@tamagui/lucide-icons';
 import { useCallback, useState } from 'react';
-import { Checkbox } from '@tamagui/checkbox';
+import { toast } from 'sonner-native';
 import { Button, Slider, Text, XStack, YStack } from 'tamagui';
-
-const AGENT_STORAGE_PREFIX = 'hl-agent:private-key:';
 
 interface PerpTradePanelProps {
   assetId?: number;
@@ -38,84 +32,111 @@ export function PerpTradePanel({ assetId }: PerpTradePanelProps) {
 function PerpTradePanelView({ assetId }: PerpTradePanelProps) {
   const { infoClient } = useApprovalGate();
 
-  // Mock market data (similar to what's in the index.tsx)
+  // Mock market data
   const marketData = {
     assetId: assetId ?? 0,
     price: 28450.75,
-    priceChange: 2.34,
-    fundingRate: 0.0012,
-    annualizedFunding: 10.95,
   };
 
-  // State for the order form
+  // Mock account balance
+  const accountBalance = 1000;
+
+  // Initialize React Hook Form (only manages order-specific fields)
+  const { form, validation } = useOrderForm({});
+
+  const { setValue, watch } = form;
+
+  // Watch form values (order API parameters)
+  const orderType = watch('orderType');
+  const orderSide = watch('orderSide');
+  const size = watch('size');
+  const limitPrice = watch('limitPrice') || '';
+  const reduceOnly = watch('reduceOnly');
+
+  // UI-only states (helper states for calculating size)
   const [collateralMode, setCollateralMode] = useState('Cross');
   const [leverage, setLeverage] = useState(5);
-  const [leverageSheetOpen, setLeverageSheetOpen] = useState(false);
-  const [orderType, setOrderType] = useState<OrderType>('Market');
-  const [sizeUnit, setSizeUnit] = useState('USDC');
-  const [orderSide, setOrderSide] = useState<'Long' | 'Short'>('Long');
   const [sizePercentage, setSizePercentage] = useState(0);
+  const [leverageSheetOpen, setLeverageSheetOpen] = useState(false);
+
+  // TP/SL states (temporarily removed from form)
   const [tpSlEnabled, setTpSlEnabled] = useState(false);
-  const [reduceOnlyEnabled, setReduceOnlyEnabled] = useState(false);
-
-  // Order type specific states
-  const [limitPrice, setLimitPrice] = useState(marketData.price.toFixed(1));
-  const [scaleLowerPrice, setScaleLowerPrice] = useState(marketData.price.toFixed(1));
-  const [scaleUpperPrice, setScaleUpperPrice] = useState(marketData.price.toFixed(1));
-  const [scaleOrderCount, setScaleOrderCount] = useState('5');
-  const [scaleSizeSkew, setScaleSizeSkew] = useState('1.0');
-
-  // TP/SL states
   const [tpValue, setTpValue] = useState('');
   const [slValue, setSlValue] = useState('');
 
-  const handlePlaceOrder = useCallback(
-    async (context: AgentClientContext) => {
-      const meta = await infoClient.meta();
+  // Actual order placement logic
+  const placeOrder = useCallback(
+    async (data: OrderFormValues, context: AgentClientContext) => {
+      try {
+        const meta = await infoClient.meta();
+        const assetIndex = assetId ?? 0;
 
-      // Use the assetId directly (it's the index in Hyperliquid)
-      const assetIndex = assetId ?? 0;
+        if (assetIndex < 0 || assetIndex >= meta.universe.length) {
+          throw new Error(`Invalid asset index: ${assetIndex}`);
+        }
 
-      if (assetIndex < 0 || assetIndex >= meta.universe.length) {
-        throw new Error(`Invalid asset index: ${assetIndex}`);
-      }
+        const assetMeta = meta.universe[assetIndex];
+        const sizeDecimals = assetMeta.szDecimals ?? 4;
 
-      const assetMeta = meta.universe[assetIndex];
-      const limitPrice = '99999';
-      const notionalUsd = 100;
-      const sizeDecimals = assetMeta.szDecimals ?? 4;
-      const baseSizeNumber = notionalUsd / Number(limitPrice);
-      const baseSize = baseSizeNumber.toFixed(sizeDecimals);
+        // Use size from form data (in base asset units)
+        // Format it to match the required decimals
+        const formattedSize = parseFloat(data.size).toFixed(sizeDecimals);
 
-      await context.agentExchangeClient.order({
-        orders: [
-          {
-            a: assetIndex,
-            b: true,
-            p: limitPrice,
-            s: baseSize,
-            r: false,
-            t: {
-              limit: {
-                tif: 'Gtc',
+        await context.agentExchangeClient.order({
+          orders: [
+            {
+              a: assetIndex,
+              b: data.orderSide === 'Long',
+              p: data.orderType === 'Limit' ? data.limitPrice : marketData.price.toString(),
+              s: formattedSize,
+              r: data.reduceOnly,
+              t: {
+                limit: {
+                  tif: 'Gtc',
+                },
               },
             },
-          },
-        ],
-      });
+          ],
+        });
+
+        toast.success('Order Placed', {
+          description: `${data.orderSide} ${data.size} @ ${data.orderType === 'Limit' ? data.limitPrice : marketData.price}`,
+        });
+      } catch (error) {
+        toast.error('Order Failed', {
+          description: error instanceof Error ? error.message : 'Unknown error',
+        });
+        throw error;
+      }
     },
-    [infoClient, assetId],
+    [infoClient, assetId, marketData.price],
   );
 
-  // Calculate order details
-  const accountBalance = 1000; // Mock account balance
-  const margin = accountBalance * (sizePercentage / 100); // Margin is the amount user is willing to risk
-  const leverageFactor = leverage;
-  const orderSize = margin * leverageFactor; // Total position size including leverage
-  const liquidationPrice =
-    orderSide === 'Long'
-      ? marketData.price * 0.8 // Simplified calculation for demo
-      : marketData.price * 1.2;
+  // Handler for Place Order button (with context)
+  const handlePlaceOrder = useCallback(
+    async (context: AgentClientContext) => {
+      const data = form.getValues();
+
+      // Check if size is zero
+      if (validation.hasSizeZero) {
+        toast.error('Size Required', {
+          description: 'Please enter an order size',
+        });
+        return;
+      }
+
+      // Check if limit price is invalid for Limit orders
+      if (validation.hasInvalidLimitPrice) {
+        toast.error('Invalid Price', {
+          description: 'Please enter a valid limit price',
+        });
+        return;
+      }
+
+      await placeOrder(data, context);
+    },
+    [form, validation.hasSizeZero, validation.hasInvalidLimitPrice, placeOrder],
+  );
 
   // Format number with 2 decimal places
   const formatNumber = (num: number) => {
@@ -174,7 +195,10 @@ function PerpTradePanelView({ assetId }: PerpTradePanelProps) {
           </YStack>
 
           {/* Order Type Selector */}
-          <OrderTypeSelector value={orderType} onValueChange={setOrderType} />
+          <OrderTypeSelector
+            value={orderType}
+            onValueChange={value => setValue('orderType', value as any)}
+          />
 
           {/* Long/Short Buttons */}
           <XStack gap="$2">
@@ -184,7 +208,7 @@ function PerpTradePanelView({ assetId }: PerpTradePanelProps) {
               borderColor={orderSide === 'Long' ? 'transparent' : '$gray8'}
               borderWidth={1}
               paddingVertical="$2"
-              onPress={() => setOrderSide('Long')}
+              onPress={() => setValue('orderSide', 'Long')}
               borderRadius="$3"
               height="$3"
             >
@@ -203,7 +227,7 @@ function PerpTradePanelView({ assetId }: PerpTradePanelProps) {
               borderColor={orderSide === 'Short' ? 'transparent' : '$gray8'}
               borderWidth={1}
               paddingVertical="$2"
-              onPress={() => setOrderSide('Short')}
+              onPress={() => setValue('orderSide', 'Short')}
               borderRadius="$3"
               height="$3"
             >
@@ -219,40 +243,15 @@ function PerpTradePanelView({ assetId }: PerpTradePanelProps) {
 
           {/* Order Type Specific Forms */}
           {orderType === 'Market' && (
-            <MarketOrderForm
-              sizeUsd={
-                sizePercentage === 0 ? '' : formatNumber(accountBalance * (sizePercentage / 100))
-              }
-              onSizeChange={() => {}}
-            />
+            <MarketOrderForm size={size} onSizeChange={value => setValue('size', value)} />
           )}
 
           {orderType === 'Limit' && (
             <LimitOrderForm
               limitPrice={limitPrice}
-              onLimitPriceChange={setLimitPrice}
-              sizeUsd={
-                sizePercentage === 0 ? '' : formatNumber(accountBalance * (sizePercentage / 100))
-              }
-              onSizeChange={() => {}}
-              marketPrice={marketData.price}
-            />
-          )}
-
-          {orderType === 'Scale' && (
-            <ScaleOrderForm
-              lowerPrice={scaleLowerPrice}
-              onLowerPriceChange={setScaleLowerPrice}
-              upperPrice={scaleUpperPrice}
-              onUpperPriceChange={setScaleUpperPrice}
-              orderCount={scaleOrderCount}
-              onOrderCountChange={setScaleOrderCount}
-              sizeSkew={scaleSizeSkew}
-              onSizeSkewChange={setScaleSizeSkew}
-              sizeUsd={
-                sizePercentage === 0 ? '' : formatNumber(accountBalance * (sizePercentage / 100))
-              }
-              onSizeChange={() => {}}
+              onLimitPriceChange={value => setValue('limitPrice', value)}
+              size={size}
+              onSizeChange={value => setValue('size', value)}
               marketPrice={marketData.price}
             />
           )}
@@ -267,7 +266,14 @@ function PerpTradePanelView({ assetId }: PerpTradePanelProps) {
                 borderRadius="$3"
                 paddingVertical="$2"
                 paddingHorizontal="$1"
-                onPress={() => setSizePercentage(percent)}
+                onPress={() => {
+                  setSizePercentage(percent);
+                  // Calculate and set size in base asset units
+                  const marginUsd = accountBalance * (percent / 100);
+                  const sizeUsd = marginUsd * leverage;
+                  const sizeInBaseAsset = sizeUsd / marketData.price;
+                  setValue('size', sizeInBaseAsset.toFixed(4));
+                }}
                 opacity={sizePercentage === percent ? 1 : 0.6}
               >
                 <Text fontFamily="$interRegular" fontSize="$2" color="$color">
@@ -288,7 +294,14 @@ function PerpTradePanelView({ assetId }: PerpTradePanelProps) {
               value={[sizePercentage]}
               max={100}
               step={1}
-              onValueChange={values => setSizePercentage(values[0])}
+              onValueChange={values => {
+                setSizePercentage(values[0]);
+                // Calculate and set size in base asset units
+                const marginUsd = accountBalance * (values[0] / 100);
+                const sizeUsd = marginUsd * leverage;
+                const sizeInBaseAsset = sizeUsd / marketData.price;
+                setValue('size', sizeInBaseAsset.toFixed(4));
+              }}
             >
               <Slider.Track backgroundColor="$gray5" height="$0.5">
                 <Slider.TrackActive backgroundColor="$accent9" />
@@ -321,8 +334,8 @@ function PerpTradePanelView({ assetId }: PerpTradePanelProps) {
             </Text>
             <Checkbox
               size="$4"
-              checked={reduceOnlyEnabled}
-              onCheckedChange={checked => setReduceOnlyEnabled(checked === true)}
+              checked={reduceOnly}
+              onCheckedChange={checked => setValue('reduceOnly', checked === true)}
             >
               <Checkbox.Indicator>
                 <Check />
@@ -332,13 +345,13 @@ function PerpTradePanelView({ assetId }: PerpTradePanelProps) {
 
           {/* Place Order Button */}
           <GateButton
-            title="Place Order"
+            title={validation.buttonText}
             loadingTitle="Placing..."
             buttonSize="lg"
             paddingVertical="$2.5"
             marginTop="$1"
             style={{ borderRadius: 8 }}
-            disabled={!orderSide}
+            disabled={validation.buttonDisabled}
             onPressApproved={async context => {
               try {
                 await handlePlaceOrder(context);
@@ -353,7 +366,16 @@ function PerpTradePanelView({ assetId }: PerpTradePanelProps) {
             open={leverageSheetOpen}
             onOpenChange={setLeverageSheetOpen}
             leverage={leverage}
-            onLeverageChange={setLeverage}
+            onLeverageChange={value => {
+              setLeverage(value);
+              // Recalculate size when leverage changes
+              if (sizePercentage > 0) {
+                const marginUsd = accountBalance * (sizePercentage / 100);
+                const sizeUsd = marginUsd * value;
+                const sizeInBaseAsset = sizeUsd / marketData.price;
+                setValue('size', sizeInBaseAsset.toFixed(4));
+              }
+            }}
             marginMode={collateralMode}
             onMarginModeChange={setCollateralMode}
           />
