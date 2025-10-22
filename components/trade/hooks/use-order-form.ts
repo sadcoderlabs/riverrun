@@ -1,44 +1,22 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { z as zv3 } from 'zod/v3'; // Zod v3 compatibility layer for resolver
 
 /**
- * Base schema for common order fields
+ * Order form schema
  * Maps to Hyperliquid API order parameters:
  * - orderSide: determines 'b' (isBuy) parameter
  * - reduceOnly: maps to 'r' parameter
+ * - size: order size in base asset units, maps to 's' parameter
+ * - limitPrice: limit price (only for Limit orders), maps to 'p' parameter
  */
-const baseOrderSchema = zv3.object({
-  orderType: zv3.enum(['Market', 'Limit', 'Scale']),
+const orderFormSchema = zv3.object({
+  orderType: zv3.enum(['Market', 'Limit']),
   orderSide: zv3.enum(['Long', 'Short']),
   reduceOnly: zv3.boolean(),
-});
-
-/**
- * Market order schema
- * - size: order size in base asset units, maps to 's' parameter in API
- */
-const marketOrderSchema = baseOrderSchema.extend({
-  orderType: zv3.literal('Market'),
   size: zv3.string(),
+  limitPrice: zv3.string().optional(),
 });
-
-/**
- * Limit order schema
- * - limitPrice: limit price as string, maps to 'p' parameter in API
- * - size: order size in base asset units, maps to 's' parameter in API
- */
-const limitOrderSchema = baseOrderSchema.extend({
-  orderType: zv3.literal('Limit'),
-  limitPrice: zv3.string(),
-  size: zv3.string(),
-});
-
-/**
- * Discriminated union for all order types
- * Using Zod v3 for compatibility with @hookform/resolvers
- */
-const orderFormSchema = zv3.discriminatedUnion('orderType', [marketOrderSchema, limitOrderSchema]);
 
 export type OrderFormValues = zv3.infer<typeof orderFormSchema>;
 
@@ -47,8 +25,8 @@ interface UseOrderFormParams {
 }
 
 interface ValidationState {
-  hasSizeZero: boolean;
-  hasInvalidLimitPrice: boolean;
+  hasValidSize: boolean;
+  hasValidLimitPrice: boolean;
   isValid: boolean;
   buttonText: string;
   buttonDisabled: boolean;
@@ -62,28 +40,32 @@ export function useOrderForm({ defaultValues }: UseOrderFormParams) {
       orderSide: 'Long',
       reduceOnly: false,
       size: '',
+      limitPrice: '',
       ...defaultValues,
-    } as OrderFormValues,
-    mode: 'onChange', // Validate on change for real-time feedback
+    },
+    mode: 'onSubmit',
   });
 
-  const { watch } = form;
-  const orderType = watch('orderType');
-  const size = watch('size');
-  const limitPrice = watch('limitPrice' as any); // Type assertion needed for discriminated union
+  const { control } = form;
+
+  // Use useWatch to properly subscribe to form value changes
+  const orderType = useWatch({ control, name: 'orderType' });
+  const size = useWatch({ control, name: 'size' });
+  const limitPrice = useWatch({ control, name: 'limitPrice' });
 
   // Validation logic
   const getValidationState = (): ValidationState => {
-    const hasSizeZero = !size || size === '' || size === '0';
+    // Check if size is valid (not empty, not zero)
+    const hasValidSize = !!(size && size !== '' && size !== '0');
 
-    // Check if limit price is invalid (empty or zero) for Limit orders
-    const hasInvalidLimitPrice =
-      orderType === 'Limit' && (!limitPrice || limitPrice === '' || limitPrice === '0');
+    // Check if limit price is valid for Limit orders
+    const hasValidLimitPrice =
+      orderType === 'Market' || !!(limitPrice && limitPrice !== '' && limitPrice !== '0');
 
-    // Size = 0 and invalid limit price are allowed (will show toast on submit)
+    // Input fields accept empty or zero values, validation only shows toast on submit
     return {
-      hasSizeZero,
-      hasInvalidLimitPrice,
+      hasValidSize,
+      hasValidLimitPrice,
       isValid: true,
       buttonText: 'Place Order',
       buttonDisabled: false,

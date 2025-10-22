@@ -1,4 +1,5 @@
 import { Input } from '@/components/global/input';
+import { OrderSizeInput } from '@/components/trade/order-size-input';
 import { Text, XStack, YStack } from 'tamagui';
 
 interface LimitOrderFormProps {
@@ -6,6 +7,8 @@ interface LimitOrderFormProps {
   onLimitPriceChange: (value: string) => void;
   size: string;
   onSizeChange: (value: string) => void;
+  leverage: number;
+  accountBalance: number;
   marketPrice: number;
 }
 
@@ -14,10 +17,12 @@ export function LimitOrderForm({
   onLimitPriceChange,
   size,
   onSizeChange,
+  leverage,
+  accountBalance,
   marketPrice,
 }: LimitOrderFormProps) {
   return (
-    <>
+    <YStack gap="$2.5">
       {/* Limit Price */}
       <YStack gap="$1.5">
         <XStack justifyContent="space-between" alignItems="center">
@@ -63,40 +68,14 @@ export function LimitOrderForm({
         </XStack>
       </YStack>
 
-      {/* Size */}
-      <YStack gap="$1.5">
-        <Text fontFamily="$interRegular" fontSize="$2" color="$gray10">
-          Size
-        </Text>
-        <XStack
-          backgroundColor="$gray3"
-          borderRadius="$3"
-          paddingVertical="$1.5"
-          paddingHorizontal="$2.5"
-          borderColor="$gray8"
-          borderWidth={1}
-          justifyContent="space-between"
-          alignItems="center"
-          height="$3"
-        >
-          <Input
-            flex={1}
-            placeholder="0.0"
-            value={size}
-            onChangeText={onSizeChange}
-            keyboardType="numeric"
-            returnKeyType="done"
-            fontSize="$3"
-            fontFamily="$interRegular"
-            borderWidth={0}
-            paddingHorizontal={0}
-            paddingVertical={0}
-          />
-          <Text fontFamily="$interSemiBold" fontSize="$2" color="$gray10" marginLeft="$2">
-            BTC
-          </Text>
-        </XStack>
-      </YStack>
-    </>
+      {/* Size Input Section */}
+      <OrderSizeInput
+        size={size}
+        onSizeChange={onSizeChange}
+        leverage={leverage}
+        accountBalance={accountBalance}
+        marketPrice={marketPrice}
+      />
+    </YStack>
   );
 }

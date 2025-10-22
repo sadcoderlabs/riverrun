@@ -9,8 +9,9 @@ import { Checkbox } from '@tamagui/checkbox';
 import { Check, ChevronDown } from '@tamagui/lucide-icons';
 import { useCallback, useState } from 'react';
 import { Alert } from 'react-native';
+import { useWatch } from 'react-hook-form';
 import { toast } from 'sonner-native';
-import { Button, Slider, Text, XStack, YStack } from 'tamagui';
+import { Button, Text, XStack, YStack } from 'tamagui';
 
 interface PerpTradePanelProps {
   assetId?: number;
@@ -29,19 +30,18 @@ export function PerpTradePanel({ assetId }: PerpTradePanelProps) {
   // Initialize React Hook Form (only manages order-specific fields)
   const { form, validation } = useOrderForm({});
 
-  const { setValue, watch } = form;
+  const { setValue, control } = form;
 
-  // Watch form values (order API parameters)
-  const orderType = watch('orderType');
-  const orderSide = watch('orderSide');
-  const size = watch('size');
-  const limitPrice = watch('limitPrice') || '';
-  const reduceOnly = watch('reduceOnly');
+  // Watch form values (order API parameters) - using useWatch for proper reactivity
+  const orderType = useWatch({ control, name: 'orderType' });
+  const orderSide = useWatch({ control, name: 'orderSide' });
+  const size = useWatch({ control, name: 'size' });
+  const limitPrice = useWatch({ control, name: 'limitPrice' }) || '';
+  const reduceOnly = useWatch({ control, name: 'reduceOnly' });
 
   // UI-only states (helper states for calculating size)
   const [collateralMode, setCollateralMode] = useState('Cross');
   const [leverage, setLeverage] = useState(5);
-  const [sizePercentage, setSizePercentage] = useState(0);
   const [leverageSheetOpen, setLeverageSheetOpen] = useState(false);
 
   // TP/SL states (temporarily removed from form)
@@ -53,16 +53,16 @@ export function PerpTradePanel({ assetId }: PerpTradePanelProps) {
   const handlePlaceOrder = useCallback(() => {
     const data = form.getValues();
 
-    // Check if size is zero
-    if (validation.hasSizeZero) {
+    // Check if size is valid
+    if (!validation.hasValidSize) {
       toast.error('Size Required', {
         description: 'Please enter an order size',
       });
       return;
     }
 
-    // Check if limit price is invalid for Limit orders
-    if (validation.hasInvalidLimitPrice) {
+    // Check if limit price is valid for Limit orders
+    if (!validation.hasValidLimitPrice) {
       toast.error('Invalid Price', {
         description: 'Please enter a valid limit price',
       });
@@ -81,7 +81,7 @@ export function PerpTradePanel({ assetId }: PerpTradePanelProps) {
 
     // Show order data in alert
     Alert.alert('Order Data', JSON.stringify(orderData, null, 2));
-  }, [form, validation.hasSizeZero, validation.hasInvalidLimitPrice, assetId]);
+  }, [form, validation.hasValidSize, validation.hasValidLimitPrice, assetId]);
 
   // Format number with 2 decimal places
   const formatNumber = (num: number) => {
@@ -188,79 +188,30 @@ export function PerpTradePanel({ assetId }: PerpTradePanelProps) {
 
           {/* Order Type Specific Forms */}
           {orderType === 'Market' && (
-            <MarketOrderForm size={size} onSizeChange={value => setValue('size', value)} />
+            <MarketOrderForm
+              size={size}
+              onSizeChange={(value: string) =>
+                setValue('size', value, { shouldValidate: false, shouldDirty: true })
+              }
+              leverage={leverage}
+              accountBalance={accountBalance}
+              marketPrice={marketData.price}
+            />
           )}
 
           {orderType === 'Limit' && (
             <LimitOrderForm
               limitPrice={limitPrice}
-              onLimitPriceChange={value => setValue('limitPrice', value)}
+              onLimitPriceChange={(value: string) => setValue('limitPrice', value)}
               size={size}
-              onSizeChange={value => setValue('size', value)}
+              onSizeChange={(value: string) =>
+                setValue('size', value, { shouldValidate: false, shouldDirty: true })
+              }
+              leverage={leverage}
+              accountBalance={accountBalance}
               marketPrice={marketData.price}
             />
           )}
-
-          {/* Percentage Buttons */}
-          <XStack gap="$1.5" justifyContent="space-between">
-            {[25, 50, 75, 100].map(percent => (
-              <Button
-                key={percent}
-                flex={1}
-                backgroundColor="$gray5"
-                borderRadius="$3"
-                paddingVertical="$2"
-                paddingHorizontal="$1"
-                onPress={() => {
-                  setSizePercentage(percent);
-                  // Calculate and set size in base asset units
-                  const marginUsd = accountBalance * (percent / 100);
-                  const sizeUsd = marginUsd * leverage;
-                  const sizeInBaseAsset = sizeUsd / marketData.price;
-                  setValue('size', sizeInBaseAsset.toFixed(4));
-                }}
-                opacity={sizePercentage === percent ? 1 : 0.6}
-              >
-                <Text fontFamily="$interRegular" fontSize="$2" color="$color">
-                  {percent}%
-                </Text>
-              </Button>
-            ))}
-          </XStack>
-
-          {/* Size Slider */}
-          <YStack gap="$1.5">
-            <XStack justifyContent="space-between" alignItems="center">
-              <Text fontFamily="$interRegular" fontSize="$2" color="$color">
-                {sizePercentage === 0 ? '0' : Math.round(sizePercentage)}%
-              </Text>
-            </XStack>
-            <Slider
-              value={[sizePercentage]}
-              max={100}
-              step={1}
-              onValueChange={values => {
-                setSizePercentage(values[0]);
-                // Calculate and set size in base asset units
-                const marginUsd = accountBalance * (values[0] / 100);
-                const sizeUsd = marginUsd * leverage;
-                const sizeInBaseAsset = sizeUsd / marketData.price;
-                setValue('size', sizeInBaseAsset.toFixed(4));
-              }}
-            >
-              <Slider.Track backgroundColor="$gray5" height="$0.5">
-                <Slider.TrackActive backgroundColor="$accent9" />
-              </Slider.Track>
-              <Slider.Thumb
-                index={0}
-                size="$0.75"
-                backgroundColor="$accent1"
-                borderWidth={1}
-                borderColor="$accent9"
-                circular
-              />
-            </Slider>
-          </YStack>
 
           {/* TP/SL */}
           <TpSlInput
@@ -311,16 +262,7 @@ export function PerpTradePanel({ assetId }: PerpTradePanelProps) {
             open={leverageSheetOpen}
             onOpenChange={setLeverageSheetOpen}
             leverage={leverage}
-            onLeverageChange={value => {
-              setLeverage(value);
-              // Recalculate size when leverage changes
-              if (sizePercentage > 0) {
-                const marginUsd = accountBalance * (sizePercentage / 100);
-                const sizeUsd = marginUsd * value;
-                const sizeInBaseAsset = sizeUsd / marketData.price;
-                setValue('size', sizeInBaseAsset.toFixed(4));
-              }
-            }}
+            onLeverageChange={setLeverage}
             marginMode={collateralMode}
             onMarginModeChange={setCollateralMode}
           />
