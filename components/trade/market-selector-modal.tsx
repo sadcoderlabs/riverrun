@@ -72,7 +72,7 @@ export function MarketSelectorModal({ open, onOpenChange }: MarketSelectorModalP
       // Close modal first
       onOpenChange(false);
       // Replace current route with new market (default to perp)
-      router.replace(`/(main)/trade/perp/${marketId}/(tab)`);
+      router.replace(`/(main)/trade/perp/${marketId}`);
     },
     [router, onOpenChange],
   );

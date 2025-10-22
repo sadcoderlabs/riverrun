@@ -51,7 +51,7 @@ export function PositionItem({ position, isExpanded, onToggle }: PositionItemPro
   };
 
   const navigateToMarket = () => {
-    router.push(`/(main)/trade/perp/${position.coin}/(tab)`);
+    router.push(`/(main)/trade/perp/${position.coin}`);
   };
 
   const isPnlPositive = unrealizedPnl >= 0;

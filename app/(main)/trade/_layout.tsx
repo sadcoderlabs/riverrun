@@ -1,5 +1,5 @@
 import { TradeTypeNav } from '@/components/trade/trade-type-nav';
-import { Slot, useLocalSearchParams, useSegments } from 'expo-router';
+import { Stack, useLocalSearchParams, useSegments } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { YStack } from 'tamagui';
 
@@ -10,6 +10,7 @@ import { YStack } from 'tamagui';
  * This layout is specific to trade pages and adds:
  * - Top navigation for switching between trade types
  * - Safe area padding for top (to account for status bar)
+ * - Handles routing for perp/[market] and spot/[market]
  */
 export default function TradeLayout() {
   const insets = useSafeAreaInsets();
@@ -33,7 +34,15 @@ export default function TradeLayout() {
       </YStack>
 
       {/* Content from child routes (perp/[market], spot/[market]) */}
-      <Slot />
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          animation: 'none', // Disable navigation animation for instant market switching
+        }}
+      >
+        <Stack.Screen name="perp/[market]/index" />
+        <Stack.Screen name="spot/[market]/(tab)/index" />
+      </Stack>
     </YStack>
   );
 }

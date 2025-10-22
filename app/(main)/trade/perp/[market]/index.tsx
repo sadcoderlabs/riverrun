@@ -1,6 +1,7 @@
 import { ChartUI } from '@/components/trade/chart-ui';
 import { MarketSelectorModal } from '@/components/trade/market-selector-modal';
 import { PerpTradePanel } from '@/components/trade/perp-trade-panel';
+import { PerpTabs } from '@/components/trade/perp-tabs';
 import { useMarketsStore } from '@/lib/store/use-markets-store';
 import { CandlestickChart, ChevronUp, Menu } from '@tamagui/lucide-icons';
 import { useLocalSearchParams } from 'expo-router';
@@ -115,7 +116,11 @@ export default function PerpTradeIndex() {
         )}
       </AnimatePresence>
 
+      {/* PERP Trade Panel - includes Order Book and Place Order UI */}
       <PerpTradePanel marketId={marketData.id} />
+
+      {/* PERP Tabs - Orders, Positions, History */}
+      <PerpTabs marketId={marketData.id} />
 
       {/* Market Selector Modal */}
       <MarketSelectorModal open={isMarketSelectorOpen} onOpenChange={setMarketSelectorOpen} />
