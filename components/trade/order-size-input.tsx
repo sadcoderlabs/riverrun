@@ -18,6 +18,36 @@ export function OrderSizeInput({
   priceForCalculation,
 }: OrderSizeInputProps) {
   const [sizePercentage, setSizePercentage] = useState(0);
+  const [sizeUnit, setSizeUnit] = useState<'BTC' | 'USD'>('BTC'); // Display unit
+
+  // Convert between BTC and USD
+  const btcToUsd = (btc: number): number => btc * priceForCalculation;
+  const usdToBtc = (usd: number): number => usd / priceForCalculation;
+
+  // Get the display value based on current unit
+  const getDisplayValue = (): string => {
+    if (!size || size === '' || size === '0') return '';
+    const sizeInBtc = parseFloat(size);
+    if (isNaN(sizeInBtc)) return '';
+
+    if (sizeUnit === 'USD') {
+      return btcToUsd(sizeInBtc).toFixed(2);
+    }
+    return size;
+  };
+
+  // Get the USD value for display below input
+  const getUsdValue = (): string => {
+    if (!size || size === '' || size === '0') return '0.00';
+    const sizeInBtc = parseFloat(size);
+    if (isNaN(sizeInBtc)) return '0.00';
+    return btcToUsd(sizeInBtc).toFixed(2);
+  };
+
+  // Toggle between BTC and USD
+  const handleUnitToggle = () => {
+    setSizeUnit(prev => (prev === 'BTC' ? 'USD' : 'BTC'));
+  };
 
   // Calculate size from percentage using the provided price
   const calculateSizeFromPercentage = (percent: number): string => {
@@ -44,11 +74,29 @@ export function OrderSizeInput({
 
   // Handle manual size input - calculate corresponding percentage
   const handleManualSizeChange = (value: string) => {
-    onSizeChange(value);
+    // Convert input to BTC if current unit is USD
+    let sizeInBtc: string;
+    if (sizeUnit === 'USD') {
+      if (value && value !== '' && value !== '0') {
+        const usdValue = parseFloat(value);
+        if (!isNaN(usdValue)) {
+          sizeInBtc = usdToBtc(usdValue).toFixed(4);
+        } else {
+          sizeInBtc = '';
+        }
+      } else {
+        sizeInBtc = '';
+      }
+    } else {
+      sizeInBtc = value;
+    }
+
+    // Always store and output size in BTC
+    onSizeChange(sizeInBtc);
 
     // Calculate the percentage that corresponds to this size
-    if (value && value !== '' && value !== '0') {
-      const sizeInBaseAsset = parseFloat(value);
+    if (sizeInBtc && sizeInBtc !== '' && sizeInBtc !== '0') {
+      const sizeInBaseAsset = parseFloat(sizeInBtc);
       if (!isNaN(sizeInBaseAsset)) {
         // Reverse calculation: size -> USD value -> margin -> percentage
         const sizeUsd = sizeInBaseAsset * priceForCalculation;
@@ -72,23 +120,24 @@ export function OrderSizeInput({
       {/* Size Input */}
       <YStack gap="$1.5">
         <Text fontFamily="$interRegular" fontSize="$2" color="$gray10">
-          Size
+          Size ({sizeUnit})
         </Text>
         <XStack
           backgroundColor="$gray3"
           borderRadius="$3"
-          paddingVertical="$1.5"
-          paddingHorizontal="$2.5"
+          paddingTop="$1.5"
+          paddingBottom="$1.5"
+          paddingLeft="$2.5"
+          paddingRight="$1"
           borderColor="$gray8"
           borderWidth={1}
-          justifyContent="space-between"
           alignItems="center"
           height="$3"
         >
           <Input
             flex={1}
             placeholder="0.0"
-            value={size}
+            value={getDisplayValue()}
             onChangeText={handleManualSizeChange}
             keyboardType="numeric"
             returnKeyType="done"
@@ -98,10 +147,27 @@ export function OrderSizeInput({
             paddingHorizontal={0}
             paddingVertical={0}
           />
-          <Text fontFamily="$interSemiBold" fontSize="$2" color="$gray10" marginLeft="$2">
-            BTC
-          </Text>
+          <Button
+            backgroundColor="$gray5"
+            borderRadius="$2"
+            paddingHorizontal="$2"
+            paddingVertical="$1"
+            height="$2"
+            minWidth="$4"
+            marginLeft="$2"
+            onPress={handleUnitToggle}
+            pressStyle={{ backgroundColor: '$gray6', opacity: 0.8 }}
+          >
+            <Text fontFamily="$interSemiBold" fontSize="$2" color="$gray11">
+              {sizeUnit}
+            </Text>
+          </Button>
         </XStack>
+        {sizeUnit === 'BTC' && (
+          <Text fontSize="$1" color="$gray10">
+            ≈ ${getUsdValue()} USD
+          </Text>
+        )}
       </YStack>
 
       {/* Percentage Buttons */}
