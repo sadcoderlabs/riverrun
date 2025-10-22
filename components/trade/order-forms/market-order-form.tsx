@@ -21,7 +21,7 @@ export function MarketOrderForm({
       onSizeChange={onSizeChange}
       leverage={leverage}
       accountBalance={accountBalance}
-      marketPrice={marketPrice}
+      priceForCalculation={marketPrice}
     />
   );
 }

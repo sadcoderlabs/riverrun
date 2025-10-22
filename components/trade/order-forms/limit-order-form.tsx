@@ -21,6 +21,11 @@ export function LimitOrderForm({
   accountBalance,
   marketPrice,
 }: LimitOrderFormProps) {
+  // Determine which price to use for size calculation
+  // If limitPrice is valid (not empty and not zero), use it; otherwise use marketPrice
+  const hasValidLimitPrice = limitPrice && limitPrice !== '' && limitPrice !== '0';
+  const priceForCalculation = hasValidLimitPrice ? parseFloat(limitPrice) : marketPrice;
+
   return (
     <YStack gap="$2.5">
       {/* Limit Price */}
@@ -74,7 +79,7 @@ export function LimitOrderForm({
         onSizeChange={onSizeChange}
         leverage={leverage}
         accountBalance={accountBalance}
-        marketPrice={marketPrice}
+        priceForCalculation={priceForCalculation}
       />
     </YStack>
   );

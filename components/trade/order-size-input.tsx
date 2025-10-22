@@ -7,7 +7,7 @@ interface OrderSizeInputProps {
   onSizeChange: (value: string) => void;
   leverage: number;
   accountBalance: number;
-  marketPrice: number;
+  priceForCalculation: number; // Price used to calculate asset quantity from USD amount
 }
 
 export function OrderSizeInput({
@@ -15,15 +15,15 @@ export function OrderSizeInput({
   onSizeChange,
   leverage,
   accountBalance,
-  marketPrice,
+  priceForCalculation,
 }: OrderSizeInputProps) {
   const [sizePercentage, setSizePercentage] = useState(0);
 
-  // Calculate size from percentage
+  // Calculate size from percentage using the provided price
   const calculateSizeFromPercentage = (percent: number): string => {
     const marginUsd = accountBalance * (percent / 100);
     const sizeUsd = marginUsd * leverage;
-    const sizeInBaseAsset = sizeUsd / marketPrice;
+    const sizeInBaseAsset = sizeUsd / priceForCalculation;
     return sizeInBaseAsset.toFixed(4);
   };
 
