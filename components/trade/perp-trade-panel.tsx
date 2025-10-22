@@ -15,9 +15,10 @@ import { Button, Text, XStack, YStack } from 'tamagui';
 
 interface PerpTradePanelProps {
   assetId?: number;
+  assetSymbol: string; // Asset symbol like 'BTC', 'ETH', 'SOL'
 }
 
-export function PerpTradePanel({ assetId }: PerpTradePanelProps) {
+export function PerpTradePanel({ assetId, assetSymbol }: PerpTradePanelProps) {
   // Mock market data
   const marketData = {
     assetId: assetId ?? 0,
@@ -196,6 +197,7 @@ export function PerpTradePanel({ assetId }: PerpTradePanelProps) {
               leverage={leverage}
               accountBalance={accountBalance}
               marketPrice={marketData.price}
+              assetSymbol={assetSymbol}
             />
           )}
 
@@ -210,6 +212,7 @@ export function PerpTradePanel({ assetId }: PerpTradePanelProps) {
               leverage={leverage}
               accountBalance={accountBalance}
               marketPrice={marketData.price}
+              assetSymbol={assetSymbol}
             />
           )}
 

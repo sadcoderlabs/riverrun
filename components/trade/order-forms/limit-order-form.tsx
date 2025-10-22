@@ -10,6 +10,7 @@ interface LimitOrderFormProps {
   leverage: number;
   accountBalance: number;
   marketPrice: number;
+  assetSymbol: string;
 }
 
 export function LimitOrderForm({
@@ -20,6 +21,7 @@ export function LimitOrderForm({
   leverage,
   accountBalance,
   marketPrice,
+  assetSymbol,
 }: LimitOrderFormProps) {
   // Determine which price to use for size calculation
   // If limitPrice is valid (not empty and not zero), use it; otherwise use marketPrice
@@ -80,6 +82,7 @@ export function LimitOrderForm({
         leverage={leverage}
         accountBalance={accountBalance}
         priceForCalculation={priceForCalculation}
+        assetSymbol={assetSymbol}
       />
     </YStack>
   );

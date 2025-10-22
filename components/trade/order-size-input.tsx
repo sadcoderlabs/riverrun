@@ -8,6 +8,7 @@ interface OrderSizeInputProps {
   leverage: number;
   accountBalance: number;
   priceForCalculation: number; // Price used to calculate asset quantity from USD amount
+  assetSymbol: string; // The asset symbol (e.g., 'BTC', 'ETH', 'SOL')
 }
 
 export function OrderSizeInput({
@@ -16,22 +17,23 @@ export function OrderSizeInput({
   leverage,
   accountBalance,
   priceForCalculation,
+  assetSymbol,
 }: OrderSizeInputProps) {
   const [sizePercentage, setSizePercentage] = useState(0);
-  const [sizeUnit, setSizeUnit] = useState<'BTC' | 'USD'>('BTC'); // Display unit
+  const [sizeUnit, setSizeUnit] = useState<'ASSET' | 'USD'>('ASSET'); // Display unit
 
-  // Convert between BTC and USD
-  const btcToUsd = (btc: number): number => btc * priceForCalculation;
-  const usdToBtc = (usd: number): number => usd / priceForCalculation;
+  // Convert between asset and USD
+  const assetToUsd = (asset: number): number => asset * priceForCalculation;
+  const usdToAsset = (usd: number): number => usd / priceForCalculation;
 
   // Get the display value based on current unit
   const getDisplayValue = (): string => {
     if (!size || size === '' || size === '0') return '';
-    const sizeInBtc = parseFloat(size);
-    if (isNaN(sizeInBtc)) return '';
+    const sizeInAsset = parseFloat(size);
+    if (isNaN(sizeInAsset)) return '';
 
     if (sizeUnit === 'USD') {
-      return btcToUsd(sizeInBtc).toFixed(2);
+      return assetToUsd(sizeInAsset).toFixed(2);
     }
     return size;
   };
@@ -39,14 +41,14 @@ export function OrderSizeInput({
   // Get the USD value for display below input
   const getUsdValue = (): string => {
     if (!size || size === '' || size === '0') return '0.00';
-    const sizeInBtc = parseFloat(size);
-    if (isNaN(sizeInBtc)) return '0.00';
-    return btcToUsd(sizeInBtc).toFixed(2);
+    const sizeInAsset = parseFloat(size);
+    if (isNaN(sizeInAsset)) return '0.00';
+    return assetToUsd(sizeInAsset).toFixed(2);
   };
 
-  // Toggle between BTC and USD
+  // Toggle between asset and USD
   const handleUnitToggle = () => {
-    setSizeUnit(prev => (prev === 'BTC' ? 'USD' : 'BTC'));
+    setSizeUnit(prev => (prev === 'ASSET' ? 'USD' : 'ASSET'));
   };
 
   // Calculate size from percentage using the provided price
@@ -74,29 +76,29 @@ export function OrderSizeInput({
 
   // Handle manual size input - calculate corresponding percentage
   const handleManualSizeChange = (value: string) => {
-    // Convert input to BTC if current unit is USD
-    let sizeInBtc: string;
+    // Convert input to asset if current unit is USD
+    let sizeInAsset: string;
     if (sizeUnit === 'USD') {
       if (value && value !== '' && value !== '0') {
         const usdValue = parseFloat(value);
         if (!isNaN(usdValue)) {
-          sizeInBtc = usdToBtc(usdValue).toFixed(4);
+          sizeInAsset = usdToAsset(usdValue).toFixed(4);
         } else {
-          sizeInBtc = '';
+          sizeInAsset = '';
         }
       } else {
-        sizeInBtc = '';
+        sizeInAsset = '';
       }
     } else {
-      sizeInBtc = value;
+      sizeInAsset = value;
     }
 
-    // Always store and output size in BTC
-    onSizeChange(sizeInBtc);
+    // Always store and output size in asset quantity
+    onSizeChange(sizeInAsset);
 
     // Calculate the percentage that corresponds to this size
-    if (sizeInBtc && sizeInBtc !== '' && sizeInBtc !== '0') {
-      const sizeInBaseAsset = parseFloat(sizeInBtc);
+    if (sizeInAsset && sizeInAsset !== '' && sizeInAsset !== '0') {
+      const sizeInBaseAsset = parseFloat(sizeInAsset);
       if (!isNaN(sizeInBaseAsset)) {
         // Reverse calculation: size -> USD value -> margin -> percentage
         const sizeUsd = sizeInBaseAsset * priceForCalculation;
@@ -120,7 +122,7 @@ export function OrderSizeInput({
       {/* Size Input */}
       <YStack gap="$1.5">
         <Text fontFamily="$interRegular" fontSize="$2" color="$gray10">
-          Size ({sizeUnit})
+          Size ({sizeUnit === 'ASSET' ? assetSymbol : 'USD'})
         </Text>
         <XStack
           backgroundColor="$gray3"
@@ -159,11 +161,11 @@ export function OrderSizeInput({
             pressStyle={{ backgroundColor: '$gray6', opacity: 0.8 }}
           >
             <Text fontFamily="$interSemiBold" fontSize="$2" color="$gray11">
-              {sizeUnit}
+              {sizeUnit === 'ASSET' ? assetSymbol : 'USD'}
             </Text>
           </Button>
         </XStack>
-        {sizeUnit === 'BTC' && (
+        {sizeUnit === 'ASSET' && (
           <Text fontSize="$1" color="$gray10">
             ≈ ${getUsdValue()} USD
           </Text>

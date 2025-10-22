@@ -135,7 +135,7 @@ export default function PerpTradeIndex() {
       </AnimatePresence>
 
       {/* PERP Trade Panel - includes Order Book and Place Order UI */}
-      <PerpTradePanel assetId={marketData.assetId} />
+      <PerpTradePanel assetId={marketData.assetId} assetSymbol={assetName} />
 
       {/* PERP Tabs - Orders, Positions, History */}
       <PerpTabs assetId={marketData.assetId} />
