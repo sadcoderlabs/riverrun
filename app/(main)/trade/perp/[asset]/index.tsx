@@ -2,22 +2,40 @@ import { ChartUI } from '@/components/trade/chart-ui';
 import { MarketSelectorModal } from '@/components/trade/market-selector-modal';
 import { PerpTradePanel } from '@/components/trade/perp-trade-panel';
 import { PerpTabs } from '@/components/trade/perp-tabs';
+import { formatMarketId } from '@/lib/hyperliquid/market-utils';
 import { useMarketsStore } from '@/lib/store/use-markets-store';
 import { CandlestickChart, ChevronUp, Menu } from '@tamagui/lucide-icons';
 import { useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { AnimatePresence, Text, XStack, YStack } from 'tamagui';
 
+// Temporary hardcoded asset mapping (will be replaced with API call)
+const ASSET_INDEX_MAP: Record<string, number> = {
+  BTC: 0,
+  ETH: 1,
+  SOL: 2,
+  // Add more as needed
+};
+
 export default function PerpTradeIndex() {
-  const { market } = useLocalSearchParams<{ market: string }>();
+  const { asset } = useLocalSearchParams<{ asset: string }>();
   const [isChart, setIsChart] = useState(false);
 
   // Use modal state from Zustand store
   const { isMarketSelectorOpen, setMarketSelectorOpen } = useMarketsStore();
 
+  // Get asset name and assetId (index in Hyperliquid)
+  const assetName = asset || 'BTC';
+  const assetId = useMemo(() => ASSET_INDEX_MAP[assetName.toUpperCase()] ?? 0, [assetName]);
+
+  // Format market display (e.g., "BTC-USD")
+  const marketDisplay = formatMarketId(assetName, 'perp');
+
   // Hard-coded market data for rendering purposes
   const marketData = {
-    id: market || 'BTC-USD',
+    assetId,
+    assetName,
+    marketDisplay,
     price: 28450.75,
     priceChange: 2.34,
     fundingRate: 0.0012, // 0.12% per 8 hours
@@ -50,7 +68,7 @@ export default function PerpTradeIndex() {
           >
             <Menu size="$1.5" color="$color" />
             <Text fontFamily="$interSemiBold" fontSize="$4" color="$color">
-              {marketData.id}
+              {marketData.marketDisplay}
             </Text>
           </XStack>
           <XStack onPress={() => setIsChart(!isChart)} pressStyle={{ opacity: 0.7 }} padding="$1">
@@ -99,7 +117,7 @@ export default function PerpTradeIndex() {
             opacity={1}
             overflow="hidden"
           >
-            <ChartUI marketId={marketData.id} />
+            <ChartUI marketId={marketData.marketDisplay} />
             <XStack
               justifyContent="center"
               alignItems="center"
@@ -117,10 +135,10 @@ export default function PerpTradeIndex() {
       </AnimatePresence>
 
       {/* PERP Trade Panel - includes Order Book and Place Order UI */}
-      <PerpTradePanel marketId={marketData.id} />
+      <PerpTradePanel assetId={marketData.assetId} />
 
       {/* PERP Tabs - Orders, Positions, History */}
-      <PerpTabs marketId={marketData.id} />
+      <PerpTabs assetId={marketData.assetId} />
 
       {/* Market Selector Modal */}
       <MarketSelectorModal open={isMarketSelectorOpen} onOpenChange={setMarketSelectorOpen} />

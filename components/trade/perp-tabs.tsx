@@ -4,10 +4,10 @@ import { useState } from 'react';
 import { Text, XStack, YStack } from 'tamagui';
 
 interface PerpTabsProps {
-  marketId?: string;
+  assetId?: number;
 }
 
-export function PerpTabs({ marketId }: PerpTabsProps) {
+export function PerpTabs({ assetId }: PerpTabsProps) {
   const [activeTab, setActiveTab] = useState<'orders' | 'positions' | 'history'>('orders');
 
   return (
@@ -42,10 +42,7 @@ export function PerpTabs({ marketId }: PerpTabsProps) {
         )}
 
         {activeTab === 'history' && (
-          <TabPlaceholder
-            title={`${marketId || 'Market'} History`}
-            message="Your trading history will appear here"
-          />
+          <TabPlaceholder title="History" message="Your trading history will appear here" />
         )}
       </YStack>
     </YStack>

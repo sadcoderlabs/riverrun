@@ -5,10 +5,10 @@ type TradeType = 'perp' | 'spot' | 'equities' | 'swap';
 
 interface TradeTypeNavProps {
   currentType: TradeType;
-  market?: string;
+  asset?: string;
 }
 
-export function TradeTypeNav({ currentType, market = 'BTC-USD' }: TradeTypeNavProps) {
+export function TradeTypeNav({ currentType, asset = 'BTC' }: TradeTypeNavProps) {
   const router = useRouter();
   const pathname = usePathname();
 
@@ -20,16 +20,16 @@ export function TradeTypeNav({ currentType, market = 'BTC-USD' }: TradeTypeNavPr
   ];
 
   const handleTabPress = (type: TradeType) => {
-    if (!tabs.find((t) => t.key === type)?.enabled) return;
+    if (!tabs.find(t => t.key === type)?.enabled) return;
     if (type === currentType) return;
 
-    // Navigate to the new trade type with the same market
-    router.replace(`/trade/${type}/${market}` as any);
+    // Navigate to the new trade type with the same asset
+    router.replace(`/trade/${type}/${asset}` as any);
   };
 
   return (
     <XStack gap="$5" paddingHorizontal="$4" paddingVertical="$3">
-      {tabs.map((tab) => {
+      {tabs.map(tab => {
         const isActive = tab.key === currentType;
         const isDisabled = !tab.enabled;
 

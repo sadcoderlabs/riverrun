@@ -80,7 +80,7 @@ export function NavBar() {
   };
 
   const navigateToTrade = () => {
-    router.navigate('/(main)/trade/perp/BTC-USD');
+    router.navigate('/(main)/trade/perp/BTC');
   };
 
   return (

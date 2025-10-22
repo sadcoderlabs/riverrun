@@ -16,7 +16,6 @@ import {
 } from '@/components/trade/order-forms';
 import { TpSlInput } from '@/components/trade/tp-sl-input';
 import type { AgentClientContext } from '@/lib/hyperliquid/agent';
-import { findAssetIndex, parseMarketId } from '@/lib/hyperliquid/market-utils';
 import { Check, ChevronDown } from '@tamagui/lucide-icons';
 import { useCallback, useState } from 'react';
 import { Checkbox } from '@tamagui/checkbox';
@@ -25,23 +24,23 @@ import { Button, Slider, Text, XStack, YStack } from 'tamagui';
 const AGENT_STORAGE_PREFIX = 'hl-agent:private-key:';
 
 interface PerpTradePanelProps {
-  marketId?: string;
+  assetId?: number;
 }
 
-export function PerpTradePanel({ marketId }: PerpTradePanelProps) {
+export function PerpTradePanel({ assetId }: PerpTradePanelProps) {
   return (
     <ApprovalGateProvider>
-      <PerpTradePanelView marketId={marketId} />
+      <PerpTradePanelView assetId={assetId} />
     </ApprovalGateProvider>
   );
 }
 
-function PerpTradePanelView({ marketId }: PerpTradePanelProps) {
+function PerpTradePanelView({ assetId }: PerpTradePanelProps) {
   const { infoClient } = useApprovalGate();
 
   // Mock market data (similar to what's in the index.tsx)
   const marketData = {
-    id: marketId || 'BTC-USD',
+    assetId: assetId ?? 0,
     price: 28450.75,
     priceChange: 2.34,
     fundingRate: 0.0012,
@@ -74,14 +73,11 @@ function PerpTradePanelView({ marketId }: PerpTradePanelProps) {
     async (context: AgentClientContext) => {
       const meta = await infoClient.meta();
 
-      // Parse marketId (e.g., "BTC-USD") to get the asset name (e.g., "BTC")
-      const { assetName } = parseMarketId(marketId || 'BTC-USD');
+      // Use the assetId directly (it's the index in Hyperliquid)
+      const assetIndex = assetId ?? 0;
 
-      // Find the asset index in the universe
-      const assetIndex = findAssetIndex(assetName, meta.universe);
-
-      if (assetIndex === -1) {
-        throw new Error(`Unable to locate ${assetName} perpetual market metadata`);
+      if (assetIndex < 0 || assetIndex >= meta.universe.length) {
+        throw new Error(`Invalid asset index: ${assetIndex}`);
       }
 
       const assetMeta = meta.universe[assetIndex];
@@ -108,7 +104,7 @@ function PerpTradePanelView({ marketId }: PerpTradePanelProps) {
         ],
       });
     },
-    [infoClient, marketId],
+    [infoClient, assetId],
   );
 
   // Calculate order details

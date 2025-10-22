@@ -71,8 +71,10 @@ export function MarketSelectorModal({ open, onOpenChange }: MarketSelectorModalP
     (marketId: string) => {
       // Close modal first
       onOpenChange(false);
-      // Replace current route with new market (default to perp)
-      router.replace(`/(main)/trade/perp/${marketId}`);
+      // Extract asset name from marketId (e.g., "BTC-USD" -> "BTC")
+      const asset = marketId.replace('-USD', '').replace('/USDC', '').split('/')[0];
+      // Replace current route with new asset (default to perp)
+      router.replace(`/(main)/trade/perp/${asset}`);
     },
     [router, onOpenChange],
   );

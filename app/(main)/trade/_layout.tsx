@@ -10,16 +10,16 @@ import { YStack } from 'tamagui';
  * This layout is specific to trade pages and adds:
  * - Top navigation for switching between trade types
  * - Safe area padding for top (to account for status bar)
- * - Handles routing for perp/[market] and spot/[market]
+ * - Handles routing for perp/[asset] and spot/[market]
  */
 export default function TradeLayout() {
   const insets = useSafeAreaInsets();
   const segments = useSegments();
   const params = useLocalSearchParams();
 
-  // Extract trade type (perp/spot) and market from segments
+  // Extract trade type (perp/spot) and asset from segments
   const tradeType = (segments[2] as 'perp' | 'spot') || 'perp';
-  const market = (params.market as string) || 'BTC-USD';
+  const asset = (params.asset as string) || 'BTC';
 
   return (
     <YStack flex={1} backgroundColor="$gray3">
@@ -30,17 +30,17 @@ export default function TradeLayout() {
         borderBottomColor="$gray8"
         backgroundColor="$gray3"
       >
-        <TradeTypeNav currentType={tradeType} market={market} />
+        <TradeTypeNav currentType={tradeType} asset={asset} />
       </YStack>
 
-      {/* Content from child routes (perp/[market], spot/[market]) */}
+      {/* Content from child routes (perp/[asset], spot/[market]) */}
       <Stack
         screenOptions={{
           headerShown: false,
           animation: 'none', // Disable navigation animation for instant market switching
         }}
       >
-        <Stack.Screen name="perp/[market]/index" />
+        <Stack.Screen name="perp/[asset]/index" />
         <Stack.Screen name="spot/[market]/(tab)/index" />
       </Stack>
     </YStack>
