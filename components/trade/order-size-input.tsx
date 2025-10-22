@@ -93,8 +93,9 @@ export function OrderSizeInput({
             flex={1}
             backgroundColor="$gray5"
             borderRadius="$3"
-            paddingVertical="$2"
+            paddingVertical="$1.5"
             paddingHorizontal="$1"
+            height="$2.5"
             onPress={() => handlePercentageClick(percent)}
             opacity={sizePercentage === percent ? 1 : 0.6}
           >
