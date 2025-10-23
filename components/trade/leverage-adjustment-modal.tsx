@@ -1,6 +1,6 @@
 import * as hl from '@nktkas/hyperliquid';
 import { useHyperliquidAgent } from '@/hooks/useHyperliquidAgent';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { toast } from 'sonner-native';
 import { Button, Sheet, Slider, Spinner, Text, XStack, YStack } from 'tamagui';
 
@@ -29,8 +29,15 @@ export function LeverageAdjustmentModal({
   assetId,
   assetSymbol,
 }: LeverageAdjustmentModalProps) {
-  const { getAgentContext, transport } = useHyperliquidAgent();
+  const { getAgentContext } = useHyperliquidAgent();
   const [isUpdating, setIsUpdating] = useState(false);
+
+  // Create transport instance (reused across API calls)
+  const transportRef = useRef<hl.HttpTransport | null>(null);
+  if (!transportRef.current) {
+    transportRef.current = new hl.HttpTransport();
+  }
+  const transport = transportRef.current;
 
   // Local state to track user's selection before confirming
   const [selectedLeverage, setSelectedLeverage] = useState(leverage);

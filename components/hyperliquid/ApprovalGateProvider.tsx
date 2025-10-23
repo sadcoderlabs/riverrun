@@ -1,5 +1,6 @@
 import { useHyperliquidAgent } from '@/hooks/useHyperliquidAgent';
 import type { AgentClientContext } from '@/lib/hyperliquid/agent';
+import { useAppKitProvider } from '@reown/appkit-ethers-react-native';
 import { createContext, useCallback, useContext, useMemo } from 'react';
 import { Alert } from 'react-native';
 
@@ -13,9 +14,8 @@ interface ApprovalGateContextValue {
   withAgentApproval: (
     action: (context: AgentClientContext) => Promise<void> | void,
   ) => Promise<boolean>;
-  walletProvider: ReturnType<typeof useHyperliquidAgent>['walletProvider'];
+  walletProvider: ReturnType<typeof useAppKitProvider>['walletProvider'];
   infoClient: ReturnType<typeof useHyperliquidAgent>['infoClient'];
-  transport: ReturnType<typeof useHyperliquidAgent>['transport'];
   getAgentContext: ReturnType<typeof useHyperliquidAgent>['getAgentContext'];
 }
 
@@ -23,10 +23,11 @@ const ApprovalGateContext = createContext<ApprovalGateContextValue | undefined>(
 
 export function ApprovalGateProvider({ children }: ApprovalGateProviderProps) {
   const agent = useHyperliquidAgent();
+  const { walletProvider } = useAppKitProvider();
 
   const withAgentApproval = useCallback<ApprovalGateContextValue['withAgentApproval']>(
     async action => {
-      if (!agent.walletProvider) {
+      if (!walletProvider) {
         Alert.alert('Wallet not connected', 'Please connect your wallet to continue.');
         return false;
       }
@@ -103,7 +104,7 @@ export function ApprovalGateProvider({ children }: ApprovalGateProviderProps) {
         ]);
       });
     },
-    [agent],
+    [agent.getAgentContext, walletProvider],
   );
 
   const value = useMemo<ApprovalGateContextValue>(
@@ -111,12 +112,11 @@ export function ApprovalGateProvider({ children }: ApprovalGateProviderProps) {
       requiresAgentApproval: agent.requiresAgentApproval,
       isCheckingApproval: agent.isCheckingApproval,
       withAgentApproval,
-      walletProvider: agent.walletProvider,
+      walletProvider,
       infoClient: agent.infoClient,
-      transport: agent.transport,
       getAgentContext: agent.getAgentContext,
     }),
-    [agent, withAgentApproval],
+    [agent, withAgentApproval, walletProvider],
   );
 
   return <ApprovalGateContext.Provider value={value}>{children}</ApprovalGateContext.Provider>;

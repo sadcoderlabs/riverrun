@@ -8,9 +8,7 @@ interface UseHyperliquidAgentResult {
   requiresAgentApproval: boolean | undefined;
   isCheckingApproval: boolean;
   getAgentContext: () => Promise<AgentClientContext>;
-  transport: hl.HttpTransport;
   infoClient: hl.InfoClient;
-  walletProvider: ReturnType<typeof useAppKitProvider>['walletProvider'];
 }
 
 export function useHyperliquidAgent(): UseHyperliquidAgentResult {
@@ -83,17 +81,8 @@ export function useHyperliquidAgent(): UseHyperliquidAgentResult {
       requiresAgentApproval,
       isCheckingApproval,
       getAgentContext,
-      transport,
       infoClient,
-      walletProvider,
     }),
-    [
-      getAgentContext,
-      infoClient,
-      isCheckingApproval,
-      requiresAgentApproval,
-      transport,
-      walletProvider,
-    ],
+    [getAgentContext, infoClient, isCheckingApproval, requiresAgentApproval],
   );
 }
