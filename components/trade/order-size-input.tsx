@@ -6,7 +6,7 @@ interface OrderSizeInputProps {
   size: string;
   onSizeChange: (value: string) => void;
   leverage: number;
-  accountBalance: number;
+  availableToTrade: number;
   priceForCalculation: number; // Price used to calculate asset quantity from USD amount
   assetSymbol: string; // The asset symbol (e.g., 'BTC', 'ETH', 'SOL')
 }
@@ -15,7 +15,7 @@ export function OrderSizeInput({
   size,
   onSizeChange,
   leverage,
-  accountBalance,
+  availableToTrade,
   priceForCalculation,
   assetSymbol,
 }: OrderSizeInputProps) {
@@ -53,7 +53,7 @@ export function OrderSizeInput({
 
   // Calculate size from percentage using the provided price
   const calculateSizeFromPercentage = (percent: number): string => {
-    const marginUsd = accountBalance * (percent / 100);
+    const marginUsd = availableToTrade * (percent / 100);
     const sizeUsd = marginUsd * leverage;
     const sizeInBaseAsset = sizeUsd / priceForCalculation;
     return sizeInBaseAsset.toFixed(4);
@@ -103,7 +103,7 @@ export function OrderSizeInput({
         // Reverse calculation: size -> USD value -> margin -> percentage
         const sizeUsd = sizeInBaseAsset * priceForCalculation;
         const marginUsd = sizeUsd / leverage;
-        const percentage = (marginUsd / accountBalance) * 100;
+        const percentage = (marginUsd / availableToTrade) * 100;
 
         // Clamp percentage between 0 and 100
         const clampedPercentage = Math.max(0, Math.min(100, percentage));

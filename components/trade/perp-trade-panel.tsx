@@ -220,7 +220,7 @@ export function PerpTradePanel({
                 setValue('size', value, { shouldValidate: false, shouldDirty: true })
               }
               leverage={leverage}
-              accountBalance={availableToTrade}
+              availableToTrade={availableToTrade}
               marketPrice={marketData.price}
               assetSymbol={assetSymbol}
             />
@@ -235,7 +235,7 @@ export function PerpTradePanel({
                 setValue('size', value, { shouldValidate: false, shouldDirty: true })
               }
               leverage={leverage}
-              accountBalance={availableToTrade}
+              availableToTrade={availableToTrade}
               marketPrice={marketData.price}
               assetSymbol={assetSymbol}
             />

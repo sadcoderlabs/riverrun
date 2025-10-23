@@ -4,7 +4,7 @@ interface MarketOrderFormProps {
   size: string;
   onSizeChange: (value: string) => void;
   leverage: number;
-  accountBalance: number;
+  availableToTrade: number;
   marketPrice: number;
   assetSymbol: string;
 }
@@ -13,7 +13,7 @@ export function MarketOrderForm({
   size,
   onSizeChange,
   leverage,
-  accountBalance,
+  availableToTrade,
   marketPrice,
   assetSymbol,
 }: MarketOrderFormProps) {
@@ -22,7 +22,7 @@ export function MarketOrderForm({
       size={size}
       onSizeChange={onSizeChange}
       leverage={leverage}
-      accountBalance={accountBalance}
+      availableToTrade={availableToTrade}
       priceForCalculation={marketPrice}
       assetSymbol={assetSymbol}
     />

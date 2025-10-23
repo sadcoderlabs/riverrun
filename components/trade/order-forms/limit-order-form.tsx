@@ -8,7 +8,7 @@ interface LimitOrderFormProps {
   size: string;
   onSizeChange: (value: string) => void;
   leverage: number;
-  accountBalance: number;
+  availableToTrade: number;
   marketPrice: number;
   assetSymbol: string;
 }
@@ -19,7 +19,7 @@ export function LimitOrderForm({
   size,
   onSizeChange,
   leverage,
-  accountBalance,
+  availableToTrade,
   marketPrice,
   assetSymbol,
 }: LimitOrderFormProps) {
@@ -80,7 +80,7 @@ export function LimitOrderForm({
         size={size}
         onSizeChange={onSizeChange}
         leverage={leverage}
-        accountBalance={accountBalance}
+        availableToTrade={availableToTrade}
         priceForCalculation={priceForCalculation}
         assetSymbol={assetSymbol}
       />
