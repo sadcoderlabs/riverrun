@@ -1,4 +1,4 @@
-import type { AgentClientContext } from '@/lib/hyperliquid/agent';
+import * as hl from '@nktkas/hyperliquid';
 import { useCallback, useMemo, useState } from 'react';
 import { ButtonProps, Text } from 'tamagui';
 import { Button } from '../global/button';
@@ -10,7 +10,7 @@ interface GateButtonProps extends Omit<ButtonProps, 'onPress'> {
   loadingTitle?: string;
   loading?: boolean;
   buttonSize?: 'sm' | 'md' | 'lg';
-  onPressApproved: (context: AgentClientContext) => Promise<void> | void;
+  onPressApproved: (exchangeClient: hl.ExchangeClient) => Promise<void> | void;
 }
 
 export function GateButton({
@@ -23,30 +23,14 @@ export function GateButton({
   children,
   ...buttonProps
 }: GateButtonProps) {
-  const { requiresAgentApproval, isCheckingApproval, withAgentApproval } = useApprovalGate();
+  const { withAgentApproval } = useApprovalGate();
   const [isRunning, setIsRunning] = useState(false);
 
-  const busy = loading || isRunning || isCheckingApproval;
+  const busy = loading || isRunning;
   const effectiveDisabled = disabled || busy;
 
   const buttonVisuals = useMemo(() => {
     if (effectiveDisabled && !busy) {
-      return {
-        backgroundColor: '$gray6',
-        borderColor: '$gray7',
-        textColor: '$color12',
-      } as const;
-    }
-
-    if (requiresAgentApproval === false) {
-      return {
-        backgroundColor: '$accent9',
-        borderColor: '$accent9',
-        textColor: '$color1',
-      } as const;
-    }
-
-    if (requiresAgentApproval === true) {
       return {
         backgroundColor: '$gray6',
         borderColor: '$gray7',
@@ -59,7 +43,7 @@ export function GateButton({
       borderColor: '$accent9',
       textColor: '$color1',
     } as const;
-  }, [busy, effectiveDisabled, requiresAgentApproval]);
+  }, [busy, effectiveDisabled]);
 
   const label = busy ? loadingTitle : (title ?? 'Submit');
 
@@ -69,8 +53,8 @@ export function GateButton({
     }
 
     setIsRunning(true);
-    void withAgentApproval(async context => {
-      await Promise.resolve(onPressApproved(context));
+    void withAgentApproval(async exchangeClient => {
+      await Promise.resolve(onPressApproved(exchangeClient));
     })
       .catch(error => {
         if (error instanceof Error) {

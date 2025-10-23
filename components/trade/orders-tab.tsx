@@ -308,7 +308,7 @@ export function OrdersTabContent() {
                           throw new Error(`Unable to determine asset index for ${order.coin}`);
                         }
 
-                        await context.agentExchangeClient.cancel({
+                        await context.cancel({
                           cancels: [
                             {
                               a: assetIndex,
