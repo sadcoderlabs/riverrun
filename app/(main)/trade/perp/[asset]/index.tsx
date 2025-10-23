@@ -32,7 +32,6 @@ export default function PerpTradeIndex() {
   // Subscribe to active asset data (leverage, margin mode) from WebSocket
   const { data: activeAssetData, isLoading: isLoadingAssetData } = useActiveAssetData({
     coin: assetSymbol,
-    enabled: true,
   });
 
   // Format market display (e.g., "BTC-USD")

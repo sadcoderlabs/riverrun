@@ -1,6 +1,7 @@
 import * as hl from '@nktkas/hyperliquid';
 import { useAppKitAccount } from '@reown/appkit-ethers-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useHyperliquidClient } from './useHyperliquidClient';
 
 export interface ActiveAssetData {
   user: string;
@@ -17,7 +18,6 @@ export interface ActiveAssetData {
 
 interface UseActiveAssetDataParams {
   coin: string;
-  enabled?: boolean;
 }
 
 interface UseActiveAssetDataResult {
@@ -30,16 +30,13 @@ interface UseActiveAssetDataResult {
  * Hook to subscribe to Hyperliquid's activeAssetData WebSocket feed
  * for real-time leverage and margin mode updates.
  */
-export function useActiveAssetData({
-  coin,
-  enabled = true,
-}: UseActiveAssetDataParams): UseActiveAssetDataResult {
+export function useActiveAssetData({ coin }: UseActiveAssetDataParams): UseActiveAssetDataResult {
   const { address, isConnected } = useAppKitAccount();
+  const { getSubscriptionClient } = useHyperliquidClient();
   const [data, setData] = useState<ActiveAssetData | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | undefined>(undefined);
 
-  const transportRef = useRef<hl.WebSocketTransport | null>(null);
   const subscriptionRef = useRef<hl.Subscription | null>(null);
 
   // Cleanup function
@@ -52,20 +49,11 @@ export function useActiveAssetData({
       }
       subscriptionRef.current = null;
     }
-
-    if (transportRef.current) {
-      try {
-        await transportRef.current.close();
-      } catch (err) {
-        console.error('Error closing WebSocket transport:', err);
-      }
-      transportRef.current = null;
-    }
   }, []);
 
   useEffect(() => {
     // Don't subscribe if conditions aren't met
-    if (!enabled || !isConnected || !address || !coin) {
+    if (!isConnected || !address || !coin) {
       setIsLoading(false);
       setData(undefined);
       return;
@@ -80,12 +68,8 @@ export function useActiveAssetData({
         // Cleanup any existing subscription
         await cleanup();
 
-        // Create WebSocket transport
-        const transport = new hl.WebSocketTransport();
-        transportRef.current = transport;
-
-        // Create subscription client
-        const subscriptionClient = new hl.SubscriptionClient({ transport });
+        // Get subscription client from hook
+        const subscriptionClient = getSubscriptionClient();
 
         // Subscribe to activeAssetData
         const subscription = await subscriptionClient.activeAssetData(
@@ -132,7 +116,7 @@ export function useActiveAssetData({
       isMounted = false;
       void cleanup();
     };
-  }, [address, coin, enabled, isConnected, cleanup]);
+  }, [address, coin, isConnected, cleanup, getSubscriptionClient]);
 
   return {
     data,

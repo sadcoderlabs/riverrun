@@ -33,9 +33,6 @@ export function PerpTradePanel({
     price: 28450.75,
   };
 
-  // Mock account balance
-  const accountBalance = 1000;
-
   // Initialize React Hook Form (only manages order-specific fields)
   const { form, validation } = useOrderForm({});
 
@@ -47,6 +44,14 @@ export function PerpTradePanel({
   const size = useWatch({ control, name: 'size' });
   const limitPrice = useWatch({ control, name: 'limitPrice' }) || '';
   const reduceOnly = useWatch({ control, name: 'reduceOnly' });
+
+  // Calculate available to trade based on order side
+  // availableToTrade[0] = long (buy) available margin
+  // availableToTrade[1] = short (sell) available margin
+  const availableToTrade =
+    orderSide === 'Long'
+      ? parseFloat(activeAssetData?.availableToTrade[0] || '0')
+      : parseFloat(activeAssetData?.availableToTrade[1] || '0');
 
   // UI-only states (helper states for calculating size)
   const [collateralMode, setCollateralMode] = useState('Cross');
@@ -139,13 +144,17 @@ export function PerpTradePanel({
             <ChevronDown size="$0.75" color="$color" />
           </XStack>
 
-          {/* Available Balance */}
+          {/* Available to Trade */}
           <XStack justifyContent="space-between" alignItems="center">
             <Text fontFamily="$interRegular" fontSize="$2" color="$gray10">
-              Available
+              Available to trade
             </Text>
             <Text fontFamily="$interSemiBold" fontSize="$4" color="$color">
-              ${formatNumber(accountBalance)}
+              {isLoadingAssetData ? (
+                <Text color="$gray10">Loading...</Text>
+              ) : (
+                `$${formatNumber(availableToTrade)}`
+              )}
             </Text>
           </XStack>
 
@@ -211,7 +220,7 @@ export function PerpTradePanel({
                 setValue('size', value, { shouldValidate: false, shouldDirty: true })
               }
               leverage={leverage}
-              accountBalance={accountBalance}
+              accountBalance={availableToTrade}
               marketPrice={marketData.price}
               assetSymbol={assetSymbol}
             />
@@ -226,7 +235,7 @@ export function PerpTradePanel({
                 setValue('size', value, { shouldValidate: false, shouldDirty: true })
               }
               leverage={leverage}
-              accountBalance={accountBalance}
+              accountBalance={availableToTrade}
               marketPrice={marketData.price}
               assetSymbol={assetSymbol}
             />

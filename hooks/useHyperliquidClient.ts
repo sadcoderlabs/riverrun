@@ -9,6 +9,8 @@ import { DEFAULT_AGENT_NAME, getOrCreateAgentSigner } from '@/lib/hyperliquid/ag
 // Singleton instances - shared across all hook usages
 let transport: hl.HttpTransport | undefined;
 let infoClient: hl.InfoClient | undefined;
+let wsTransport: hl.WebSocketTransport | undefined;
+let subscriptionClient: hl.SubscriptionClient | undefined;
 
 function getTransport(): hl.HttpTransport {
   if (!transport) {
@@ -24,10 +26,19 @@ function getInfoClient(): hl.InfoClient {
   return infoClient;
 }
 
+function getSubscriptionClient(): hl.SubscriptionClient {
+  if (!subscriptionClient || !wsTransport) {
+    wsTransport = new hl.WebSocketTransport();
+    subscriptionClient = new hl.SubscriptionClient({ transport: wsTransport });
+  }
+  return subscriptionClient;
+}
+
 interface UseHyperliquidClientResult {
   getAgentExchangeClient: () => Promise<hl.ExchangeClient | undefined>;
   getMasterExchangeClient: () => Promise<hl.ExchangeClient | undefined>;
   getInfoClient: () => hl.InfoClient;
+  getSubscriptionClient: () => hl.SubscriptionClient;
 }
 
 export function useHyperliquidClient(): UseHyperliquidClientResult {
@@ -160,6 +171,7 @@ export function useHyperliquidClient(): UseHyperliquidClientResult {
       getAgentExchangeClient,
       getMasterExchangeClient,
       getInfoClient,
+      getSubscriptionClient,
     }),
     [getAgentExchangeClient, getMasterExchangeClient],
   );
