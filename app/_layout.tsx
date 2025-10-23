@@ -18,10 +18,14 @@ import { useThemePreference } from '@/hooks/useThemePreference';
 import { ActionSheetProvider } from '@expo/react-native-action-sheet';
 import { SplashScreen, Stack } from 'expo-router';
 import { useEffect } from 'react';
+import { LogBox } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Toaster } from 'sonner-native';
 import { TamaguiProvider, View } from 'tamagui';
+
+// Suppress known WalletConnect warnings during session restoration
+LogBox.ignoreLogs(['emitting session_request', 'without any listeners']);
 
 // 1. Get projectId at https://dashboard.reown.com
 const projectId = 'REOWN_PROJECT_ID_REMOVED';
