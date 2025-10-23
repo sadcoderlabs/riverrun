@@ -1,39 +1,40 @@
 import * as hl from '@nktkas/hyperliquid';
-import { useAppKitAccount } from '@reown/appkit-ethers-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useHyperliquidClient } from './useHyperliquidClient';
 
-export interface ActiveAssetData {
-  user: string;
+export interface ActiveAssetCtx {
   coin: string;
-  leverage: {
-    type: 'isolated' | 'cross';
-    value: number;
-    rawUsd?: string;
+  ctx: {
+    markPx: string;
+    funding: string;
+    prevDayPx: string;
+    dayNtlVlm: string;
+    openInterest: string;
+    midPx: string;
+    oraclePx: string;
+    premium: string;
+    impactPxs: [string, string];
+    dayBaseVlm: string;
   };
-  maxTradeSzs: [string, string];
-  availableToTrade: [string, string];
-  markPx: string;
 }
 
-interface UseActiveAssetDataParams {
+interface UseActiveAssetCtxParams {
   coin: string;
 }
 
-interface UseActiveAssetDataResult {
-  data: ActiveAssetData | undefined;
+interface UseActiveAssetCtxResult {
+  data: ActiveAssetCtx | undefined;
   isLoading: boolean;
   error: Error | undefined;
 }
 
 /**
- * Hook to subscribe to Hyperliquid's activeAssetData WebSocket feed
- * for real-time leverage and margin mode updates.
+ * Hook to subscribe to Hyperliquid's activeAssetCtx WebSocket feed
+ * for real-time market data including price, funding rate, and volume.
  */
-export function useActiveAssetData({ coin }: UseActiveAssetDataParams): UseActiveAssetDataResult {
-  const { address, isConnected } = useAppKitAccount();
+export function useActiveAssetCtx({ coin }: UseActiveAssetCtxParams): UseActiveAssetCtxResult {
   const { getSubscriptionClient } = useHyperliquidClient();
-  const [data, setData] = useState<ActiveAssetData | undefined>(undefined);
+  const [data, setData] = useState<ActiveAssetCtx | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | undefined>(undefined);
 
@@ -45,15 +46,15 @@ export function useActiveAssetData({ coin }: UseActiveAssetDataParams): UseActiv
       try {
         await subscriptionRef.current.unsubscribe();
       } catch (err) {
-        console.error('Error unsubscribing from activeAssetData:', err);
+        console.error('Error unsubscribing from activeAssetCtx:', err);
       }
       subscriptionRef.current = null;
     }
   }, []);
 
   useEffect(() => {
-    // Don't subscribe if conditions aren't met
-    if (!isConnected || !address || !coin) {
+    // Don't subscribe if coin is not provided
+    if (!coin) {
       setIsLoading(false);
       setData(undefined);
       return;
@@ -71,15 +72,14 @@ export function useActiveAssetData({ coin }: UseActiveAssetDataParams): UseActiv
         // Get subscription client from hook
         const subscriptionClient = getSubscriptionClient();
 
-        // Subscribe to activeAssetData
-        const subscription = await subscriptionClient.activeAssetData(
+        // Subscribe to activeAssetCtx
+        const subscription = await subscriptionClient.activeAssetCtx(
           {
             coin: coin.toUpperCase(),
-            user: address,
           },
-          assetData => {
+          assetCtx => {
             if (isMounted) {
-              setData(assetData);
+              setData(assetCtx as ActiveAssetCtx);
               setIsLoading(false);
             }
           },
@@ -88,7 +88,7 @@ export function useActiveAssetData({ coin }: UseActiveAssetDataParams): UseActiv
         subscriptionRef.current = subscription;
       } catch (err) {
         if (isMounted) {
-          console.error('Error setting up activeAssetData subscription:', err);
+          console.error('Error setting up activeAssetCtx subscription:', err);
           setError(err instanceof Error ? err : new Error('Failed to subscribe'));
           setIsLoading(false);
         }
@@ -102,7 +102,7 @@ export function useActiveAssetData({ coin }: UseActiveAssetDataParams): UseActiv
       isMounted = false;
       void cleanup();
     };
-  }, [address, coin, isConnected, cleanup, getSubscriptionClient]);
+  }, [coin, cleanup, getSubscriptionClient]);
 
   return {
     data,

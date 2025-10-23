@@ -1,5 +1,6 @@
 import { ChartUI } from '@/components/trade/chart-ui';
 import { MarketSelectorModal } from '@/components/trade/market-selector-modal';
+import { useActiveAssetCtx } from '@/hooks/useActiveAssetCtx';
 import { formatMarketId } from '@/lib/hyperliquid/market-utils';
 import { useMarketsStore } from '@/lib/store/use-markets-store';
 import { CandlestickChart, ChevronUp, Menu } from '@tamagui/lucide-icons';
@@ -20,16 +21,35 @@ export function AssetInfo({ assetSymbol }: AssetInfoProps) {
   // Format market display (e.g., "BTC-USD")
   const marketDisplay = formatMarketId(assetSymbol, 'perp');
 
-  // Hard-coded market data for rendering purposes
-  const marketData = useMemo(
-    () => ({
-      price: 28450.75,
-      priceChange: 2.34,
-      fundingRate: 0.0012, // 0.12% per 8 hours
-      annualizedFunding: 10.95, // Annualized percentage
-    }),
-    [],
-  );
+  // Subscribe to real-time asset context data
+  const { data: assetCtx, isLoading, error } = useActiveAssetCtx({ coin: assetSymbol });
+
+  // Calculate market data from real-time WebSocket data
+  const marketData = useMemo(() => {
+    if (!assetCtx) {
+      return {
+        price: 0,
+        priceChange: 0,
+        fundingRate: 0,
+      };
+    }
+
+    const markPx = parseFloat(assetCtx.ctx.markPx);
+    const prevDayPx = parseFloat(assetCtx.ctx.prevDayPx);
+    const funding = parseFloat(assetCtx.ctx.funding);
+
+    // Calculate 24h price change percentage
+    const priceChange = prevDayPx > 0 ? ((markPx - prevDayPx) / prevDayPx) * 100 : 0;
+
+    // Convert funding to percentage (funding is already a decimal, multiply by 100)
+    const fundingRate = funding * 100;
+
+    return {
+      price: markPx,
+      priceChange,
+      fundingRate,
+    };
+  }, [assetCtx]);
 
   // Helper function to format price with commas
   const formatPrice = (price: number) => {
@@ -72,15 +92,15 @@ export function AssetInfo({ assetSymbol }: AssetInfoProps) {
             </Text>
             <Text fontFamily="$interMedium" fontSize="$3" color={isPriceUp ? '$green9' : '$red9'}>
               {isPriceUp ? '+' : ''}
-              {marketData.priceChange}%
+              {marketData.priceChange.toFixed(2)}%
             </Text>
           </XStack>
           <YStack alignItems="flex-end">
             <Text fontFamily="$interRegular" fontSize="$2" color="$gray10">
-              Ann. Funding
+              Funding
             </Text>
             <Text fontFamily="$interSemiBold" fontSize="$3" color="$color">
-              {marketData.annualizedFunding.toFixed(2)}% APR
+              {marketData.fundingRate.toFixed(4)}%
             </Text>
           </YStack>
         </XStack>
