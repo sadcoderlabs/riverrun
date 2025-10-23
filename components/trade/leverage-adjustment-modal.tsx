@@ -1,4 +1,4 @@
-import { useHyperliquidAgent } from '@/hooks/useHyperliquidAgent';
+import { useHyperliquidClient } from '@/hooks/useHyperliquidClient';
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner-native';
 import { Button, Sheet, Slider, Spinner, Text, XStack, YStack } from 'tamagui';
@@ -28,7 +28,7 @@ export function LeverageAdjustmentModal({
   assetId,
   assetSymbol,
 }: LeverageAdjustmentModalProps) {
-  const { getAgentExchangeClient } = useHyperliquidAgent();
+  const { getAgentExchangeClient } = useHyperliquidClient();
   const [isUpdating, setIsUpdating] = useState(false);
 
   // Local state to track user's selection before confirming

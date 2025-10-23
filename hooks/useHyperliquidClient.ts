@@ -6,13 +6,13 @@ import { BrowserProvider } from 'ethers';
 
 import { DEFAULT_AGENT_NAME, getOrCreateAgentSigner } from '@/lib/hyperliquid/agent';
 
-interface UseHyperliquidAgentResult {
+interface UseHyperliquidClientResult {
   getAgentExchangeClient: () => Promise<hl.ExchangeClient | undefined>;
   getMasterExchangeClient: () => Promise<hl.ExchangeClient | undefined>;
   infoClient: hl.InfoClient;
 }
 
-export function useHyperliquidAgent(): UseHyperliquidAgentResult {
+export function useHyperliquidClient(): UseHyperliquidClientResult {
   const { walletProvider } = useAppKitProvider();
 
   const transportRef = useRef<hl.HttpTransport | undefined>(undefined);

@@ -1,4 +1,4 @@
-import { useHyperliquidAgent } from '@/hooks/useHyperliquidAgent';
+import { useHyperliquidClient } from '@/hooks/useHyperliquidClient';
 import * as hl from '@nktkas/hyperliquid';
 import { useAppKitProvider } from '@reown/appkit-ethers-react-native';
 import { createContext, useCallback, useContext, useMemo } from 'react';
@@ -13,13 +13,13 @@ interface ApprovalGateContextValue {
     action: (exchangeClient: hl.ExchangeClient) => Promise<void> | void,
   ) => Promise<boolean>;
   walletProvider: ReturnType<typeof useAppKitProvider>['walletProvider'];
-  infoClient: ReturnType<typeof useHyperliquidAgent>['infoClient'];
+  infoClient: ReturnType<typeof useHyperliquidClient>['infoClient'];
 }
 
 const ApprovalGateContext = createContext<ApprovalGateContextValue | undefined>(undefined);
 
 export function ApprovalGateProvider({ children }: ApprovalGateProviderProps) {
-  const { getAgentExchangeClient, infoClient } = useHyperliquidAgent();
+  const { getAgentExchangeClient, infoClient } = useHyperliquidClient();
   const { walletProvider } = useAppKitProvider();
 
   const withAgentApproval = useCallback<ApprovalGateContextValue['withAgentApproval']>(
