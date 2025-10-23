@@ -4,6 +4,7 @@ import { PerpTradePanel } from '@/components/trade/perp-trade-panel';
 import { PerpTabs } from '@/components/trade/perp-tabs';
 import { formatMarketId } from '@/lib/hyperliquid/market-utils';
 import { useMarketsStore } from '@/lib/store/use-markets-store';
+import { useActiveAssetData } from '@/hooks/useActiveAssetData';
 import { CandlestickChart, ChevronUp, Menu } from '@tamagui/lucide-icons';
 import { useLocalSearchParams } from 'expo-router';
 import { useState, useMemo } from 'react';
@@ -27,6 +28,12 @@ export default function PerpTradeIndex() {
   // Get asset name and assetId (index in Hyperliquid)
   const assetName = asset || 'BTC';
   const assetId = useMemo(() => ASSET_INDEX_MAP[assetName.toUpperCase()] ?? 0, [assetName]);
+
+  // Subscribe to active asset data (leverage, margin mode) from WebSocket
+  const { data: activeAssetData, isLoading: isLoadingAssetData } = useActiveAssetData({
+    coin: assetName,
+    enabled: true,
+  });
 
   // Format market display (e.g., "BTC-USD")
   const marketDisplay = formatMarketId(assetName, 'perp');
@@ -135,7 +142,12 @@ export default function PerpTradeIndex() {
       </AnimatePresence>
 
       {/* PERP Trade Panel - includes Order Book and Place Order UI */}
-      <PerpTradePanel assetId={marketData.assetId} assetSymbol={assetName} />
+      <PerpTradePanel
+        assetId={marketData.assetId}
+        assetSymbol={assetName}
+        activeAssetData={activeAssetData}
+        isLoadingAssetData={isLoadingAssetData}
+      />
 
       {/* PERP Tabs - Orders, Positions, History */}
       <PerpTabs assetId={marketData.assetId} />

@@ -5,9 +5,10 @@ import { useOrderForm } from '@/components/trade/hooks/use-order-form';
 import { LeverageAdjustmentModal } from '@/components/trade/leverage-adjustment-modal';
 import { LimitOrderForm, MarketOrderForm, OrderTypeSelector } from '@/components/trade/order-forms';
 import { TpSlInput } from '@/components/trade/tp-sl-input';
+import { ActiveAssetData } from '@/hooks/useActiveAssetData';
 import { Checkbox } from '@tamagui/checkbox';
 import { Check, ChevronDown } from '@tamagui/lucide-icons';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 import { useWatch } from 'react-hook-form';
 import { toast } from 'sonner-native';
@@ -16,9 +17,16 @@ import { Button, Text, XStack, YStack } from 'tamagui';
 interface PerpTradePanelProps {
   assetId?: number;
   assetSymbol: string; // Asset symbol like 'BTC', 'ETH', 'SOL'
+  activeAssetData?: ActiveAssetData;
+  isLoadingAssetData?: boolean;
 }
 
-export function PerpTradePanel({ assetId, assetSymbol }: PerpTradePanelProps) {
+export function PerpTradePanel({
+  assetId,
+  assetSymbol,
+  activeAssetData,
+  isLoadingAssetData,
+}: PerpTradePanelProps) {
   // Mock market data
   const marketData = {
     assetId: assetId ?? 0,
@@ -44,6 +52,14 @@ export function PerpTradePanel({ assetId, assetSymbol }: PerpTradePanelProps) {
   const [collateralMode, setCollateralMode] = useState('Cross');
   const [leverage, setLeverage] = useState(5);
   const [leverageSheetOpen, setLeverageSheetOpen] = useState(false);
+
+  // Update leverage and margin mode from WebSocket data
+  useEffect(() => {
+    if (activeAssetData?.leverage) {
+      setLeverage(activeAssetData.leverage.value);
+      setCollateralMode(activeAssetData.leverage.type === 'cross' ? 'Cross' : 'Isolated');
+    }
+  }, [activeAssetData]);
 
   // TP/SL states (temporarily removed from form)
   const [tpSlEnabled, setTpSlEnabled] = useState(false);
