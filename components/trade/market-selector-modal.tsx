@@ -1,10 +1,9 @@
 import { MarketListItem } from '@/components/trade/market-list-item';
 import { useMarketsStore } from '@/lib/store/use-markets-store';
 import { Search } from '@tamagui/lucide-icons';
-import { Sheet } from '@tamagui/sheet';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, RefreshControl } from 'react-native';
+import { FlatList, Modal, Pressable, RefreshControl, StyleSheet } from 'react-native';
 import { Input, Spinner, Text, XStack, YStack } from 'tamagui';
 
 interface MarketSelectorModalProps {
@@ -99,116 +98,123 @@ export function MarketSelectorModal({ open, onOpenChange }: MarketSelectorModalP
     }
   }, [refreshMarkets]);
 
-  if (!open) {
-    return null;
-  }
-
   // Show loading state only if we don't have markets yet
   const showLoading = isLoading && markets.length === 0;
 
   return (
-    <Sheet
-      modal
-      open={true}
-      onOpenChange={onOpenChange}
-      snapPoints={[85]}
-      dismissOnSnapToBottom
-      zIndex={100_000}
-      animation="quick"
-      disableDrag={false}
+    <Modal
+      visible={open}
+      transparent
+      animationType="slide"
+      onRequestClose={() => onOpenChange(false)}
+      statusBarTranslucent
     >
-      <Sheet.Overlay
-        animation="lazy"
-        enterStyle={{ opacity: 0 }}
-        exitStyle={{ opacity: 0 }}
-        opacity={0.5}
-        backgroundColor="$background"
-      />
-      <Sheet.Frame
-        padding="$4"
-        paddingTop="$2"
-        gap="$3"
-        backgroundColor="$background"
-        borderTopLeftRadius="$6"
-        borderTopRightRadius="$6"
-      >
-        <Sheet.Handle
-          opacity={0.5}
-          backgroundColor="$gray9"
-          height={3}
-          width={32}
-          alignSelf="center"
-          marginBottom="$1"
-          borderRadius="$12"
-        />
-        {/* Search Box */}
-        <XStack
-          backgroundColor="$gray3"
-          rounded="$12"
-          paddingHorizontal="$3"
-          paddingVertical="$2"
-          alignItems="center"
-          gap="$2"
-        >
-          <Search size="$1" color="$gray9" />
-          <Input
+      {/* Overlay */}
+      <Pressable style={styles.overlay} onPress={() => onOpenChange(false)}>
+        {/* Content Container */}
+        <Pressable style={styles.contentContainer} onPress={e => e.stopPropagation()}>
+          <YStack
             flex={1}
-            placeholder="Search tokens"
-            placeholderTextColor="$gray9"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            backgroundColor="transparent"
-            borderWidth={0}
-            fontSize="$3"
-            paddingVertical="$0"
-            paddingHorizontal="$0"
-          />
-        </XStack>
+            backgroundColor="$background"
+            borderTopLeftRadius="$6"
+            borderTopRightRadius="$6"
+            padding="$4"
+            paddingTop="$2"
+            gap="$3"
+          >
+            {/* Handle */}
+            <YStack
+              opacity={0.5}
+              backgroundColor="$gray9"
+              height={3}
+              width={32}
+              alignSelf="center"
+              marginBottom="$1"
+              borderRadius="$12"
+            />
 
-        {/* Market List */}
-        {showLoading ? (
-          <YStack flex={1} justifyContent="center" alignItems="center">
-            <Spinner size="large" />
-            <Text marginTop="$2">Loading markets...</Text>
-          </YStack>
-        ) : error && markets.length === 0 ? (
-          <YStack flex={1} justifyContent="center" alignItems="center">
-            <Text color="$red10">{error}</Text>
-          </YStack>
-        ) : (
-          <FlatList
-            data={filteredMarkets}
-            keyExtractor={item => item.id}
-            renderItem={({ item: market }) => (
-              <MarketListItem
-                id={market.id}
-                name={market.name}
-                price={market.price}
-                change={market.change}
-                maxLeverage={market.maxLeverage}
-                isFavorite={favorites.includes(market.id)}
-                onPress={() => navigateToMarket(market.id)}
-                onToggleFavorite={handleToggleFavorite}
+            {/* Search Box */}
+            <XStack
+              backgroundColor="$gray3"
+              rounded="$12"
+              paddingHorizontal="$3"
+              paddingVertical="$2"
+              alignItems="center"
+              gap="$2"
+            >
+              <Search size="$1" color="$gray9" />
+              <Input
+                flex={1}
+                placeholder="Search tokens"
+                placeholderTextColor="$gray9"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                backgroundColor="transparent"
+                borderWidth={0}
+                fontSize="$3"
+                paddingVertical="$0"
+                paddingHorizontal="$0"
+              />
+            </XStack>
+
+            {/* Market List */}
+            {showLoading ? (
+              <YStack flex={1} justifyContent="center" alignItems="center">
+                <Spinner size="large" />
+                <Text marginTop="$2">Loading markets...</Text>
+              </YStack>
+            ) : error && markets.length === 0 ? (
+              <YStack flex={1} justifyContent="center" alignItems="center">
+                <Text color="$red10">{error}</Text>
+              </YStack>
+            ) : (
+              <FlatList
+                data={filteredMarkets}
+                keyExtractor={item => item.id}
+                renderItem={({ item: market }) => (
+                  <MarketListItem
+                    id={market.id}
+                    name={market.name}
+                    price={market.price}
+                    change={market.change}
+                    maxLeverage={market.maxLeverage}
+                    isFavorite={favorites.includes(market.id)}
+                    onPress={() => navigateToMarket(market.id)}
+                    onToggleFavorite={handleToggleFavorite}
+                  />
+                )}
+                ItemSeparatorComponent={() => <YStack height="$0.5" />}
+                ListEmptyComponent={
+                  markets.length > 0 ? (
+                    <Text textAlign="center" color="$gray9" padding="$4">
+                      No markets found
+                    </Text>
+                  ) : null
+                }
+                showsVerticalScrollIndicator={false}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
+                initialNumToRender={20}
+                maxToRenderPerBatch={10}
+                windowSize={5}
+                removeClippedSubviews={true}
+                style={{ flex: 1 }}
               />
             )}
-            ItemSeparatorComponent={() => <YStack height="$0.5" />}
-            ListEmptyComponent={
-              markets.length > 0 ? (
-                <Text textAlign="center" color="$gray9" padding="$4">
-                  No markets found
-                </Text>
-              ) : null
-            }
-            showsVerticalScrollIndicator={false}
-            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
-            initialNumToRender={20}
-            maxToRenderPerBatch={10}
-            windowSize={5}
-            removeClippedSubviews={true}
-            style={{ flex: 1 }}
-          />
-        )}
-      </Sheet.Frame>
-    </Sheet>
+          </YStack>
+        </Pressable>
+      </Pressable>
+    </Modal>
   );
 }
+
+const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  contentContainer: {
+    height: '85%',
+    width: '100%',
+  },
+});
