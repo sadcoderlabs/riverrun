@@ -1,13 +1,10 @@
-import {
-  ApprovalGateProvider,
-  useApprovalGate,
-} from '@/components/hyperliquid/ApprovalGateProvider';
-import { GateButton } from '@/components/hyperliquid/GateButton';
+import { useHyperliquidClient } from '@/hooks/useHyperliquidClient';
 import * as hl from '@nktkas/hyperliquid';
 import { useAppKitAccount } from '@reown/appkit-ethers-react-native';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshControl } from 'react-native';
-import { ScrollView, Spinner, Text, XStack, YStack } from 'tamagui';
+import { toast } from 'sonner-native';
+import { Button, ScrollView, Spinner, Text, XStack, YStack } from 'tamagui';
 
 const formatNumber = (value: number | string, decimals = 4) => {
   const numericValue = typeof value === 'string' ? parseFloat(value) : value;
@@ -48,7 +45,7 @@ const formatSide = (side: string) => {
 
 export function OrdersTabContent() {
   const { address, isConnected } = useAppKitAccount();
-  const { getInfoClient, walletProvider } = useApprovalGate();
+  const { getInfoClient, getAgentExchangeClient } = useHyperliquidClient();
 
   const [orders, setOrders] = useState<hl.OpenOrdersResponse>([]);
   const [loading, setLoading] = useState(true);
@@ -281,17 +278,22 @@ export function OrdersTabContent() {
 
                 {/* Fourth row: Cancel button */}
                 <XStack justifyContent="flex-end" marginTop="$2">
-                  <GateButton
+                  <Button
                     size="$3"
-                    disabled={Boolean(cancelingOrderIds[order.oid]) || !walletProvider}
-                    loading={Boolean(cancelingOrderIds[order.oid])}
-                    loadingTitle="Canceling..."
-                    title="Cancel Order"
-                    onPressApproved={async context => {
+                    disabled={Boolean(cancelingOrderIds[order.oid])}
+                    onPress={async () => {
                       setCancelError(undefined);
                       setCancelingOrderIds(prev => ({ ...prev, [order.oid]: true }));
 
                       try {
+                        const exchangeClient = await getAgentExchangeClient();
+                        if (!exchangeClient) {
+                          toast.info('Cancelled', {
+                            description: 'Order cancellation was cancelled',
+                          });
+                          return;
+                        }
+
                         let universe = metaUniverse;
                         if (!universe) {
                           const meta = await getInfoClient().meta();
@@ -308,7 +310,7 @@ export function OrdersTabContent() {
                           throw new Error(`Unable to determine asset index for ${order.coin}`);
                         }
 
-                        await context.cancel({
+                        await exchangeClient.cancel({
                           cancels: [
                             {
                               a: assetIndex,
@@ -317,11 +319,18 @@ export function OrdersTabContent() {
                           ],
                         });
 
+                        toast.success('Order Cancelled', {
+                          description: `Successfully cancelled order for ${order.coin}`,
+                        });
+
                         await fetchOpenOrders();
                       } catch (err) {
                         console.error('Error canceling order:', err);
-                        setCancelError('Failed to cancel order. Please try again.');
-                        throw err;
+                        const errorMessage = 'Failed to cancel order. Please try again.';
+                        setCancelError(errorMessage);
+                        toast.error('Cancel Failed', {
+                          description: errorMessage,
+                        });
                       } finally {
                         setCancelingOrderIds(prev => {
                           const next = { ...prev };
@@ -330,7 +339,9 @@ export function OrdersTabContent() {
                         });
                       }
                     }}
-                  />
+                  >
+                    {cancelingOrderIds[order.oid] ? 'Canceling...' : 'Cancel Order'}
+                  </Button>
                 </XStack>
               </YStack>
             );
@@ -342,9 +353,5 @@ export function OrdersTabContent() {
 }
 
 export default function OrdersTab() {
-  return (
-    <ApprovalGateProvider>
-      <OrdersTabContent />
-    </ApprovalGateProvider>
-  );
+  return <OrdersTabContent />;
 }
