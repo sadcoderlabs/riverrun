@@ -1,7 +1,7 @@
 import * as hl from '@nktkas/hyperliquid';
 import { useAppKitAccount } from '@reown/appkit-ethers-react-native';
 import { Ban } from '@tamagui/lucide-icons';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Separator,
   Spinner,
@@ -15,6 +15,7 @@ import {
 import { CardContainer } from '../global/card-container';
 import { HistoryData, HistoryItem } from './history-item';
 import { PositionItem } from './position-item';
+import { useHyperliquidClient } from '@/hooks/useHyperliquidClient';
 
 type Tab = 'positions' | 'history';
 
@@ -62,13 +63,13 @@ export const historyData: HistoryData[] = [
 
 export function AccountInfo() {
   const { address, isConnected } = useAppKitAccount();
+  const { getInfoClient } = useHyperliquidClient();
   const [activeTab, setActiveTab] = useState<Tab>('positions');
   const [expandedPositionCoin, setExpandedPositionCoin] = useState<string | null>(null);
   const [positions, setPositions] = useState<Position[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const theme = useTheme();
-  const infoClientRef = useRef<hl.InfoClient | null>(null);
 
   useEffect(() => {
     const fetchPositions = async () => {
@@ -82,12 +83,7 @@ export function AccountInfo() {
         setLoading(true);
         setError(null);
 
-        if (infoClientRef.current === null) {
-          infoClientRef.current = new hl.InfoClient({ transport: new hl.HttpTransport() });
-        }
-
-        const client = infoClientRef.current;
-        const clearinghouseState = await client.clearinghouseState({ user: address });
+        const clearinghouseState = await getInfoClient().clearinghouseState({ user: address });
 
         const userPositions = clearinghouseState.assetPositions
           .filter(asset => asset.position && Number(asset.position.szi) !== 0)

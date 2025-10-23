@@ -13,13 +13,13 @@ interface ApprovalGateContextValue {
     action: (exchangeClient: hl.ExchangeClient) => Promise<void> | void,
   ) => Promise<boolean>;
   walletProvider: ReturnType<typeof useAppKitProvider>['walletProvider'];
-  infoClient: ReturnType<typeof useHyperliquidClient>['infoClient'];
+  getInfoClient: ReturnType<typeof useHyperliquidClient>['getInfoClient'];
 }
 
 const ApprovalGateContext = createContext<ApprovalGateContextValue | undefined>(undefined);
 
 export function ApprovalGateProvider({ children }: ApprovalGateProviderProps) {
-  const { getAgentExchangeClient, infoClient } = useHyperliquidClient();
+  const { getAgentExchangeClient, getInfoClient } = useHyperliquidClient();
   const { walletProvider } = useAppKitProvider();
 
   const withAgentApproval = useCallback<ApprovalGateContextValue['withAgentApproval']>(
@@ -52,9 +52,9 @@ export function ApprovalGateProvider({ children }: ApprovalGateProviderProps) {
     () => ({
       withAgentApproval,
       walletProvider,
-      infoClient,
+      getInfoClient,
     }),
-    [withAgentApproval, walletProvider, infoClient],
+    [withAgentApproval, walletProvider, getInfoClient],
   );
 
   return <ApprovalGateContext.Provider value={value}>{children}</ApprovalGateContext.Provider>;

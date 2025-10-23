@@ -1,43 +1,48 @@
 import * as hl from '@nktkas/hyperliquid';
 import { useAppKitProvider } from '@reown/appkit-ethers-react-native';
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useMemo } from 'react';
 import { Alert } from 'react-native';
 import { BrowserProvider } from 'ethers';
 
 import { DEFAULT_AGENT_NAME, getOrCreateAgentSigner } from '@/lib/hyperliquid/agent';
 
+// Singleton instances - shared across all hook usages
+let transport: hl.HttpTransport | undefined;
+let infoClient: hl.InfoClient | undefined;
+
+function getTransport(): hl.HttpTransport {
+  if (!transport) {
+    transport = new hl.HttpTransport();
+  }
+  return transport;
+}
+
+function getInfoClient(): hl.InfoClient {
+  if (!infoClient) {
+    infoClient = new hl.InfoClient({ transport: getTransport() });
+  }
+  return infoClient;
+}
+
 interface UseHyperliquidClientResult {
   getAgentExchangeClient: () => Promise<hl.ExchangeClient | undefined>;
   getMasterExchangeClient: () => Promise<hl.ExchangeClient | undefined>;
-  infoClient: hl.InfoClient;
+  getInfoClient: () => hl.InfoClient;
 }
 
 export function useHyperliquidClient(): UseHyperliquidClientResult {
   const { walletProvider } = useAppKitProvider();
 
-  const transportRef = useRef<hl.HttpTransport | undefined>(undefined);
-  const infoClientRef = useRef<hl.InfoClient | undefined>(undefined);
-
-  if (!transportRef.current) {
-    transportRef.current = new hl.HttpTransport();
-  }
-
-  const transport = transportRef.current;
-  if (!infoClientRef.current) {
-    infoClientRef.current = new hl.InfoClient({ transport });
-  }
-
-  const infoClient = infoClientRef.current;
-
   // Helper function to check if agent is approved
   const checkAgentApproval = useCallback(
     async (masterAddress: string, agentAddress: string): Promise<boolean> => {
-      const existingAgents = await infoClient.extraAgents({ user: masterAddress });
+      const client = getInfoClient();
+      const existingAgents = await client.extraAgents({ user: masterAddress });
       return existingAgents.some(
         agent => agent.address.toLowerCase() === agentAddress.toLowerCase(),
       );
     },
-    [infoClient],
+    [],
   );
 
   // Get master exchange client
@@ -53,14 +58,14 @@ export function useHyperliquidClient(): UseHyperliquidClientResult {
 
       return new hl.ExchangeClient({
         wallet: masterSigner,
-        transport,
+        transport: getTransport(),
       });
     } catch (error) {
       console.error('Failed to get master exchange client:', error);
       Alert.alert('Error', error instanceof Error ? error.message : 'Failed to initialize wallet');
       return undefined;
     }
-  }, [walletProvider, transport]);
+  }, [walletProvider]);
 
   // Get agent exchange client with approval flow
   const getAgentExchangeClient = useCallback(async (): Promise<hl.ExchangeClient | undefined> => {
@@ -82,7 +87,7 @@ export function useHyperliquidClient(): UseHyperliquidClientResult {
       // Create agent exchange client
       const agentExchangeClient = new hl.ExchangeClient({
         wallet: agentSigner,
-        transport,
+        transport: getTransport(),
       });
 
       // Check if agent is already approved
@@ -111,7 +116,7 @@ export function useHyperliquidClient(): UseHyperliquidClientResult {
                   // Create master exchange client for approval
                   const masterExchangeClient = new hl.ExchangeClient({
                     wallet: masterSigner,
-                    transport,
+                    transport: getTransport(),
                   });
 
                   // Approve the agent
@@ -148,14 +153,14 @@ export function useHyperliquidClient(): UseHyperliquidClientResult {
       Alert.alert('Error', error instanceof Error ? error.message : 'Failed to initialize agent');
       return undefined;
     }
-  }, [walletProvider, transport, checkAgentApproval]);
+  }, [walletProvider, checkAgentApproval]);
 
   return useMemo(
     () => ({
       getAgentExchangeClient,
       getMasterExchangeClient,
-      infoClient,
+      getInfoClient,
     }),
-    [getAgentExchangeClient, getMasterExchangeClient, infoClient],
+    [getAgentExchangeClient, getMasterExchangeClient],
   );
 }

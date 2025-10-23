@@ -1,18 +1,18 @@
 import * as hl from '@nktkas/hyperliquid';
 import { useAppKitAccount } from '@reown/appkit-ethers-react-native';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ScrollView, Spinner, Text, View, YStack } from 'tamagui';
 import { PositionItem } from '@/components/home/position-item';
+import { useHyperliquidClient } from '@/hooks/useHyperliquidClient';
 type Position = hl.ClearinghouseStateResponse['assetPositions'][number]['position'];
 
 export default function PositionsTab() {
   const { address, isConnected } = useAppKitAccount();
+  const { getInfoClient } = useHyperliquidClient();
   const [positions, setPositions] = useState<Position[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedPositions, setExpandedPositions] = useState<Set<string>>(new Set());
-
-  const infoClientRef = useRef<hl.InfoClient | null>(null);
 
   useEffect(() => {
     const fetchPositions = async () => {
@@ -26,12 +26,7 @@ export default function PositionsTab() {
         setLoading(true);
         setError(null);
 
-        if (infoClientRef.current === null) {
-          infoClientRef.current = new hl.InfoClient({ transport: new hl.HttpTransport() });
-        }
-
-        const client = infoClientRef.current;
-        const clearinghouseState = await client.clearinghouseState({ user: address });
+        const clearinghouseState = await getInfoClient().clearinghouseState({ user: address });
 
         const userPositions = clearinghouseState.assetPositions
           .filter(asset => asset.position && Number(asset.position.szi) !== 0)

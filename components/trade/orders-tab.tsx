@@ -48,7 +48,7 @@ const formatSide = (side: string) => {
 
 export function OrdersTabContent() {
   const { address, isConnected } = useAppKitAccount();
-  const { infoClient, walletProvider } = useApprovalGate();
+  const { getInfoClient, walletProvider } = useApprovalGate();
 
   const [orders, setOrders] = useState<hl.OpenOrdersResponse>([]);
   const [loading, setLoading] = useState(true);
@@ -77,7 +77,7 @@ export function OrdersTabContent() {
           setLoading(true);
         }
 
-        const userOpenOrders = await infoClient.openOrders({ user: address });
+        const userOpenOrders = await getInfoClient().openOrders({ user: address });
         setOrders(userOpenOrders);
       } catch (err) {
         console.error('Error fetching open orders:', err);
@@ -90,7 +90,7 @@ export function OrdersTabContent() {
         }
       }
     },
-    [address, infoClient],
+    [address, getInfoClient],
   );
 
   const fetchMeta = useCallback(async () => {
@@ -99,12 +99,12 @@ export function OrdersTabContent() {
     }
 
     try {
-      const meta = await infoClient.meta();
+      const meta = await getInfoClient().meta();
       setMetaUniverse(meta.universe);
     } catch (err) {
       console.error('Error fetching meta data:', err);
     }
-  }, [infoClient, metaUniverse]);
+  }, [getInfoClient, metaUniverse]);
 
   useEffect(() => {
     if (!address) {
@@ -294,7 +294,7 @@ export function OrdersTabContent() {
                       try {
                         let universe = metaUniverse;
                         if (!universe) {
-                          const meta = await infoClient.meta();
+                          const meta = await getInfoClient().meta();
                           universe = meta.universe;
                           setMetaUniverse(universe);
                         }
