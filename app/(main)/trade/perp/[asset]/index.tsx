@@ -1,13 +1,13 @@
 import { ChartUI } from '@/components/trade/chart-ui';
 import { MarketSelectorModal } from '@/components/trade/market-selector-modal';
-import { PerpTradePanel } from '@/components/trade/perp-trade-panel';
 import { PerpTabs } from '@/components/trade/perp-tabs';
+import { PerpTradePanel } from '@/components/trade/perp-trade-panel';
+import { useActiveAssetData } from '@/hooks/useActiveAssetData';
 import { formatMarketId } from '@/lib/hyperliquid/market-utils';
 import { useMarketsStore } from '@/lib/store/use-markets-store';
-import { useActiveAssetData } from '@/hooks/useActiveAssetData';
 import { CandlestickChart, ChevronUp, Menu } from '@tamagui/lucide-icons';
 import { useLocalSearchParams } from 'expo-router';
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { AnimatePresence, Text, XStack, YStack } from 'tamagui';
 
 // Temporary hardcoded asset mapping (will be replaced with API call)
@@ -26,22 +26,22 @@ export default function PerpTradeIndex() {
   const { isMarketSelectorOpen, setMarketSelectorOpen } = useMarketsStore();
 
   // Get asset name and assetId (index in Hyperliquid)
-  const assetName = asset || 'BTC';
-  const assetId = useMemo(() => ASSET_INDEX_MAP[assetName.toUpperCase()] ?? 0, [assetName]);
+  const assetSymbol = asset || 'BTC';
+  const assetId = useMemo(() => ASSET_INDEX_MAP[assetSymbol.toUpperCase()] ?? 0, [assetSymbol]);
 
   // Subscribe to active asset data (leverage, margin mode) from WebSocket
   const { data: activeAssetData, isLoading: isLoadingAssetData } = useActiveAssetData({
-    coin: assetName,
+    coin: assetSymbol,
     enabled: true,
   });
 
   // Format market display (e.g., "BTC-USD")
-  const marketDisplay = formatMarketId(assetName, 'perp');
+  const marketDisplay = formatMarketId(assetSymbol, 'perp');
 
   // Hard-coded market data for rendering purposes
   const marketData = {
     assetId,
-    assetName,
+    assetName: assetSymbol,
     marketDisplay,
     price: 28450.75,
     priceChange: 2.34,
@@ -144,7 +144,7 @@ export default function PerpTradeIndex() {
       {/* PERP Trade Panel - includes Order Book and Place Order UI */}
       <PerpTradePanel
         assetId={marketData.assetId}
-        assetSymbol={assetName}
+        assetSymbol={assetSymbol}
         activeAssetData={activeAssetData}
         isLoadingAssetData={isLoadingAssetData}
       />
