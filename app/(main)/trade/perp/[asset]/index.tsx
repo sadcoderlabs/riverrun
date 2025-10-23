@@ -41,7 +41,7 @@ export default function PerpTradeIndex() {
   // Hard-coded market data for rendering purposes
   const marketData = {
     assetId,
-    assetName: assetSymbol,
+    assetSymbol,
     marketDisplay,
     price: 28450.75,
     priceChange: 2.34,
