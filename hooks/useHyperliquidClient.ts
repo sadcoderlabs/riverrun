@@ -1,4 +1,5 @@
 import * as hl from '@nktkas/hyperliquid';
+import { SymbolConverter } from '@nktkas/hyperliquid/utils';
 import { useAppKitProvider } from '@reown/appkit-ethers-react-native';
 import { useCallback, useMemo } from 'react';
 import { Alert } from 'react-native';
@@ -11,6 +12,7 @@ let transport: hl.HttpTransport | undefined;
 let infoClient: hl.InfoClient | undefined;
 let wsTransport: hl.WebSocketTransport | undefined;
 let subscriptionClient: hl.SubscriptionClient | undefined;
+let symbolConverter: SymbolConverter | undefined;
 
 function getTransport(): hl.HttpTransport {
   if (!transport) {
@@ -34,11 +36,19 @@ function getSubscriptionClient(): hl.SubscriptionClient {
   return subscriptionClient;
 }
 
+async function getSymbolConverter(): Promise<SymbolConverter> {
+  if (!symbolConverter) {
+    symbolConverter = await SymbolConverter.create({ transport: getTransport() });
+  }
+  return symbolConverter;
+}
+
 interface UseHyperliquidClientResult {
   getAgentExchangeClient: () => Promise<hl.ExchangeClient | undefined>;
   getMasterExchangeClient: () => Promise<hl.ExchangeClient | undefined>;
   getInfoClient: () => hl.InfoClient;
   getSubscriptionClient: () => hl.SubscriptionClient;
+  getSymbolConverter: () => Promise<SymbolConverter>;
 }
 
 export function useHyperliquidClient(): UseHyperliquidClientResult {
@@ -172,6 +182,7 @@ export function useHyperliquidClient(): UseHyperliquidClientResult {
       getMasterExchangeClient,
       getInfoClient,
       getSubscriptionClient,
+      getSymbolConverter,
     }),
     [getAgentExchangeClient, getMasterExchangeClient],
   );

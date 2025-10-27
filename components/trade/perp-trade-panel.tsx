@@ -293,7 +293,6 @@ export function PerpTradePanel({
             onLeverageChange={setLeverage}
             marginMode={collateralMode}
             onMarginModeChange={setCollateralMode}
-            assetId={assetId ?? 0}
             coin={coin}
           />
         </YStack>

@@ -15,7 +15,6 @@ interface LeverageAdjustmentModalProps {
   onLeverageChange: (leverage: number) => void;
   marginMode: string;
   onMarginModeChange: (mode: string) => void;
-  assetId: number;
   coin: string;
 }
 
@@ -26,10 +25,9 @@ export function LeverageAdjustmentModal({
   onLeverageChange,
   marginMode,
   onMarginModeChange,
-  assetId,
   coin,
 }: LeverageAdjustmentModalProps) {
-  const { getAgentExchangeClient } = useHyperliquidClient();
+  const { getAgentExchangeClient, getSymbolConverter } = useHyperliquidClient();
   const [isUpdating, setIsUpdating] = useState(false);
 
   // Local state to track user's selection before confirming
@@ -60,6 +58,17 @@ export function LeverageAdjustmentModal({
           return;
         }
 
+        const converter = await getSymbolConverter();
+        const assetId = converter.getAssetId(coin);
+
+        if (assetId === undefined) {
+          toast.error('Invalid Asset', {
+            description: `Unable to find asset ID for ${coin}`,
+          });
+          setIsUpdating(false);
+          return;
+        }
+
         await exchangeClient.updateLeverage({
           asset: assetId,
           isCross,
@@ -82,7 +91,14 @@ export function LeverageAdjustmentModal({
         setIsUpdating(false);
       }
     },
-    [assetId, coin, getAgentExchangeClient, isUpdating, onMarginModeChange, selectedLeverage],
+    [
+      coin,
+      getAgentExchangeClient,
+      getSymbolConverter,
+      isUpdating,
+      onMarginModeChange,
+      selectedLeverage,
+    ],
   );
 
   // Handle leverage confirmation - call API on confirm button
@@ -96,6 +112,17 @@ export function LeverageAdjustmentModal({
       const exchangeClient = await getAgentExchangeClient();
       if (!exchangeClient) {
         // User cancelled or approval failed
+        setIsUpdating(false);
+        return;
+      }
+
+      const converter = await getSymbolConverter();
+      const assetId = converter.getAssetId(coin);
+
+      if (assetId === undefined) {
+        toast.error('Invalid Asset', {
+          description: `Unable to find asset ID for ${coin}`,
+        });
         setIsUpdating(false);
         return;
       }
@@ -124,9 +151,9 @@ export function LeverageAdjustmentModal({
       setIsUpdating(false);
     }
   }, [
-    assetId,
     coin,
     getAgentExchangeClient,
+    getSymbolConverter,
     isUpdating,
     onLeverageChange,
     onOpenChange,
