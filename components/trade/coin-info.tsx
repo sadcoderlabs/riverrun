@@ -7,11 +7,11 @@ import { CandlestickChart, ChevronUp, Menu } from '@tamagui/lucide-icons';
 import { useMemo, useState } from 'react';
 import { AnimatePresence, Text, XStack, YStack } from 'tamagui';
 
-interface AssetInfoProps {
-  assetSymbol: string;
+interface CoinInfoProps {
+  coin: string;
 }
 
-export function AssetInfo({ assetSymbol }: AssetInfoProps) {
+export function CoinInfo({ coin }: CoinInfoProps) {
   // Use modal state from Zustand store
   const { isMarketSelectorOpen, setMarketSelectorOpen } = useMarketsStore();
 
@@ -19,10 +19,10 @@ export function AssetInfo({ assetSymbol }: AssetInfoProps) {
   const [isChart, setIsChart] = useState(false);
 
   // Format market display (e.g., "BTC-USD")
-  const marketDisplay = formatMarketId(assetSymbol, 'perp');
+  const marketDisplay = formatMarketId(coin, 'perp');
 
   // Subscribe to real-time asset context data
-  const { data: assetCtx, isLoading, error } = useActiveAssetCtx({ coin: assetSymbol });
+  const { data: assetCtx, isLoading, error } = useActiveAssetCtx({ coin });
 
   // Calculate market data from real-time WebSocket data
   const marketData = useMemo(() => {

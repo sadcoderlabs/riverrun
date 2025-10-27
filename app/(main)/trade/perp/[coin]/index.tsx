@@ -1,4 +1,4 @@
-import { AssetInfo } from '@/components/trade/asset-info';
+import { CoinInfo } from '@/components/trade/coin-info';
 import { PerpTabs } from '@/components/trade/perp-tabs';
 import { PerpTradePanel } from '@/components/trade/perp-trade-panel';
 import { useActiveAssetData } from '@/hooks/useActiveAssetData';
@@ -28,7 +28,7 @@ export default function PerpTradeIndex() {
   return (
     <YStack flex={1} backgroundColor="$gray3">
       {/* Market Information Section with Chart */}
-      <AssetInfo assetSymbol={coin} />
+      <CoinInfo coin={coin} />
 
       {/* PERP Trade Panel - includes Order Book and Place Order UI */}
       <PerpTradePanel
