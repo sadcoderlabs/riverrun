@@ -26,8 +26,8 @@ importers:
         specifier: 5.2.2
         version: 5.2.2(react-hook-form@7.65.0(react@19.1.0))
       '@nktkas/hyperliquid':
-        specifier: 0.25.1
-        version: 0.25.1(typescript@5.9.2)
+        specifier: 0.25.6
+        version: 0.25.6(typescript@5.9.2)
       '@react-native-async-storage/async-storage':
         specifier: 2.2.0
         version: 2.2.0(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(bufferutil@4.0.9)(react@19.1.0)(utf-8-validate@5.0.10))
@@ -1195,8 +1195,8 @@ packages:
   '@napi-rs/wasm-runtime@0.2.12':
     resolution: {integrity: sha512-ZVWUcfwY4E/yPitQJl481FjFo3K22D6qF0DuFH6Y/nbnE11GY5uguDxZMGXPQ8WQ0128MXQD7TnfHyK4oWoIJQ==}
 
-  '@nktkas/hyperliquid@0.25.1':
-    resolution: {integrity: sha512-ghO8LGhYPhsiqSisCLc5k2N9yA7yeFj+0zvYEao7j8yE3YBOr5ihm5yU56JjDvTeO86RVhTwgUadXU4BcQZQLQ==}
+  '@nktkas/hyperliquid@0.25.6':
+    resolution: {integrity: sha512-xYJZGJDtPOYI2EYRhdJiffGn0mt8omxRn/k5XavKREqGq+7y37uqQUye3kqpMoaJmYOJSp4JNkNLR1qQiQfDPA==}
     engines: {node: '>=20.19.0'}
     hasBin: true
 
@@ -7925,7 +7925,7 @@ snapshots:
       '@tybys/wasm-util': 0.10.1
     optional: true
 
-  '@nktkas/hyperliquid@0.25.1(typescript@5.9.2)':
+  '@nktkas/hyperliquid@0.25.6(typescript@5.9.2)':
     dependencies:
       '@msgpack/msgpack': 3.1.2
       '@noble/hashes': 2.0.1
