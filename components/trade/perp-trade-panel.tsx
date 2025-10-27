@@ -4,14 +4,14 @@ import 'fast-text-encoding'; // polyfill for hyperliquid sdk
 import { useOrderForm } from '@/components/trade/hooks/use-order-form';
 import { LeverageSelector } from '@/components/trade/leverage-selector';
 import { LimitOrderForm, MarketOrderForm, OrderTypeSelector } from '@/components/trade/order-forms';
+import { roundPrice } from '@/components/trade/price-utils';
 import { TpSlInput } from '@/components/trade/tp-sl-input';
 import { useActiveAssetData } from '@/hooks/useActiveAssetData';
 import { useHyperliquidClient } from '@/hooks/useHyperliquidClient';
 import { Checkbox } from '@tamagui/checkbox';
 import { Check } from '@tamagui/lucide-icons';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useWatch } from 'react-hook-form';
-import { Alert } from 'react-native';
 import { toast } from 'sonner-native';
 import { Button, Text, XStack, YStack } from 'tamagui';
 
@@ -20,12 +20,26 @@ interface PerpTradePanelProps {
 }
 
 export function PerpTradePanel({ coin }: PerpTradePanelProps) {
-  const { getSymbolConverter } = useHyperliquidClient();
+  const { getSymbolConverter, getAgentExchangeClient } = useHyperliquidClient();
 
   // Subscribe to active asset data (leverage, margin mode) from WebSocket
   const { data: activeAssetData, isLoading: isLoadingAssetData } = useActiveAssetData({
     coin,
   });
+
+  // Get szDecimals for the asset
+  const [szDecimals, setSzDecimals] = useState<number>(4); // Default to 4 decimals
+
+  useEffect(() => {
+    const fetchSzDecimals = async () => {
+      const converter = await getSymbolConverter();
+      const decimals = converter.getSzDecimals(coin);
+      if (decimals !== undefined) {
+        setSzDecimals(decimals);
+      }
+    };
+    fetchSzDecimals();
+  }, [coin, getSymbolConverter]);
 
   // Initialize React Hook Form (only manages order-specific fields)
   const { form, validation } = useOrderForm({});
@@ -51,13 +65,25 @@ export function PerpTradePanel({ coin }: PerpTradePanelProps) {
   const leverage = activeAssetData?.leverage?.value ?? 5;
   const marginMode = activeAssetData?.leverage?.type === 'cross' ? 'Cross' : 'Isolated';
 
+  // Memoize marketPrice to prevent unnecessary re-renders when markPx updates
+  // This stabilizes the price used for size calculations
+  const marketPrice = useMemo(
+    () => parseFloat(activeAssetData?.markPx || '0'),
+    [activeAssetData?.markPx],
+  );
+
   // TP/SL states (temporarily removed from form)
   const [tpSlEnabled, setTpSlEnabled] = useState(false);
   const [tpValue, setTpValue] = useState('');
   const [slValue, setSlValue] = useState('');
 
-  // Simplified handler for Place Order button (without API call)
+  // Loading state for placing orders
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+
+  // Handler for Place Order button
   const handlePlaceOrder = useCallback(async () => {
+    if (isPlacingOrder) return;
+
     const data = form.getValues();
 
     // Check if size is valid
@@ -76,30 +102,119 @@ export function PerpTradePanel({ coin }: PerpTradePanelProps) {
       return;
     }
 
-    // Get assetId from coin symbol
-    const converter = await getSymbolConverter();
-    const assetId = converter.getAssetId(coin);
+    setIsPlacingOrder(true);
 
-    if (assetId === undefined) {
-      toast.error('Invalid Asset', {
-        description: `Unable to find asset ID for ${coin}`,
+    try {
+      // Get ExchangeClient
+      const exchangeClient = await getAgentExchangeClient();
+      if (!exchangeClient) {
+        // User cancelled signing
+        toast.info('Cancelled', {
+          description: 'Order placement was cancelled',
+        });
+        return;
+      }
+
+      // Get assetId from coin symbol
+      const converter = await getSymbolConverter();
+      const assetId = converter.getAssetId(coin);
+
+      if (assetId === undefined) {
+        toast.error('Invalid Asset', {
+          description: `Unable to find asset ID for ${coin}`,
+        });
+        return;
+      }
+
+      // Get szDecimals for the asset to properly round the size
+      const assetSzDecimals = converter.getSzDecimals(coin);
+      if (assetSzDecimals === undefined) {
+        toast.error('Invalid Asset', {
+          description: `Unable to find size decimals for ${coin}`,
+        });
+        return;
+      }
+
+      // Round size to the required decimal places for this asset
+      const rawSize = parseFloat(data.size);
+      const roundedSize = rawSize.toFixed(assetSzDecimals);
+
+      // Calculate price based on order type
+      const isLong = data.orderSide === 'Long';
+      let price: string;
+
+      if (data.orderType === 'Market') {
+        // Market order: use extreme price to ensure immediate execution
+        // Buy: price above market, Sell: price below market
+        const extremePrice = isLong
+          ? marketPrice * 1.05 // 5% above market for buys
+          : marketPrice * 0.95; // 5% below market for sells
+        // Round the price according to Hyperliquid rules
+        price = roundPrice(extremePrice, assetSzDecimals, false);
+      } else {
+        // Limit order: use user-specified price (no rounding)
+        price = data.limitPrice || '0';
+      }
+
+      // Prepare order parameters
+      // Size is rounded here before submitting, price is user-specified
+      const orderParams = {
+        a: assetId, // asset ID
+        b: isLong, // true for long (buy), false for short (sell)
+        p: price, // price (user-specified, not rounded)
+        s: roundedSize, // size (rounded to szDecimals)
+        r: data.reduceOnly, // reduce-only
+        t:
+          data.orderType === 'Market'
+            ? { limit: { tif: 'Ioc' as const } } // Market order: Immediate-Or-Cancel
+            : { limit: { tif: 'Gtc' as const } }, // Limit order: Good-Till-Cancel
+      };
+
+      // Place the order
+      const response = await exchangeClient.order({
+        orders: [orderParams],
+        grouping: 'na',
       });
-      return;
+
+      console.log('[handlePlaceOrder] Order response:', response);
+
+      // Check if response contains errors
+      if (response.response.data.statuses && response.response.data.statuses.length > 0) {
+        const status = response.response.data.statuses[0];
+
+        // Check if the status contains an error
+        if ('error' in status && typeof status.error === 'string') {
+          toast.error('Order Failed', {
+            description: status.error,
+          });
+          return;
+        }
+      }
+
+      // Show success toast
+      toast.success('Order Placed', {
+        description: `${data.orderType} ${data.orderSide} order for ${data.size} ${coin}`,
+      });
+
+      // WebSocket will automatically update the orders list
+    } catch (err) {
+      console.error('[handlePlaceOrder] Error placing order:', err);
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to place order. Please try again.';
+      toast.error('Order Failed', {
+        description: errorMessage,
+      });
+    } finally {
+      setIsPlacingOrder(false);
     }
-
-    // Prepare order data for display
-    const orderData = {
-      orderType: data.orderType,
-      orderSide: data.orderSide,
-      size: data.size,
-      ...(data.orderType === 'Limit' && { limitPrice: data.limitPrice }),
-      reduceOnly: data.reduceOnly,
-      assetId,
-    };
-
-    // Show order data in alert
-    Alert.alert('Order Data', JSON.stringify(orderData, null, 2));
-  }, [coin, form, getSymbolConverter, validation.hasValidLimitPrice, validation.hasValidSize]);
+  }, [
+    coin,
+    form,
+    validation.hasValidLimitPrice,
+    validation.hasValidSize,
+    isPlacingOrder,
+    marketPrice,
+  ]);
 
   // Format number with 2 decimal places
   const formatNumber = (num: number) => {
@@ -201,8 +316,9 @@ export function PerpTradePanel({ coin }: PerpTradePanelProps) {
               }
               leverage={leverage}
               availableToTrade={availableToTrade}
-              marketPrice={parseFloat(activeAssetData?.markPx || '0')}
+              marketPrice={marketPrice}
               coin={coin}
+              szDecimals={szDecimals}
             />
           )}
 
@@ -216,8 +332,9 @@ export function PerpTradePanel({ coin }: PerpTradePanelProps) {
               }
               leverage={leverage}
               availableToTrade={availableToTrade}
-              marketPrice={parseFloat(activeAssetData?.markPx || '0')}
+              marketPrice={marketPrice}
               coin={coin}
+              szDecimals={szDecimals}
             />
           )}
 
@@ -253,7 +370,7 @@ export function PerpTradePanel({ coin }: PerpTradePanelProps) {
             paddingVertical="$2.5"
             marginTop="$1"
             borderRadius="$3"
-            disabled={validation.buttonDisabled}
+            disabled={validation.buttonDisabled || isPlacingOrder}
             onPress={handlePlaceOrder}
             pressStyle={{ opacity: 0.8 }}
           >
@@ -262,7 +379,7 @@ export function PerpTradePanel({ coin }: PerpTradePanelProps) {
               fontSize="$3"
               color={orderSide === 'Long' ? '$green1' : '$red1'}
             >
-              {validation.buttonText}
+              {isPlacingOrder ? 'Placing Order...' : validation.buttonText}
             </Text>
           </Button>
         </YStack>
