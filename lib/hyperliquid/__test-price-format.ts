@@ -21,7 +21,7 @@ const testCases: TestCase[] = [
     szDecimals: 4,
     maxDecimals: 6,
     price: 4219,
-    expected: '4219.0',
+    expected: '4,219.0',
     reason: '4 sig figs → pad 1 decimal to reach 5',
   },
   {
@@ -37,7 +37,7 @@ const testCases: TestCase[] = [
     szDecimals: 4,
     maxDecimals: 6,
     price: 4219.5,
-    expected: '4219.5',
+    expected: '4,219.5',
     reason: '5 sig figs → no padding needed',
   },
   {
@@ -45,7 +45,7 @@ const testCases: TestCase[] = [
     szDecimals: 4,
     maxDecimals: 6,
     price: '4219.50',
-    expected: '4219.5',
+    expected: '4,219.5',
     reason: '5 sig figs → remove trailing zero',
   },
   {
@@ -53,7 +53,7 @@ const testCases: TestCase[] = [
     szDecimals: 4,
     maxDecimals: 6,
     price: 4180.6,
-    expected: '4180.6',
+    expected: '4,180.6',
     reason: '5 sig figs → no padding',
   },
   {
@@ -61,7 +61,7 @@ const testCases: TestCase[] = [
     szDecimals: 4,
     maxDecimals: 6,
     price: 4220,
-    expected: '4220.0',
+    expected: '4,220.0',
     reason: '4 sig figs (trailing zero counts for integers) → pad 1 decimal to reach 5',
   },
 
@@ -71,7 +71,7 @@ const testCases: TestCase[] = [
     szDecimals: 5,
     maxDecimals: 6,
     price: 114971,
-    expected: '114971',
+    expected: '114,971',
     reason: '6 sig figs → no padding, remove .0',
   },
   {
@@ -79,7 +79,7 @@ const testCases: TestCase[] = [
     szDecimals: 5,
     maxDecimals: 6,
     price: 1149,
-    expected: '1149.0',
+    expected: '1,149.0',
     reason: '4 sig figs → pad 1 decimal to reach 5',
   },
   {
@@ -87,7 +87,7 @@ const testCases: TestCase[] = [
     szDecimals: 5,
     maxDecimals: 6,
     price: '114971.0',
-    expected: '114971',
+    expected: '114,971',
     reason: '6 sig figs → no padding, remove .0',
   },
 
@@ -124,15 +124,15 @@ const testCases: TestCase[] = [
     maxDecimals: 6,
     price: 0.004705,
     expected: '0.004705',
-    reason: '4 sig figs → pad 1 decimal to reach 5... wait',
+    reason: '6 sig figs (6 decimal places) → no padding needed',
   },
   {
     coin: 'PUMP',
     szDecimals: 0,
     maxDecimals: 6,
     price: 0.00471,
-    expected: '0.004710',
-    reason: '3 sig figs → pad 2 decimals (capped by max=6) → 4 sig figs',
+    expected: '0.00471',
+    reason: '5 sig figs (5 decimal places) → no padding needed',
   },
 ];
 

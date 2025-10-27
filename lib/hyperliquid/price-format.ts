@@ -20,18 +20,21 @@ const DEFAULT_MAX_DECIMALS_PERP = 6;
 /**
  * Count significant figures in a number
  *
- * Significant figures are all digits except:
- * - Leading zeros (zeros before the first non-zero digit)
- * - Trailing zeros in decimal part only (for integers, trailing zeros count)
+ * Counting rule for price display context:
+ * - For pure decimals (< 1): count all decimal places (including leading zeros after decimal point)
+ * - For numbers >= 1: count integer digits + decimal places
+ * - Trailing zeros in decimal part don't count
  *
  * Examples:
- * - 4219 → 4 sig figs (4,2,1,9)
- * - 4220 → 4 sig figs (4,2,2,0) - trailing zero counts for integers
- * - 4219.5 → 5 sig figs (4,2,1,9,5)
- * - 4219.50 → 5 sig figs (4,2,1,9,5) - trailing zero in decimal doesn't count
- * - 0.2 → 1 sig fig (2)
- * - 0.004705 → 4 sig figs (4,7,0,5) - middle zero counts
- * - 114971 → 6 sig figs
+ * - 4219 → 4 sig figs (4 integer digits)
+ * - 4220 → 4 sig figs (4 integer digits)
+ * - 4219.5 → 5 sig figs (4 integer + 1 decimal)
+ * - 4219.50 → 5 sig figs (4 integer + 1 decimal, trailing zero removed)
+ * - 0.2 → 1 sig fig (1 decimal place)
+ * - 0.03 → 2 sig figs (2 decimal places)
+ * - 0.004705 → 6 sig figs (6 decimal places including leading zeros)
+ * - 0.028542 → 6 sig figs (6 decimal places)
+ * - 114971 → 6 sig figs (6 integer digits)
  *
  * @param num - Number to count significant figures for
  * @returns Number of significant figures
@@ -44,27 +47,29 @@ function countSignificantFigures(num: number): number {
 
   // Handle scientific notation (e.g., "1e-5")
   if (str.includes('e')) {
-    const [mantissa] = str.split('e');
-    str = mantissa;
+    // Convert scientific notation to regular decimal string
+    const absNum = Math.abs(num);
+    str = absNum.toFixed(20).replace(/\.?0+$/, '');
   }
 
-  // Check if it has a decimal point
-  const hasDecimal = str.includes('.');
+  // Split into integer and decimal parts
+  const parts = str.split('.');
+  const integerPart = parts[0] || '0';
+  const decimalPart = parts[1] || '';
 
-  // Remove decimal point for processing
-  str = str.replace('.', '');
+  // Remove trailing zeros from decimal part
+  const decimalWithoutTrailing = decimalPart.replace(/0+$/, '');
 
-  // Remove leading zeros
-  str = str.replace(/^0+/, '');
-
-  // For numbers with decimal part or fractional numbers, remove trailing zeros
-  // For integers (no decimal point and >= 1), keep trailing zeros as they're significant
-  if (hasDecimal || num < 1) {
-    str = str.replace(/0+$/, '');
+  // Count digits
+  if (num < 1) {
+    // Pure decimal: count all decimal places (including leading zeros)
+    return decimalWithoutTrailing.length;
+  } else {
+    // Number >= 1: count integer digits + decimal places
+    const integerDigits = integerPart.length;
+    const decimalDigits = decimalWithoutTrailing.length;
+    return integerDigits + decimalDigits;
   }
-
-  // Count remaining digits
-  return str.length;
 }
 
 /**
@@ -144,6 +149,11 @@ export function formatPrice(
     // Remove trailing zeros but keep at least minimal meaningful decimals
     formatted = formatted.replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '');
   }
+
+  // Add thousand separators to integer part
+  const parts = formatted.split('.');
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  formatted = parts.join('.');
 
   return formatted || '0';
 }
