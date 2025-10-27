@@ -9,9 +9,9 @@ import { useActiveAssetData } from '@/hooks/useActiveAssetData';
 import { useHyperliquidClient } from '@/hooks/useHyperliquidClient';
 import { Checkbox } from '@tamagui/checkbox';
 import { Check, ChevronDown } from '@tamagui/lucide-icons';
-import { useCallback, useEffect, useState } from 'react';
-import { Alert } from 'react-native';
+import { useCallback, useState } from 'react';
 import { useWatch } from 'react-hook-form';
+import { Alert } from 'react-native';
 import { toast } from 'sonner-native';
 import { Button, Text, XStack, YStack } from 'tamagui';
 
@@ -47,18 +47,12 @@ export function PerpTradePanel({ coin }: PerpTradePanelProps) {
       ? parseFloat(activeAssetData?.availableToTrade[0] || '0')
       : parseFloat(activeAssetData?.availableToTrade[1] || '0');
 
-  // UI-only states (helper states for calculating size)
-  const [collateralMode, setCollateralMode] = useState('Cross');
-  const [leverage, setLeverage] = useState(5);
+  // UI-only states
   const [leverageSheetOpen, setLeverageSheetOpen] = useState(false);
 
-  // Update leverage and margin mode from WebSocket data
-  useEffect(() => {
-    if (activeAssetData?.leverage) {
-      setLeverage(activeAssetData.leverage.value);
-      setCollateralMode(activeAssetData.leverage.type === 'cross' ? 'Cross' : 'Isolated');
-    }
-  }, [activeAssetData]);
+  // Get leverage and margin mode directly from activeAssetData
+  const leverage = activeAssetData?.leverage?.value ?? 5;
+  const collateralMode = activeAssetData?.leverage?.type === 'cross' ? 'Cross' : 'Isolated';
 
   // TP/SL states (temporarily removed from form)
   const [tpSlEnabled, setTpSlEnabled] = useState(false);
@@ -295,9 +289,13 @@ export function PerpTradePanel({ coin }: PerpTradePanelProps) {
             open={leverageSheetOpen}
             onOpenChange={setLeverageSheetOpen}
             leverage={leverage}
-            onLeverageChange={setLeverage}
+            onLeverageChange={() => {
+              // No-op: leverage updates via WebSocket (activeAssetData)
+            }}
             marginMode={collateralMode}
-            onMarginModeChange={setCollateralMode}
+            onMarginModeChange={() => {
+              // No-op: margin mode updates via WebSocket (activeAssetData)
+            }}
             coin={coin}
           />
         </YStack>

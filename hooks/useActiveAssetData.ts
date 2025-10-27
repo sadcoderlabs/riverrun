@@ -54,6 +54,9 @@ export function useActiveAssetData({ coin }: UseActiveAssetDataParams): UseActiv
   useEffect(() => {
     // Don't subscribe if conditions aren't met
     if (!isConnected || !address || !coin) {
+      if (!address && isConnected) {
+        console.warn('[useActiveAssetData] Wallet connected but address not available');
+      }
       setIsLoading(false);
       setData(undefined);
       return;
@@ -88,7 +91,7 @@ export function useActiveAssetData({ coin }: UseActiveAssetDataParams): UseActiv
         subscriptionRef.current = subscription;
       } catch (err) {
         if (isMounted) {
-          console.error('Error setting up activeAssetData subscription:', err);
+          console.error('[useActiveAssetData] Error setting up subscription:', err);
           setError(err instanceof Error ? err : new Error('Failed to subscribe'));
           setIsLoading(false);
         }
