@@ -1,7 +1,9 @@
+import AdaptiveSelect from '@/components/global/adaptive-select';
 import { useOrderBook, type OrderBookLevel } from '@/hooks/useOrderBook';
+import { ChevronDown } from '@tamagui/lucide-icons';
 import { useMemo, useState } from 'react';
 import { FlatList } from 'react-native';
-import { Button, Text, XStack, YStack } from 'tamagui';
+import { Text, XStack, YStack } from 'tamagui';
 import { OrderBookRow } from './OrderBookRow';
 
 interface OrderBookProps {
@@ -17,6 +19,7 @@ type SizeUnit = 'usd' | 'asset';
  */
 export function OrderBook({ coin, onPriceClick }: OrderBookProps) {
   const [sizeUnit, setSizeUnit] = useState<SizeUnit>('usd');
+  const [selectedPrecision, setSelectedPrecision] = useState<string>('1');
 
   const { data, isLoading, error } = useOrderBook({ coin });
 
@@ -100,7 +103,85 @@ export function OrderBook({ coin, onPriceClick }: OrderBookProps) {
 
   return (
     <YStack flex={1} backgroundColor="$background">
-      {/* Column Headers with Size Unit Selector */}
+      {/* Selectors Row - Precision & Size Unit Dropdowns */}
+      <XStack
+        paddingHorizontal="$1.5"
+        paddingVertical="$1"
+        backgroundColor="$background"
+        justifyContent="space-between"
+        alignItems="center"
+        borderBottomWidth={1}
+        borderBottomColor="$gray8"
+      >
+        {/* Precision Dropdown */}
+        <AdaptiveSelect
+          value={selectedPrecision}
+          onValueChange={setSelectedPrecision}
+          title="Precision"
+        >
+          <AdaptiveSelect.Trigger>
+            <XStack
+              gap="$1"
+              alignItems="center"
+              backgroundColor="$gray3"
+              paddingHorizontal="$2"
+              paddingVertical="$1"
+              height={24}
+              borderRadius="$2"
+              borderWidth={1}
+              borderColor="$gray8"
+            >
+              <Text fontFamily="$interMedium" fontSize="$2" color="$color">
+                {selectedPrecision}
+              </Text>
+              <ChevronDown size={12} color="$gray10" />
+            </XStack>
+          </AdaptiveSelect.Trigger>
+          <AdaptiveSelect.Item value="1" index={0}>
+            1
+          </AdaptiveSelect.Item>
+          <AdaptiveSelect.Item value="10" index={1}>
+            10
+          </AdaptiveSelect.Item>
+          <AdaptiveSelect.Item value="100" index={2}>
+            100
+          </AdaptiveSelect.Item>
+        </AdaptiveSelect>
+
+        {/* Size Unit Dropdown */}
+        <AdaptiveSelect
+          value={sizeUnit}
+          onValueChange={value => setSizeUnit(value as SizeUnit)}
+          title="Size Unit"
+        >
+          <AdaptiveSelect.Trigger>
+            <XStack
+              gap="$1"
+              alignItems="center"
+              backgroundColor="$gray3"
+              paddingHorizontal="$2"
+              paddingVertical="$1"
+              height={24}
+              borderRadius="$2"
+              borderWidth={1}
+              borderColor="$gray8"
+            >
+              <Text fontFamily="$interMedium" fontSize="$2" color="$color">
+                {sizeUnit === 'usd' ? 'USD' : coin}
+              </Text>
+              <ChevronDown size={12} color="$gray10" />
+            </XStack>
+          </AdaptiveSelect.Trigger>
+          <AdaptiveSelect.Item value="usd" index={0}>
+            USD
+          </AdaptiveSelect.Item>
+          <AdaptiveSelect.Item value="asset" index={1}>
+            {coin}
+          </AdaptiveSelect.Item>
+        </AdaptiveSelect>
+      </XStack>
+
+      {/* Column Headers */}
       <XStack
         paddingHorizontal="$1.5"
         paddingVertical="$0.75"
@@ -112,46 +193,9 @@ export function OrderBook({ coin, onPriceClick }: OrderBookProps) {
           Price (USD)
         </Text>
 
-        {/* Size Unit Toggle */}
-        <XStack gap="$0.5" alignItems="center">
-          <Button
-            size="$1"
-            paddingHorizontal="$1.5"
-            paddingVertical="$0.5"
-            height={18}
-            backgroundColor={sizeUnit === 'usd' ? '$gray8' : 'transparent'}
-            borderWidth={0}
-            onPress={() => setSizeUnit('usd')}
-            pressStyle={{ opacity: 0.7 }}
-          >
-            <Text
-              fontFamily="$interMedium"
-              fontSize="$1"
-              color={sizeUnit === 'usd' ? '$color' : '$gray10'}
-            >
-              USD
-            </Text>
-          </Button>
-
-          <Button
-            size="$1"
-            paddingHorizontal="$1.5"
-            paddingVertical="$0.5"
-            height={18}
-            backgroundColor={sizeUnit === 'asset' ? '$gray8' : 'transparent'}
-            borderWidth={0}
-            onPress={() => setSizeUnit('asset')}
-            pressStyle={{ opacity: 0.7 }}
-          >
-            <Text
-              fontFamily="$interMedium"
-              fontSize="$1"
-              color={sizeUnit === 'asset' ? '$color' : '$gray10'}
-            >
-              {coin}
-            </Text>
-          </Button>
-        </XStack>
+        <Text fontFamily="$interMedium" fontSize="$1" color="$gray10" textAlign="right" width={70}>
+          Size
+        </Text>
       </XStack>
 
       <YStack flex={1}>
