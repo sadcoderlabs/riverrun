@@ -16,7 +16,7 @@ interface LeverageAdjustmentModalProps {
   marginMode: string;
   onMarginModeChange: (mode: string) => void;
   assetId: number;
-  assetSymbol: string;
+  coin: string;
 }
 
 export function LeverageAdjustmentModal({
@@ -27,7 +27,7 @@ export function LeverageAdjustmentModal({
   marginMode,
   onMarginModeChange,
   assetId,
-  assetSymbol,
+  coin,
 }: LeverageAdjustmentModalProps) {
   const { getAgentExchangeClient } = useHyperliquidClient();
   const [isUpdating, setIsUpdating] = useState(false);
@@ -71,7 +71,7 @@ export function LeverageAdjustmentModal({
         onMarginModeChange(newMode);
 
         toast.success('Margin Mode Updated', {
-          description: `Successfully switched to ${newMode} margin mode for ${assetSymbol}`,
+          description: `Successfully switched to ${newMode} margin mode for ${coin}`,
         });
       } catch (error) {
         console.error('Failed to update margin mode:', error);
@@ -82,14 +82,7 @@ export function LeverageAdjustmentModal({
         setIsUpdating(false);
       }
     },
-    [
-      assetId,
-      assetSymbol,
-      getAgentExchangeClient,
-      isUpdating,
-      onMarginModeChange,
-      selectedLeverage,
-    ],
+    [assetId, coin, getAgentExchangeClient, isUpdating, onMarginModeChange, selectedLeverage],
   );
 
   // Handle leverage confirmation - call API on confirm button
@@ -117,7 +110,7 @@ export function LeverageAdjustmentModal({
       onLeverageChange(selectedLeverage);
 
       toast.success('Leverage Updated', {
-        description: `Successfully set leverage to ${selectedLeverage}x for ${assetSymbol}`,
+        description: `Successfully set leverage to ${selectedLeverage}x for ${coin}`,
       });
 
       // Close modal
@@ -132,7 +125,7 @@ export function LeverageAdjustmentModal({
     }
   }, [
     assetId,
-    assetSymbol,
+    coin,
     getAgentExchangeClient,
     isUpdating,
     onLeverageChange,
@@ -299,7 +292,10 @@ export function LeverageAdjustmentModal({
                   if (typeof next !== 'number') {
                     return;
                   }
-                  const clampedValue = Math.max(LEVERAGE_MIN, Math.min(LEVERAGE_MAX, Math.round(next)));
+                  const clampedValue = Math.max(
+                    LEVERAGE_MIN,
+                    Math.min(LEVERAGE_MAX, Math.round(next)),
+                  );
                   setSelectedLeverage(clampedValue);
                 }}
               >

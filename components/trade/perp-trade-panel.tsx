@@ -16,14 +16,14 @@ import { Button, Text, XStack, YStack } from 'tamagui';
 
 interface PerpTradePanelProps {
   assetId?: number;
-  assetSymbol: string; // Asset symbol like 'BTC', 'ETH', 'SOL'
+  coin: string; // Asset symbol like 'BTC', 'ETH', 'SOL'
   activeAssetData?: ActiveAssetData;
   isLoadingAssetData?: boolean;
 }
 
 export function PerpTradePanel({
   assetId,
-  assetSymbol,
+  coin,
   activeAssetData,
   isLoadingAssetData,
 }: PerpTradePanelProps) {
@@ -222,7 +222,7 @@ export function PerpTradePanel({
               leverage={leverage}
               availableToTrade={availableToTrade}
               marketPrice={marketData.price}
-              assetSymbol={assetSymbol}
+              coin={coin}
             />
           )}
 
@@ -237,7 +237,7 @@ export function PerpTradePanel({
               leverage={leverage}
               availableToTrade={availableToTrade}
               marketPrice={marketData.price}
-              assetSymbol={assetSymbol}
+              coin={coin}
             />
           )}
 
@@ -294,7 +294,7 @@ export function PerpTradePanel({
             marginMode={collateralMode}
             onMarginModeChange={setCollateralMode}
             assetId={assetId ?? 0}
-            assetSymbol={assetSymbol}
+            coin={coin}
           />
         </YStack>
       </YStack>

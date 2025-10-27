@@ -8,7 +8,7 @@ interface OrderSizeInputProps {
   leverage: number;
   availableToTrade: number;
   priceForCalculation: number; // Price used to calculate asset quantity from USD amount
-  assetSymbol: string; // The asset symbol (e.g., 'BTC', 'ETH', 'SOL')
+  coin: string; // The asset symbol (e.g., 'BTC', 'ETH', 'SOL')
 }
 
 export function OrderSizeInput({
@@ -17,7 +17,7 @@ export function OrderSizeInput({
   leverage,
   availableToTrade,
   priceForCalculation,
-  assetSymbol,
+  coin,
 }: OrderSizeInputProps) {
   const [sizePercentage, setSizePercentage] = useState(0);
   const [sizeUnit, setSizeUnit] = useState<'ASSET' | 'USD'>('ASSET'); // Display unit
@@ -122,7 +122,7 @@ export function OrderSizeInput({
       {/* Size Input */}
       <YStack gap="$1.5">
         <Text fontFamily="$interRegular" fontSize="$2" color="$gray10">
-          Size ({sizeUnit === 'ASSET' ? assetSymbol : 'USD'})
+          Size ({sizeUnit === 'ASSET' ? coin : 'USD'})
         </Text>
         <XStack
           backgroundColor="$gray3"
@@ -161,7 +161,7 @@ export function OrderSizeInput({
             pressStyle={{ backgroundColor: '$gray6', opacity: 0.8 }}
           >
             <Text fontFamily="$interSemiBold" fontSize="$2" color="$gray11">
-              {sizeUnit === 'ASSET' ? assetSymbol : 'USD'}
+              {sizeUnit === 'ASSET' ? coin : 'USD'}
             </Text>
           </Button>
         </XStack>

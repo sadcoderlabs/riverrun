@@ -33,7 +33,7 @@ export default function PerpTradeIndex() {
       {/* PERP Trade Panel - includes Order Book and Place Order UI */}
       <PerpTradePanel
         assetId={assetId}
-        assetSymbol={coin}
+        coin={coin}
         activeAssetData={activeAssetData}
         isLoadingAssetData={isLoadingAssetData}
       />
