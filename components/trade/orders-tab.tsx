@@ -1,10 +1,10 @@
 import { useHyperliquidClient } from '@/hooks/useHyperliquidClient';
+import { useOrderUpdates } from '@/hooks/useOrderUpdates';
 import * as hl from '@nktkas/hyperliquid';
 import { useAppKitAccount } from '@reown/appkit-ethers-react-native';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { RefreshControl } from 'react-native';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner-native';
-import { Button, ScrollView, Spinner, Text, XStack, YStack } from 'tamagui';
+import { Button, Spinner, Text, XStack, YStack } from 'tamagui';
 
 const formatNumber = (value: number | string, decimals = 4) => {
   const numericValue = typeof value === 'string' ? parseFloat(value) : value;
@@ -45,90 +45,58 @@ const formatSide = (side: string) => {
 
 export function OrdersTabContent() {
   const { address, isConnected } = useAppKitAccount();
-  const { getInfoClient, getAgentExchangeClient } = useHyperliquidClient();
+  const { getAgentExchangeClient, getSymbolConverter } = useHyperliquidClient();
 
-  const [orders, setOrders] = useState<hl.OpenOrdersResponse>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | undefined>(undefined);
+  // Subscribe to order updates via WebSocket
+  const { orders: orderUpdates, isLoading: loading, error: wsError } = useOrderUpdates();
+
+  console.log('[OrdersTabContent] State:', {
+    address,
+    isConnected,
+    orderUpdatesCount: orderUpdates.length,
+    loading,
+    wsError,
+  });
+
   const [cancelError, setCancelError] = useState<string | undefined>(undefined);
   const [cancelingOrderIds, setCancelingOrderIds] = useState<Record<number, boolean>>({});
 
-  type MetaUniverse = Awaited<ReturnType<hl.InfoClient['meta']>>['universe'];
-  const [metaUniverse, setMetaUniverse] = useState<MetaUniverse | undefined>(undefined);
+  const error = wsError ? wsError.message : undefined;
 
-  const fetchOpenOrders = useCallback(
-    async (isRefresh = false) => {
-      if (!address) {
-        setOrders([]);
-        setLoading(false);
-        setRefreshing(false);
-        return;
-      }
-
-      try {
-        setError(undefined);
-        if (isRefresh) {
-          setRefreshing(true);
-        } else {
-          setLoading(true);
-        }
-
-        const userOpenOrders = await getInfoClient().openOrders({ user: address });
-        setOrders(userOpenOrders);
-      } catch (err) {
-        console.error('Error fetching open orders:', err);
-        setError('Failed to fetch open orders');
-      } finally {
-        if (isRefresh) {
-          setRefreshing(false);
-        } else {
-          setLoading(false);
-        }
-      }
-    },
-    [address, getInfoClient],
-  );
-
-  const fetchMeta = useCallback(async () => {
-    if (metaUniverse) {
-      return;
-    }
-
-    try {
-      const meta = await getInfoClient().meta();
-      setMetaUniverse(meta.universe);
-    } catch (err) {
-      console.error('Error fetching meta data:', err);
-    }
-  }, [getInfoClient, metaUniverse]);
-
-  useEffect(() => {
-    if (!address) {
-      setLoading(false);
-      return;
-    }
-
-    fetchOpenOrders();
-  }, [address, fetchOpenOrders]);
-
-  useEffect(() => {
-    fetchMeta();
-  }, [fetchMeta]);
-
-  const onRefresh = useCallback(() => {
-    fetchOpenOrders(true);
-  }, [fetchOpenOrders]);
-
+  // Filter and sort orders - only show open orders
   const sortedOrders = useMemo(() => {
-    return [...orders].sort((a, b) => b.timestamp - a.timestamp);
-  }, [orders]);
+    console.log('[OrdersTabContent] Processing orders:', {
+      totalUpdates: orderUpdates.length,
+      updates: orderUpdates,
+    });
 
-  const normalizeAssetName = useCallback((value: string) => {
-    return value.replace(/[^a-z0-9]/gi, '').toLowerCase();
-  }, []);
+    // Filter for open orders only
+    const openOrders = orderUpdates
+      .filter(update => {
+        const isOpen = update.status === 'open';
+        console.log('[OrdersTabContent] Order status:', {
+          oid: update.order.oid,
+          status: update.status,
+          isOpen,
+        });
+        return isOpen;
+      })
+      .map(update => update.order);
+
+    console.log('[OrdersTabContent] Open orders:', {
+      count: openOrders.length,
+      orders: openOrders,
+    });
+
+    // Sort by timestamp (most recent first)
+    const sorted = openOrders.sort((a, b) => b.timestamp - a.timestamp);
+    console.log('[OrdersTabContent] Sorted orders:', sorted);
+
+    return sorted;
+  }, [orderUpdates]);
 
   if (!isConnected || !address) {
+    console.log('[OrdersTabContent] Not connected or no address');
     return (
       <YStack flex={1} justifyContent="center" alignItems="center" padding="$4">
         <Text>Please connect your wallet to view orders</Text>
@@ -137,6 +105,7 @@ export function OrdersTabContent() {
   }
 
   if (loading) {
+    console.log('[OrdersTabContent] Loading...');
     return (
       <YStack flex={1} justifyContent="center" alignItems="center">
         <Spinner size="large" />
@@ -146,6 +115,7 @@ export function OrdersTabContent() {
   }
 
   if (error) {
+    console.log('[OrdersTabContent] Error:', error);
     return (
       <YStack flex={1} justifyContent="center" alignItems="center" padding="$4">
         <Text color="$red10">{error}</Text>
@@ -154,6 +124,7 @@ export function OrdersTabContent() {
   }
 
   if (sortedOrders.length === 0) {
+    console.log('[OrdersTabContent] No orders');
     return (
       <YStack flex={1} justifyContent="center" alignItems="center" padding="$4">
         <Text>No open orders</Text>
@@ -161,193 +132,180 @@ export function OrdersTabContent() {
     );
   }
 
+  console.log('[OrdersTabContent] Rendering orders:', sortedOrders.length);
+
   return (
-    <YStack flex={1}>
-      <ScrollView
-        flex={1}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#999" />
-        }
-      >
-        <YStack paddingBottom="$4">
-          {cancelError ? (
-            <YStack
-              borderRadius="$2"
-              backgroundColor="$red4"
-              borderColor="$red8"
-              borderWidth={1}
-              padding="$3"
-              mx="$4"
-              mt="$4"
-              mb="$2"
-            >
-              <Text color="$red10" fontFamily="$interMedium">
-                {cancelError}
-              </Text>
-            </YStack>
-          ) : undefined}
-          {sortedOrders.map(order => {
-            const price = parseFloat(order.limitPx);
-            const size = parseFloat(order.sz);
-            const orderValue = Number.isFinite(price * size) ? (price * size).toFixed(2) : '-';
-            const isBuy = order.side?.toUpperCase() === 'B' || order.side?.toUpperCase() === 'BUY';
+    <YStack>
+      <YStack paddingBottom="$4">
+        {cancelError ? (
+          <YStack
+            borderRadius="$2"
+            backgroundColor="$red4"
+            borderColor="$red8"
+            borderWidth={1}
+            padding="$3"
+            mx="$4"
+            mt="$4"
+            mb="$2"
+          >
+            <Text color="$red10" fontFamily="$interMedium">
+              {cancelError}
+            </Text>
+          </YStack>
+        ) : undefined}
+        {sortedOrders.map(order => {
+          const price = parseFloat(order.limitPx);
+          const size = parseFloat(order.sz);
+          const orderValue = Number.isFinite(price * size) ? (price * size).toFixed(2) : '-';
+          const isBuy = order.side?.toUpperCase() === 'B' || order.side?.toUpperCase() === 'BUY';
 
-            // Pill badge for order side
-            const PillBadge = ({ text, type }: { text: string; type: 'buy' | 'sell' }) => {
-              return (
-                <XStack
-                  px="$2"
-                  py="$1"
-                  borderRadius="$5"
-                  alignItems="center"
-                  borderWidth={1}
-                  borderColor={type === 'buy' ? '$green9' : '$red9'}
-                  backgroundColor={type === 'buy' ? '$green2' : '$red2'}
-                >
-                  <Text fontSize="$1" color={type === 'buy' ? '$green9' : '$red9'}>
-                    {text}
-                  </Text>
-                </XStack>
-              );
-            };
-
+          // Pill badge for order side
+          const PillBadge = ({ text, type }: { text: string; type: 'buy' | 'sell' }) => {
             return (
-              <YStack
-                key={order.oid}
-                borderBottomWidth={1}
-                borderBottomColor="$borderColor"
-                px="$6"
-                py="$6"
+              <XStack
+                px="$2"
+                py="$1"
+                borderRadius="$5"
+                alignItems="center"
+                borderWidth={1}
+                borderColor={type === 'buy' ? '$green9' : '$red9'}
+                backgroundColor={type === 'buy' ? '$green2' : '$red2'}
               >
-                {/* First row: Symbol, Side badge and Timestamp */}
-                <XStack justifyContent="space-between" alignItems="center" mb="$3">
-                  <XStack gap="$2" alignItems="center">
-                    <Text fontFamily="$interBold" fontSize="$3">
-                      {order.coin}
-                    </Text>
-                    <PillBadge text={formatSide(order.side)} type={isBuy ? 'buy' : 'sell'} />
-                  </XStack>
-                  <Text color="$color9" fontSize="$1">
-                    {formatTimestamp(order.timestamp)}
-                  </Text>
-                </XStack>
-
-                {/* Second row: Order ID */}
-                <XStack justifyContent="space-between" alignItems="center" mb="$2">
-                  <Text color="$color9" fontSize="$2">
-                    Order ID
-                  </Text>
-                  <Text fontSize="$2" fontFamily="$interMedium">
-                    {order.oid}
-                  </Text>
-                </XStack>
-
-                {/* Third row: Price */}
-                <XStack justifyContent="space-between" alignItems="center" mb="$2">
-                  <Text color="$color9" fontSize="$2">
-                    Price
-                  </Text>
-                  <Text fontSize="$2" fontFamily="$interMedium">
-                    ${formatNumber(order.limitPx)}
-                  </Text>
-                </XStack>
-
-                {/* Fourth row: Size - only show if size > 0 */}
-                {size > 0 && (
-                  <XStack justifyContent="space-between" alignItems="center" mb="$2">
-                    <Text color="$color9" fontSize="$2">
-                      Size
-                    </Text>
-                    <Text fontSize="$2" fontFamily="$interMedium">
-                      {formatNumber(order.sz)}
-                    </Text>
-                  </XStack>
-                )}
-
-                {/* Fifth row: Value - only show if value > 0 */}
-                {orderValue !== '-' && parseFloat(orderValue) > 0 && (
-                  <XStack justifyContent="space-between" alignItems="center" mb="$2">
-                    <Text color="$color9" fontSize="$2">
-                      Value
-                    </Text>
-                    <Text fontSize="$2" fontFamily="$interMedium">
-                      ${orderValue}
-                    </Text>
-                  </XStack>
-                )}
-
-                {/* Fourth row: Cancel button */}
-                <XStack justifyContent="flex-end" marginTop="$2">
-                  <Button
-                    size="$3"
-                    disabled={Boolean(cancelingOrderIds[order.oid])}
-                    onPress={async () => {
-                      setCancelError(undefined);
-                      setCancelingOrderIds(prev => ({ ...prev, [order.oid]: true }));
-
-                      try {
-                        const exchangeClient = await getAgentExchangeClient();
-                        if (!exchangeClient) {
-                          toast.info('Cancelled', {
-                            description: 'Order cancellation was cancelled',
-                          });
-                          return;
-                        }
-
-                        let universe = metaUniverse;
-                        if (!universe) {
-                          const meta = await getInfoClient().meta();
-                          universe = meta.universe;
-                          setMetaUniverse(universe);
-                        }
-
-                        const normalizedCoin = normalizeAssetName(order.coin);
-                        const assetIndex = universe.findIndex(
-                          asset => normalizeAssetName(asset.name) === normalizedCoin,
-                        );
-
-                        if (assetIndex === -1) {
-                          throw new Error(`Unable to determine asset index for ${order.coin}`);
-                        }
-
-                        await exchangeClient.cancel({
-                          cancels: [
-                            {
-                              a: assetIndex,
-                              o: order.oid,
-                            },
-                          ],
-                        });
-
-                        toast.success('Order Cancelled', {
-                          description: `Successfully cancelled order for ${order.coin}`,
-                        });
-
-                        await fetchOpenOrders();
-                      } catch (err) {
-                        console.error('Error canceling order:', err);
-                        const errorMessage = 'Failed to cancel order. Please try again.';
-                        setCancelError(errorMessage);
-                        toast.error('Cancel Failed', {
-                          description: errorMessage,
-                        });
-                      } finally {
-                        setCancelingOrderIds(prev => {
-                          const next = { ...prev };
-                          delete next[order.oid];
-                          return next;
-                        });
-                      }
-                    }}
-                  >
-                    {cancelingOrderIds[order.oid] ? 'Canceling...' : 'Cancel Order'}
-                  </Button>
-                </XStack>
-              </YStack>
+                <Text fontSize="$1" color={type === 'buy' ? '$green9' : '$red9'}>
+                  {text}
+                </Text>
+              </XStack>
             );
-          })}
-        </YStack>
-      </ScrollView>
+          };
+
+          return (
+            <YStack
+              key={order.oid}
+              borderBottomWidth={1}
+              borderBottomColor="$borderColor"
+              px="$6"
+              py="$6"
+            >
+              {/* First row: Symbol, Side badge and Timestamp */}
+              <XStack justifyContent="space-between" alignItems="center" mb="$3">
+                <XStack gap="$2" alignItems="center">
+                  <Text fontFamily="$interBold" fontSize="$3">
+                    {order.coin}
+                  </Text>
+                  <PillBadge text={formatSide(order.side)} type={isBuy ? 'buy' : 'sell'} />
+                </XStack>
+                <Text color="$color9" fontSize="$1">
+                  {formatTimestamp(order.timestamp)}
+                </Text>
+              </XStack>
+
+              {/* Second row: Order ID */}
+              <XStack justifyContent="space-between" alignItems="center" mb="$2">
+                <Text color="$color9" fontSize="$2">
+                  Order ID
+                </Text>
+                <Text fontSize="$2" fontFamily="$interMedium">
+                  {order.oid}
+                </Text>
+              </XStack>
+
+              {/* Third row: Price */}
+              <XStack justifyContent="space-between" alignItems="center" mb="$2">
+                <Text color="$color9" fontSize="$2">
+                  Price
+                </Text>
+                <Text fontSize="$2" fontFamily="$interMedium">
+                  ${formatNumber(order.limitPx)}
+                </Text>
+              </XStack>
+
+              {/* Fourth row: Size - only show if size > 0 */}
+              {size > 0 && (
+                <XStack justifyContent="space-between" alignItems="center" mb="$2">
+                  <Text color="$color9" fontSize="$2">
+                    Size
+                  </Text>
+                  <Text fontSize="$2" fontFamily="$interMedium">
+                    {formatNumber(order.sz)}
+                  </Text>
+                </XStack>
+              )}
+
+              {/* Fifth row: Value - only show if value > 0 */}
+              {orderValue !== '-' && parseFloat(orderValue) > 0 && (
+                <XStack justifyContent="space-between" alignItems="center" mb="$2">
+                  <Text color="$color9" fontSize="$2">
+                    Value
+                  </Text>
+                  <Text fontSize="$2" fontFamily="$interMedium">
+                    ${orderValue}
+                  </Text>
+                </XStack>
+              )}
+
+              {/* Fourth row: Cancel button */}
+              <XStack justifyContent="flex-end" marginTop="$2">
+                <Button
+                  size="$3"
+                  disabled={Boolean(cancelingOrderIds[order.oid])}
+                  onPress={async () => {
+                    setCancelError(undefined);
+                    setCancelingOrderIds(prev => ({ ...prev, [order.oid]: true }));
+
+                    try {
+                      const exchangeClient = await getAgentExchangeClient();
+                      if (!exchangeClient) {
+                        toast.info('Cancelled', {
+                          description: 'Order cancellation was cancelled',
+                        });
+                        return;
+                      }
+
+                      // Get asset ID from coin symbol using SymbolConverter
+                      const converter = await getSymbolConverter();
+                      const assetId = converter.getAssetId(order.coin);
+
+                      if (assetId === undefined) {
+                        throw new Error(`Unable to determine asset index for ${order.coin}`);
+                      }
+
+                      await exchangeClient.cancel({
+                        cancels: [
+                          {
+                            a: assetId,
+                            o: order.oid,
+                          },
+                        ],
+                      });
+
+                      toast.success('Order Cancelled', {
+                        description: `Successfully cancelled order for ${order.coin}`,
+                      });
+
+                      // WebSocket will automatically update the orders list
+                    } catch (err) {
+                      console.error('Error canceling order:', err);
+                      const errorMessage = 'Failed to cancel order. Please try again.';
+                      setCancelError(errorMessage);
+                      toast.error('Cancel Failed', {
+                        description: errorMessage,
+                      });
+                    } finally {
+                      setCancelingOrderIds(prev => {
+                        const next = { ...prev };
+                        delete next[order.oid];
+                        return next;
+                      });
+                    }
+                  }}
+                >
+                  {cancelingOrderIds[order.oid] ? 'Canceling...' : 'Cancel Order'}
+                </Button>
+              </XStack>
+            </YStack>
+          );
+        })}
+      </YStack>
     </YStack>
   );
 }
