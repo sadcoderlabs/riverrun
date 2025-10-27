@@ -10,7 +10,7 @@ interface LeverageSelectorProps {
 }
 
 export function LeverageSelector({ leverage, marginMode, coin }: LeverageSelectorProps) {
-  const [leverageSheetOpen, setLeverageSheetOpen] = useState(false);
+  const [leverageModalOpen, setLeverageModalOpen] = useState(false);
 
   return (
     <>
@@ -24,7 +24,7 @@ export function LeverageSelector({ leverage, marginMode, coin }: LeverageSelecto
         borderWidth={1}
         alignItems="center"
         justifyContent="space-between"
-        onPress={() => setLeverageSheetOpen(true)}
+        onPress={() => setLeverageModalOpen(true)}
         pressStyle={{ opacity: 0.7 }}
       >
         <Text color="$color" fontSize="$2" fontFamily="$interRegular">
@@ -35,8 +35,8 @@ export function LeverageSelector({ leverage, marginMode, coin }: LeverageSelecto
 
       {/* Leverage Adjustment Modal */}
       <LeverageAdjustmentModal
-        open={leverageSheetOpen}
-        onOpenChange={setLeverageSheetOpen}
+        open={leverageModalOpen}
+        onOpenChange={setLeverageModalOpen}
         leverage={leverage}
         marginMode={marginMode}
         coin={coin}
