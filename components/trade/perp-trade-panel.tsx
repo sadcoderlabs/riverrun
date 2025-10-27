@@ -289,13 +289,7 @@ export function PerpTradePanel({ coin }: PerpTradePanelProps) {
             open={leverageSheetOpen}
             onOpenChange={setLeverageSheetOpen}
             leverage={leverage}
-            onLeverageChange={() => {
-              // No-op: leverage updates via WebSocket (activeAssetData)
-            }}
             marginMode={collateralMode}
-            onMarginModeChange={() => {
-              // No-op: margin mode updates via WebSocket (activeAssetData)
-            }}
             coin={coin}
           />
         </YStack>

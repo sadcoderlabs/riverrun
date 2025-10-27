@@ -12,9 +12,7 @@ interface LeverageAdjustmentModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   leverage: number;
-  onLeverageChange: (leverage: number) => void;
   marginMode: string;
-  onMarginModeChange: (mode: string) => void;
   coin: string;
 }
 
@@ -22,9 +20,7 @@ export function LeverageAdjustmentModal({
   open,
   onOpenChange,
   leverage,
-  onLeverageChange,
   marginMode,
-  onMarginModeChange,
   coin,
 }: LeverageAdjustmentModalProps) {
   const { getAgentExchangeClient, getSymbolConverter } = useHyperliquidClient();
@@ -75,9 +71,8 @@ export function LeverageAdjustmentModal({
           leverage: selectedLeverage,
         });
 
-        // Update local state and parent state
+        // Update local state (WebSocket will update parent component)
         setSelectedMarginMode(newMode);
-        onMarginModeChange(newMode);
 
         toast.success('Margin Mode Updated', {
           description: `Successfully switched to ${newMode} margin mode for ${coin}`,
@@ -91,14 +86,7 @@ export function LeverageAdjustmentModal({
         setIsUpdating(false);
       }
     },
-    [
-      coin,
-      getAgentExchangeClient,
-      getSymbolConverter,
-      isUpdating,
-      onMarginModeChange,
-      selectedLeverage,
-    ],
+    [coin, getAgentExchangeClient, getSymbolConverter, isUpdating, selectedLeverage],
   );
 
   // Handle leverage confirmation - call API on confirm button
@@ -133,9 +121,7 @@ export function LeverageAdjustmentModal({
         leverage: selectedLeverage,
       });
 
-      // Update parent state
-      onLeverageChange(selectedLeverage);
-
+      // WebSocket will update parent component with new leverage
       toast.success('Leverage Updated', {
         description: `Successfully set leverage to ${selectedLeverage}x for ${coin}`,
       });
@@ -155,7 +141,6 @@ export function LeverageAdjustmentModal({
     getAgentExchangeClient,
     getSymbolConverter,
     isUpdating,
-    onLeverageChange,
     onOpenChange,
     selectedLeverage,
     selectedMarginMode,
