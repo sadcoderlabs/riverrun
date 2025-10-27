@@ -2,13 +2,13 @@ import 'event-target-polyfill'; // polyfill for hyperliquid sdk
 import 'fast-text-encoding'; // polyfill for hyperliquid sdk
 
 import { useOrderForm } from '@/components/trade/hooks/use-order-form';
-import { LeverageAdjustmentModal } from '@/components/trade/leverage-adjustment-modal';
+import { LeverageSelector } from '@/components/trade/leverage-selector';
 import { LimitOrderForm, MarketOrderForm, OrderTypeSelector } from '@/components/trade/order-forms';
 import { TpSlInput } from '@/components/trade/tp-sl-input';
 import { useActiveAssetData } from '@/hooks/useActiveAssetData';
 import { useHyperliquidClient } from '@/hooks/useHyperliquidClient';
 import { Checkbox } from '@tamagui/checkbox';
-import { Check, ChevronDown } from '@tamagui/lucide-icons';
+import { Check } from '@tamagui/lucide-icons';
 import { useCallback, useState } from 'react';
 import { useWatch } from 'react-hook-form';
 import { Alert } from 'react-native';
@@ -47,12 +47,9 @@ export function PerpTradePanel({ coin }: PerpTradePanelProps) {
       ? parseFloat(activeAssetData?.availableToTrade[0] || '0')
       : parseFloat(activeAssetData?.availableToTrade[1] || '0');
 
-  // UI-only states
-  const [leverageSheetOpen, setLeverageSheetOpen] = useState(false);
-
   // Get leverage and margin mode directly from activeAssetData
   const leverage = activeAssetData?.leverage?.value ?? 5;
-  const collateralMode = activeAssetData?.leverage?.type === 'cross' ? 'Cross' : 'Isolated';
+  const marginMode = activeAssetData?.leverage?.type === 'cross' ? 'Cross' : 'Isolated';
 
   // TP/SL states (temporarily removed from form)
   const [tpSlEnabled, setTpSlEnabled] = useState(false);
@@ -124,24 +121,8 @@ export function PerpTradePanel({ coin }: PerpTradePanelProps) {
       <YStack flex={7} backgroundColor="$background">
         {/* Trading Form */}
         <YStack padding="$3" gap="$2.5">
-          {/* Leverage & Margin Type Selector Button */}
-          <XStack
-            backgroundColor="$gray3"
-            borderRadius="$3"
-            paddingVertical="$2"
-            paddingHorizontal="$2.5"
-            borderColor="$gray8"
-            borderWidth={1}
-            alignItems="center"
-            justifyContent="space-between"
-            onPress={() => setLeverageSheetOpen(true)}
-            pressStyle={{ opacity: 0.7 }}
-          >
-            <Text color="$color" fontSize="$2" fontFamily="$interRegular">
-              {leverage}x {collateralMode.toUpperCase()}
-            </Text>
-            <ChevronDown size="$0.75" color="$color" />
-          </XStack>
+          {/* Leverage & Margin Type Selector */}
+          <LeverageSelector leverage={leverage} marginMode={marginMode} coin={coin} />
 
           {/* Available to Trade */}
           <XStack justifyContent="space-between" alignItems="center">
@@ -284,14 +265,6 @@ export function PerpTradePanel({ coin }: PerpTradePanelProps) {
               {validation.buttonText}
             </Text>
           </Button>
-
-          <LeverageAdjustmentModal
-            open={leverageSheetOpen}
-            onOpenChange={setLeverageSheetOpen}
-            leverage={leverage}
-            marginMode={collateralMode}
-            coin={coin}
-          />
         </YStack>
       </YStack>
     </XStack>
