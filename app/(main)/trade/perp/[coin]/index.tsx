@@ -15,26 +15,26 @@ const ASSET_INDEX_MAP: Record<string, number> = {
 };
 
 export default function PerpTradeIndex() {
-  const { asset } = useLocalSearchParams<{ asset: string }>();
+  const { coin } = useLocalSearchParams<{ coin: string }>();
 
-  // Get asset name and assetId (index in Hyperliquid)
-  const assetSymbol = asset || 'BTC';
-  const assetId = useMemo(() => ASSET_INDEX_MAP[assetSymbol.toUpperCase()] ?? 0, [assetSymbol]);
+  // Get coin name and assetId (index in Hyperliquid)
+  const coinName = coin || 'BTC';
+  const assetId = useMemo(() => ASSET_INDEX_MAP[coinName.toUpperCase()] ?? 0, [coinName]);
 
   // Subscribe to active asset data (leverage, margin mode) from WebSocket
   const { data: activeAssetData, isLoading: isLoadingAssetData } = useActiveAssetData({
-    coin: assetSymbol,
+    coin: coinName,
   });
 
   return (
     <YStack flex={1} backgroundColor="$gray3">
       {/* Market Information Section with Chart */}
-      <AssetInfo assetSymbol={assetSymbol} />
+      <AssetInfo assetSymbol={coinName} />
 
       {/* PERP Trade Panel - includes Order Book and Place Order UI */}
       <PerpTradePanel
         assetId={assetId}
-        assetSymbol={assetSymbol}
+        assetSymbol={coinName}
         activeAssetData={activeAssetData}
         isLoadingAssetData={isLoadingAssetData}
       />
