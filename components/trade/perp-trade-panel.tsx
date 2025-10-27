@@ -4,6 +4,7 @@ import 'fast-text-encoding'; // polyfill for hyperliquid sdk
 import { useOrderForm } from '@/components/trade/hooks/use-order-form';
 import { LeverageSelector } from '@/components/trade/leverage-selector';
 import { LimitOrderForm, MarketOrderForm, OrderTypeSelector } from '@/components/trade/order-forms';
+import { OrderBook } from '@/components/trade/OrderBook';
 import { roundPrice } from '@/components/trade/price-utils';
 import { TpSlInput } from '@/components/trade/tp-sl-input';
 import { useActiveAssetData } from '@/hooks/useActiveAssetData';
@@ -223,13 +224,9 @@ export function PerpTradePanel({ coin }: PerpTradePanelProps) {
 
   return (
     <XStack>
-      {/* Left Side - Order Book Placeholder */}
+      {/* Left Side - Order Book */}
       <YStack flex={5} backgroundColor="$background" borderRightWidth={1} borderRightColor="$gray8">
-        <YStack justifyContent="center" alignItems="center" padding="$4" minHeight={200}>
-          <Text fontFamily="$interRegular" fontSize="$3" color="$gray10">
-            Order Book
-          </Text>
-        </YStack>
+        <OrderBook coin={coin} />
       </YStack>
 
       {/* Right Side - Trading Panel */}
