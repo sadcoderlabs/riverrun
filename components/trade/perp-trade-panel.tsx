@@ -27,11 +27,6 @@ export function PerpTradePanel({ coin }: PerpTradePanelProps) {
     coin,
   });
 
-  // Mock market data
-  const marketData = {
-    price: 28450.75,
-  };
-
   // Initialize React Hook Form (only manages order-specific fields)
   const { form, validation } = useOrderForm({});
 
@@ -231,7 +226,7 @@ export function PerpTradePanel({ coin }: PerpTradePanelProps) {
               }
               leverage={leverage}
               availableToTrade={availableToTrade}
-              marketPrice={marketData.price}
+              marketPrice={parseFloat(activeAssetData?.markPx || '0')}
               coin={coin}
             />
           )}
@@ -246,7 +241,7 @@ export function PerpTradePanel({ coin }: PerpTradePanelProps) {
               }
               leverage={leverage}
               availableToTrade={availableToTrade}
-              marketPrice={marketData.price}
+              marketPrice={parseFloat(activeAssetData?.markPx || '0')}
               coin={coin}
             />
           )}
