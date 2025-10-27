@@ -39,7 +39,7 @@ export default function PerpTradeIndex() {
       />
 
       {/* PERP Tabs - Orders, Positions, History */}
-      <PerpTabs assetId={assetId} />
+      <PerpTabs />
     </YStack>
   );
 }

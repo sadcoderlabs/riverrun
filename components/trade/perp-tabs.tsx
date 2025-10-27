@@ -3,11 +3,7 @@ import PositionsTab from '@/components/trade/positions-tab';
 import { useState } from 'react';
 import { Text, XStack, YStack } from 'tamagui';
 
-interface PerpTabsProps {
-  assetId?: number;
-}
-
-export function PerpTabs({ assetId }: PerpTabsProps) {
+export function PerpTabs() {
   const [activeTab, setActiveTab] = useState<'orders' | 'positions' | 'history'>('orders');
 
   return (
