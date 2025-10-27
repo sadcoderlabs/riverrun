@@ -1,4 +1,5 @@
 import * as hl from '@nktkas/hyperliquid';
+import { type NSigFigs } from '@/lib/hyperliquid/orderbook-precision';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useHyperliquidClient } from './useHyperliquidClient';
 
@@ -17,6 +18,15 @@ export interface OrderBookData {
 
 interface UseOrderBookParams {
   coin: string;
+  /**
+   * Number of significant figures for price aggregation
+   * - null: Full precision (finest possible under exchange rules)
+   * - 2-5: Round prices to N significant figures
+   *
+   * When this changes, the hook will unsubscribe and resubscribe
+   * to get order book data at the new precision level.
+   */
+  nSigFigs?: NSigFigs;
 }
 
 interface UseOrderBookResult {
@@ -27,9 +37,13 @@ interface UseOrderBookResult {
 
 /**
  * Hook to subscribe to Hyperliquid's l2Book WebSocket feed
- * for real-time order book data.
+ * for real-time order book data with configurable precision.
+ *
+ * The precision can be dynamically changed by updating the nSigFigs parameter.
+ * The hook will automatically unsubscribe from the old precision and subscribe
+ * to the new one.
  */
-export function useOrderBook({ coin }: UseOrderBookParams): UseOrderBookResult {
+export function useOrderBook({ coin, nSigFigs }: UseOrderBookParams): UseOrderBookResult {
   const { getSubscriptionClient } = useHyperliquidClient();
   const [data, setData] = useState<OrderBookData | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
@@ -69,10 +83,14 @@ export function useOrderBook({ coin }: UseOrderBookParams): UseOrderBookResult {
         // Get subscription client from hook
         const subscriptionClient = getSubscriptionClient();
 
-        // Subscribe to l2Book
+        // Subscribe to l2Book with precision parameter
+        // nSigFigs controls price aggregation level:
+        // - undefined/null: Full precision
+        // - 2-5: Round to N significant figures
         const subscription = await subscriptionClient.l2Book(
           {
             coin: coin.toUpperCase(),
+            nSigFigs: nSigFigs ?? undefined,
           },
           orderBookEvent => {
             if (isMounted) {
@@ -102,11 +120,13 @@ export function useOrderBook({ coin }: UseOrderBookParams): UseOrderBookResult {
     void setupSubscription();
 
     // Cleanup on unmount or when dependencies change
+    // When nSigFigs changes, this will trigger unsubscribe + resubscribe
+    // to get order book data at the new precision level
     return () => {
       isMounted = false;
       void cleanup();
     };
-  }, [coin, cleanup, getSubscriptionClient]);
+  }, [coin, nSigFigs, cleanup, getSubscriptionClient]);
 
   return {
     data,

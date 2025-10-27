@@ -1,5 +1,10 @@
 import AdaptiveSelect from '@/components/global/adaptive-select';
 import { useOrderBook, type OrderBookLevel } from '@/hooks/useOrderBook';
+import {
+  buildPrecisionMenu,
+  type NSigFigs,
+  type PrecisionMenuItem,
+} from '@/lib/hyperliquid/orderbook-precision';
 import { ChevronDown } from '@tamagui/lucide-icons';
 import { useMemo, useState } from 'react';
 import { FlatList } from 'react-native';
@@ -8,20 +13,56 @@ import { OrderBookRow } from './OrderBookRow';
 
 interface OrderBookProps {
   coin: string;
+  /**
+   * Size decimals for the asset (from Hyperliquid meta)
+   * Used to calculate valid precision levels
+   */
+  szDecimals: number;
+  /**
+   * Mark price for the asset (from activeAssetData)
+   * Used as representative price for precision calculation
+   */
+  markPx: string;
   onPriceClick?: (price: string) => void;
 }
 
 type SizeUnit = 'usd' | 'asset';
 
 /**
- * Order Book component displaying real-time bids and asks
+ * Order Book component displaying real-time bids and asks with dynamic precision control
+ *
+ * Features:
+ * - Dynamic precision menu based on current price and asset decimals
+ * - Automatic resubscription when precision changes
+ * - Size display in USD or asset units
+ *
  * Layout: Asks (top, reversed) -> Bids (bottom)
  */
-export function OrderBook({ coin, onPriceClick }: OrderBookProps) {
+export function OrderBook({ coin, szDecimals, markPx, onPriceClick }: OrderBookProps) {
   const [sizeUnit, setSizeUnit] = useState<SizeUnit>('usd');
-  const [selectedPrecision, setSelectedPrecision] = useState<string>('1');
+  // Selected precision: null for full, or the nSigFigs value
+  const [selectedPrecision, setSelectedPrecision] = useState<NSigFigs | undefined>(undefined);
 
-  const { data, isLoading, error } = useOrderBook({ coin });
+  // Calculate precision menu items based on current mark price
+  // This menu dynamically adjusts based on the price level of the asset
+  const precisionMenuItems = useMemo<PrecisionMenuItem[]>(() => {
+    try {
+      const price = parseFloat(markPx);
+      // Only calculate if we have a valid price
+      if (!price || price <= 0) {
+        return [];
+      }
+      return buildPrecisionMenu(price, szDecimals);
+    } catch (err) {
+      console.error('[OrderBook] Error building precision menu:', err);
+      return [];
+    }
+  }, [markPx, szDecimals]);
+
+  // Default to first menu item (finest precision) if not selected
+  const effectiveNSigFigs = selectedPrecision ?? precisionMenuItems[0]?.nSigFigs;
+
+  const { data, isLoading, error } = useOrderBook({ coin, nSigFigs: effectiveNSigFigs });
 
   // Calculate max size for depth percentage calculation
   const maxSize = useMemo(() => {
@@ -113,10 +154,14 @@ export function OrderBook({ coin, onPriceClick }: OrderBookProps) {
         borderBottomWidth={1}
         borderBottomColor="$gray8"
       >
-        {/* Precision Dropdown */}
+        {/* Precision Dropdown - dynamically generated based on price and szDecimals */}
         <AdaptiveSelect
-          value={selectedPrecision}
-          onValueChange={setSelectedPrecision}
+          value={String(effectiveNSigFigs ?? 'null')}
+          onValueChange={value => {
+            // Convert string back to NSigFigs
+            const nSigFigs = value === 'null' ? null : (parseInt(value) as NSigFigs);
+            setSelectedPrecision(nSigFigs);
+          }}
           title="Precision"
         >
           <AdaptiveSelect.Trigger>
@@ -132,20 +177,21 @@ export function OrderBook({ coin, onPriceClick }: OrderBookProps) {
               borderColor="$gray8"
             >
               <Text fontFamily="$interMedium" fontSize="$2" color="$color">
-                {selectedPrecision}
+                {precisionMenuItems.find(item => item.nSigFigs === effectiveNSigFigs)?.label || '?'}
               </Text>
               <ChevronDown size={12} color="$gray10" />
             </XStack>
           </AdaptiveSelect.Trigger>
-          <AdaptiveSelect.Item value="1" index={0}>
-            1
-          </AdaptiveSelect.Item>
-          <AdaptiveSelect.Item value="10" index={1}>
-            10
-          </AdaptiveSelect.Item>
-          <AdaptiveSelect.Item value="100" index={2}>
-            100
-          </AdaptiveSelect.Item>
+          {/* Dynamically render menu items based on calculated precision levels */}
+          {precisionMenuItems.map((item, index) => (
+            <AdaptiveSelect.Item
+              key={String(item.nSigFigs ?? 'null')}
+              value={String(item.nSigFigs ?? 'null')}
+              index={index}
+            >
+              {item.label}
+            </AdaptiveSelect.Item>
+          ))}
         </AdaptiveSelect>
 
         {/* Size Unit Dropdown */}

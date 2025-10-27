@@ -237,7 +237,12 @@ export function PerpTradePanel({ coin }: PerpTradePanelProps) {
     <XStack>
       {/* Left Side - Order Book */}
       <YStack flex={5} backgroundColor="$background" borderRightWidth={1} borderRightColor="$gray8">
-        <OrderBook coin={coin} onPriceClick={handleOrderBookPriceClick} />
+        <OrderBook
+          coin={coin}
+          szDecimals={szDecimals}
+          markPx={activeAssetData?.markPx || '0'}
+          onPriceClick={handleOrderBookPriceClick}
+        />
       </YStack>
 
       {/* Right Side - Trading Panel */}
