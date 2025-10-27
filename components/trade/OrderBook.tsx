@@ -6,6 +6,7 @@ import { OrderBookRow } from './OrderBookRow';
 
 interface OrderBookProps {
   coin: string;
+  onPriceClick?: (price: string) => void;
 }
 
 type SizeUnit = 'usd' | 'asset';
@@ -14,7 +15,7 @@ type SizeUnit = 'usd' | 'asset';
  * Order Book component displaying real-time bids and asks
  * Layout: Asks (top, reversed) -> Bids (bottom)
  */
-export function OrderBook({ coin }: OrderBookProps) {
+export function OrderBook({ coin, onPriceClick }: OrderBookProps) {
   const [sizeUnit, setSizeUnit] = useState<SizeUnit>('usd');
 
   const { data, isLoading, error } = useOrderBook({ coin });
@@ -56,6 +57,7 @@ export function OrderBook({ coin }: OrderBookProps) {
         size={displaySize}
         type={type}
         depthPercentage={depthPercentage}
+        onPress={() => onPriceClick?.(item.px)}
       />
     );
   };

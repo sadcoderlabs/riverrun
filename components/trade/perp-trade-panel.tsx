@@ -222,11 +222,22 @@ export function PerpTradePanel({ coin }: PerpTradePanelProps) {
     return num.toFixed(2);
   };
 
+  // Handle order book price click - update limit price when in Limit order mode
+  const handleOrderBookPriceClick = useCallback(
+    (price: string) => {
+      // Only update limit price when in Limit order mode
+      if (orderType === 'Limit') {
+        setValue('limitPrice', price);
+      }
+    },
+    [orderType, setValue],
+  );
+
   return (
     <XStack>
       {/* Left Side - Order Book */}
       <YStack flex={5} backgroundColor="$background" borderRightWidth={1} borderRightColor="$gray8">
-        <OrderBook coin={coin} />
+        <OrderBook coin={coin} onPriceClick={handleOrderBookPriceClick} />
       </YStack>
 
       {/* Right Side - Trading Panel */}
