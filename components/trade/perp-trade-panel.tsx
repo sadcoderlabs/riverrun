@@ -5,7 +5,7 @@ import { useOrderForm } from '@/components/trade/hooks/use-order-form';
 import { LeverageAdjustmentModal } from '@/components/trade/leverage-adjustment-modal';
 import { LimitOrderForm, MarketOrderForm, OrderTypeSelector } from '@/components/trade/order-forms';
 import { TpSlInput } from '@/components/trade/tp-sl-input';
-import { ActiveAssetData } from '@/hooks/useActiveAssetData';
+import { useActiveAssetData } from '@/hooks/useActiveAssetData';
 import { useHyperliquidClient } from '@/hooks/useHyperliquidClient';
 import { Checkbox } from '@tamagui/checkbox';
 import { Check, ChevronDown } from '@tamagui/lucide-icons';
@@ -17,12 +17,15 @@ import { Button, Text, XStack, YStack } from 'tamagui';
 
 interface PerpTradePanelProps {
   coin: string; // Asset symbol like 'BTC', 'ETH', 'SOL'
-  activeAssetData?: ActiveAssetData;
-  isLoadingAssetData?: boolean;
 }
 
-export function PerpTradePanel({ coin, activeAssetData, isLoadingAssetData }: PerpTradePanelProps) {
+export function PerpTradePanel({ coin }: PerpTradePanelProps) {
   const { getSymbolConverter } = useHyperliquidClient();
+
+  // Subscribe to active asset data (leverage, margin mode) from WebSocket
+  const { data: activeAssetData, isLoading: isLoadingAssetData } = useActiveAssetData({
+    coin,
+  });
 
   // Mock market data
   const marketData = {
