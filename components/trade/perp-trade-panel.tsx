@@ -6,6 +6,7 @@ import { LeverageAdjustmentModal } from '@/components/trade/leverage-adjustment-
 import { LimitOrderForm, MarketOrderForm, OrderTypeSelector } from '@/components/trade/order-forms';
 import { TpSlInput } from '@/components/trade/tp-sl-input';
 import { ActiveAssetData } from '@/hooks/useActiveAssetData';
+import { useHyperliquidClient } from '@/hooks/useHyperliquidClient';
 import { Checkbox } from '@tamagui/checkbox';
 import { Check, ChevronDown } from '@tamagui/lucide-icons';
 import { useCallback, useEffect, useState } from 'react';
@@ -15,21 +16,16 @@ import { toast } from 'sonner-native';
 import { Button, Text, XStack, YStack } from 'tamagui';
 
 interface PerpTradePanelProps {
-  assetId?: number;
   coin: string; // Asset symbol like 'BTC', 'ETH', 'SOL'
   activeAssetData?: ActiveAssetData;
   isLoadingAssetData?: boolean;
 }
 
-export function PerpTradePanel({
-  assetId,
-  coin,
-  activeAssetData,
-  isLoadingAssetData,
-}: PerpTradePanelProps) {
+export function PerpTradePanel({ coin, activeAssetData, isLoadingAssetData }: PerpTradePanelProps) {
+  const { getSymbolConverter } = useHyperliquidClient();
+
   // Mock market data
   const marketData = {
-    assetId: assetId ?? 0,
     price: 28450.75,
   };
 
@@ -72,7 +68,7 @@ export function PerpTradePanel({
   const [slValue, setSlValue] = useState('');
 
   // Simplified handler for Place Order button (without API call)
-  const handlePlaceOrder = useCallback(() => {
+  const handlePlaceOrder = useCallback(async () => {
     const data = form.getValues();
 
     // Check if size is valid
@@ -91,6 +87,17 @@ export function PerpTradePanel({
       return;
     }
 
+    // Get assetId from coin symbol
+    const converter = await getSymbolConverter();
+    const assetId = converter.getAssetId(coin);
+
+    if (assetId === undefined) {
+      toast.error('Invalid Asset', {
+        description: `Unable to find asset ID for ${coin}`,
+      });
+      return;
+    }
+
     // Prepare order data for display
     const orderData = {
       orderType: data.orderType,
@@ -98,12 +105,12 @@ export function PerpTradePanel({
       size: data.size,
       ...(data.orderType === 'Limit' && { limitPrice: data.limitPrice }),
       reduceOnly: data.reduceOnly,
-      assetId: assetId ?? 0,
+      assetId,
     };
 
     // Show order data in alert
     Alert.alert('Order Data', JSON.stringify(orderData, null, 2));
-  }, [form, validation.hasValidSize, validation.hasValidLimitPrice, assetId]);
+  }, [coin, form, getSymbolConverter, validation.hasValidLimitPrice, validation.hasValidSize]);
 
   // Format number with 2 decimal places
   const formatNumber = (num: number) => {
