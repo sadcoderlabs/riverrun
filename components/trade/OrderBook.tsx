@@ -101,6 +101,7 @@ export function OrderBook({ coin, szDecimals, markPx, onPriceClick }: OrderBookP
         size={displaySize}
         type={type}
         depthPercentage={depthPercentage}
+        szDecimals={szDecimals}
         onPress={() => onPriceClick?.(item.px)}
       />
     );

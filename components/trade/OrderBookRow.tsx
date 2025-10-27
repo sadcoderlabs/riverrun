@@ -1,3 +1,4 @@
+import { formatPrice } from '@/lib/hyperliquid/price-format';
 import { memo } from 'react';
 import { Text, XStack, YStack } from 'tamagui';
 
@@ -6,30 +7,40 @@ interface OrderBookRowProps {
   size: string;
   type: 'bid' | 'ask';
   depthPercentage: number; // 0-100
+  /**
+   * Size decimals for the asset (from Hyperliquid meta)
+   * Used to determine maximum decimal places for price display
+   */
+  szDecimals: number;
   onPress?: () => void;
 }
 
 /**
  * Individual row component for order book displaying price, size, and depth bar
+ *
+ * Price formatting follows Hyperliquid rules:
+ * - Max (MAX_DECIMALS - szDecimals) decimal places
+ * - Trailing zeros removed for clean display
+ * - Only meaningful digits are shown
  */
 export const OrderBookRow = memo(function OrderBookRow({
   price,
   size,
   type,
   depthPercentage,
+  szDecimals,
   onPress,
 }: OrderBookRowProps) {
   const isBid = type === 'bid';
 
-  // Format numbers for display with consistent formatting
-  const priceNum = parseFloat(price);
-  const sizeNum = parseFloat(size);
+  // Format price according to Hyperliquid rules
+  // This removes trailing zeros: "4180.60" → "4180.6"
+  // Why? Due to 5-sig-fig rule, "4180.6" is already 5 sig figs,
+  // so "4180.60" would be redundant
+  const formattedPrice = formatPrice(price, szDecimals);
 
-  // Format price with consistent decimal places
-  const formattedPrice = priceNum.toLocaleString('en-US', {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
-  });
+  // Format size for display
+  const sizeNum = parseFloat(size);
 
   // Format size with consistent decimal places based on magnitude
   let formattedSize: string;
