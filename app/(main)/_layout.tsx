@@ -35,8 +35,6 @@ export default function MainLayout() {
             options={{ headerShown: true, title: 'Theme Options' }}
           />
           <Stack.Screen name="trade" />
-          <Stack.Screen name="close-position" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="set-tp-sl" options={{ presentation: 'modal' }} />
         </Stack>
       </YStack>
 
