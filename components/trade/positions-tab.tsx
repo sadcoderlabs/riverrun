@@ -1,8 +1,7 @@
 import * as hl from '@nktkas/hyperliquid';
 import { useAppKitAccount } from '@reown/appkit-ethers-react-native';
-import { useCallback, useEffect, useState } from 'react';
-import { ScrollView, Spinner, Text, View, YStack } from 'tamagui';
-import { PositionItem } from '@/components/home/position-item';
+import { useEffect, useState } from 'react';
+import { ScrollView, Spinner, Text, View, XStack, YStack } from 'tamagui';
 import { useHyperliquidClient } from '@/hooks/useHyperliquidClient';
 type Position = hl.ClearinghouseStateResponse['assetPositions'][number]['position'];
 
@@ -12,7 +11,6 @@ export default function PositionsTab() {
   const [positions, setPositions] = useState<Position[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [expandedPositions, setExpandedPositions] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const fetchPositions = async () => {
@@ -44,18 +42,6 @@ export default function PositionsTab() {
 
     fetchPositions();
   }, [address, isConnected]);
-
-  const handleTogglePosition = useCallback((coin: string) => {
-    setExpandedPositions(prev => {
-      const next = new Set(prev);
-      if (next.has(coin)) {
-        next.delete(coin);
-      } else {
-        next.add(coin);
-      }
-      return next;
-    });
-  }, []);
 
   if (!isConnected || !address) {
     return (
@@ -90,17 +76,69 @@ export default function PositionsTab() {
     );
   }
 
+  const formatNumber = (num: number | string, decimals = 2) => {
+    const value = typeof num === 'string' ? parseFloat(num) : num;
+    return !isNaN(value) ? value.toFixed(decimals) : '-';
+  };
+
   return (
     <ScrollView flex={1}>
-      <YStack>
-        {positions.map((position, index) => (
-          <PositionItem
-            key={`${position.coin}-${index}`}
-            position={position}
-            isExpanded={expandedPositions.has(position.coin)}
-            onToggle={handleTogglePosition}
-          />
-        ))}
+      <YStack padding="$4" gap="$3">
+        {positions.map((position, index) => {
+          const szi = Number(position.szi);
+          const unrealizedPnl = Number(position.unrealizedPnl);
+          const positionSide = szi > 0 ? 'Long' : 'Short';
+          const isPnlPositive = unrealizedPnl >= 0;
+
+          return (
+            <YStack
+              key={`${position.coin}-${index}`}
+              padding="$4"
+              backgroundColor="$gray2"
+              borderRadius="$4"
+              borderWidth={1}
+              borderColor="$gray5"
+              gap="$2"
+            >
+              <XStack justifyContent="space-between" alignItems="center">
+                <Text fontSize="$5" fontFamily="$interSemiBold">
+                  {position.coin}
+                </Text>
+                <Text
+                  fontSize="$3"
+                  color={positionSide === 'Long' ? '$green9' : '$red9'}
+                  fontFamily="$interMedium"
+                >
+                  {positionSide} {formatNumber(Math.abs(szi), 4)}
+                </Text>
+              </XStack>
+
+              <XStack justifyContent="space-between">
+                <YStack gap="$1">
+                  <Text fontSize="$2" color="$color9">
+                    Entry Price
+                  </Text>
+                  <Text fontSize="$3" fontFamily="$interMedium">
+                    ${formatNumber(position.entryPx)}
+                  </Text>
+                </YStack>
+
+                <YStack gap="$1" alignItems="flex-end">
+                  <Text fontSize="$2" color="$color9">
+                    Unrealized PnL
+                  </Text>
+                  <Text
+                    fontSize="$3"
+                    fontFamily="$interMedium"
+                    color={isPnlPositive ? '$green9' : '$red9'}
+                  >
+                    {isPnlPositive ? '+' : ''}${formatNumber(unrealizedPnl)}
+                  </Text>
+                </YStack>
+              </XStack>
+            </YStack>
+          );
+        })}
       </YStack>
     </ScrollView>
   );

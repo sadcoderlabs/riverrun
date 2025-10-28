@@ -2,9 +2,9 @@ import { ListButton, ListItem } from '@/components/global/list-item';
 import { ListSection } from '@/components/global/list-section';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { clearAgentSigner } from '@/lib/hyperliquid/agent';
+import { type ThemePreference } from '@/store/theme.store';
 import { useAppKit, useAppKitAccount } from '@reown/appkit-ethers-react-native';
 import { ArrowUpRight } from '@tamagui/lucide-icons';
-import { Link } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Alert } from 'react-native';
 import { toast } from 'sonner-native';
@@ -20,7 +20,13 @@ export default function Index() {
   const { address } = useAppKitAccount();
   const [revoking, setRevoking] = useState(false);
   const [status, setStatus] = useState<RevokeStatus | null>(null);
-  const { preference } = useThemePreference();
+  const { preference, setPreference } = useThemePreference();
+
+  const themeOptions: { name: string; value: ThemePreference }[] = [
+    { name: 'Light', value: 'light' },
+    { name: 'Dark', value: 'dark' },
+    { name: 'System', value: 'system' },
+  ];
 
   const displayAddress = '0x123456789';
 
@@ -88,16 +94,20 @@ export default function Index() {
           </YStack>
           {/* Theme Section */}
           <YStack>
-            <ListSection label="Preferences">
-              <Link href="/(main)/theme-options" asChild>
+            <ListSection label="Theme">
+              {themeOptions.map(theme => (
                 <ListItem
-                  title="Theme"
-                  subTitle={
-                    preference ? preference.charAt(0).toUpperCase() + preference.slice(1) : 'System'
-                  }
-                  showIosChevron={true}
+                  key={theme.value}
+                  title={theme.name}
+                  isChecked={preference === theme.value}
+                  onPress={() => setPreference(theme.value)}
                 />
-              </Link>
+              ))}
+            </ListSection>
+          </YStack>
+          {/* Preferences Section */}
+          <YStack>
+            <ListSection label="Preferences">
               <ListItem
                 title="Allow Notifications"
                 subTitle="Permission Unset"

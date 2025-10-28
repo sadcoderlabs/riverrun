@@ -30,10 +30,6 @@ export default function MainLayout() {
         >
           <Stack.Screen name="index" />
           <Stack.Screen name="settings" options={{ headerShown: true, title: 'Settings' }} />
-          <Stack.Screen
-            name="theme-options"
-            options={{ headerShown: true, title: 'Theme Options' }}
-          />
           <Stack.Screen name="trade" />
         </Stack>
       </YStack>
