@@ -7,4 +7,6 @@ import '@walletconnect/react-native-compat';
 import 'event-target-polyfill'; // `EventTarget`, `Event`, polyfill for @nktkas/hyperliquid
 import 'fast-text-encoding'; // `TextEncoder` (utf-8), polyfill for @nktkas/hyperliquid
 
+import '@ethersproject/shims'; // Polyfill for privy
+
 import 'expo-router/entry';
