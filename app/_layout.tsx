@@ -1,3 +1,4 @@
+
 import {
   AppKit,
   createAppKit,
@@ -16,6 +17,7 @@ import {
 
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { ActionSheetProvider } from '@expo/react-native-action-sheet';
+import { PrivyProvider, usePrivy } from '@privy-io/expo';
 import { SplashScreen, Stack } from 'expo-router';
 import { useEffect } from 'react';
 import { LogBox } from 'react-native';
@@ -77,6 +79,16 @@ SplashScreen.preventAutoHideAsync();
 
 function WalletInfoDisplay() {
   const { isConnected } = useAppKitAccount();
+  const { isReady, user } = usePrivy();
+
+  // Wait for Privy to be ready before showing content
+  if (!isReady) {
+    return null;
+  }
+
+  // User is authenticated if they're logged in with Privy OR connected wallet
+  const isAuthenticated = !!user || isConnected;
+
   return (
     <>
       <Stack
@@ -85,10 +97,10 @@ function WalletInfoDisplay() {
           animation: 'default',
         }}
       >
-        <Stack.Protected guard={!isConnected}>
+        <Stack.Protected guard={!isAuthenticated}>
           <Stack.Screen name="login" options={{ headerShown: false }} />
         </Stack.Protected>
-        <Stack.Protected guard={isConnected}>
+        <Stack.Protected guard={isAuthenticated}>
           {/* Main group - includes bottom navigation layout */}
           <Stack.Screen
             name="(main)"
@@ -128,19 +140,24 @@ export default function RootLayout() {
 
   return (
     <>
-      <TamaguiProvider config={tamaguiConfig} defaultTheme={effectiveTheme}>
-        <GestureHandlerRootView>
-          <SafeAreaProvider>
-            <ActionSheetProvider>
-              <View style={{ flex: 1 }}>
-                <WalletInfoDisplay />
-              </View>
-            </ActionSheetProvider>
-            <Toaster />
-          </SafeAreaProvider>
-        </GestureHandlerRootView>
-      </TamaguiProvider>
-      <AppKit />
+      <PrivyProvider
+        appId="cmhaalv5t00jmjt0dyv6yby9h"
+        clientId="client-WY6SSrDi1gWJqto3F2v88JkVeyd9aJJpCUweNA1dhFF92"
+      >
+        <TamaguiProvider config={tamaguiConfig} defaultTheme={effectiveTheme}>
+          <GestureHandlerRootView>
+            <SafeAreaProvider>
+              <ActionSheetProvider>
+                <View style={{ flex: 1 }}>
+                  <WalletInfoDisplay />
+                </View>
+              </ActionSheetProvider>
+              <Toaster />
+            </SafeAreaProvider>
+          </GestureHandlerRootView>
+        </TamaguiProvider>
+        <AppKit />
+      </PrivyProvider>
     </>
   );
 }

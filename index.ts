@@ -9,4 +9,7 @@ import 'fast-text-encoding'; // `TextEncoder` (utf-8), polyfill for @nktkas/hype
 
 import '@ethersproject/shims'; // Polyfill for privy
 
+// Import Privy polyfills FIRST - must be before any other imports
+import '@privy-io/expo-native-extensions';
+
 import 'expo-router/entry';
