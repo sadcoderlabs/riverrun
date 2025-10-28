@@ -1,3 +1,4 @@
+import { useAppKitAccount, useWalletInfo } from '@reown/appkit-ethers-react-native';
 import { Copy, Settings, User } from '@tamagui/lucide-icons';
 import { Link } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,22 +20,19 @@ const IconButton = styled(XStack, {
   pressStyle: { opacity: 0.7 },
 });
 
-interface WalletInfoProps {
-  walletAddress?: string;
-  walletName?: string;
-}
-
 function shortenAddress(address: string): string {
   if (!address || address.length < 10) return address;
   return `${address.slice(0, 6)}...${address.slice(-6)}`;
 }
 
-export function WalletInfo({
-  walletAddress = '0xmock_address',
-  walletName = 'mock wallet name',
-}: WalletInfoProps) {
+export function WalletInfo() {
   const insets = useSafeAreaInsets();
   const theme = useTheme();
+  const { address } = useAppKitAccount();
+  const { walletInfo } = useWalletInfo();
+
+  const walletAddress = address || '0xunknown_wallet';
+  const walletName = walletInfo?.name || 'Unknown Wallet';
 
   const handleCopyAddress = () => {
     // TODO: Implement clipboard functionality
