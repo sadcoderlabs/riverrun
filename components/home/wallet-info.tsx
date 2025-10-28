@@ -1,7 +1,9 @@
 import { useAppKitAccount, useWalletInfo } from '@reown/appkit-ethers-react-native';
 import { Copy, Settings, User } from '@tamagui/lucide-icons';
+import * as Clipboard from 'expo-clipboard';
 import { Link } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { toast } from 'sonner-native';
 import { styled, Text, useTheme, XStack, YStack } from 'tamagui';
 
 const Avatar = styled(XStack, {
@@ -34,8 +36,13 @@ export function WalletInfo() {
   const walletAddress = address || '0xunknown_wallet';
   const walletName = walletInfo?.name || 'Unknown Wallet';
 
-  const handleCopyAddress = () => {
-    // TODO: Implement clipboard functionality
+  const handleCopyAddress = async () => {
+    if (address) {
+      await Clipboard.setStringAsync(address);
+      toast.success('Address Copied', {
+        description: 'Wallet address copied to clipboard',
+      });
+    }
   };
 
   return (
