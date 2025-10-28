@@ -1,24 +1,18 @@
-import { TopBar } from '@/components/global/top-bar';
 import { AccountInfo } from '@/components/home/account-info';
 import { AccountValue } from '@/components/home/account-value';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ScrollView, View, YStack } from 'tamagui';
+import { WalletInfo } from '@/components/home/wallet-info';
+import { ScrollView, YStack } from 'tamagui';
 
 /**
  * Home Page
  *
- * Shows account overview with TopBar for navigation to settings
+ * Shows account overview with wallet info and account details
  */
 export default function Index() {
-  const insets = useSafeAreaInsets();
-
   return (
     <YStack flex={1} backgroundColor="$gray3">
-      {/* Top Bar - Fixed */}
-      <TopBar />
-
-      {/* Spacer for TopBar height */}
-      <View height={56 + insets.top} />
+      {/* Wallet Info - Sticky at top */}
+      <WalletInfo />
 
       {/* Scrollable Content */}
       <ScrollView flex={1} backgroundColor="$gray3" contentContainerStyle={{ paddingBottom: 20 }}>
