@@ -68,15 +68,15 @@ export function NavBar() {
 
   const isHomeActive =
     pathname === '/' ||
-    pathname === '/index' ||
+    pathname === '/home' ||
     pathname === '/(main)' ||
-    pathname === '/(main)/index' ||
+    pathname === '/(main)/home' ||
     pathname === '/(main)/settings' ||
     pathname.includes('/settings'); // More inclusive check for settings paths
   const isTradeActive = pathname.includes('/trade');
 
   const navigateToHome = () => {
-    router.navigate('/(main)');
+    router.navigate('/(main)/home');
   };
 
   const navigateToTrade = () => {

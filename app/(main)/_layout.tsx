@@ -23,12 +23,13 @@ export default function MainLayout() {
         paddingBottom={60 + insets.bottom} // Space for NavBar
       >
         <Stack
+          initialRouteName="home"
           screenOptions={{
             headerShown: false,
             animation: 'none',
           }}
         >
-          <Stack.Screen name="index" />
+          <Stack.Screen name="home" />
           <Stack.Screen name="settings" options={{ headerShown: true, title: 'Settings' }} />
           <Stack.Screen name="trade" />
         </Stack>
