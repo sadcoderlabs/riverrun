@@ -4,7 +4,7 @@ import { BrowserProvider, Signer } from 'ethers';
 import { useMemo, useCallback } from 'react';
 import { useWalletStore, type WalletSource } from '@/store/wallet.store';
 
-export type WalletType = 'privy' | 'external' | null;
+export type WalletType = 'privy' | 'external' | undefined;
 
 export interface UseActiveWalletResult {
   // Authentication state
@@ -17,8 +17,8 @@ export interface UseActiveWalletResult {
   walletType: WalletType;
 
   // Signing operations
-  getProvider: () => Promise<BrowserProvider | null>;
-  getSigner: () => Promise<Signer | null>;
+  getProvider: () => Promise<BrowserProvider | undefined>;
+  getSigner: () => Promise<Signer | undefined>;
 }
 
 /**
@@ -62,7 +62,7 @@ export function useActiveWallet(): UseActiveWalletResult {
   const embeddedAddress = embeddedWallet?.address;
 
   // Determine active wallet based on user selection or default priority
-  let activeSource: WalletSource | null = selectedWalletSource;
+  let activeSource: WalletSource | undefined = selectedWalletSource;
 
   // If no explicit selection, use default priority (Privy > Reown)
   if (!activeSource) {
@@ -76,11 +76,11 @@ export function useActiveWallet(): UseActiveWalletResult {
   // Ensure the selected wallet is actually connected
   if (activeSource === 'privy' && !embeddedAddress) {
     // Privy wallet is selected but not connected, fallback to Reown if available
-    activeSource = isConnected ? 'reown' : null;
+    activeSource = isConnected ? 'reown' : undefined;
   }
   if (activeSource === 'reown' && !isConnected) {
     // Reown wallet is selected but not connected, fallback to Privy if available
-    activeSource = embeddedAddress ? 'privy' : null;
+    activeSource = embeddedAddress ? 'privy' : undefined;
   }
 
   // Get active wallet information
@@ -92,7 +92,7 @@ export function useActiveWallet(): UseActiveWalletResult {
         : undefined;
 
   const walletType: WalletType =
-    activeSource === 'privy' ? 'privy' : activeSource === 'reown' ? 'external' : null;
+    activeSource === 'privy' ? 'privy' : activeSource === 'reown' ? 'external' : undefined;
 
   const walletName =
     activeSource === 'privy'
@@ -108,9 +108,9 @@ export function useActiveWallet(): UseActiveWalletResult {
   /**
    * Get the ethers.js BrowserProvider for the currently selected wallet.
    *
-   * @returns BrowserProvider instance or null if no wallet is connected
+   * @returns BrowserProvider instance or undefined if no wallet is connected
    */
-  const getProvider = useCallback(async (): Promise<BrowserProvider | null> => {
+  const getProvider = useCallback(async (): Promise<BrowserProvider | undefined> => {
     try {
       if (activeSource === 'privy' && embeddedWallet) {
         // Privy embedded wallet - use getProvider() for React Native
@@ -120,28 +120,28 @@ export function useActiveWallet(): UseActiveWalletResult {
         // Reown external wallet
         return new BrowserProvider(reownProvider as any);
       }
-      return null;
+      return undefined;
     } catch (error) {
       console.error('Failed to get provider:', error);
-      return null;
+      return undefined;
     }
   }, [activeSource, embeddedWallet, reownProvider]);
 
   /**
    * Get the ethers.js Signer for the current wallet.
    *
-   * @returns Signer instance or null if no wallet is connected
+   * @returns Signer instance or undefined if no wallet is connected
    */
-  const getSigner = useCallback(async (): Promise<Signer | null> => {
+  const getSigner = useCallback(async (): Promise<Signer | undefined> => {
     try {
       const provider = await getProvider();
-      if (!provider) return null;
+      if (!provider) return undefined;
 
       const signer = await provider.getSigner();
       return signer;
     } catch (error) {
       console.error('Failed to get signer:', error);
-      return null;
+      return undefined;
     }
   }, [getProvider]);
 

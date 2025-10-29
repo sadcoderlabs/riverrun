@@ -7,9 +7,9 @@ export type WalletSource = 'privy' | 'reown';
 interface WalletState {
   /**
    * The wallet source that the user has selected to use.
-   * null means no explicit selection (will use default priority: Privy > Reown)
+   * undefined means no explicit selection (will use default priority: Privy > Reown)
    */
-  selectedWalletSource: WalletSource | null;
+  selectedWalletSource: WalletSource | undefined;
 
   /**
    * Set the user's preferred wallet source
@@ -28,9 +28,9 @@ interface WalletState {
 export const useWalletStore = create<WalletState>()(
   persist(
     set => ({
-      selectedWalletSource: null,
+      selectedWalletSource: undefined,
       setSelectedWalletSource: source => set({ selectedWalletSource: source }),
-      clearSelection: () => set({ selectedWalletSource: null }),
+      clearSelection: () => set({ selectedWalletSource: undefined }),
       _hasHydrated: false,
       _setHasHydrated: state => set({ _hasHydrated: state }),
     }),

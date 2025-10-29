@@ -16,7 +16,7 @@ export interface UseWalletManagerResult {
   availableWallets: AvailableWallet[];
 
   // Current selection
-  selectedWalletSource: WalletSource | null;
+  selectedWalletSource: WalletSource | undefined;
 
   // Switch wallet
   switchWallet: (source: WalletSource) => void;
@@ -150,7 +150,7 @@ export function useWalletManager(): UseWalletManagerResult {
   const disconnectPrivy = useCallback(async () => {
     // Determine if we need to switch to another wallet
     const needsSwitch = selectedWalletSource === 'privy';
-    let targetWallet: WalletSource | null = null;
+    let targetWallet: WalletSource | undefined;
 
     if (needsSwitch) {
       // Find other available wallet to switch to
@@ -196,7 +196,7 @@ export function useWalletManager(): UseWalletManagerResult {
   const disconnectReown = useCallback(() => {
     // Determine if we need to switch to another wallet
     const needsSwitch = selectedWalletSource === 'reown';
-    let targetWallet: WalletSource | null = null;
+    let targetWallet: WalletSource | undefined;
 
     if (needsSwitch) {
       // Find other available wallet to switch to
