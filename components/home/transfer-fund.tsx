@@ -1,6 +1,6 @@
 import { ArrowDown, ArrowUp, ArrowLeftRight } from '@tamagui/lucide-icons';
 import React from 'react';
-import { Button, Text, XStack, YStack } from 'tamagui';
+import { Text, XStack, YStack } from 'tamagui';
 import { CardContainer } from '../global/card-container';
 
 /**
@@ -14,17 +14,14 @@ import { CardContainer } from '../global/card-container';
 export function TransferFund() {
   const handleDeposit = () => {
     // TODO: Implement deposit functionality
-    console.log('Deposit clicked');
   };
 
   const handleWithdraw = () => {
     // TODO: Implement withdraw functionality
-    console.log('Withdraw clicked');
   };
 
   const handleTransfer = () => {
     // TODO: Implement transfer functionality
-    console.log('Transfer clicked');
   };
 
   return (

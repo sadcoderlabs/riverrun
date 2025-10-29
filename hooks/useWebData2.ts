@@ -92,18 +92,8 @@ export function useWebData2(): UseWebData2Result {
   }, []);
 
   useEffect(() => {
-    console.log('[useWebData2] Effect triggered:', {
-      isAuthenticated,
-      address,
-      hasAddress: !!address,
-    });
-
     // Don't subscribe if conditions aren't met
     if (!isAuthenticated || !address) {
-      if (!address && isAuthenticated) {
-        console.warn('[useWebData2] Wallet authenticated but address not available');
-      }
-      console.log('[useWebData2] Conditions not met, skipping subscription');
       setIsLoading(false);
       setData(undefined);
       return;
@@ -115,53 +105,27 @@ export function useWebData2(): UseWebData2Result {
 
     const setupSubscription = async () => {
       try {
-        console.log('[useWebData2] Setting up subscription for user:', address);
-
         // Cleanup any existing subscription
         await cleanup();
 
         // Step 1: Fetch initial data using InfoClient
         const infoClient = getInfoClient();
-        console.log('[useWebData2] Fetching initial webData2...');
-
         const initialData = await infoClient.webData2({ user: address });
         // Use optional chaining because spotState may not exist for accounts with no spot positions
         const initialSpotValue = calculateSpotValue(initialData.spotState?.balances);
 
-        console.log('[useWebData2] Initial data fetched:', {
-          perpAccountValue: initialData.clearinghouseState.marginSummary.accountValue,
-          spotAccountValue: initialSpotValue.toFixed(6),
-          totalAccountValue: (
-            parseFloat(initialData.clearinghouseState.marginSummary.accountValue) + initialSpotValue
-          ).toFixed(6),
-        });
-
         if (isMounted) {
           setData(initialData);
-          console.log('[useWebData2] Set initial data');
         }
 
         // Step 2: Subscribe to webData2 WebSocket for real-time updates
         const subscriptionClient = getSubscriptionClient();
-        console.log('[useWebData2] Setting up WebSocket subscription...');
 
         const subscription = await subscriptionClient.webData2(
           {
             user: address,
           },
           (event: hl.WsWebData2Event) => {
-            // Use optional chaining because spotState may not exist for accounts with no spot positions
-            const spotValue = calculateSpotValue(event.spotState?.balances);
-            const perpValue = parseFloat(event.clearinghouseState.marginSummary.accountValue);
-
-            console.log('[useWebData2] Received update:', {
-              perpAccountValue: event.clearinghouseState.marginSummary.accountValue,
-              spotAccountValue: spotValue.toFixed(6),
-              totalAccountValue: (perpValue + spotValue).toFixed(6),
-              time: event.clearinghouseState.time,
-              isMounted,
-            });
-
             if (isMounted) {
               setData(event);
               setIsLoading(false);
@@ -169,16 +133,13 @@ export function useWebData2(): UseWebData2Result {
           },
         );
 
-        console.log('[useWebData2] WebSocket subscription successful');
         subscriptionRef.current = subscription;
 
         if (isMounted) {
           setIsLoading(false);
-          console.log('[useWebData2] Ready to receive updates');
         }
       } catch (err) {
         if (isMounted) {
-          console.error('[useWebData2] Error setting up subscription:', err);
           setError(err instanceof Error ? err : new Error('Failed to subscribe'));
           setIsLoading(false);
         }
@@ -189,7 +150,6 @@ export function useWebData2(): UseWebData2Result {
 
     // Cleanup on unmount or when dependencies change
     return () => {
-      console.log('[useWebData2] Cleaning up subscription');
       isMounted = false;
       void cleanup();
     };
