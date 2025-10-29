@@ -15,7 +15,7 @@ export function WalletSelectorModal({ visible, onClose }: WalletSelectorModalPro
     availableWallets,
     selectedWalletSource,
     switchWallet,
-    loginWithEmail,
+    connectPrivy,
     disconnectPrivy,
     connectReown,
     disconnectReown,
@@ -62,7 +62,7 @@ export function WalletSelectorModal({ visible, onClose }: WalletSelectorModalPro
     onClose();
     // Small delay to let modal close first
     setTimeout(async () => {
-      await loginWithEmail();
+      await connectPrivy();
     }, 300);
   };
 

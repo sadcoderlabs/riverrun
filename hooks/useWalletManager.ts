@@ -22,7 +22,7 @@ export interface UseWalletManagerResult {
   switchWallet: (source: WalletSource) => void;
 
   // Privy operations
-  loginWithEmail: () => Promise<unknown>;
+  connectPrivy: () => Promise<unknown>;
   disconnectPrivy: () => Promise<void>;
 
   // Reown operations
@@ -42,7 +42,7 @@ export interface UseWalletManagerResult {
  *   availableWallets,
  *   selectedWalletSource,
  *   switchWallet,
- *   loginWithEmail,
+ *   connectPrivy,
  *   connectReown,
  * } = useWalletManager();
  * ```
@@ -113,11 +113,11 @@ export function useWalletManager(): UseWalletManagerResult {
   );
 
   /**
-   * Login with email via Privy.
+   * Connect via Privy (email login).
    * Opens Privy's email login modal.
-   * Auto-switches to Privy wallet after successful login.
+   * Auto-switches to Privy wallet after successful connection.
    */
-  const loginWithEmail = useCallback(async () => {
+  const connectPrivy = useCallback(async () => {
     try {
       const result = await privyLogin({ loginMethods: ['email'] });
       // Auto-switch to Privy wallet after login
@@ -228,7 +228,7 @@ export function useWalletManager(): UseWalletManagerResult {
       availableWallets,
       selectedWalletSource,
       switchWallet,
-      loginWithEmail,
+      connectPrivy,
       disconnectPrivy,
       connectReown,
       disconnectReown,
@@ -237,7 +237,7 @@ export function useWalletManager(): UseWalletManagerResult {
       availableWallets,
       selectedWalletSource,
       switchWallet,
-      loginWithEmail,
+      connectPrivy,
       disconnectPrivy,
       connectReown,
       disconnectReown,

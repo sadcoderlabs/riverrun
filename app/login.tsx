@@ -10,12 +10,12 @@ import { Text, View, YStack } from 'tamagui';
 export default function Login() {
   const insets = useSafeAreaInsets();
   const { effectiveTheme } = useThemePreference();
-  const { loginWithEmail, connectReown } = useWalletManager();
+  const { connectPrivy, connectReown } = useWalletManager();
 
   // Handle email login via Privy
   const handleEmailLogin = async () => {
     try {
-      const session = await loginWithEmail();
+      const session = await connectPrivy();
       if (session) {
         toast.success('Welcome!', {
           description: 'Login successful',
