@@ -1,4 +1,5 @@
 import { useAppKitAccount, useWalletInfo } from '@reown/appkit-ethers-react-native';
+import { useEmbeddedEthereumWallet } from '@privy-io/expo';
 import { Copy, Settings, User } from '@tamagui/lucide-icons';
 import * as Clipboard from 'expo-clipboard';
 import { Link } from 'expo-router';
@@ -32,13 +33,20 @@ export function WalletInfo() {
   const theme = useTheme();
   const { address } = useAppKitAccount();
   const { walletInfo } = useWalletInfo();
+  const { wallets } = useEmbeddedEthereumWallet();
 
-  const walletAddress = address || '0xunknown_wallet';
-  const walletName = walletInfo?.name || 'Unknown Wallet';
+  // Get the first Privy embedded wallet (most recently connected)
+  const embeddedWallet = wallets[0];
+  const embeddedAddress = embeddedWallet?.address;
+
+  // Prioritize Privy embedded wallet, fallback to AppKit connected wallet
+  const walletAddress = embeddedAddress || address || '0xunknown_wallet';
+  const walletName = embeddedAddress ? 'Privy Wallet' : walletInfo?.name || 'Unknown Wallet';
 
   const handleCopyAddress = async () => {
-    if (address) {
-      await Clipboard.setStringAsync(address);
+    const addressToCopy = embeddedAddress || address;
+    if (addressToCopy) {
+      await Clipboard.setStringAsync(addressToCopy);
       toast.success('Address Copied', {
         description: 'Wallet address copied to clipboard',
       });

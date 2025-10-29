@@ -1,4 +1,3 @@
-
 import {
   AppKit,
   createAppKit,
@@ -143,6 +142,13 @@ export default function RootLayout() {
       <PrivyProvider
         appId="cmhaalv5t00jmjt0dyv6yby9h"
         clientId="client-WY6SSrDi1gWJqto3F2v88JkVeyd9aJJpCUweNA1dhFF92"
+        config={{
+          embedded: {
+            ethereum: {
+              createOnLogin: 'users-without-wallets',
+            },
+          },
+        }}
       >
         <TamaguiProvider config={tamaguiConfig} defaultTheme={effectiveTheme}>
           <GestureHandlerRootView>
