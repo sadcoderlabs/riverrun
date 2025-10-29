@@ -4,7 +4,7 @@ import { useCallback, useMemo } from 'react';
 import { Alert } from 'react-native';
 
 import { DEFAULT_AGENT_NAME, getOrCreateAgentSigner } from '@/lib/hyperliquid/agent';
-import { useWallet } from './useWallet';
+import { useActiveWallet } from './useActiveWallet';
 
 // Singleton instances - shared across all hook usages
 let transport: hl.HttpTransport | undefined;
@@ -51,7 +51,7 @@ interface UseHyperliquidClientResult {
 }
 
 export function useHyperliquidClient(): UseHyperliquidClientResult {
-  const { getProvider, address: walletAddress } = useWallet();
+  const { getProvider, address: walletAddress } = useActiveWallet();
 
   // Helper function to check if agent is approved
   const checkAgentApproval = useCallback(

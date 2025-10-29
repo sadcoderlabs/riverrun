@@ -1,8 +1,8 @@
-import { useWallet } from '@/hooks/useWallet';
+import { useActiveWallet } from '@/hooks/useActiveWallet';
 import { Redirect } from 'expo-router';
 
 export default function Index() {
-  const { isAuthenticated } = useWallet();
+  const { isAuthenticated } = useActiveWallet();
 
   if (isAuthenticated) {
     return <Redirect href="/(main)/home" />;

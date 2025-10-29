@@ -1,7 +1,7 @@
 import * as hl from '@nktkas/hyperliquid';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useHyperliquidClient } from './useHyperliquidClient';
-import { useWallet } from './useWallet';
+import { useActiveWallet } from './useActiveWallet';
 
 export interface OrderUpdate {
   order: {
@@ -31,7 +31,7 @@ interface UseOrderUpdatesResult {
  * 2. Subscribes to orderUpdates WebSocket for real-time incremental updates
  */
 export function useOrderUpdates(): UseOrderUpdatesResult {
-  const { address, isAuthenticated } = useWallet();
+  const { address, isAuthenticated } = useActiveWallet();
   const { getSubscriptionClient, getInfoClient } = useHyperliquidClient();
   const [orders, setOrders] = useState<OrderUpdate[]>([]);
   const [isLoading, setIsLoading] = useState(true);

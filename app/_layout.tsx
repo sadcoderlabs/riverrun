@@ -11,7 +11,7 @@ import {
 } from '@expo-google-fonts/inter';
 
 import { useThemePreference } from '@/hooks/useThemePreference';
-import { useWallet } from '@/hooks/useWallet';
+import { useActiveWallet } from '@/hooks/useActiveWallet';
 import { ActionSheetProvider } from '@expo/react-native-action-sheet';
 import { PrivyProvider } from '@privy-io/expo';
 import { PrivyElements } from '@privy-io/expo/ui';
@@ -30,7 +30,7 @@ LogBox.ignoreLogs(['emitting session_request', 'without any listeners']);
 SplashScreen.preventAutoHideAsync();
 
 function WalletInfoDisplay() {
-  const { isReady, isAuthenticated } = useWallet();
+  const { isReady, isAuthenticated } = useActiveWallet();
 
   // Wait for wallet providers to be ready before showing content
   if (!isReady) {

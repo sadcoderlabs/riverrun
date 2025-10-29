@@ -1,0 +1,45 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
+
+export type WalletSource = 'privy' | 'reown';
+
+interface WalletState {
+  /**
+   * The wallet source that the user has selected to use.
+   * null means no explicit selection (will use default priority: Privy > Reown)
+   */
+  selectedWalletSource: WalletSource | null;
+
+  /**
+   * Set the user's preferred wallet source
+   */
+  setSelectedWalletSource: (source: WalletSource) => void;
+
+  /**
+   * Clear the wallet selection (will revert to default priority)
+   */
+  clearSelection: () => void;
+
+  _hasHydrated: boolean;
+  _setHasHydrated: (state: boolean) => void;
+}
+
+export const useWalletStore = create<WalletState>()(
+  persist(
+    set => ({
+      selectedWalletSource: null,
+      setSelectedWalletSource: source => set({ selectedWalletSource: source }),
+      clearSelection: () => set({ selectedWalletSource: null }),
+      _hasHydrated: false,
+      _setHasHydrated: state => set({ _hasHydrated: state }),
+    }),
+    {
+      name: 'wallet-preference-storage',
+      storage: createJSONStorage(() => AsyncStorage),
+      onRehydrateStorage: () => state => {
+        if (state) state._setHasHydrated(true);
+      },
+    },
+  ),
+);

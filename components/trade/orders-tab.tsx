@@ -1,6 +1,6 @@
 import { useHyperliquidClient } from '@/hooks/useHyperliquidClient';
 import { useOrderUpdates } from '@/hooks/useOrderUpdates';
-import { useWallet } from '@/hooks/useWallet';
+import { useActiveWallet } from '@/hooks/useActiveWallet';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner-native';
 import { Button, Spinner, Text, XStack, YStack } from 'tamagui';
@@ -43,7 +43,7 @@ const formatSide = (side: string) => {
 };
 
 export function OrdersTabContent() {
-  const { address, isAuthenticated } = useWallet();
+  const { address, isAuthenticated } = useActiveWallet();
   const { getAgentExchangeClient, getSymbolConverter } = useHyperliquidClient();
 
   // Subscribe to order updates via WebSocket

@@ -1,7 +1,7 @@
 import * as hl from '@nktkas/hyperliquid';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useHyperliquidClient } from './useHyperliquidClient';
-import { useWallet } from './useWallet';
+import { useActiveWallet } from './useActiveWallet';
 
 export interface ActiveAssetData {
   user: string;
@@ -31,7 +31,7 @@ interface UseActiveAssetDataResult {
  * for real-time leverage and margin mode updates.
  */
 export function useActiveAssetData({ coin }: UseActiveAssetDataParams): UseActiveAssetDataResult {
-  const { address, isAuthenticated } = useWallet();
+  const { address, isAuthenticated } = useActiveWallet();
   const { getSubscriptionClient } = useHyperliquidClient();
   const [data, setData] = useState<ActiveAssetData | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);

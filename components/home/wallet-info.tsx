@@ -1,10 +1,13 @@
-import { useWallet } from '@/hooks/useWallet';
+import { useActiveWallet } from '@/hooks/useActiveWallet';
 import { Copy, Settings, User } from '@tamagui/lucide-icons';
 import * as Clipboard from 'expo-clipboard';
 import { Link } from 'expo-router';
+import { useState } from 'react';
+import { Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { toast } from 'sonner-native';
 import { styled, Text, useTheme, XStack, YStack } from 'tamagui';
+import { WalletSelectorModal } from './wallet-selector-modal';
 
 const Avatar = styled(XStack, {
   width: 48,
@@ -30,7 +33,8 @@ function shortenAddress(address: string): string {
 export function WalletInfo() {
   const insets = useSafeAreaInsets();
   const theme = useTheme();
-  const { address, walletName } = useWallet();
+  const { address, walletName } = useActiveWallet();
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Use the unified wallet address and name from useWallet
   const walletAddress = address || '0xunknown_wallet';
@@ -45,48 +49,55 @@ export function WalletInfo() {
   };
 
   return (
-    <XStack
-      backgroundColor="$background"
-      borderBottomWidth={1}
-      borderBottomColor="$borderColor"
-      width="100%"
-      justifyContent="space-between"
-      alignItems="center"
-      paddingHorizontal="$4"
-      paddingTop={insets.top + 12}
-      paddingBottom={12}
-      shadowColor="$shadowColor"
-      shadowOffset={{ width: 0, height: 2 }}
-      shadowOpacity={0.1}
-      shadowRadius={3}
-      elevation={3}
-    >
-      {/* Avatar */}
-      <Avatar>
-        <User size={28} color={theme.color12} />
-      </Avatar>
+    <>
+      <XStack
+        backgroundColor="$background"
+        borderBottomWidth={1}
+        borderBottomColor="$borderColor"
+        width="100%"
+        justifyContent="space-between"
+        alignItems="center"
+        paddingHorizontal="$4"
+        paddingTop={insets.top + 12}
+        paddingBottom={12}
+        shadowColor="$shadowColor"
+        shadowOffset={{ width: 0, height: 2 }}
+        shadowOpacity={0.1}
+        shadowRadius={3}
+        elevation={3}
+      >
+        {/* Avatar - Now Pressable */}
+        <Pressable onPress={() => setIsModalOpen(true)}>
+          <Avatar>
+            <User size={28} color={theme.color12} />
+          </Avatar>
+        </Pressable>
 
-      {/* Wallet Address and Name */}
-      <YStack gap="$1" flex={1} marginLeft="$3">
-        <XStack gap="$2" alignItems="center">
-          <Text fontSize={16} fontWeight="600" color="$color12">
-            {shortenAddress(walletAddress)}
+        {/* Wallet Address and Name */}
+        <YStack gap="$1" flex={1} marginLeft="$3">
+          <XStack gap="$2" alignItems="center">
+            <Text fontSize={16} fontWeight="600" color="$color12">
+              {shortenAddress(walletAddress)}
+            </Text>
+            <IconButton onPress={handleCopyAddress}>
+              <Copy size={16} color={theme.color9} />
+            </IconButton>
+          </XStack>
+          <Text fontSize={14} color="$color9">
+            {walletName}
           </Text>
-          <IconButton onPress={handleCopyAddress}>
-            <Copy size={16} color={theme.color9} />
-          </IconButton>
-        </XStack>
-        <Text fontSize={14} color="$color9">
-          {walletName}
-        </Text>
-      </YStack>
+        </YStack>
 
-      {/* Settings Icon */}
-      <Link href="/(main)/settings" asChild>
-        <IconButton>
-          <Settings size={24} color={theme.color9} />
-        </IconButton>
-      </Link>
-    </XStack>
+        {/* Settings Icon */}
+        <Link href="/(main)/settings" asChild>
+          <IconButton>
+            <Settings size={24} color={theme.color9} />
+          </IconButton>
+        </Link>
+      </XStack>
+
+      {/* Wallet Selector Modal */}
+      <WalletSelectorModal visible={isModalOpen} onClose={() => setIsModalOpen(false)} />
+    </>
   );
 }

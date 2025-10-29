@@ -2,12 +2,12 @@ import * as hl from '@nktkas/hyperliquid';
 import { useEffect, useState } from 'react';
 import { ScrollView, Spinner, Text, View, XStack, YStack } from 'tamagui';
 import { useHyperliquidClient } from '@/hooks/useHyperliquidClient';
-import { useWallet } from '@/hooks/useWallet';
+import { useActiveWallet } from '@/hooks/useActiveWallet';
 
 type Position = hl.ClearinghouseStateResponse['assetPositions'][number]['position'];
 
 export default function PositionsTab() {
-  const { address, isAuthenticated } = useWallet();
+  const { address, isAuthenticated } = useActiveWallet();
   const { getInfoClient } = useHyperliquidClient();
   const [positions, setPositions] = useState<Position[]>([]);
   const [loading, setLoading] = useState(true);
