@@ -2,7 +2,6 @@ import { ListButton, ListItem } from '@/components/global/list-item';
 import { ListSection } from '@/components/global/list-section';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { useActiveWallet } from '@/hooks/useActiveWallet';
-import { useWalletManager } from '@/hooks/useWalletManager';
 import { clearAgentSigner } from '@/lib/hyperliquid/agent';
 import { type ThemePreference } from '@/store/theme.store';
 import { ArrowUpRight } from '@tamagui/lucide-icons';
@@ -17,10 +16,9 @@ type RevokeStatus = {
 };
 
 export default function Index() {
-  const { address, isAuthenticated } = useActiveWallet();
-  const { selectedWalletSource, disconnectPrivy, disconnectReown } = useWalletManager();
+  const { address } = useActiveWallet();
   const [revoking, setRevoking] = useState(false);
-  const [status, setStatus] = useState<RevokeStatus | null>(null);
+  const [status, setStatus] = useState<RevokeStatus | undefined>(undefined);
   const { preference, setPreference } = useThemePreference();
 
   const themeOptions: { name: string; value: ThemePreference }[] = [
@@ -37,7 +35,7 @@ export default function Index() {
     }
 
     setRevoking(true);
-    setStatus(null);
+    setStatus(undefined);
 
     try {
       await clearAgentSigner(address);
@@ -78,33 +76,6 @@ export default function Index() {
       ],
     );
   }, [address, performRevoke]);
-
-  const handleLogout = useCallback(async () => {
-    if (!selectedWalletSource) return;
-
-    Alert.alert('Disconnect Wallet', 'Are you sure you want to disconnect?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Disconnect',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            if (selectedWalletSource === 'privy') {
-              await disconnectPrivy();
-            } else {
-              disconnectReown();
-            }
-            toast.success('Logged out successfully');
-          } catch (error) {
-            console.error('Logout error:', error);
-            toast.error('Failed to logout', {
-              description: 'Please try again',
-            });
-          }
-        },
-      },
-    ]);
-  }, [selectedWalletSource, disconnectPrivy, disconnectReown]);
 
   return (
     <PortalProvider>
@@ -188,14 +159,6 @@ export default function Index() {
               {revoking ? 'Revoking...' : 'Revoke Agent'}
             </ListButton>
           </ListSection>
-          {/* Logout Button */}
-          {isAuthenticated && (
-            <ListSection>
-              <ListButton justifyContent="center" onPress={handleLogout}>
-                Logout
-              </ListButton>
-            </ListSection>
-          )}
           <ListSection>
             <ListButton
               justifyContent="center"
