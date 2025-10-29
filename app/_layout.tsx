@@ -1,5 +1,5 @@
+import { appKit } from '@/lib/reown/AppKitConfig';
 import { AppKit, AppKitProvider, useAccount } from '@reown/appkit-react-native';
-import { appKit } from '@/lib/appkit/AppKitConfig';
 
 import { tamaguiConfig } from '@/tamagui.config';
 import {
