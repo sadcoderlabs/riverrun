@@ -30,7 +30,6 @@
     "@reown/appkit-core-react-native": "2.0.1",
     "@reown/appkit-ethers-react-native": "2.0.1",
     "@reown/appkit-react-native": "2.0.1",
-    "@reown/appkit-wagmi-react-native": "2.0.1",
     "@tamagui/animations-moti": "1.132.24",
     "@tamagui/checkbox": "1.132.24",
     "@tamagui/colors": "1.132.24",
@@ -40,7 +39,6 @@
     "@tamagui/sheet": "1.132.24",
     "@tamagui/theme-builder": "1.132.24",
     "@tanstack/react-query": "5.89.0",
-    "@wagmi/core": "2.20.3",
     "@walletconnect/react-native-compat": "2.21.8",
     "@walletconnect/safe-json": "1.0.2",
     "@walletconnect/universal-provider": "2.21.8",
@@ -86,7 +84,6 @@
     "sonner-native": "0.21.1",
     "tamagui": "1.132.24",
     "viem": "2.37.6",
-    "wagmi": "2.16.9",
     "zod": "^4.1.12",
     "zustand": "^5.0.8"
   },
