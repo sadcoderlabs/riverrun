@@ -17,6 +17,7 @@ import {
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { ActionSheetProvider } from '@expo/react-native-action-sheet';
 import { PrivyProvider, usePrivy } from '@privy-io/expo';
+import { PrivyElements } from '@privy-io/expo/ui';
 import { SplashScreen, Stack } from 'expo-router';
 import { useEffect } from 'react';
 import { LogBox } from 'react-native';
@@ -163,6 +164,7 @@ export default function RootLayout() {
           </GestureHandlerRootView>
         </TamaguiProvider>
         <AppKit />
+        <PrivyElements />
       </PrivyProvider>
     </>
   );

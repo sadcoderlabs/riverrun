@@ -1,38 +1,59 @@
 import { Button } from '@/components/global/button';
 import { Heading } from '@/components/global/heading';
 import { useThemePreference } from '@/hooks/useThemePreference';
-import { useAppKit, useAppKitAccount } from '@reown/appkit-ethers-react-native';
-import { useLoginWithEmail, usePrivy } from '@privy-io/expo';
-import { useState } from 'react';
+import { useLogin } from '@privy-io/expo/ui';
+import { useAppKit } from '@reown/appkit-ethers-react-native';
 import { Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Input, Text, View, YStack } from 'tamagui';
+import { toast } from 'sonner-native';
+import { Text, View, YStack } from 'tamagui';
 
 export default function Login() {
-  const { open } = useAppKit();
   const insets = useSafeAreaInsets();
   const { effectiveTheme } = useThemePreference();
 
-  const { address, isConnected, chainId } = useAppKitAccount();
-  const { user } = usePrivy();
-  const { sendCode, loginWithCode, state } = useLoginWithEmail();
+  const { login } = useLogin();
+  const { open: openAppKit } = useAppKit();
 
-  const [email, setEmail] = useState('');
-  const [code, setCode] = useState('');
-
-  const handleSendCode = async () => {
+  // Handle Privy login (Email/SMS/Google)
+  const handleEmailLogin = async () => {
     try {
-      await sendCode({ email });
-    } catch (error) {
-      console.error('Error sending code:', error);
+      const session = await login({
+        loginMethods: ['email'],
+      });
+      console.log('Privy login successful:', session.user);
+      toast.success('Welcome!', {
+        description: 'Login successful',
+      });
+    } catch (error: any) {
+      // Check if user cancelled/dismissed the modal
+      const errorMessage = error?.message || error?.toString() || '';
+      const isCancelled =
+        errorMessage.includes('cancelled') ||
+        errorMessage.includes('dismissed') ||
+        errorMessage.includes('closed') ||
+        errorMessage.includes('User cancelled') ||
+        error?.code === 'USER_CANCELLED';
+
+      // Only show error toast if it's not a cancellation
+      if (!isCancelled) {
+        console.error('Privy login error:', error);
+        toast.error('Login failed', {
+          description: 'Please try again',
+        });
+      }
     }
   };
 
-  const handleLoginWithCode = async () => {
+  // Handle AppKit wallet connection
+  const handleWalletConnect = async () => {
     try {
-      await loginWithCode({ code, email });
+      await openAppKit();
+      // AppKit handles the connection flow
+      // Once connected, the app will automatically navigate to main screen
+      // via the authentication logic in _layout.tsx
     } catch (error) {
-      console.error('Error logging in:', error);
+      console.error('Wallet connection error:', error);
     }
   };
 
@@ -65,54 +86,11 @@ export default function Login() {
           Futures Trading In Motion
         </Text>
 
-        {/* Email Login Section */}
+        {/* Login Buttons */}
         <YStack gap="$3" width="100%" maxWidth={400} paddingHorizontal="$4">
-          <Input
-            placeholder="Enter your email"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            size="$4"
-            borderWidth={1}
-            borderColor="$borderColor"
-          />
-
-          {state.status === 'awaiting-code-input' && (
-            <Input
-              placeholder="Enter verification code"
-              value={code}
-              onChangeText={setCode}
-              keyboardType="number-pad"
-              size="$4"
-              borderWidth={1}
-              borderColor="$borderColor"
-            />
-          )}
-
-          {state.status === 'initial' && (
-            <Button.Filled level="lg" onPress={handleSendCode} disabled={!email}>
-              Continue with Email
-            </Button.Filled>
-          )}
-
-          {state.status === 'sending-code' && (
-            <Button.Filled level="lg" disabled>
-              Sending code...
-            </Button.Filled>
-          )}
-
-          {state.status === 'awaiting-code-input' && (
-            <Button.Filled level="lg" onPress={handleLoginWithCode} disabled={!code}>
-              Verify Code
-            </Button.Filled>
-          )}
-
-          {state.status === 'submitting-code' && (
-            <Button.Filled level="lg" disabled>
-              Verifying...
-            </Button.Filled>
-          )}
+          <Button.Filled level="lg" onPress={handleEmailLogin}>
+            Continue with Email
+          </Button.Filled>
 
           {/* Divider */}
           <YStack alignItems="center" gap="$2" marginVertical="$2">
@@ -122,28 +100,10 @@ export default function Login() {
           </YStack>
 
           {/* Connect Wallet Button */}
-          <Button.Filled level="lg" onPress={() => open()}>
-            Connect Wallet
-          </Button.Filled>
+          <Button.Tinted level="lg" onPress={handleWalletConnect}>
+            Continue with Wallet
+          </Button.Tinted>
         </YStack>
-
-        {/* Debug info */}
-        {__DEV__ && (
-          <YStack gap="$1">
-            <Text fontSize={12} color="$color9">
-              address: {address || 'none'}
-            </Text>
-            <Text fontSize={12} color="$color9">
-              isConnected: {`${isConnected}`}
-            </Text>
-            <Text fontSize={12} color="$color9">
-              chainId: {chainId || 'none'}
-            </Text>
-            <Text fontSize={12} color="$color9">
-              privy user: {user?.id || 'none'}
-            </Text>
-          </YStack>
-        )}
       </YStack>
 
       {/* Powered by logo at bottom */}
