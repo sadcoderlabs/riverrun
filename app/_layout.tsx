@@ -1,9 +1,5 @@
-import '@walletconnect/react-native-compat';
-
-import { createAppKit, AppKit, AppKitProvider, useAccount } from '@reown/appkit-react-native';
-import { EthersAdapter } from '@reown/appkit-ethers-react-native';
-import { mainnet, arbitrum } from 'viem/chains';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AppKit, AppKitProvider, useAccount } from '@reown/appkit-react-native';
+import { appKit } from '@/lib/appkit/AppKitConfig';
 
 import { tamaguiConfig } from '@/tamagui.config';
 import {
@@ -28,58 +24,6 @@ import { TamaguiProvider, View } from 'tamagui';
 
 // Suppress known WalletConnect warnings during session restoration
 LogBox.ignoreLogs(['emitting session_request', 'without any listeners']);
-
-// 1. Get projectId at https://dashboard.reown.com
-const projectId = 'REOWN_PROJECT_ID_REMOVED';
-
-// 2. Create metadata
-const metadata = {
-  name: 'Riverrun',
-  description: 'A trading app built by perpetual protocol',
-  url: 'https://riverrun.perp.com',
-  icons: ['https://avatars.githubusercontent.com/u/179229932'],
-  redirect: {
-    native: 'YOUR_APP_SCHEME://',
-    universal: 'YOUR_APP_UNIVERSAL_LINK.com',
-  },
-};
-
-// 3. Create storage implementation
-const storage = {
-  async getKeys(): Promise<string[]> {
-    const keys = await AsyncStorage.getAllKeys();
-    return [...keys]; // Convert readonly array to mutable array
-  },
-  async getEntries<T = any>(): Promise<[string, T][]> {
-    const keys = await AsyncStorage.getAllKeys();
-    const entries = await AsyncStorage.multiGet(keys);
-    return entries.map(([key, value]) => [key, JSON.parse(value || 'null') as T]);
-  },
-  async getItem<T = any>(key: string): Promise<T | undefined> {
-    const value = await AsyncStorage.getItem(key);
-    return value ? (JSON.parse(value) as T) : undefined;
-  },
-  async setItem<T = any>(key: string, value: T): Promise<void> {
-    await AsyncStorage.setItem(key, JSON.stringify(value));
-  },
-  async removeItem(key: string): Promise<void> {
-    await AsyncStorage.removeItem(key);
-  },
-};
-
-// 4. Create adapter
-const ethersAdapter = new EthersAdapter();
-
-// 5. Create AppKit instance
-const appKit = createAppKit({
-  projectId,
-  metadata,
-  networks: [mainnet, arbitrum],
-  defaultNetwork: mainnet,
-  adapters: [ethersAdapter],
-  storage,
-  enableAnalytics: true,
-});
 
 // Prevent the splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();

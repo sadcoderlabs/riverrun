@@ -42,6 +42,7 @@
     "@tanstack/react-query": "5.89.0",
     "@wagmi/core": "2.20.3",
     "@walletconnect/react-native-compat": "2.21.8",
+    "@walletconnect/safe-json": "1.0.2",
     "@walletconnect/universal-provider": "2.21.8",
     "ethers": "6.15.0",
     "event-target-polyfill": "0.0.4",
