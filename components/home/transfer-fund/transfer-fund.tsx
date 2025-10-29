@@ -1,7 +1,8 @@
 import { ArrowDown, ArrowUp, ArrowLeftRight } from '@tamagui/lucide-icons';
+import { useRouter } from 'expo-router';
 import React from 'react';
 import { Text, XStack, YStack } from 'tamagui';
-import { CardContainer } from '../global/card-container';
+import { CardContainer } from '../../global/card-container';
 
 /**
  * Transfer Fund Component
@@ -12,8 +13,10 @@ import { CardContainer } from '../global/card-container';
  * - Transfer: Move funds between spot and perpetual accounts
  */
 export function TransferFund() {
+  const router = useRouter();
+
   const handleDeposit = () => {
-    // TODO: Implement deposit functionality
+    router.navigate('/(main)/deposit');
   };
 
   const handleWithdraw = () => {
