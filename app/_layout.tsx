@@ -1,5 +1,5 @@
 import { appKit } from '@/lib/reown/AppKitConfig';
-import { AppKit, AppKitProvider, useAccount } from '@reown/appkit-react-native';
+import { AppKit, AppKitProvider } from '@reown/appkit-react-native';
 
 import { tamaguiConfig } from '@/tamagui.config';
 import {
@@ -11,8 +11,9 @@ import {
 } from '@expo-google-fonts/inter';
 
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { useWallet } from '@/hooks/useWallet';
 import { ActionSheetProvider } from '@expo/react-native-action-sheet';
-import { PrivyProvider, usePrivy } from '@privy-io/expo';
+import { PrivyProvider } from '@privy-io/expo';
 import { PrivyElements } from '@privy-io/expo/ui';
 import { SplashScreen, Stack } from 'expo-router';
 import { useEffect } from 'react';
@@ -29,16 +30,12 @@ LogBox.ignoreLogs(['emitting session_request', 'without any listeners']);
 SplashScreen.preventAutoHideAsync();
 
 function WalletInfoDisplay() {
-  const { isConnected } = useAccount();
-  const { isReady, user } = usePrivy();
+  const { isReady, isAuthenticated } = useWallet();
 
-  // Wait for Privy to be ready before showing content
+  // Wait for wallet providers to be ready before showing content
   if (!isReady) {
     return null;
   }
-
-  // User is authenticated if they're logged in with Privy OR connected wallet
-  const isAuthenticated = !!user || isConnected;
 
   return (
     <>

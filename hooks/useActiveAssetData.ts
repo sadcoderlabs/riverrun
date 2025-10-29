@@ -1,7 +1,7 @@
 import * as hl from '@nktkas/hyperliquid';
-import { useAccount } from '@reown/appkit-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useHyperliquidClient } from './useHyperliquidClient';
+import { useWallet } from './useWallet';
 
 export interface ActiveAssetData {
   user: string;
@@ -31,7 +31,7 @@ interface UseActiveAssetDataResult {
  * for real-time leverage and margin mode updates.
  */
 export function useActiveAssetData({ coin }: UseActiveAssetDataParams): UseActiveAssetDataResult {
-  const { address, isConnected } = useAccount();
+  const { address, isAuthenticated } = useWallet();
   const { getSubscriptionClient } = useHyperliquidClient();
   const [data, setData] = useState<ActiveAssetData | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
@@ -53,9 +53,9 @@ export function useActiveAssetData({ coin }: UseActiveAssetDataParams): UseActiv
 
   useEffect(() => {
     // Don't subscribe if conditions aren't met
-    if (!isConnected || !address || !coin) {
-      if (!address && isConnected) {
-        console.warn('[useActiveAssetData] Wallet connected but address not available');
+    if (!isAuthenticated || !address || !coin) {
+      if (!address && isAuthenticated) {
+        console.warn('[useActiveAssetData] Wallet authenticated but address not available');
       }
       setIsLoading(false);
       setData(undefined);
@@ -105,7 +105,7 @@ export function useActiveAssetData({ coin }: UseActiveAssetDataParams): UseActiv
       isMounted = false;
       void cleanup();
     };
-  }, [address, coin, isConnected, cleanup, getSubscriptionClient]);
+  }, [address, coin, isAuthenticated, cleanup, getSubscriptionClient]);
 
   return {
     data,

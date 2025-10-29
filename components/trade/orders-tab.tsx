@@ -1,7 +1,6 @@
 import { useHyperliquidClient } from '@/hooks/useHyperliquidClient';
 import { useOrderUpdates } from '@/hooks/useOrderUpdates';
-import * as hl from '@nktkas/hyperliquid';
-import { useAccount } from '@reown/appkit-react-native';
+import { useWallet } from '@/hooks/useWallet';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner-native';
 import { Button, Spinner, Text, XStack, YStack } from 'tamagui';
@@ -44,7 +43,7 @@ const formatSide = (side: string) => {
 };
 
 export function OrdersTabContent() {
-  const { address, isConnected } = useAccount();
+  const { address, isAuthenticated } = useWallet();
   const { getAgentExchangeClient, getSymbolConverter } = useHyperliquidClient();
 
   // Subscribe to order updates via WebSocket
@@ -52,7 +51,7 @@ export function OrdersTabContent() {
 
   console.log('[OrdersTabContent] State:', {
     address,
-    isConnected,
+    isAuthenticated,
     orderUpdatesCount: orderUpdates.length,
     loading,
     wsError,
@@ -95,8 +94,8 @@ export function OrdersTabContent() {
     return sorted;
   }, [orderUpdates]);
 
-  if (!isConnected || !address) {
-    console.log('[OrdersTabContent] Not connected or no address');
+  if (!isAuthenticated || !address) {
+    console.log('[OrdersTabContent] Not authenticated or no address');
     return (
       <YStack flex={1} justifyContent="center" alignItems="center" padding="$4">
         <Text>Please connect your wallet to view orders</Text>

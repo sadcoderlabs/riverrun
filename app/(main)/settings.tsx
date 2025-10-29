@@ -1,10 +1,9 @@
 import { ListButton, ListItem } from '@/components/global/list-item';
 import { ListSection } from '@/components/global/list-section';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { useWallet } from '@/hooks/useWallet';
 import { clearAgentSigner } from '@/lib/hyperliquid/agent';
 import { type ThemePreference } from '@/store/theme.store';
-import { usePrivy } from '@privy-io/expo';
-import { useAppKit, useAccount } from '@reown/appkit-react-native';
 import { ArrowUpRight } from '@tamagui/lucide-icons';
 import { useCallback, useState } from 'react';
 import { Alert } from 'react-native';
@@ -17,9 +16,7 @@ type RevokeStatus = {
 };
 
 export default function Index() {
-  const { open } = useAppKit();
-  const { address } = useAccount();
-  const { user, logout } = usePrivy();
+  const { address, isAuthenticated, logout: walletLogout } = useWallet();
   const [revoking, setRevoking] = useState(false);
   const [status, setStatus] = useState<RevokeStatus | null>(null);
   const { preference, setPreference } = useThemePreference();
@@ -162,49 +159,23 @@ export default function Index() {
               {revoking ? 'Revoking...' : 'Revoke Agent'}
             </ListButton>
           </ListSection>
-          {/* Disconnect Wallet Button */}
-          {address && (
+          {/* Logout Button */}
+          {isAuthenticated && (
             <ListSection>
               <ListButton
                 justifyContent="center"
-                onPress={() => {
-                  open();
+                onPress={async () => {
+                  try {
+                    await walletLogout();
+                    toast.success('Logged out successfully');
+                  } catch {
+                    toast.error('Failed to logout', {
+                      description: 'Please try again',
+                    });
+                  }
                 }}
               >
-                Disconnect Wallet
-              </ListButton>
-            </ListSection>
-          )}
-          {/* Logout from Privy Button */}
-          {user && (
-            <ListSection>
-              <ListButton
-                justifyContent="center"
-                onPress={() => {
-                  Alert.alert(
-                    'Logout from Privy?',
-                    'You will need to login again to access the app.',
-                    [
-                      { text: 'Cancel', style: 'cancel' },
-                      {
-                        text: 'Logout',
-                        style: 'destructive',
-                        onPress: async () => {
-                          try {
-                            await logout();
-                            toast.success('Logged out successfully');
-                          } catch {
-                            toast.error('Failed to logout', {
-                              description: 'Please try again',
-                            });
-                          }
-                        },
-                      },
-                    ],
-                  );
-                }}
-              >
-                Logout from Privy
+                Logout
               </ListButton>
             </ListSection>
           )}

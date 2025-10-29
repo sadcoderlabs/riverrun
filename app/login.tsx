@@ -1,8 +1,7 @@
 import { Button } from '@/components/global/button';
 import { Heading } from '@/components/global/heading';
 import { useThemePreference } from '@/hooks/useThemePreference';
-import { useLogin } from '@privy-io/expo/ui';
-import { useAppKit } from '@reown/appkit-react-native';
+import { useWallet } from '@/hooks/useWallet';
 import { Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { toast } from 'sonner-native';
@@ -11,44 +10,30 @@ import { Text, View, YStack } from 'tamagui';
 export default function Login() {
   const insets = useSafeAreaInsets();
   const { effectiveTheme } = useThemePreference();
+  const { loginWithEmail, connectWallet } = useWallet();
 
-  const { login } = useLogin();
-  const { open: openAppKit } = useAppKit();
-
-  // Handle Privy login (Email/SMS/Google)
+  // Handle email login via Privy
   const handleEmailLogin = async () => {
     try {
-      const session = await login({
-        loginMethods: ['email'],
-      });
-      console.log('Privy login successful:', session.user);
-      toast.success('Welcome!', {
-        description: 'Login successful',
-      });
-    } catch (error: any) {
-      // Check if user cancelled/dismissed the modal
-      const errorMessage = error?.message || error?.toString() || '';
-      const isCancelled =
-        errorMessage.includes('cancelled') ||
-        errorMessage.includes('dismissed') ||
-        errorMessage.includes('closed') ||
-        errorMessage.includes('User cancelled') ||
-        error?.code === 'USER_CANCELLED';
-
-      // Only show error toast if it's not a cancellation
-      if (!isCancelled) {
-        console.error('Privy login error:', error);
-        toast.error('Login failed', {
-          description: 'Please try again',
+      const session = await loginWithEmail();
+      if (session) {
+        console.log('Privy login successful:', session.user);
+        toast.success('Welcome!', {
+          description: 'Login successful',
         });
       }
+    } catch (error: any) {
+      console.error('Privy login error:', error);
+      toast.error('Login failed', {
+        description: 'Please try again',
+      });
     }
   };
 
-  // Handle AppKit wallet connection
+  // Handle external wallet connection
   const handleWalletConnect = async () => {
     try {
-      await openAppKit();
+      await connectWallet();
       // AppKit handles the connection flow
       // Once connected, the app will automatically navigate to main screen
       // via the authentication logic in _layout.tsx

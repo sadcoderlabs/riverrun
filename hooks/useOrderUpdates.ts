@@ -1,7 +1,7 @@
 import * as hl from '@nktkas/hyperliquid';
-import { useAccount } from '@reown/appkit-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useHyperliquidClient } from './useHyperliquidClient';
+import { useWallet } from './useWallet';
 
 export interface OrderUpdate {
   order: {
@@ -31,7 +31,7 @@ interface UseOrderUpdatesResult {
  * 2. Subscribes to orderUpdates WebSocket for real-time incremental updates
  */
 export function useOrderUpdates(): UseOrderUpdatesResult {
-  const { address, isConnected } = useAccount();
+  const { address, isAuthenticated } = useWallet();
   const { getSubscriptionClient, getInfoClient } = useHyperliquidClient();
   const [orders, setOrders] = useState<OrderUpdate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -53,15 +53,15 @@ export function useOrderUpdates(): UseOrderUpdatesResult {
 
   useEffect(() => {
     console.log('[useOrderUpdates] Effect triggered:', {
-      isConnected,
+      isAuthenticated,
       address,
       hasAddress: !!address,
     });
 
     // Don't subscribe if conditions aren't met
-    if (!isConnected || !address) {
-      if (!address && isConnected) {
-        console.warn('[useOrderUpdates] Wallet connected but address not available');
+    if (!isAuthenticated || !address) {
+      if (!address && isAuthenticated) {
+        console.warn('[useOrderUpdates] Wallet authenticated but address not available');
       }
       console.log('[useOrderUpdates] Conditions not met, skipping subscription');
       setIsLoading(false);
@@ -181,7 +181,7 @@ export function useOrderUpdates(): UseOrderUpdatesResult {
       isMounted = false;
       void cleanup();
     };
-  }, [address, isConnected, cleanup, getSubscriptionClient, getInfoClient]);
+  }, [address, isAuthenticated, cleanup, getSubscriptionClient, getInfoClient]);
 
   return {
     orders,

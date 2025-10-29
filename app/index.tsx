@@ -1,13 +1,8 @@
-import { useAccount } from '@reown/appkit-react-native';
-import { usePrivy } from '@privy-io/expo';
+import { useWallet } from '@/hooks/useWallet';
 import { Redirect } from 'expo-router';
 
 export default function Index() {
-  const { isConnected } = useAccount();
-  const { user } = usePrivy();
-
-  // User is authenticated if they're logged in with Privy OR connected wallet
-  const isAuthenticated = !!user || isConnected;
+  const { isAuthenticated } = useWallet();
 
   if (isAuthenticated) {
     return <Redirect href="/(main)/home" />;

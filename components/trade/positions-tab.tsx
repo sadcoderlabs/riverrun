@@ -1,12 +1,13 @@
 import * as hl from '@nktkas/hyperliquid';
-import { useAccount } from '@reown/appkit-react-native';
 import { useEffect, useState } from 'react';
 import { ScrollView, Spinner, Text, View, XStack, YStack } from 'tamagui';
 import { useHyperliquidClient } from '@/hooks/useHyperliquidClient';
+import { useWallet } from '@/hooks/useWallet';
+
 type Position = hl.ClearinghouseStateResponse['assetPositions'][number]['position'];
 
 export default function PositionsTab() {
-  const { address, isConnected } = useAccount();
+  const { address, isAuthenticated } = useWallet();
   const { getInfoClient } = useHyperliquidClient();
   const [positions, setPositions] = useState<Position[]>([]);
   const [loading, setLoading] = useState(true);
@@ -14,7 +15,7 @@ export default function PositionsTab() {
 
   useEffect(() => {
     const fetchPositions = async () => {
-      if (!address || !isConnected) {
+      if (!address || !isAuthenticated) {
         setPositions([]);
         setLoading(false);
         return;
@@ -41,9 +42,9 @@ export default function PositionsTab() {
     };
 
     fetchPositions();
-  }, [address, isConnected]);
+  }, [address, isAuthenticated]);
 
-  if (!isConnected || !address) {
+  if (!isAuthenticated || !address) {
     return (
       <View flex={1} justifyContent="center" alignItems="center" padding="$4">
         <Text>Please connect your wallet to view positions</Text>

@@ -1,11 +1,10 @@
 import * as hl from '@nktkas/hyperliquid';
 import { SymbolConverter } from '@nktkas/hyperliquid/utils';
-import { useProvider } from '@reown/appkit-react-native';
 import { useCallback, useMemo } from 'react';
 import { Alert } from 'react-native';
-import { BrowserProvider } from 'ethers';
 
 import { DEFAULT_AGENT_NAME, getOrCreateAgentSigner } from '@/lib/hyperliquid/agent';
+import { useWallet } from './useWallet';
 
 // Singleton instances - shared across all hook usages
 let transport: hl.HttpTransport | undefined;
@@ -52,7 +51,7 @@ interface UseHyperliquidClientResult {
 }
 
 export function useHyperliquidClient(): UseHyperliquidClientResult {
-  const { provider: walletProvider } = useProvider();
+  const { getProvider, address: walletAddress } = useWallet();
 
   // Helper function to check if agent is approved
   const checkAgentApproval = useCallback(
@@ -68,13 +67,18 @@ export function useHyperliquidClient(): UseHyperliquidClientResult {
 
   // Get master exchange client
   const getMasterExchangeClient = useCallback(async (): Promise<hl.ExchangeClient | undefined> => {
-    if (!walletProvider) {
+    if (!walletAddress) {
       Alert.alert('Wallet Not Connected', 'Please connect your wallet to continue.');
       return undefined;
     }
 
     try {
-      const ethersProvider = new BrowserProvider(walletProvider as any);
+      const ethersProvider = await getProvider();
+      if (!ethersProvider) {
+        Alert.alert('Wallet Not Connected', 'Please connect your wallet to continue.');
+        return undefined;
+      }
+
       const masterSigner = await ethersProvider.getSigner();
 
       return new hl.ExchangeClient({
@@ -86,18 +90,23 @@ export function useHyperliquidClient(): UseHyperliquidClientResult {
       Alert.alert('Error', error instanceof Error ? error.message : 'Failed to initialize wallet');
       return undefined;
     }
-  }, [walletProvider]);
+  }, [walletAddress, getProvider]);
 
   // Get agent exchange client with approval flow
   const getAgentExchangeClient = useCallback(async (): Promise<hl.ExchangeClient | undefined> => {
-    if (!walletProvider) {
+    if (!walletAddress) {
       Alert.alert('Wallet Not Connected', 'Please connect your wallet to continue.');
       return undefined;
     }
 
     try {
       // Setup master wallet
-      const ethersProvider = new BrowserProvider(walletProvider as any);
+      const ethersProvider = await getProvider();
+      if (!ethersProvider) {
+        Alert.alert('Wallet Not Connected', 'Please connect your wallet to continue.');
+        return undefined;
+      }
+
       const masterSigner = await ethersProvider.getSigner();
       const masterAddress = (await masterSigner.getAddress()).toLowerCase();
 
@@ -174,7 +183,7 @@ export function useHyperliquidClient(): UseHyperliquidClientResult {
       Alert.alert('Error', error instanceof Error ? error.message : 'Failed to initialize agent');
       return undefined;
     }
-  }, [walletProvider, checkAgentApproval]);
+  }, [walletAddress, getProvider, checkAgentApproval]);
 
   return useMemo(
     () => ({
