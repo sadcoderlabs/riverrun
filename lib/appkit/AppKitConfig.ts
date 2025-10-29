@@ -1,8 +1,8 @@
 import '@walletconnect/react-native-compat';
 
-import { createAppKit } from '@reown/appkit-react-native';
 import { EthersAdapter } from '@reown/appkit-ethers-react-native';
-import { mainnet, arbitrum } from 'viem/chains';
+import { createAppKit } from '@reown/appkit-react-native';
+import { arbitrum, mainnet } from 'viem/chains';
 import { storage } from './StorageUtil';
 
 /**
@@ -38,4 +38,7 @@ export const appKit = createAppKit({
   adapters: [ethersAdapter],
   storage,
   enableAnalytics: true,
+  features: {
+    socials: false, // Disable email and social logins, only show external wallets
+  },
 });
