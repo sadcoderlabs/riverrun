@@ -1,11 +1,12 @@
-import { AccountValue } from '@/components/home/account-value';
+import { AccountEquity } from '@/components/home/account-equity';
+import { PerpsOverview } from '@/components/home/perps-overview';
 import { WalletInfo } from '@/components/home/wallet-info';
 import { ScrollView, YStack } from 'tamagui';
 
 /**
  * Home Page
  *
- * Shows account overview with wallet info and account value
+ * Shows account overview with wallet info, account equity, and perps overview
  */
 export default function Index() {
   return (
@@ -16,7 +17,8 @@ export default function Index() {
       {/* Scrollable Content */}
       <ScrollView flex={1} backgroundColor="$gray3" contentContainerStyle={{ paddingBottom: 20 }}>
         <YStack padding="$4" gap="$4" backgroundColor="$gray3">
-          <AccountValue value={567.89} />
+          <AccountEquity />
+          <PerpsOverview />
         </YStack>
       </ScrollView>
     </YStack>
