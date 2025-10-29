@@ -2,7 +2,7 @@ import { Button } from '@/components/global/button';
 import { Heading } from '@/components/global/heading';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { useLogin } from '@privy-io/expo/ui';
-import { useAppKit } from '@reown/appkit-ethers-react-native';
+import { useAppKit } from '@reown/appkit-react-native';
 import { Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { toast } from 'sonner-native';

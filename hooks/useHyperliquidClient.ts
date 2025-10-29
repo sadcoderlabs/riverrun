@@ -1,6 +1,6 @@
 import * as hl from '@nktkas/hyperliquid';
 import { SymbolConverter } from '@nktkas/hyperliquid/utils';
-import { useAppKitProvider } from '@reown/appkit-ethers-react-native';
+import { useProvider } from '@reown/appkit-react-native';
 import { useCallback, useMemo } from 'react';
 import { Alert } from 'react-native';
 import { BrowserProvider } from 'ethers';
@@ -52,7 +52,7 @@ interface UseHyperliquidClientResult {
 }
 
 export function useHyperliquidClient(): UseHyperliquidClientResult {
-  const { walletProvider } = useAppKitProvider();
+  const { provider: walletProvider } = useProvider();
 
   // Helper function to check if agent is approved
   const checkAgentApproval = useCallback(

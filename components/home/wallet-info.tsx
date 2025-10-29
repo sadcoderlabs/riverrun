@@ -1,4 +1,4 @@
-import { useAppKitAccount, useWalletInfo } from '@reown/appkit-ethers-react-native';
+import { useAccount, useWalletInfo } from '@reown/appkit-react-native';
 import { useEmbeddedEthereumWallet } from '@privy-io/expo';
 import { Copy, Settings, User } from '@tamagui/lucide-icons';
 import * as Clipboard from 'expo-clipboard';
@@ -31,7 +31,7 @@ function shortenAddress(address: string): string {
 export function WalletInfo() {
   const insets = useSafeAreaInsets();
   const theme = useTheme();
-  const { address } = useAppKitAccount();
+  const { address } = useAccount();
   const { walletInfo } = useWalletInfo();
   const { wallets } = useEmbeddedEthereumWallet();
 

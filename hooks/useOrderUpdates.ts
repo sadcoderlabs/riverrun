@@ -1,5 +1,5 @@
 import * as hl from '@nktkas/hyperliquid';
-import { useAppKitAccount } from '@reown/appkit-ethers-react-native';
+import { useAccount } from '@reown/appkit-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useHyperliquidClient } from './useHyperliquidClient';
 
@@ -31,7 +31,7 @@ interface UseOrderUpdatesResult {
  * 2. Subscribes to orderUpdates WebSocket for real-time incremental updates
  */
 export function useOrderUpdates(): UseOrderUpdatesResult {
-  const { address, isConnected } = useAppKitAccount();
+  const { address, isConnected } = useAccount();
   const { getSubscriptionClient, getInfoClient } = useHyperliquidClient();
   const [orders, setOrders] = useState<OrderUpdate[]>([]);
   const [isLoading, setIsLoading] = useState(true);

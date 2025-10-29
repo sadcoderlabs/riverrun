@@ -1,7 +1,7 @@
 import { useHyperliquidClient } from '@/hooks/useHyperliquidClient';
 import { useOrderUpdates } from '@/hooks/useOrderUpdates';
 import * as hl from '@nktkas/hyperliquid';
-import { useAppKitAccount } from '@reown/appkit-ethers-react-native';
+import { useAccount } from '@reown/appkit-react-native';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner-native';
 import { Button, Spinner, Text, XStack, YStack } from 'tamagui';
@@ -44,7 +44,7 @@ const formatSide = (side: string) => {
 };
 
 export function OrdersTabContent() {
-  const { address, isConnected } = useAppKitAccount();
+  const { address, isConnected } = useAccount();
   const { getAgentExchangeClient, getSymbolConverter } = useHyperliquidClient();
 
   // Subscribe to order updates via WebSocket

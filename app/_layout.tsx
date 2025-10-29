@@ -1,9 +1,9 @@
-import {
-  AppKit,
-  createAppKit,
-  defaultConfig,
-  useAppKitAccount,
-} from '@reown/appkit-ethers-react-native';
+import '@walletconnect/react-native-compat';
+
+import { createAppKit, AppKit, AppKitProvider, useAccount } from '@reown/appkit-react-native';
+import { EthersAdapter } from '@reown/appkit-ethers-react-native';
+import { mainnet, arbitrum } from 'viem/chains';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { tamaguiConfig } from '@/tamagui.config';
 import {
@@ -32,7 +32,7 @@ LogBox.ignoreLogs(['emitting session_request', 'without any listeners']);
 // 1. Get projectId at https://dashboard.reown.com
 const projectId = 'REOWN_PROJECT_ID_REMOVED';
 
-// 2. Create config
+// 2. Create metadata
 const metadata = {
   name: 'Riverrun',
   description: 'A trading app built by perpetual protocol',
@@ -44,41 +44,48 @@ const metadata = {
   },
 };
 
-const mainnet = {
-  chainId: 1,
-  name: 'Ethereum',
-  currency: 'ETH',
-  explorerUrl: 'https://etherscan.io',
-  rpcUrl: 'https://cloudflare-eth.com',
+// 3. Create storage implementation
+const storage = {
+  async getKeys(): Promise<string[]> {
+    const keys = await AsyncStorage.getAllKeys();
+    return [...keys]; // Convert readonly array to mutable array
+  },
+  async getEntries<T = any>(): Promise<[string, T][]> {
+    const keys = await AsyncStorage.getAllKeys();
+    const entries = await AsyncStorage.multiGet(keys);
+    return entries.map(([key, value]) => [key, JSON.parse(value || 'null') as T]);
+  },
+  async getItem<T = any>(key: string): Promise<T | undefined> {
+    const value = await AsyncStorage.getItem(key);
+    return value ? (JSON.parse(value) as T) : undefined;
+  },
+  async setItem<T = any>(key: string, value: T): Promise<void> {
+    await AsyncStorage.setItem(key, JSON.stringify(value));
+  },
+  async removeItem(key: string): Promise<void> {
+    await AsyncStorage.removeItem(key);
+  },
 };
 
-const arbitrum = {
-  chainId: 42161,
-  name: 'Arbitrum',
-  currency: 'ETH',
-  explorerUrl: 'https://arbiscan.io',
-  rpcUrl: 'https://arb-mainnet.g.alchemy.com/v2/demo',
-};
+// 4. Create adapter
+const ethersAdapter = new EthersAdapter();
 
-const chains = [mainnet, arbitrum];
-
-const config = defaultConfig({ metadata });
-
-// 3. Create modal
-createAppKit({
+// 5. Create AppKit instance
+const appKit = createAppKit({
   projectId,
   metadata,
-  chains,
-  config,
-  defaultChain: mainnet, // Optional
-  enableAnalytics: true, // Optional - defaults to your Cloud configuration
+  networks: [mainnet, arbitrum],
+  defaultNetwork: mainnet,
+  adapters: [ethersAdapter],
+  storage,
+  enableAnalytics: true,
 });
 
 // Prevent the splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
 
 function WalletInfoDisplay() {
-  const { isConnected } = useAppKitAccount();
+  const { isConnected } = useAccount();
   const { isReady, user } = usePrivy();
 
   // Wait for Privy to be ready before showing content
@@ -140,32 +147,34 @@ export default function RootLayout() {
 
   return (
     <>
-      <PrivyProvider
-        appId="cmhaalv5t00jmjt0dyv6yby9h"
-        clientId="client-WY6SSrDi1gWJqto3F2v88JkVeyd9aJJpCUweNA1dhFF92"
-        config={{
-          embedded: {
-            ethereum: {
-              createOnLogin: 'users-without-wallets',
+      <AppKitProvider instance={appKit}>
+        <PrivyProvider
+          appId="cmhaalv5t00jmjt0dyv6yby9h"
+          clientId="client-WY6SSrDi1gWJqto3F2v88JkVeyd9aJJpCUweNA1dhFF92"
+          config={{
+            embedded: {
+              ethereum: {
+                createOnLogin: 'users-without-wallets',
+              },
             },
-          },
-        }}
-      >
-        <TamaguiProvider config={tamaguiConfig} defaultTheme={effectiveTheme}>
-          <GestureHandlerRootView>
-            <SafeAreaProvider>
-              <ActionSheetProvider>
-                <View style={{ flex: 1 }}>
-                  <WalletInfoDisplay />
-                </View>
-              </ActionSheetProvider>
-              <Toaster />
-            </SafeAreaProvider>
-          </GestureHandlerRootView>
-        </TamaguiProvider>
-        <AppKit />
-        <PrivyElements />
-      </PrivyProvider>
+          }}
+        >
+          <TamaguiProvider config={tamaguiConfig} defaultTheme={effectiveTheme}>
+            <GestureHandlerRootView>
+              <SafeAreaProvider>
+                <ActionSheetProvider>
+                  <View style={{ flex: 1 }}>
+                    <WalletInfoDisplay />
+                  </View>
+                </ActionSheetProvider>
+                <Toaster />
+              </SafeAreaProvider>
+            </GestureHandlerRootView>
+          </TamaguiProvider>
+          <AppKit />
+          <PrivyElements />
+        </PrivyProvider>
+      </AppKitProvider>
     </>
   );
 }

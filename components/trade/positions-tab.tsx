@@ -1,12 +1,12 @@
 import * as hl from '@nktkas/hyperliquid';
-import { useAppKitAccount } from '@reown/appkit-ethers-react-native';
+import { useAccount } from '@reown/appkit-react-native';
 import { useEffect, useState } from 'react';
 import { ScrollView, Spinner, Text, View, XStack, YStack } from 'tamagui';
 import { useHyperliquidClient } from '@/hooks/useHyperliquidClient';
 type Position = hl.ClearinghouseStateResponse['assetPositions'][number]['position'];
 
 export default function PositionsTab() {
-  const { address, isConnected } = useAppKitAccount();
+  const { address, isConnected } = useAccount();
   const { getInfoClient } = useHyperliquidClient();
   const [positions, setPositions] = useState<Position[]>([]);
   const [loading, setLoading] = useState(true);

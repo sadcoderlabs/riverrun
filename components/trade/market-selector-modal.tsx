@@ -192,7 +192,9 @@ export function MarketSelectorModal({ open, onOpenChange }: MarketSelectorModalP
                   ) : null
                 }
                 showsVerticalScrollIndicator={false}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
+                refreshControl={
+                  <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+                }
                 initialNumToRender={20}
                 maxToRenderPerBatch={10}
                 windowSize={5}

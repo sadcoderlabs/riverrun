@@ -4,7 +4,7 @@ import { useThemePreference } from '@/hooks/useThemePreference';
 import { clearAgentSigner } from '@/lib/hyperliquid/agent';
 import { type ThemePreference } from '@/store/theme.store';
 import { usePrivy } from '@privy-io/expo';
-import { useAppKit, useAppKitAccount } from '@reown/appkit-ethers-react-native';
+import { useAppKit, useAccount } from '@reown/appkit-react-native';
 import { ArrowUpRight } from '@tamagui/lucide-icons';
 import { useCallback, useState } from 'react';
 import { Alert } from 'react-native';
@@ -18,7 +18,7 @@ type RevokeStatus = {
 
 export default function Index() {
   const { open } = useAppKit();
-  const { address } = useAppKitAccount();
+  const { address } = useAccount();
   const { user, logout } = usePrivy();
   const [revoking, setRevoking] = useState(false);
   const [status, setStatus] = useState<RevokeStatus | null>(null);
