@@ -1,17 +1,23 @@
-import { AlertTriangle, ArrowLeft, Copy } from '@tamagui/lucide-icons';
+import { AlertTriangle, ArrowLeft, ClipboardPaste } from '@tamagui/lucide-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Alert, Pressable, ScrollView } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, Input, Spinner, Text, XStack, YStack } from 'tamagui';
 import { toast } from 'sonner-native';
 import { useActiveWallet } from '@/hooks/useActiveWallet';
+import { useHyperliquidWithdraw } from '@/hooks/useHyperliquidWithdraw';
 
 // Helper function to shorten address (first 5 and last 5 characters)
 function shortenAddress(address: string, chars: number = 5): string {
   if (!address || address.length < chars * 2) return address;
   return `${address.slice(0, chars + 2)}...${address.slice(-chars)}`;
+}
+
+// Validate Ethereum address format
+function isValidAddress(address: string): boolean {
+  return /^0x[a-fA-F0-9]{40}$/.test(address);
 }
 
 /**
@@ -28,13 +34,26 @@ export default function HyperliquidBridgeWithdrawPage() {
   // Wallet hooks
   const { address, isAuthenticated } = useActiveWallet();
 
+  // Hyperliquid withdraw hook
+  const {
+    withdrawableBalance,
+    isLoadingBalance,
+    isWithdrawing,
+    refreshBalance,
+    withdraw,
+    minWithdrawAmount,
+  } = useHyperliquidWithdraw();
+
   // State
   const [recipientAddress, setRecipientAddress] = useState('');
   const [amount, setAmount] = useState('');
-  const [isWithdrawing, setIsWithdrawing] = useState(false);
 
-  // Mock balance - replace with actual balance hook
-  const balance = '0.000000';
+  // Load withdrawable balance on mount
+  useEffect(() => {
+    if (isAuthenticated && address) {
+      refreshBalance();
+    }
+  }, [isAuthenticated, address, refreshBalance]);
 
   if (!isAuthenticated || !address) {
     return (
@@ -45,21 +64,26 @@ export default function HyperliquidBridgeWithdrawPage() {
   }
 
   const numAmount = parseFloat(amount) || 0;
-  const numBalance = parseFloat(balance || '0') || 0;
-  const isValidAmount = numAmount > 0 && numAmount <= numBalance;
-  const isValidAddress = recipientAddress.length > 0; // TODO: Add proper address validation
+  const numBalance = parseFloat(withdrawableBalance || '0') || 0;
+  const isValidAmount = numAmount >= minWithdrawAmount && numAmount <= numBalance;
+  const isValidRecipient = isValidAddress(recipientAddress);
 
   const handleMaxPress = () => {
-    if (balance) {
-      setAmount(balance);
+    if (withdrawableBalance) {
+      setAmount(withdrawableBalance);
     }
   };
 
   const handlePasteAddress = async () => {
     try {
       const text = await Clipboard.getStringAsync();
+
+      if (!text) {
+        toast.error('Clipboard is empty');
+        return;
+      }
+
       setRecipientAddress(text);
-      toast.success('Pasted from clipboard');
     } catch (error) {
       console.error('Failed to paste address:', error);
       toast.error('Failed to paste address');
@@ -67,32 +91,23 @@ export default function HyperliquidBridgeWithdrawPage() {
   };
 
   const handleWithdraw = async () => {
-    if (!isValidAmount || !isValidAddress) {
-      Alert.alert('Invalid Input', 'Please enter valid recipient address and amount');
+    if (!isValidAmount) {
+      Alert.alert('Invalid Amount', 'Please enter a valid withdrawal amount');
       return;
     }
 
-    try {
-      setIsWithdrawing(true);
+    if (!isValidRecipient) {
+      Alert.alert('Invalid Address', 'Please enter a valid Arbitrum address (0x...)');
+      return;
+    }
 
-      // TODO: Implement actual withdraw logic using Hyperliquid SDK
-      // await exchangeClient.withdraw3(...)
+    // Execute withdrawal
+    const success = await withdraw(recipientAddress, amount);
 
-      toast.success('Withdrawal Initiated!', {
-        description: `Withdrawing ${amount} USDC to ${shortenAddress(recipientAddress)}`,
-      });
-
+    if (success) {
       // Clear form after successful withdrawal
       setAmount('');
       setRecipientAddress('');
-    } catch (error) {
-      console.error('Withdrawal failed:', error);
-      Alert.alert(
-        'Withdrawal Failed',
-        error instanceof Error ? error.message : 'Unknown error occurred',
-      );
-    } finally {
-      setIsWithdrawing(false);
     }
   };
 
@@ -135,7 +150,7 @@ export default function HyperliquidBridgeWithdrawPage() {
             borderWidth={1}
             borderColor="$borderColor"
             alignItems="center"
-            paddingRight="$3"
+            paddingRight="$2"
           >
             <Input
               flex={1}
@@ -150,16 +165,19 @@ export default function HyperliquidBridgeWithdrawPage() {
               paddingVertical="$3"
               editable={!isWithdrawing}
             />
-            <Pressable onPress={handlePasteAddress} disabled={isWithdrawing}>
-              <XStack
-                backgroundColor="#F97316"
-                paddingHorizontal="$3"
-                paddingVertical="$2"
-                borderRadius="$2"
-                pressStyle={{ opacity: 0.7 }}
-              >
-                <Copy size={16} color="white" />
-              </XStack>
+            <Pressable
+              onPress={handlePasteAddress}
+              disabled={isWithdrawing}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              style={({ pressed }) => ({
+                backgroundColor: '#F97316',
+                paddingHorizontal: 8,
+                paddingVertical: 8,
+                borderRadius: 6,
+                opacity: pressed ? 0.7 : 1,
+              })}
+            >
+              <ClipboardPaste size={16} color="white" />
             </Pressable>
           </XStack>
         </YStack>
@@ -172,16 +190,20 @@ export default function HyperliquidBridgeWithdrawPage() {
           alignItems="center"
         >
           <Text fontSize="$3" color="$gray11">
-            Balance:
+            Withdrawable Balance:
           </Text>
-          <XStack alignItems="baseline" gap="$1">
-            <Text fontSize="$5" fontFamily="$interSemiBold" color="$color">
-              {balance}
-            </Text>
-            <Text fontSize="$3" color="$gray10">
-              USDC
-            </Text>
-          </XStack>
+          {isLoadingBalance ? (
+            <Spinner size="small" color="$color" />
+          ) : (
+            <XStack alignItems="baseline" gap="$1">
+              <Text fontSize="$5" fontFamily="$interSemiBold" color="$color">
+                {withdrawableBalance || '0.000000'}
+              </Text>
+              <Text fontSize="$3" color="$gray10">
+                USDC
+              </Text>
+            </XStack>
+          )}
         </XStack>
 
         {/* Amount Input Section */}
@@ -233,9 +255,9 @@ export default function HyperliquidBridgeWithdrawPage() {
             </XStack>
 
             {/* Validation Message */}
-            {amount && numAmount <= 0 && (
+            {amount && numAmount > 0 && numAmount < minWithdrawAmount && (
               <Text fontSize="$2" color="#F97316" fontFamily="$interMedium">
-                Amount must be greater than 0
+                Minimum withdrawal amount: {minWithdrawAmount} USDC
               </Text>
             )}
             {amount && numAmount > numBalance && (
@@ -254,8 +276,8 @@ export default function HyperliquidBridgeWithdrawPage() {
             color="$color"
             fontFamily="$interSemiBold"
             onPress={handleWithdraw}
-            disabled={!isValidAmount || !isValidAddress || !amount || isWithdrawing}
-            opacity={!isValidAmount || !isValidAddress || !amount || isWithdrawing ? 0.5 : 1}
+            disabled={!isValidAmount || !isValidRecipient || !amount || isWithdrawing}
+            opacity={!isValidAmount || !isValidRecipient || !amount || isWithdrawing ? 0.5 : 1}
             pressStyle={{ opacity: 0.8 }}
             marginTop="$3"
             icon={isWithdrawing ? <Spinner size="small" color="$color" /> : undefined}
@@ -264,10 +286,34 @@ export default function HyperliquidBridgeWithdrawPage() {
           </Button>
         </YStack>
 
-        {/* Warning Section */}
+        {/* Withdrawal Info */}
         <XStack
           marginHorizontal="$4"
           marginTop="$4"
+          padding="$3"
+          backgroundColor="rgba(59, 130, 246, 0.1)"
+          borderRadius="$3"
+          alignItems="center"
+          gap="$2"
+        >
+          <AlertTriangle size={20} color="#3B82F6" />
+          <YStack flex={1} gap="$1">
+            <Text fontSize="$3" color="#3B82F6" fontFamily="$interMedium">
+              Minimum withdrawal: {minWithdrawAmount} USDC
+            </Text>
+            <Text fontSize="$3" color="#3B82F6" fontFamily="$interMedium">
+              Withdrawal fee: $1 USDC (deducted from amount)
+            </Text>
+            <Text fontSize="$2" color="#3B82F6">
+              Withdrawals should arrive within 5 minutes.
+            </Text>
+          </YStack>
+        </XStack>
+
+        {/* Warning Section */}
+        <XStack
+          marginHorizontal="$4"
+          marginTop="$3"
           padding="$3"
           backgroundColor="rgba(251, 191, 36, 0.1)"
           borderRadius="$3"
@@ -277,8 +323,8 @@ export default function HyperliquidBridgeWithdrawPage() {
           <YStack flex={1}>
             <Text fontSize="$2" color="#F59E0B" lineHeight="$1">
               Important: USDC can only be withdrawn to Arbitrum from your Hyperliquid Perpetual
-              account. Important: Make sure the recipient address is correct and on the Arbitrum
-              network. Withdrawals to incorrect addresses cannot be recovered.
+              account. Make sure the recipient address is correct and on the Arbitrum network.
+              Withdrawals to incorrect addresses cannot be recovered.
             </Text>
           </YStack>
         </XStack>
