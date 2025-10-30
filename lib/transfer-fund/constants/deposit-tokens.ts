@@ -1,3 +1,9 @@
+/**
+ * Chain type mapping for Unit Protocol API
+ * Maps to the keys in /v2/estimate-fees response
+ */
+export type UnitChainType = 'bitcoin' | 'ethereum' | 'plasma' | 'solana' | 'spl';
+
 export interface DepositToken {
   symbol: string;
   fullName: string;
@@ -5,6 +11,7 @@ export interface DepositToken {
   defaultChain: string;
   estimatedTime: string;
   isRecommended?: boolean;
+  chainType: UnitChainType; // For Unit Protocol API mapping
 }
 
 /**
@@ -19,6 +26,7 @@ export const DEPOSIT_TOKENS: DepositToken[] = [
     defaultChain: 'hyperliquid,arbitrum',
     estimatedTime: '1 minute',
     isRecommended: true,
+    chainType: 'plasma', // Hyperliquid uses Plasma chain
   },
   {
     symbol: 'BTC',
@@ -26,6 +34,7 @@ export const DEPOSIT_TOKENS: DepositToken[] = [
     icon: '₿',
     defaultChain: 'bitcoin',
     estimatedTime: '20 minutes',
+    chainType: 'bitcoin',
   },
   {
     symbol: 'ETH',
@@ -33,6 +42,7 @@ export const DEPOSIT_TOKENS: DepositToken[] = [
     icon: 'Ξ',
     defaultChain: 'ethereum',
     estimatedTime: '3 minutes',
+    chainType: 'ethereum',
   },
   {
     symbol: 'SOL',
@@ -40,6 +50,7 @@ export const DEPOSIT_TOKENS: DepositToken[] = [
     icon: '◎',
     defaultChain: 'solana',
     estimatedTime: '13 seconds',
+    chainType: 'solana', // Native SOL token
   },
   {
     symbol: 'FART',
@@ -47,5 +58,6 @@ export const DEPOSIT_TOKENS: DepositToken[] = [
     icon: '💨',
     defaultChain: 'solana',
     estimatedTime: '13 seconds',
+    chainType: 'spl', // SPL token on Solana
   },
 ];

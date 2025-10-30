@@ -16,7 +16,7 @@ import { Text, XStack, YStack } from 'tamagui';
 export default function DepositScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { tokens, searchQuery, setSearchQuery, selectToken } = useDepositTokens();
+  const { tokens, searchQuery, setSearchQuery, selectToken, isLoading, error } = useDepositTokens();
 
   return (
     <YStack flex={1} backgroundColor="$background" paddingTop={insets.top}>
@@ -52,16 +52,36 @@ export default function DepositScreen() {
       {/* Search Bar */}
       <DepositSearchBar value={searchQuery} onChangeText={setSearchQuery} />
 
+      {/* Loading State */}
+      {isLoading && (
+        <YStack flex={1} alignItems="center" justifyContent="center" padding="$4">
+          <Text fontSize="$3" color="$gray11">
+            Loading estimation times...
+          </Text>
+        </YStack>
+      )}
+
+      {/* Error State */}
+      {error && !isLoading && (
+        <YStack padding="$4">
+          <Text fontSize="$3" color="$red10">
+            {error}
+          </Text>
+        </YStack>
+      )}
+
       {/* Token List */}
-      <FlatList
-        data={tokens}
-        keyExtractor={item => item.symbol}
-        renderItem={({ item }) => (
-          <DepositTokenItem token={item} onPress={() => selectToken(item)} />
-        )}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 20 }}
-      />
+      {!isLoading && (
+        <FlatList
+          data={tokens}
+          keyExtractor={item => item.symbol}
+          renderItem={({ item }) => (
+            <DepositTokenItem token={item} onPress={() => selectToken(item)} />
+          )}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 20 }}
+        />
+      )}
     </YStack>
   );
 }
