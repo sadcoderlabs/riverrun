@@ -16,6 +16,11 @@ const BASE_URL = UNIT_API_BASE_URL;
 export type SourceChain = 'bitcoin' | 'ethereum' | 'solana';
 
 /**
+ * Supported destination chains (for withdrawals)
+ */
+export type DestinationChain = 'bitcoin' | 'ethereum' | 'solana';
+
+/**
  * Supported assets
  */
 export type Asset = 'btc' | 'eth' | 'sol';
@@ -27,6 +32,15 @@ export const MIN_DEPOSIT_AMOUNTS = {
   btc: 0.002,
   eth: 0.05,
   sol: 0.1,
+} as const;
+
+/**
+ * Minimum withdrawal amounts (same as deposit)
+ */
+export const MIN_WITHDRAWAL_AMOUNTS = {
+  btc: 0.002,
+  eth: 0.05,
+  sol: 0.2,
 } as const;
 
 /**
@@ -86,6 +100,50 @@ export async function generateDepositAddress(
     return data as GenerateAddressResponse;
   } catch (error) {
     console.error('Failed to generate deposit address:', error);
+    throw error;
+  }
+}
+
+/**
+ * Generate a Unit Protocol withdrawal address
+ *
+ * This generates a Hyperliquid address that, when sent tokens via spotSend,
+ * will forward those tokens to the destination chain address.
+ *
+ * @param dstChain - Destination chain (bitcoin, ethereum, solana)
+ * @param asset - Asset symbol (btc, eth, sol)
+ * @param dstAddr - Destination address on the target chain (e.g., Ethereum address)
+ * @returns Generated Hyperliquid withdrawal address
+ */
+export async function generateWithdrawalAddress(
+  dstChain: DestinationChain,
+  asset: Asset,
+  dstAddr: string,
+): Promise<GenerateAddressResponse> {
+  const url = `${BASE_URL}/gen/hyperliquid/${dstChain}/${asset}/${dstAddr}`;
+
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    // Check if response has error
+    if ('error' in data) {
+      throw new Error((data as ErrorResponse).error);
+    }
+
+    return data as GenerateAddressResponse;
+  } catch (error) {
+    console.error('Failed to generate withdrawal address:', error);
     throw error;
   }
 }

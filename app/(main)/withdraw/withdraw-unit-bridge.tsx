@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowLeft, AtSign } from '@tamagui/lucide-icons';
+import { AlertTriangle, ArrowLeft, ClipboardPaste, Info } from '@tamagui/lucide-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Pressable, ScrollView } from 'react-native';
@@ -7,29 +7,58 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, Input, Spinner, Text, XStack, YStack } from 'tamagui';
 import { toast } from 'sonner-native';
 import { useActiveWallet } from '@/hooks/useActiveWallet';
+import { useUnitWithdrawalAddress } from '@/lib/hyper-unit/hooks/useUnitWithdrawalAddress';
+import { useSpotBalance } from '@/hooks/useSpotBalance';
+import { useSpotSend } from '@/hooks/useSpotSend';
+import { useEstimateFees } from '@/lib/hyper-unit/hooks/useEstimateFees';
+import type { DestinationChain, Asset } from '@/lib/hyper-unit/api';
+
+// Validate Ethereum/Bitcoin/Solana address format
+function isValidAddress(address: string, network: string): boolean {
+  if (network === 'ethereum') {
+    // Ethereum address: 0x + 40 hex chars
+    return /^0x[a-fA-F0-9]{40}$/.test(address);
+  } else if (network === 'bitcoin') {
+    // Bitcoin address: starts with 1, 3, or bc1
+    return /^(1|3|bc1)[a-zA-HJ-NP-Z0-9]{25,62}$/.test(address);
+  } else if (network === 'solana') {
+    // Solana address: base58, 32-44 chars
+    return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(address);
+  }
+  return false;
+}
 
 // Token configurations
 const TOKEN_INFO: Record<
   string,
-  { fullName: string; icon: string; network: string; minWithdrawal: number }
+  {
+    fullName: string;
+    icon: string;
+    network: string;
+    minWithdrawal: number;
+    spotTokenName: string;
+  }
 > = {
   ETH: {
     fullName: 'Ethereum',
     icon: 'Ξ',
     network: 'ethereum',
     minWithdrawal: 0.05,
+    spotTokenName: 'UETH', // Hyperliquid uses UETH for ETH spot token
   },
   BTC: {
     fullName: 'Bitcoin',
     icon: '₿',
     network: 'bitcoin',
     minWithdrawal: 0.002,
+    spotTokenName: 'UBTC', // Hyperliquid likely uses UBTC for BTC spot token
   },
   SOL: {
     fullName: 'Solana',
     icon: '◎',
     network: 'solana',
     minWithdrawal: 0.2,
+    spotTokenName: 'USOL', // Hyperliquid likely uses USOL for SOL spot token
   },
 };
 
@@ -53,10 +82,36 @@ export default function UnitBridgeWithdrawPage() {
   // State
   const [recipientAddress, setRecipientAddress] = useState('');
   const [amount, setAmount] = useState('');
-  const [isWithdrawing, setIsWithdrawing] = useState(false);
 
-  // Mock balance - replace with actual balance hook
-  const balance = '0.000000';
+  // Get spot balance for the token (use Hyperliquid token name)
+  const {
+    balance,
+    tokenInfo: spotTokenInfo,
+    isLoading: isBalanceLoading,
+    refreshBalance,
+  } = useSpotBalance(tokenInfo?.spotTokenName || '');
+
+  // Get Unit withdrawal address (will generate when recipient address is valid)
+  const isRecipientValid =
+    recipientAddress.length > 0 &&
+    tokenInfo &&
+    isValidAddress(recipientAddress, tokenInfo.network);
+
+  const {
+    address: unitWithdrawalAddress,
+    isLoading: isAddressLoading,
+    error: addressError,
+  } = useUnitWithdrawalAddress(
+    isRecipientValid ? (tokenInfo!.network as DestinationChain) : null,
+    isRecipientValid ? (params.symbol?.toLowerCase() as Asset) : null,
+    isRecipientValid ? recipientAddress : null,
+  );
+
+  // Get spotSend hook
+  const { send: spotSend, isSending } = useSpotSend();
+
+  // Get fee estimates
+  const { estimates, isLoading: isFeesLoading } = useEstimateFees();
 
   if (!tokenInfo) {
     return (
@@ -77,7 +132,12 @@ export default function UnitBridgeWithdrawPage() {
   const numAmount = parseFloat(amount) || 0;
   const numBalance = parseFloat(balance || '0') || 0;
   const isValidAmount = numAmount >= tokenInfo.minWithdrawal && numAmount <= numBalance;
-  const isValidAddress = recipientAddress.length > 0; // TODO: Add proper address validation
+
+  // Get withdrawal fee from estimates
+  const withdrawalFee =
+    estimates && tokenInfo ? estimates[tokenInfo.network]?.withdrawalFee || 0 : 0;
+  const withdrawalEta =
+    estimates && tokenInfo ? estimates[tokenInfo.network]?.withdrawalEta || 'N/A' : 'N/A';
 
   const handleMaxPress = () => {
     if (balance) {
@@ -89,41 +149,51 @@ export default function UnitBridgeWithdrawPage() {
     try {
       const text = await Clipboard.getStringAsync();
       setRecipientAddress(text);
-      toast.success('Pasted from clipboard');
     } catch (error) {
-      console.error('Failed to paste address:', error);
       toast.error('Failed to paste address');
     }
   };
 
   const handleWithdraw = async () => {
-    if (!isValidAmount || !isValidAddress) {
+    if (!isValidAmount || !isRecipientValid) {
       Alert.alert('Invalid Input', 'Please enter valid recipient address and amount');
       return;
     }
 
+    if (!unitWithdrawalAddress) {
+      Alert.alert('Error', 'Failed to generate withdrawal address. Please try again.');
+      return;
+    }
+
+    if (!spotTokenInfo?.tokenId) {
+      Alert.alert('Error', 'Token information not available. Please try again.');
+      return;
+    }
+
     try {
-      setIsWithdrawing(true);
+      // Construct token identifier in format "NAME:TOKEN_ID"
+      const tokenIdentifier = `${spotTokenInfo.name}:${spotTokenInfo.tokenId}`;
 
-      // TODO: Implement actual withdraw logic using Hyperliquid spotSend API
-      // A withdrawal is identified as a Hyperliquid transfer - greater than the minimum
-      // for the source-chain - to a Unit withdrawal address.
+      // Execute spotSend to Unit withdrawal address
+      const success = await spotSend(unitWithdrawalAddress, tokenIdentifier, amount);
 
-      toast.success('Withdrawal Initiated!', {
-        description: `Withdrawing ${amount} ${params.symbol}`,
-      });
+      if (success) {
+        toast.success('Withdrawal Initiated!', {
+          description: `Your ${params.symbol} will arrive in approximately ${withdrawalEta}`,
+        });
 
-      // Clear form after successful withdrawal
-      setAmount('');
-      setRecipientAddress('');
+        // Refresh balance after successful withdrawal
+        await refreshBalance();
+
+        // Clear form
+        setAmount('');
+        setRecipientAddress('');
+      }
     } catch (error) {
-      console.error('Withdrawal failed:', error);
       Alert.alert(
         'Withdrawal Failed',
         error instanceof Error ? error.message : 'Unknown error occurred',
       );
-    } finally {
-      setIsWithdrawing(false);
     }
   };
 
@@ -179,20 +249,53 @@ export default function UnitBridgeWithdrawPage() {
               backgroundColor="transparent"
               borderWidth={0}
               paddingVertical="$3"
-              editable={!isWithdrawing}
+              editable={!isSending}
             />
-            <Pressable onPress={handlePasteAddress} disabled={isWithdrawing}>
-              <XStack
-                backgroundColor="#F97316"
-                paddingHorizontal="$3"
-                paddingVertical="$2"
-                borderRadius="$2"
-                pressStyle={{ opacity: 0.7 }}
-              >
-                <AtSign size={16} color="white" />
-              </XStack>
+            <Pressable
+              onPress={handlePasteAddress}
+              disabled={isSending}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              style={({ pressed }) => ({
+                backgroundColor: '#F97316',
+                paddingHorizontal: 8,
+                paddingVertical: 8,
+                borderRadius: 6,
+                opacity: pressed ? 0.7 : 1,
+              })}
+            >
+              <ClipboardPaste size={16} color="white" />
             </Pressable>
           </XStack>
+
+          {/* Address Validation Feedback */}
+          {recipientAddress.length > 0 && !isRecipientValid && (
+            <XStack alignItems="center" gap="$2" marginTop="$2">
+              <AlertTriangle size={16} color="#F97316" />
+              <Text fontSize="$2" color="#F97316" fontFamily="$interMedium">
+                Invalid {tokenInfo.network} address format
+              </Text>
+            </XStack>
+          )}
+
+          {/* Show loading state for withdrawal address generation */}
+          {isAddressLoading && (
+            <XStack alignItems="center" gap="$2" marginTop="$2">
+              <Spinner size="small" color="$gray11" />
+              <Text fontSize="$2" color="$gray11">
+                Generating withdrawal address...
+              </Text>
+            </XStack>
+          )}
+
+          {/* Show error if address generation failed */}
+          {addressError && (
+            <XStack alignItems="center" gap="$2" marginTop="$2">
+              <AlertTriangle size={16} color="#F97316" />
+              <Text fontSize="$2" color="#F97316" fontFamily="$interMedium">
+                {addressError}
+              </Text>
+            </XStack>
+          )}
         </YStack>
 
         {/* Balance Display */}
@@ -247,13 +350,13 @@ export default function UnitBridgeWithdrawPage() {
                 backgroundColor="transparent"
                 borderWidth={0}
                 paddingVertical="$3"
-                editable={!isWithdrawing}
+                editable={!isSending && !isBalanceLoading}
               />
               <XStack gap="$2" alignItems="center">
-                <Pressable onPress={handleMaxPress} disabled={isWithdrawing}>
+                <Pressable onPress={handleMaxPress} disabled={isSending || isBalanceLoading}>
                   <Text
                     fontSize="$3"
-                    color={isWithdrawing ? '$gray10' : '#F97316'}
+                    color={isSending || isBalanceLoading ? '$gray10' : '#F97316'}
                     fontFamily="$interSemiBold"
                   >
                     MAX
@@ -290,15 +393,55 @@ export default function UnitBridgeWithdrawPage() {
             color="$color"
             fontFamily="$interSemiBold"
             onPress={handleWithdraw}
-            disabled={!isValidAmount || !isValidAddress || !amount || isWithdrawing}
-            opacity={!isValidAmount || !isValidAddress || !amount || isWithdrawing ? 0.5 : 1}
+            disabled={
+              !isValidAmount ||
+              !isRecipientValid ||
+              !amount ||
+              isSending ||
+              isBalanceLoading ||
+              isAddressLoading ||
+              !unitWithdrawalAddress
+            }
+            opacity={
+              !isValidAmount ||
+              !isRecipientValid ||
+              !amount ||
+              isSending ||
+              isBalanceLoading ||
+              isAddressLoading ||
+              !unitWithdrawalAddress
+                ? 0.5
+                : 1
+            }
             pressStyle={{ opacity: 0.8 }}
             marginTop="$3"
-            icon={isWithdrawing ? <Spinner size="small" color="$color" /> : undefined}
+            icon={isSending ? <Spinner size="small" color="$color" /> : undefined}
           >
-            {isWithdrawing ? 'Processing...' : 'Withdraw'}
+            {isSending ? 'Processing...' : 'Withdraw'}
           </Button>
         </YStack>
+
+        {/* Fee Information */}
+        {!isFeesLoading && estimates && (
+          <XStack
+            marginHorizontal="$4"
+            marginTop="$4"
+            padding="$3"
+            backgroundColor="rgba(59, 130, 246, 0.1)"
+            borderRadius="$3"
+            gap="$3"
+          >
+            <Info size={20} color="#3B82F6" style={{ marginTop: 2 }} />
+            <YStack flex={1} gap="$1">
+              <Text fontSize="$2" color="#3B82F6" lineHeight="$1">
+                Withdrawal fee: {withdrawalFee} {params.symbol}
+              </Text>
+              <Text fontSize="$2" color="#3B82F6" lineHeight="$1">
+                Expected arrival time: {withdrawalEta}
+              </Text>
+            </YStack>
+          </XStack>
+        )}
 
         {/* Warning Section */}
         <XStack
