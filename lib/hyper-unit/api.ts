@@ -134,3 +134,73 @@ export async function getOperations(address: string): Promise<Operation[]> {
     throw error;
   }
 }
+
+/**
+ * Chain fee estimation data
+ */
+export interface ChainFeeEstimate {
+  depositEta: string;
+  depositFee: number;
+  withdrawalEta: string;
+  withdrawalFee: number;
+}
+
+/**
+ * Response from /v2/estimate-fees endpoint
+ */
+export interface EstimateFeesResponse {
+  bitcoin: ChainFeeEstimate & {
+    'deposit-fee-rate-sats-per-vb': number;
+    'deposit-size-v-bytes': number;
+    'withdrawal-fee-rate-sats-per-vb': number;
+    'withdrawal-size-v-bytes': number;
+  };
+  ethereum: ChainFeeEstimate & {
+    'base-fee': number;
+    'eth-deposit-gas': number;
+    'eth-withdrawal-gas': number;
+    'priority-fee': number;
+  };
+  solana: ChainFeeEstimate;
+  spl: ChainFeeEstimate;
+}
+
+/**
+ * Fetch current fee rates and expected processing times
+ *
+ * @returns Fee estimates for all supported chains
+ */
+export async function fetchEstimateFees(): Promise<EstimateFeesResponse> {
+  const url = `${BASE_URL}/v2/estimate-fees`;
+
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Failed to fetch estimate fees:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get deposit ETA for a specific chain
+ *
+ * @param chain - Chain name (bitcoin, ethereum, solana)
+ * @param estimates - Estimate fees response
+ * @returns Deposit ETA string (e.g., "21m", "3m")
+ */
+export function getDepositEta(chain: SourceChain, estimates: EstimateFeesResponse): string | null {
+  const chainData = estimates[chain];
+  return chainData?.depositEta || null;
+}

@@ -8,6 +8,7 @@ import { toast } from 'sonner-native';
 import { DEPOSIT_TOKENS, ChainName, CHAINS } from '@/lib/transfer-fund/constants/deposit-tokens';
 import { useActiveWallet } from '@/hooks/useActiveWallet';
 import { useUnitDepositAddress } from '@/lib/hyper-unit/hooks/useUnitDepositAddress';
+import { useEstimateFees } from '@/lib/hyper-unit/hooks/useEstimateFees';
 import { MIN_DEPOSIT_AMOUNTS, type SourceChain, type Asset } from '@/lib/hyper-unit/api';
 
 /**
@@ -43,8 +44,16 @@ export default function UnitBridgePage() {
     (token?.symbol.toLowerCase() as Asset) || 'btc',
   );
 
+  // Get fee estimates and deposit ETA
+  const { getDepositEtaForChain } = useEstimateFees();
+
   // Get minimum deposit amount
   const minimumAmount = MIN_DEPOSIT_AMOUNTS[(token?.symbol.toLowerCase() as Asset) || 'btc'] || 0;
+
+  // Get deposit ETA for the current chain
+  const depositEta = chainInfo
+    ? getDepositEtaForChain(chainInfo.unitChainType as SourceChain)
+    : null;
 
   // Early returns after all hooks
   if (!token || !selectedChain || !chainInfo) {
@@ -119,10 +128,17 @@ export default function UnitBridgePage() {
         </YStack>
 
         {/* Description */}
-        <YStack paddingHorizontal="$4" paddingBottom="$3">
+        <YStack paddingHorizontal="$4" paddingBottom="$3" gap="$2">
           <Text fontSize="$3" color="$gray11" textAlign="center">
             Use the address below to receive {token.symbol} to your exchange account.
           </Text>
+          {depositEta && (
+            <XStack alignItems="center" gap="$2" justifyContent="center">
+              <Text fontSize="$2" color="$gray10" fontStyle="italic">
+                Est. completion time: {depositEta}
+              </Text>
+            </XStack>
+          )}
         </YStack>
 
         {/* Minimum Amount Warning */}
