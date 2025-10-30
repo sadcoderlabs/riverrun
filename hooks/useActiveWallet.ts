@@ -19,6 +19,7 @@ export interface UseActiveWalletResult {
   // Signing operations
   getProvider: () => Promise<BrowserProvider | undefined>;
   getSigner: () => Promise<Signer | undefined>;
+  switchChain: (chainId: number) => Promise<void>;
 }
 
 /**
@@ -145,6 +146,48 @@ export function useActiveWallet(): UseActiveWalletResult {
     }
   }, [getProvider]);
 
+  /**
+   * Switch to a different blockchain network
+   *
+   * @param chainId - The chain ID to switch to (e.g., 42161 for Arbitrum)
+   * @throws Error if switching fails or wallet doesn't support it
+   */
+  const switchChain = useCallback(
+    async (chainId: number): Promise<void> => {
+      try {
+        const chainIdHex = `0x${chainId.toString(16)}`; // Convert to hex
+
+        if (activeSource === 'privy' && embeddedWallet) {
+          // Privy: Use provider.request with wallet_switchEthereumChain
+          const provider = await embeddedWallet.getProvider();
+          await provider.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: chainIdHex }],
+          });
+          console.log(`Switched to chain ${chainId} (${chainIdHex}) via Privy`);
+        } else if (activeSource === 'reown' && reownProvider) {
+          // Reown: Use provider.request with wallet_switchEthereumChain
+          // The provider should support EIP-1193 standard methods
+          if (!(reownProvider as any).request) {
+            throw new Error('Provider does not support network switching');
+          }
+
+          await (reownProvider as any).request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: chainIdHex }],
+          });
+          console.log(`Switched to chain ${chainId} (${chainIdHex}) via Reown`);
+        } else {
+          throw new Error('No active wallet to switch chain');
+        }
+      } catch (error) {
+        console.error('Failed to switch chain:', error);
+        throw error;
+      }
+    },
+    [activeSource, embeddedWallet, reownProvider],
+  );
+
   return useMemo(
     () => ({
       isAuthenticated,
@@ -154,7 +197,17 @@ export function useActiveWallet(): UseActiveWalletResult {
       walletType,
       getProvider,
       getSigner,
+      switchChain,
     }),
-    [isAuthenticated, isReady, address, walletName, walletType, getProvider, getSigner],
+    [
+      isAuthenticated,
+      isReady,
+      address,
+      walletName,
+      walletType,
+      getProvider,
+      getSigner,
+      switchChain,
+    ],
   );
 }

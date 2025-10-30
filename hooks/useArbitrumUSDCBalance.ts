@@ -1,0 +1,180 @@
+import { useEffect, useState, useCallback } from 'react';
+import { Contract, formatUnits } from 'ethers';
+import { useActiveWallet } from './useActiveWallet';
+
+// Arbitrum USDC contract address
+export const ARBITRUM_USDC_ADDRESS = '0xaf88d065e77c8cC2239327C5EDb3A432268e5831';
+
+// Minimal ERC20 ABI for balance and transfer
+const ERC20_ABI = [
+  'function balanceOf(address owner) view returns (uint256)',
+  'function decimals() view returns (uint8)',
+  'function transfer(address to, uint256 amount) returns (bool)',
+];
+
+export interface UseArbitrumUSDCBalanceResult {
+  balance: string | null;
+  isLoading: boolean;
+  error: string | null;
+  isWrongNetwork: boolean;
+  refetch: () => Promise<void>;
+  transfer: (to: string, amount: string) => Promise<string>;
+  switchToArbitrum: () => Promise<void>;
+}
+
+/**
+ * Hook for monitoring Arbitrum USDC balance
+ *
+ * Automatically fetches and monitors the user's USDC balance on Arbitrum
+ * Updates every 10 seconds while the component is mounted
+ *
+ * @returns Balance information and transfer function
+ */
+export function useArbitrumUSDCBalance(): UseArbitrumUSDCBalanceResult {
+  const { address, getProvider, switchChain } = useActiveWallet();
+  const [balance, setBalance] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isWrongNetwork, setIsWrongNetwork] = useState(false);
+
+  const fetchBalance = useCallback(async () => {
+    if (!address) {
+      setBalance(null);
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      setError(null);
+      const provider = await getProvider();
+      if (!provider) {
+        throw new Error('Provider not available');
+      }
+
+      // Check if we're on Arbitrum (chainId 42161)
+      const network = await provider.getNetwork();
+      if (network.chainId !== 42161n) {
+        setIsWrongNetwork(true);
+        setError('Switching to Arbitrum network...');
+
+        // Automatically try to switch to Arbitrum using unified API
+        try {
+          await switchChain(42161); // Arbitrum chainId
+          console.log('Successfully switched to Arbitrum');
+          // Don't continue fetching balance - wait for next poll
+          return;
+        } catch (switchError) {
+          console.error('Failed to switch network:', switchError);
+          throw new Error('Please switch to Arbitrum network manually');
+        }
+      }
+      setIsWrongNetwork(false);
+
+      const usdcContract = new Contract(ARBITRUM_USDC_ADDRESS, ERC20_ABI, provider);
+      const balanceRaw = await usdcContract.balanceOf(address);
+      const decimals = await usdcContract.decimals();
+
+      // Format balance to human-readable string
+      const formattedBalance = formatUnits(balanceRaw, decimals);
+      setBalance(formattedBalance);
+    } catch (err) {
+      console.error('Failed to fetch USDC balance:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch balance');
+      setBalance(null);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [address, getProvider, switchChain]);
+
+  /**
+   * Switch wallet to Arbitrum network manually
+   * Uses the unified switchChain API from useActiveWallet
+   */
+  const switchToArbitrum = useCallback(async () => {
+    try {
+      await switchChain(42161); // Arbitrum chainId
+      console.log('Successfully switched to Arbitrum');
+
+      // Trigger refetch after a short delay to allow network switch to complete
+      setTimeout(() => {
+        fetchBalance();
+      }, 1000);
+    } catch (err) {
+      console.error('Failed to switch to Arbitrum:', err);
+      throw err;
+    }
+  }, [switchChain, fetchBalance]);
+
+  /**
+   * Transfer USDC to a recipient address
+   *
+   * @param to Recipient address
+   * @param amount Amount in USDC (human-readable, e.g., "10.5")
+   * @returns Transaction hash
+   */
+  const transfer = useCallback(
+    async (to: string, amount: string): Promise<string> => {
+      if (!address) {
+        throw new Error('Wallet not connected');
+      }
+
+      const provider = await getProvider();
+      if (!provider) {
+        throw new Error('Provider not available');
+      }
+
+      // Check if we're on Arbitrum
+      const network = await provider.getNetwork();
+      if (network.chainId !== 42161n) {
+        throw new Error('Please switch to Arbitrum network');
+      }
+
+      const signer = await provider.getSigner();
+      const usdcContract = new Contract(ARBITRUM_USDC_ADDRESS, ERC20_ABI, signer);
+
+      // Get decimals and convert amount to raw units
+      const decimals = await usdcContract.decimals();
+      const amountRaw = BigInt(parseFloat(amount) * 10 ** Number(decimals));
+
+      // Send transaction
+      const tx = await usdcContract.transfer(to, amountRaw);
+      console.log('Transfer transaction sent:', tx.hash);
+
+      // Wait for confirmation
+      await tx.wait();
+      console.log('Transfer confirmed:', tx.hash);
+
+      // Refetch balance after transfer
+      await fetchBalance();
+
+      return tx.hash;
+    },
+    [address, getProvider, fetchBalance],
+  );
+
+  // Fetch balance on mount and when address changes
+  useEffect(() => {
+    fetchBalance();
+  }, [fetchBalance]);
+
+  // Poll balance every 10 seconds
+  useEffect(() => {
+    if (!address) return;
+
+    const interval = setInterval(() => {
+      fetchBalance();
+    }, 10000); // 10 seconds
+
+    return () => clearInterval(interval);
+  }, [address, fetchBalance]);
+
+  return {
+    balance,
+    isLoading,
+    error,
+    isWrongNetwork,
+    refetch: fetchBalance,
+    transfer,
+    switchToArbitrum,
+  };
+}
