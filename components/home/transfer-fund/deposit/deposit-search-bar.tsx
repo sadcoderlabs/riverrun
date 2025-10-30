@@ -39,6 +39,7 @@ export function DepositSearchBar({
         backgroundColor="transparent"
         borderWidth={0}
         paddingVertical="$3"
+        returnKeyType="done"
       />
     </XStack>
   );
