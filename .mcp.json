@@ -3,6 +3,10 @@
     "hyperliquid-gitbook": {
       "type": "http",
       "url": "https://hyperliquid.gitbook.io/hyperliquid-docs/~gitbook/mcp"
+    },
+    "unit-gitbook": {
+      "type": "http",
+      "url": "https://docs.hyperunit.xyz/~gitbook/mcp"
     }
   }
 }
