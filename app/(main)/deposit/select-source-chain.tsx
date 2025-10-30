@@ -46,7 +46,7 @@ export default function SelectSourceChainPage() {
     if (selectedChain.depositMethod === 'hyperliquid-bridge') {
       // USDC goes to Hyperliquid Bridge page
       router.push({
-        pathname: '/(main)/deposit/hyperliquid-bridge',
+        pathname: '/(main)/deposit/deposit-hl-bridge',
         params: {
           symbol: token.symbol,
           chain: chainName,
@@ -55,7 +55,7 @@ export default function SelectSourceChainPage() {
     } else {
       // BTC/ETH/SOL go to Unit Bridge page
       router.push({
-        pathname: '/(main)/deposit/unit-bridge',
+        pathname: '/(main)/deposit/deposit-unit-bridge',
         params: {
           symbol: token.symbol,
           chain: chainName,

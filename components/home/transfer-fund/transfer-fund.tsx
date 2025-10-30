@@ -16,11 +16,11 @@ export function TransferFund() {
   const router = useRouter();
 
   const handleDeposit = () => {
-    router.navigate('/(main)/deposit');
+    router.navigate('/(main)/deposit/deposit-tokens');
   };
 
   const handleWithdraw = () => {
-    // TODO: Implement withdraw functionality
+    router.navigate('/(main)/withdraw/withdraw-tokens');
   };
 
   const handleTransfer = () => {
