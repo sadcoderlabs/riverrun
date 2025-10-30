@@ -3,7 +3,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, XStack, YStack } from 'tamagui';
-import { DEPOSIT_TOKENS } from '@/lib/transfer-fund/constants/deposit-tokens';
+import { DEPOSIT_TOKENS, CHAINS, ChainName } from '@/lib/transfer-fund/constants/deposit-tokens';
 
 /**
  * Select Source Chain Page
@@ -27,21 +27,23 @@ export default function SelectSourceChainPage() {
     );
   }
 
-  // For now, we only support the default chain
-  // In the future, this could be expanded to support multiple chains
-  const availableChains = [
-    {
-      name: token.defaultChain.split(',')[0], // Take first chain from defaultChain
-      displayName:
-        token.defaultChain.split(',')[0].charAt(0).toUpperCase() +
-        token.defaultChain.split(',')[0].slice(1),
-      estimatedTime: token.estimatedTime,
-    },
-  ];
+  // Get available chains from token's supportChains
+  const availableChains = token.supportChains.map(supportChain => {
+    const chainInfo = CHAINS[supportChain.chain];
+    return {
+      name: supportChain.chain,
+      displayName: chainInfo.displayName,
+      icon: chainInfo.icon,
+      depositMethod: supportChain.depositMethod,
+    };
+  });
 
-  const handleSelectChain = (chainName: string) => {
+  const handleSelectChain = (chainName: ChainName) => {
+    const selectedChain = token.supportChains.find(sc => sc.chain === chainName);
+    if (!selectedChain) return;
+
     // Navigate to different pages based on deposit method
-    if (token.depositMethod === 'hyperliquid-bridge') {
+    if (selectedChain.depositMethod === 'hyperliquid-bridge') {
       // USDC goes to Hyperliquid Bridge page
       router.push({
         pathname: '/(main)/deposit/hyperliquid-bridge',
@@ -130,16 +132,13 @@ export default function SelectSourceChainPage() {
               alignItems="center"
               justifyContent="center"
             >
-              <Text fontSize={24}>{token.icon}</Text>
+              <Text fontSize={24}>{chain.icon}</Text>
             </XStack>
 
             {/* Chain Info */}
             <YStack flex={1} gap="$1">
               <Text fontFamily="$interSemiBold" fontSize="$4">
                 {chain.displayName}
-              </Text>
-              <Text fontSize="$2" color="$gray10" fontStyle="italic">
-                Est. completion: {chain.estimatedTime}
               </Text>
             </YStack>
 

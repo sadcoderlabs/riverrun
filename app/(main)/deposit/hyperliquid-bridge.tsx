@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Alert, Pressable, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, Input, Text, XStack, YStack } from 'tamagui';
-import { DEPOSIT_TOKENS } from '@/lib/transfer-fund/constants/deposit-tokens';
+import { DEPOSIT_TOKENS, ChainName } from '@/lib/transfer-fund/constants/deposit-tokens';
 
 /**
  * Hyperliquid Bridge Page
@@ -20,13 +20,16 @@ export default function HyperliquidBridgePage() {
   // Find the token based on symbol from URL params
   const token = DEPOSIT_TOKENS.find(t => t.symbol === params.symbol);
 
+  // Find the selected chain configuration
+  const selectedChain = token?.supportChains.find(sc => sc.chain === (params.chain as ChainName));
+
   // State
   const [amount, setAmount] = useState('');
 
   // Placeholder balance (will be replaced with real balance later)
   const mockBalance = '1234.56';
 
-  if (!token || token.depositMethod !== 'hyperliquid-bridge') {
+  if (!token || !selectedChain || selectedChain.depositMethod !== 'hyperliquid-bridge') {
     return (
       <YStack flex={1} backgroundColor="$background" paddingTop={insets.top}>
         <Text>Invalid token or deposit method</Text>
@@ -34,7 +37,7 @@ export default function HyperliquidBridgePage() {
     );
   }
 
-  const minAmount = token.minDepositAmount || 5;
+  const minAmount = 5; // Minimum deposit amount for Hyperliquid Bridge
   const numAmount = parseFloat(amount) || 0;
   const numBalance = parseFloat(mockBalance) || 0;
   const isValidAmount = numAmount >= minAmount && numAmount <= numBalance;

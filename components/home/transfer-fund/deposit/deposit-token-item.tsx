@@ -1,6 +1,6 @@
 import { ChevronRight } from '@tamagui/lucide-icons';
 import { Text, XStack, YStack } from 'tamagui';
-import { DepositToken } from '@/lib/transfer-fund/constants/deposit-tokens';
+import { DepositToken, CHAINS } from '@/lib/transfer-fund/constants/deposit-tokens';
 
 export interface DepositTokenItemProps {
   token: DepositToken;
@@ -14,6 +14,10 @@ export interface DepositTokenItemProps {
  * Shows token info including symbol, full name, estimated completion time, and default chain
  */
 export function DepositTokenItem({ token, onPress }: DepositTokenItemProps) {
+  // Get the first supported chain as the default to display
+  const defaultChain = token.supportChains[0];
+  const chainInfo = CHAINS[defaultChain.chain];
+
   return (
     <XStack
       paddingVertical="$3.5"
@@ -64,15 +68,10 @@ export function DepositTokenItem({ token, onPress }: DepositTokenItemProps) {
           {token.fullName}
         </Text>
 
-        {/* Estimated Time and Chain */}
-        <YStack gap="$0.5">
-          <Text fontSize="$2" color="$gray10" fontStyle="italic">
-            Est. completion: {token.estimatedTime}
-          </Text>
-          <Text fontSize="$2" color="$gray10">
-            Default Chain: {token.defaultChain}
-          </Text>
-        </YStack>
+        {/* Chain */}
+        <Text fontSize="$2" color="$gray10">
+          Default Chain: {chainInfo.displayName}
+        </Text>
       </YStack>
 
       {/* Chevron Arrow */}

@@ -5,7 +5,7 @@ import { Alert, Pressable, ScrollView } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, Text, XStack, YStack } from 'tamagui';
-import { DEPOSIT_TOKENS } from '@/lib/transfer-fund/constants/deposit-tokens';
+import { DEPOSIT_TOKENS, ChainName } from '@/lib/transfer-fund/constants/deposit-tokens';
 
 /**
  * Unit Bridge Page
@@ -23,10 +23,13 @@ export default function UnitBridgePage() {
   // Find the token based on symbol from URL params
   const token = DEPOSIT_TOKENS.find(t => t.symbol === params.symbol);
 
-  if (!token) {
+  // Find the selected chain configuration
+  const selectedChain = token?.supportChains.find(sc => sc.chain === (params.chain as ChainName));
+
+  if (!token || !selectedChain) {
     return (
       <YStack flex={1} backgroundColor="$background" paddingTop={insets.top}>
-        <Text>Token not found</Text>
+        <Text>Token or chain not found</Text>
       </YStack>
     );
   }
@@ -34,17 +37,8 @@ export default function UnitBridgePage() {
   // TODO: Generate real deposit address from Unit Protocol API
   const depositAddress = '0x4F78D6eA93395be76AFeBfA624BD714E8AcAc3Bf';
 
-  // TODO: Get minimum amount from Unit Protocol API
-  const getMinimumAmount = (): string => {
-    const minimumAmounts: Record<string, string> = {
-      ETH: '0.05',
-      BTC: '0.001',
-      SOL: '0.1',
-      USDC: '10',
-      FART: '100',
-    };
-    return minimumAmounts[token.symbol] || '0.05';
-  };
+  // Placeholder minimum amount (will be implemented later based on token/chain)
+  const minimumAmount = '0.05';
 
   const handleCopyAddress = async () => {
     if (!depositAddress) return;
@@ -61,8 +55,6 @@ export default function UnitBridgePage() {
       setIsCopying(false);
     }
   };
-
-  const minimumAmount = getMinimumAmount();
 
   return (
     <YStack flex={1} backgroundColor="$background" paddingTop={insets.top}>

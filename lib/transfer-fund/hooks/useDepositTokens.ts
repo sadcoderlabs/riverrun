@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { DEPOSIT_TOKENS, DepositToken } from '../constants/deposit-tokens';
+import { DEPOSIT_TOKENS, DepositToken, CHAINS } from '../constants/deposit-tokens';
 import {
   EstimateFeesResponse,
   fetchEstimateFees,
@@ -44,10 +44,19 @@ export function useDepositTokens() {
     }
 
     return DEPOSIT_TOKENS.map(token => {
-      const depositEta = getDepositEta(token.chainType, estimates);
+      // Update estimation times for each support chain
+      const updatedSupportChains = token.supportChains.map(supportChain => {
+        const chainInfo = CHAINS[supportChain.chain];
+        const depositEta = getDepositEta(chainInfo.unitChainType, estimates);
+        return {
+          ...supportChain,
+          estimatedTime: depositEta, // Add estimated time from API
+        };
+      });
+
       return {
         ...token,
-        estimatedTime: depositEta || token.estimatedTime, // Fallback to default if API doesn't return data
+        supportChains: updatedSupportChains,
       };
     });
   }, [estimates]);

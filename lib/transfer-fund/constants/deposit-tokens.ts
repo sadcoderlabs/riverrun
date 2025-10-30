@@ -11,16 +11,55 @@ export type UnitChainType = 'bitcoin' | 'ethereum' | 'plasma' | 'solana' | 'spl'
  */
 export type DepositMethod = 'hyperliquid-bridge' | 'unit-protocol';
 
+/**
+ * Supported chains configuration
+ */
+export const CHAINS = {
+  arbitrum: {
+    name: 'arbitrum',
+    displayName: 'Arbitrum',
+    icon: '🔷',
+    unitChainType: 'plasma' as UnitChainType,
+  },
+  bitcoin: {
+    name: 'bitcoin',
+    displayName: 'Bitcoin',
+    icon: '₿',
+    unitChainType: 'bitcoin' as UnitChainType,
+  },
+  ethereum: {
+    name: 'ethereum',
+    displayName: 'Ethereum',
+    icon: 'Ξ',
+    unitChainType: 'ethereum' as UnitChainType,
+  },
+  solana: {
+    name: 'solana',
+    displayName: 'Solana',
+    icon: '◎',
+    unitChainType: 'solana' as UnitChainType,
+  },
+} as const;
+
+export type ChainName = keyof typeof CHAINS;
+
+/**
+ * Support chain configuration for a token
+ */
+export interface SupportChain {
+  chain: ChainName;
+  depositMethod: DepositMethod;
+}
+
+/**
+ * Deposit token interface
+ */
 export interface DepositToken {
   symbol: string;
   fullName: string;
-  icon: string; // Icon component name or emoji
-  defaultChain: string;
-  estimatedTime: string;
+  icon: string;
   isRecommended?: boolean;
-  chainType: UnitChainType; // For Unit Protocol API mapping
-  depositMethod: DepositMethod; // Determines which deposit flow to use
-  minDepositAmount?: number; // Minimum deposit amount
+  supportChains: SupportChain[];
 }
 
 /**
@@ -32,41 +71,45 @@ export const DEPOSIT_TOKENS: DepositToken[] = [
     symbol: 'USDC',
     fullName: 'USD Coin',
     icon: '💵',
-    defaultChain: 'arbitrum',
-    estimatedTime: '1 minute',
     isRecommended: true,
-    chainType: 'plasma',
-    depositMethod: 'hyperliquid-bridge',
-    minDepositAmount: 5,
+    supportChains: [
+      {
+        chain: 'arbitrum',
+        depositMethod: 'hyperliquid-bridge',
+      },
+    ],
   },
   {
     symbol: 'BTC',
     fullName: 'Bitcoin',
     icon: '₿',
-    defaultChain: 'bitcoin',
-    estimatedTime: '20 minutes',
-    chainType: 'bitcoin',
-    depositMethod: 'unit-protocol',
-    minDepositAmount: 0.001,
+    supportChains: [
+      {
+        chain: 'bitcoin',
+        depositMethod: 'unit-protocol',
+      },
+    ],
   },
   {
     symbol: 'ETH',
     fullName: 'Ethereum',
     icon: 'Ξ',
-    defaultChain: 'ethereum',
-    estimatedTime: '3 minutes',
-    chainType: 'ethereum',
-    depositMethod: 'unit-protocol',
-    minDepositAmount: 0.05,
+    supportChains: [
+      {
+        chain: 'ethereum',
+        depositMethod: 'unit-protocol',
+      },
+    ],
   },
   {
     symbol: 'SOL',
     fullName: 'Solana',
     icon: '◎',
-    defaultChain: 'solana',
-    estimatedTime: '13 seconds',
-    chainType: 'solana',
-    depositMethod: 'unit-protocol',
-    minDepositAmount: 0.1,
+    supportChains: [
+      {
+        chain: 'solana',
+        depositMethod: 'unit-protocol',
+      },
+    ],
   },
 ];
