@@ -16,10 +16,10 @@ const HYPERLIQUID_BRIDGE_ADDRESS = '0x2Df1c51E09aECF9cacB7bc98cB1742757f163dF7';
 // Minimum deposit amount
 const MIN_DEPOSIT_AMOUNT = 5;
 
-// Helper function to shorten address
-function shortenAddress(address: string): string {
-  if (!address || address.length < 10) return address;
-  return `${address.slice(0, 6)}...${address.slice(-6)}`;
+// Helper function to shorten address (first 5 and last 5 characters)
+function shortenAddress(address: string, chars: number = 5): string {
+  if (!address || address.length < chars * 2) return address;
+  return `${address.slice(0, chars + 2)}...${address.slice(-chars)}`;
 }
 
 /**
@@ -141,142 +141,77 @@ export default function HyperliquidBridgePage() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
       >
-        {/* Token Display */}
-        <YStack alignItems="center" gap="$3" paddingVertical="$5">
-          <XStack
-            width={80}
-            height={80}
-            borderRadius="$12"
-            backgroundColor="#3B82F6"
-            alignItems="center"
-            justifyContent="center"
-          >
-            <Text fontSize={40}>{token.icon}</Text>
-          </XStack>
-          <Text fontFamily="$interSemiBold" fontSize="$6">
-            {token.fullName} ({token.symbol})
-          </Text>
-        </YStack>
-
-        {/* Wallet Address Section */}
-        <YStack paddingHorizontal="$4" paddingBottom="$3" gap="$2">
-          <Text fontSize="$3" color="$gray11" fontFamily="$interMedium">
-            Your Wallet Address
-          </Text>
-          <XStack
+        {/* Main Card */}
+        <YStack paddingHorizontal="$4" paddingTop="$4" gap="$4">
+          {/* Call to Action Card */}
+          <YStack
             backgroundColor="$background02"
-            borderRadius="$3"
-            padding="$3"
+            borderRadius="$4"
+            padding="$4"
             borderWidth={1}
             borderColor="$borderColor"
-            alignItems="center"
-            gap="$2"
+            gap="$3"
           >
-            <Text
-              flex={1}
-              fontSize="$3"
-              fontFamily="$skMono"
-              color="$color"
-              numberOfLines={1}
-              ellipsizeMode="middle"
-            >
-              {address}
+            {/* Title */}
+            <Text fontFamily="$interSemiBold" fontSize="$5" color="$color" textAlign="center">
+              Deposit USDC to your wallet on Arbitrum
             </Text>
-            <Pressable onPress={() => handleCopyAddress(address, 'Wallet address')}>
-              <Copy size={20} color="$gray10" />
-            </Pressable>
-          </XStack>
+
+            {/* Wallet Address */}
+            <XStack
+              backgroundColor="#F97316"
+              borderRadius="$3"
+              padding="$3"
+              alignItems="center"
+              gap="$2"
+              justifyContent="center"
+            >
+              <Text fontSize="$5" fontFamily="$skMono" color="white" fontWeight="600">
+                {shortenAddress(address, 4)}
+              </Text>
+              <Pressable onPress={() => handleCopyAddress(address, 'Wallet address')}>
+                <Copy size={20} color="white" />
+              </Pressable>
+            </XStack>
+
+            {/* USDC Contract Address */}
+            <Text fontSize="$2" color="$gray10" textAlign="center">
+              USDC Contract: {shortenAddress(ARBITRUM_USDC_ADDRESS, 3)}
+            </Text>
+
+            {/* Monitoring Status */}
+            <XStack alignItems="center" gap="$2" justifyContent="center">
+              <Loader size={16} color="#F97316" animation="slow" />
+              <Text fontSize="$3" color="#F97316" fontFamily="$interMedium">
+                Monitoring for deposits...
+              </Text>
+            </XStack>
+          </YStack>
         </YStack>
 
-        {/* USDC Contract Address Section */}
-        <YStack paddingHorizontal="$4" paddingBottom="$4" gap="$2">
-          <Text fontSize="$3" color="$gray11" fontFamily="$interMedium">
-            Arbitrum USDC Contract
+        {/* Balance Display */}
+        <XStack
+          paddingHorizontal="$4"
+          paddingVertical="$3"
+          justifyContent="space-between"
+          alignItems="center"
+        >
+          <Text fontSize="$3" color="$gray11">
+            Your USDC Balance on Arbitrum:
           </Text>
-          <XStack
-            backgroundColor="$background02"
-            borderRadius="$3"
-            padding="$3"
-            borderWidth={1}
-            borderColor="$borderColor"
-            alignItems="center"
-            gap="$2"
-          >
-            <Text
-              flex={1}
-              fontSize="$2"
-              fontFamily="$skMono"
-              color="$gray11"
-              numberOfLines={1}
-              ellipsizeMode="middle"
-            >
-              {ARBITRUM_USDC_ADDRESS}
+          <XStack alignItems="baseline" gap="$1">
+            <Text fontSize="$5" fontFamily="$interSemiBold" color="$color">
+              {balance || '0.0'}
             </Text>
-            <Pressable onPress={() => handleCopyAddress(ARBITRUM_USDC_ADDRESS, 'Contract address')}>
-              <Copy size={18} color="$gray10" />
-            </Pressable>
-          </XStack>
-          <Text fontSize="$2" color="$gray10" fontStyle="italic">
-            Verify you're depositing the correct token
-          </Text>
-        </YStack>
-
-        {/* Balance Section */}
-        <YStack paddingHorizontal="$4" paddingBottom="$4" gap="$2">
-          <XStack alignItems="center" gap="$2">
-            <Text fontSize="$3" color="$gray11" fontFamily="$interMedium">
-              Your Arbitrum USDC Balance
-            </Text>
-            {isBalanceLoading && <Spinner size="small" color="$gray10" />}
-          </XStack>
-          <XStack alignItems="baseline" gap="$2">
-            <Text fontSize="$8" fontFamily="$interSemiBold" color="$color">
-              {balance || '0.00'}
-            </Text>
-            <Text fontSize="$5" color="$gray10">
+            <Text fontSize="$3" color="$gray10">
               USDC
             </Text>
           </XStack>
-          {error ? (
-            <Text fontSize="$2" color="#F97316">
-              {error}
-            </Text>
-          ) : (
-            <XStack alignItems="center" gap="$2">
-              <Loader size={16} color="$gray10" />
-              <Text fontSize="$2" color="$gray10">
-                Balance updates every 10 seconds
-              </Text>
-            </XStack>
-          )}
-        </YStack>
-
-        {/* Minimum Deposit Warning */}
-        <XStack
-          marginHorizontal="$4"
-          marginBottom="$3"
-          padding="$3"
-          backgroundColor="rgba(249, 115, 22, 0.15)"
-          borderRadius="$3"
-          borderWidth={2}
-          borderColor="#F97316"
-          alignItems="center"
-          gap="$3"
-        >
-          <AlertTriangle size={24} color="#F97316" />
-          <YStack flex={1}>
-            <Text fontSize="$4" color="#F97316" fontFamily="$interSemiBold">
-              Minimum Deposit: {MIN_DEPOSIT_AMOUNT} USDC
-            </Text>
-            <Text fontSize="$2" color="#F97316" marginTop="$1">
-              Deposits below {MIN_DEPOSIT_AMOUNT} USDC are not accepted
-            </Text>
-          </YStack>
         </XStack>
 
         {/* Amount Input Section */}
-        <YStack paddingHorizontal="$4" gap="$3" paddingTop="$1">
-          <Text fontSize="$3" color="$gray11" fontFamily="$interMedium">
+        <YStack paddingHorizontal="$4" gap="$2" paddingTop="$2">
+          <Text fontSize="$3" color="$gray11">
             Deposit Amount
           </Text>
 
@@ -336,35 +271,53 @@ export default function HyperliquidBridgePage() {
           {/* Deposit Button */}
           <Button
             size="$5"
-            backgroundColor="#F97316"
-            color="white"
+            backgroundColor="$background"
+            borderWidth={1}
+            borderColor="$borderColor"
+            color="$color"
             fontFamily="$interSemiBold"
             onPress={handleDeposit}
             disabled={!isValidAmount || !amount || isDepositing}
             opacity={!isValidAmount || !amount || isDepositing ? 0.5 : 1}
             pressStyle={{ opacity: 0.8 }}
-            marginTop="$2"
-            icon={isDepositing ? <Spinner size="small" color="white" /> : undefined}
+            marginTop="$3"
+            icon={isDepositing ? <Spinner size="small" color="$color" /> : undefined}
           >
-            {isDepositing ? 'Processing...' : 'Deposit'}
+            {isDepositing ? 'Processing...' : 'Deposit USDC'}
           </Button>
         </YStack>
 
-        {/* Warning Section */}
+        {/* Minimum Deposit Info */}
         <XStack
           marginHorizontal="$4"
           marginTop="$4"
           padding="$3"
-          backgroundColor="rgba(249, 115, 22, 0.1)"
+          backgroundColor="rgba(59, 130, 246, 0.1)"
+          borderRadius="$3"
+          alignItems="center"
+          gap="$2"
+        >
+          <AlertTriangle size={20} color="#3B82F6" />
+          <Text fontSize="$3" color="#3B82F6" flex={1}>
+            Minimum deposit amount: {MIN_DEPOSIT_AMOUNT} USDC
+          </Text>
+        </XStack>
+
+        {/* Warning Section */}
+        <XStack
+          marginHorizontal="$4"
+          marginTop="$3"
+          padding="$3"
+          backgroundColor="rgba(251, 191, 36, 0.1)"
           borderRadius="$3"
           gap="$3"
         >
-          <AlertTriangle size={20} color="#F97316" style={{ marginTop: 2 }} />
+          <AlertTriangle size={20} color="#F59E0B" style={{ marginTop: 2 }} />
           <YStack flex={1}>
-            <Text fontSize="$2" color="#F97316" lineHeight="$1">
-              Important: Deposits are processed via Hyperliquid Bridge on Arbitrum. Make sure you're
-              on Arbitrum network and have sufficient USDC balance. The transfer will require you to
-              sign a transaction. Bridge address: {shortenAddress(HYPERLIQUID_BRIDGE_ADDRESS)}
+            <Text fontSize="$2" color="#F59E0B" lineHeight="$1">
+              Important: This will transfer USDC from your Arbitrum wallet to the Hyperliquid bridge
+              contract at {shortenAddress(HYPERLIQUID_BRIDGE_ADDRESS, 3)}. Depositing any amount
+              less than minimum deposit amount will result in loss of funds.
             </Text>
           </YStack>
         </XStack>
