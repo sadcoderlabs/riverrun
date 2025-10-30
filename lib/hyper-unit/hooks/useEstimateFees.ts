@@ -2,8 +2,10 @@ import { useEffect, useState, useCallback } from 'react';
 import {
   fetchEstimateFees,
   getDepositEta,
+  getWithdrawalEta,
   type EstimateFeesResponse,
   type SourceChain,
+  type DestinationChain,
 } from '../api';
 
 export interface UseEstimateFeesResult {
@@ -12,6 +14,7 @@ export interface UseEstimateFeesResult {
   error: string | null;
   refetch: () => Promise<void>;
   getDepositEtaForChain: (chain: SourceChain) => string | null;
+  getWithdrawalEtaForChain: (chain: DestinationChain) => string | null;
 }
 
 /**
@@ -57,11 +60,21 @@ export function useEstimateFees(): UseEstimateFeesResult {
     [estimates],
   );
 
+  // Helper function to get withdrawal ETA for a specific chain
+  const getWithdrawalEtaForChain = useCallback(
+    (chain: DestinationChain): string | null => {
+      if (!estimates) return null;
+      return getWithdrawalEta(chain, estimates);
+    },
+    [estimates],
+  );
+
   return {
     estimates,
     isLoading,
     error,
     refetch: fetchData,
     getDepositEtaForChain,
+    getWithdrawalEtaForChain,
   };
 }

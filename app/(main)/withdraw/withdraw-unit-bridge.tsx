@@ -93,9 +93,7 @@ export default function UnitBridgeWithdrawPage() {
 
   // Get Unit withdrawal address (will generate when recipient address is valid)
   const isRecipientValid =
-    recipientAddress.length > 0 &&
-    tokenInfo &&
-    isValidAddress(recipientAddress, tokenInfo.network);
+    recipientAddress.length > 0 && tokenInfo && isValidAddress(recipientAddress, tokenInfo.network);
 
   const {
     address: unitWithdrawalAddress,
@@ -110,8 +108,8 @@ export default function UnitBridgeWithdrawPage() {
   // Get spotSend hook
   const { send: spotSend, isSending } = useSpotSend();
 
-  // Get fee estimates
-  const { estimates, isLoading: isFeesLoading } = useEstimateFees();
+  // Get fee estimates and withdrawal ETA
+  const { estimates, isLoading: isFeesLoading, getWithdrawalEtaForChain } = useEstimateFees();
 
   if (!tokenInfo) {
     return (
@@ -133,11 +131,10 @@ export default function UnitBridgeWithdrawPage() {
   const numBalance = parseFloat(balance || '0') || 0;
   const isValidAmount = numAmount >= tokenInfo.minWithdrawal && numAmount <= numBalance;
 
-  // Get withdrawal fee from estimates
-  const withdrawalFee =
-    estimates && tokenInfo ? estimates[tokenInfo.network]?.withdrawalFee || 0 : 0;
-  const withdrawalEta =
-    estimates && tokenInfo ? estimates[tokenInfo.network]?.withdrawalEta || 'N/A' : 'N/A';
+  // Get withdrawal ETA for the current chain
+  const withdrawalEta = tokenInfo
+    ? getWithdrawalEtaForChain(tokenInfo.network as DestinationChain)
+    : null;
 
   const handleMaxPress = () => {
     if (balance) {
@@ -149,7 +146,7 @@ export default function UnitBridgeWithdrawPage() {
     try {
       const text = await Clipboard.getStringAsync();
       setRecipientAddress(text);
-    } catch (error) {
+    } catch {
       toast.error('Failed to paste address');
     }
   };
@@ -178,8 +175,12 @@ export default function UnitBridgeWithdrawPage() {
       const success = await spotSend(unitWithdrawalAddress, tokenIdentifier, amount);
 
       if (success) {
+        const etaMessage = withdrawalEta
+          ? `Your ${params.symbol} will arrive in approximately ${withdrawalEta}`
+          : `Withdrawal initiated for ${params.symbol}`;
+
         toast.success('Withdrawal Initiated!', {
-          description: `Your ${params.symbol} will arrive in approximately ${withdrawalEta}`,
+          description: etaMessage,
         });
 
         // Refresh balance after successful withdrawal
@@ -189,10 +190,10 @@ export default function UnitBridgeWithdrawPage() {
         setAmount('');
         setRecipientAddress('');
       }
-    } catch (error) {
+    } catch (err) {
       Alert.alert(
         'Withdrawal Failed',
-        error instanceof Error ? error.message : 'Unknown error occurred',
+        err instanceof Error ? err.message : 'Unknown error occurred',
       );
     }
   };
@@ -320,9 +321,14 @@ export default function UnitBridgeWithdrawPage() {
 
         {/* Amount Input Section */}
         <YStack paddingHorizontal="$4" gap="$2" paddingTop="$2">
-          <Text fontSize="$3" color="$gray11">
-            Amount
-          </Text>
+          <XStack justifyContent="space-between" alignItems="center">
+            <Text fontSize="$3" color="$gray11">
+              Amount
+            </Text>
+            <Text fontSize="$2" color="$gray10" fontStyle="italic">
+              Min: {tokenInfo.minWithdrawal} {params.symbol}
+            </Text>
+          </XStack>
 
           <YStack gap="$2">
             {/* Input with Max Button */}
@@ -373,14 +379,17 @@ export default function UnitBridgeWithdrawPage() {
               <XStack alignItems="center" gap="$2">
                 <AlertTriangle size={16} color="#F97316" />
                 <Text fontSize="$2" color="#F97316" fontFamily="$interMedium">
-                  Minimum withdrawal amount: {tokenInfo.minWithdrawal} {params.symbol}
+                  Amount must be at least {tokenInfo.minWithdrawal} {params.symbol}
                 </Text>
               </XStack>
             )}
             {amount && numAmount > numBalance && (
-              <Text fontSize="$2" color="#F97316" fontFamily="$interMedium">
-                Insufficient balance
-              </Text>
+              <XStack alignItems="center" gap="$2">
+                <AlertTriangle size={16} color="#F97316" />
+                <Text fontSize="$2" color="#F97316" fontFamily="$interMedium">
+                  Insufficient balance
+                </Text>
+              </XStack>
             )}
           </YStack>
 
@@ -421,7 +430,7 @@ export default function UnitBridgeWithdrawPage() {
           </Button>
         </YStack>
 
-        {/* Fee Information */}
+        {/* Withdrawal Information */}
         {!isFeesLoading && estimates && (
           <XStack
             marginHorizontal="$4"
@@ -434,11 +443,13 @@ export default function UnitBridgeWithdrawPage() {
             <Info size={20} color="#3B82F6" style={{ marginTop: 2 }} />
             <YStack flex={1} gap="$1">
               <Text fontSize="$2" color="#3B82F6" lineHeight="$1">
-                Withdrawal fee: {withdrawalFee} {params.symbol}
+                Network costs will be deducted from your withdrawal amount
               </Text>
-              <Text fontSize="$2" color="#3B82F6" lineHeight="$1">
-                Expected arrival time: {withdrawalEta}
-              </Text>
+              {withdrawalEta && (
+                <Text fontSize="$2" color="#3B82F6" lineHeight="$1">
+                  Expected arrival time: {withdrawalEta}
+                </Text>
+              )}
             </YStack>
           </XStack>
         )}

@@ -262,3 +262,18 @@ export function getDepositEta(chain: SourceChain, estimates: EstimateFeesRespons
   const chainData = estimates[chain];
   return chainData?.depositEta || null;
 }
+
+/**
+ * Get withdrawal ETA for a specific chain
+ *
+ * @param chain - Chain name (bitcoin, ethereum, solana)
+ * @param estimates - Estimate fees response
+ * @returns Withdrawal ETA string (e.g., "21m", "7m")
+ */
+export function getWithdrawalEta(
+  chain: DestinationChain,
+  estimates: EstimateFeesResponse,
+): string | null {
+  const chainData = estimates[chain];
+  return chainData?.withdrawalEta || null;
+}
