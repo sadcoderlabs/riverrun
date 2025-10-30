@@ -35,7 +35,7 @@ export default function HyperliquidBridgePage() {
 
   // Wallet and balance hooks
   const { address, isAuthenticated } = useActiveWallet();
-  const { balance, isLoading: isBalanceLoading, error, transfer } = useArbitrumUSDCBalance();
+  const { balance, transfer } = useArbitrumUSDCBalance();
 
   // Find the token based on symbol from URL params
   const token = DEPOSIT_TOKENS.find(t => t.symbol === params.symbol);

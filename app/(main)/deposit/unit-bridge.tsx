@@ -1,11 +1,14 @@
 import { AlertTriangle, Copy, ArrowLeft } from '@tamagui/lucide-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
-import { Alert, Pressable, ScrollView } from 'react-native';
+import { Pressable, ScrollView } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Button, Text, XStack, YStack } from 'tamagui';
-import { DEPOSIT_TOKENS, ChainName } from '@/lib/transfer-fund/constants/deposit-tokens';
+import { Button, Spinner, Text, XStack, YStack } from 'tamagui';
+import { toast } from 'sonner-native';
+import { DEPOSIT_TOKENS, ChainName, CHAINS } from '@/lib/transfer-fund/constants/deposit-tokens';
+import { useActiveWallet } from '@/hooks/useActiveWallet';
+import { useUnitDepositAddress } from '@/lib/hyper-unit/hooks/useUnitDepositAddress';
+import { MIN_DEPOSIT_AMOUNTS, type SourceChain, type Asset } from '@/lib/hyper-unit/api';
 
 /**
  * Unit Bridge Page
@@ -18,7 +21,8 @@ export default function UnitBridgePage() {
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ symbol: string; chain: string }>();
 
-  const [isCopying, setIsCopying] = useState(false);
+  // Wallet hooks
+  const { address: userAddress, isAuthenticated } = useActiveWallet();
 
   // Find the token based on symbol from URL params
   const token = DEPOSIT_TOKENS.find(t => t.symbol === params.symbol);
@@ -26,7 +30,24 @@ export default function UnitBridgePage() {
   // Find the selected chain configuration
   const selectedChain = token?.supportChains.find(sc => sc.chain === (params.chain as ChainName));
 
-  if (!token || !selectedChain) {
+  // Get chain info (with fallback to avoid errors)
+  const chainInfo = selectedChain ? CHAINS[selectedChain.chain] : null;
+
+  // Generate deposit address via Unit Protocol (always call hooks at top level)
+  const {
+    address: depositAddress,
+    isLoading,
+    error,
+  } = useUnitDepositAddress(
+    (chainInfo?.unitChainType as SourceChain) || 'bitcoin',
+    (token?.symbol.toLowerCase() as Asset) || 'btc',
+  );
+
+  // Get minimum deposit amount
+  const minimumAmount = MIN_DEPOSIT_AMOUNTS[(token?.symbol.toLowerCase() as Asset) || 'btc'] || 0;
+
+  // Early returns after all hooks
+  if (!token || !selectedChain || !chainInfo) {
     return (
       <YStack flex={1} backgroundColor="$background" paddingTop={insets.top}>
         <Text>Token or chain not found</Text>
@@ -34,25 +55,25 @@ export default function UnitBridgePage() {
     );
   }
 
-  // TODO: Generate real deposit address from Unit Protocol API
-  const depositAddress = '0x4F78D6eA93395be76AFeBfA624BD714E8AcAc3Bf';
-
-  // Placeholder minimum amount (will be implemented later based on token/chain)
-  const minimumAmount = '0.05';
+  if (!isAuthenticated || !userAddress) {
+    return (
+      <YStack flex={1} backgroundColor="$background" paddingTop={insets.top}>
+        <Text>Please connect your wallet</Text>
+      </YStack>
+    );
+  }
 
   const handleCopyAddress = async () => {
     if (!depositAddress) return;
 
     try {
-      setIsCopying(true);
       await Clipboard.setStringAsync(depositAddress);
-      // Show success feedback
-      Alert.alert('Copied!', 'Address copied to clipboard');
+      toast.success('Copied!', {
+        description: 'Address copied to clipboard',
+      });
     } catch (error) {
       console.error('Failed to copy address:', error);
-      Alert.alert('Error', 'Failed to copy address');
-    } finally {
-      setIsCopying(false);
+      toast.error('Failed to copy address');
     }
   };
 
@@ -126,40 +147,68 @@ export default function UnitBridgePage() {
             Your Deposit Address
           </Text>
 
-          <YStack
-            backgroundColor="$background02"
-            borderRadius="$3"
-            padding="$3"
-            borderWidth={1}
-            borderColor="$borderColor"
-          >
-            <Text fontSize="$2" color="$gray11" marginBottom="$1">
-              Address
-            </Text>
-            <Text
-              fontSize="$3"
-              fontFamily="$skMono"
-              color="$color"
-              style={{ wordWrap: 'break-word' }}
-            >
-              {depositAddress}
-            </Text>
-          </YStack>
+          {/* Loading State */}
+          {isLoading && (
+            <XStack alignItems="center" gap="$2" padding="$3">
+              <Spinner size="small" color="$gray10" />
+              <Text fontSize="$3" color="$gray11">
+                Generating your deposit address...
+              </Text>
+            </XStack>
+          )}
 
-          {/* Copy Button */}
-          <Button
-            size="$5"
-            backgroundColor="#F97316"
-            color="white"
-            fontFamily="$interSemiBold"
-            onPress={handleCopyAddress}
-            disabled={isCopying}
-            opacity={isCopying ? 0.5 : 1}
-            pressStyle={{ opacity: 0.8 }}
-            icon={<Copy size={20} color="white" />}
-          >
-            Copy Address
-          </Button>
+          {/* Error State */}
+          {error && !isLoading && (
+            <YStack
+              backgroundColor="rgba(239, 68, 68, 0.1)"
+              borderRadius="$3"
+              padding="$3"
+              borderWidth={1}
+              borderColor="rgba(239, 68, 68, 0.3)"
+            >
+              <Text fontSize="$3" color="#EF4444">
+                {error}
+              </Text>
+            </YStack>
+          )}
+
+          {/* Address Display */}
+          {depositAddress && !isLoading && (
+            <>
+              <YStack
+                backgroundColor="$background02"
+                borderRadius="$3"
+                padding="$3"
+                borderWidth={1}
+                borderColor="$borderColor"
+              >
+                <Text fontSize="$2" color="$gray11" marginBottom="$2">
+                  Address
+                </Text>
+                <Text
+                  fontSize="$3"
+                  fontFamily="$skMono"
+                  color="$color"
+                  style={{ wordWrap: 'break-word' }}
+                >
+                  {depositAddress}
+                </Text>
+              </YStack>
+
+              {/* Copy Button */}
+              <Button
+                size="$5"
+                backgroundColor="#F97316"
+                color="white"
+                fontFamily="$interSemiBold"
+                onPress={handleCopyAddress}
+                pressStyle={{ opacity: 0.8 }}
+                icon={<Copy size={20} color="white" />}
+              >
+                Copy Address
+              </Button>
+            </>
+          )}
         </YStack>
 
         {/* Warning Message */}
@@ -176,9 +225,9 @@ export default function UnitBridgePage() {
             <Text fontSize="$2" color="#F97316" lineHeight="$1">
               Important: Deposits are powered by Unit Protocol. There is a minimum deposit of{' '}
               {minimumAmount} {token.symbol}. This address can only receive {token.symbol} on the{' '}
-              {params.chain} network. Any other asset (e.g., USDC, USDT) sent from {params.chain}{' '}
-              will be lost. Deposits below {minimumAmount} {token.symbol} will result in a loss of
-              funds.
+              {chainInfo.displayName} network. Any other asset (e.g., USDC, USDT) sent from{' '}
+              {chainInfo.displayName} will be lost. Deposits below {minimumAmount} {token.symbol}{' '}
+              will result in a loss of funds.
             </Text>
           </YStack>
         </XStack>
