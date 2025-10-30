@@ -1,6 +1,7 @@
 import { DepositSearchBar } from '@/components/home/transfer-fund/deposit/deposit-search-bar';
 import { DepositTokenItem } from '@/components/home/transfer-fund/deposit/deposit-token-item';
 import { useDepositTokens } from '@/lib/transfer-fund/hooks/useDepositTokens';
+import { DepositToken } from '@/lib/transfer-fund/constants/deposit-tokens';
 import { ArrowLeft } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 import { FlatList } from 'react-native';
@@ -16,7 +17,17 @@ import { Text, XStack, YStack } from 'tamagui';
 export default function DepositScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { tokens, searchQuery, setSearchQuery, selectToken, isLoading, error } = useDepositTokens();
+  const { tokens, searchQuery, setSearchQuery, isLoading, error } = useDepositTokens();
+
+  // Handle token selection - navigates to chain selection page
+  const handleSelectToken = (token: DepositToken) => {
+    router.push({
+      pathname: '/(main)/deposit/select-source-chain',
+      params: {
+        symbol: token.symbol,
+      },
+    });
+  };
 
   return (
     <YStack flex={1} backgroundColor="$background" paddingTop={insets.top}>
@@ -76,7 +87,7 @@ export default function DepositScreen() {
           data={tokens}
           keyExtractor={item => item.symbol}
           renderItem={({ item }) => (
-            <DepositTokenItem token={item} onPress={() => selectToken(item)} />
+            <DepositTokenItem token={item} onPress={() => handleSelectToken(item)} />
           )}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 20 }}
