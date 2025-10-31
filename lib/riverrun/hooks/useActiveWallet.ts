@@ -2,7 +2,7 @@ import { usePrivy, useEmbeddedEthereumWallet } from '@privy-io/expo';
 import { useAccount, useWalletInfo, useProvider } from '@reown/appkit-react-native';
 import { BrowserProvider, Signer } from 'ethers';
 import { useMemo, useCallback, useRef, useEffect } from 'react';
-import { useWalletStore, type WalletSource } from '@/store/wallet.store';
+import { useWalletStore, type WalletSource } from '@/lib/riverrun/store/wallet.store';
 
 export type WalletType = 'privy' | 'external' | undefined;
 

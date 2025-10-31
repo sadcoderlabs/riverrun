@@ -2,7 +2,7 @@ import { ChartUI } from '@/components/trade/chart-ui';
 import { MarketSelectorModal } from '@/components/trade/market-selector-modal';
 import { useActiveAssetCtx } from '@/lib/hyperliquid/hooks';
 import { formatMarketId } from '@/lib/hyperliquid/market-utils';
-import { useMarketsStore } from '@/lib/store/use-markets-store';
+import { useMarketsStore } from '@/lib/riverrun/store/use-markets-store';
 import { CandlestickChart, ChevronUp, Menu } from '@tamagui/lucide-icons';
 import { useMemo, useState } from 'react';
 import { AnimatePresence, Text, XStack, YStack } from 'tamagui';

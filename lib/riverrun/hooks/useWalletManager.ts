@@ -2,7 +2,7 @@ import { usePrivy, useEmbeddedEthereumWallet } from '@privy-io/expo';
 import { useLogin } from '@privy-io/expo/ui';
 import { useAccount, useWalletInfo, useAppKit } from '@reown/appkit-react-native';
 import { useMemo, useCallback, useEffect, useRef } from 'react';
-import { useWalletStore, type WalletSource } from '@/store/wallet.store';
+import { useWalletStore, type WalletSource } from '@/lib/riverrun/store/wallet.store';
 
 export interface AvailableWallet {
   source: WalletSource;

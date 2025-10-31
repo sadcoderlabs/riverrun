@@ -1,5 +1,5 @@
 import { MarketListItem } from '@/components/trade/market-list-item';
-import { useMarketsStore } from '@/lib/store/use-markets-store';
+import { useMarketsStore } from '@/lib/riverrun/store/use-markets-store';
 import { Search } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';

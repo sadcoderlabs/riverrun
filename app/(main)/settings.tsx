@@ -3,7 +3,7 @@ import { ListSection } from '@/components/global/list-section';
 import { useThemePreference } from '@/lib/riverrun/hooks';
 import { useActiveWallet } from '@/lib/riverrun/hooks';
 import { clearAgentSigner } from '@/lib/hyperliquid/agent';
-import { type ThemePreference } from '@/store/theme.store';
+import { type ThemePreference } from '@/lib/riverrun/store/theme.store';
 import { ArrowUpRight } from '@tamagui/lucide-icons';
 import { useCallback, useState } from 'react';
 import { Alert } from 'react-native';
