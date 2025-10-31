@@ -1,16 +1,15 @@
-import { ArrowDown, ArrowUp, ArrowLeftRight } from '@tamagui/lucide-icons';
+import { ArrowDown, ArrowUp } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { Text, XStack, YStack } from 'tamagui';
-import { CardContainer } from '../../global/card-container';
+import { CardContainer } from '../global/card-container';
 
 /**
  * Transfer Fund Component
  *
  * Provides quick access to fund management actions:
- * - Deposit: Transfer funds from external wallet to trading account
- * - Withdraw: Transfer funds from trading account to external wallet
- * - Transfer: Move funds between spot and perpetual accounts
+ * - Deposit: Transfer USDC from Arbitrum to Hyperliquid
+ * - Withdraw: Transfer USDC from Hyperliquid to Arbitrum
  */
 export function TransferFund() {
   const router = useRouter();
@@ -33,10 +32,6 @@ export function TransferFund() {
         chain: 'arbitrum',
       },
     });
-  };
-
-  const handleTransfer = () => {
-    // TODO: Implement transfer functionality
   };
 
   return (
@@ -75,24 +70,6 @@ export function TransferFund() {
           <ArrowUp size={24} color="$color" />
           <Text fontFamily="$interMedium" fontSize="$3">
             Withdraw
-          </Text>
-        </YStack>
-
-        {/* Transfer Button */}
-        <YStack
-          flex={1}
-          alignItems="center"
-          gap="$2"
-          padding="$3"
-          borderRadius="$4"
-          backgroundColor="$background02"
-          pressStyle={{ opacity: 0.7, scale: 0.98 }}
-          onPress={handleTransfer}
-          cursor="pointer"
-        >
-          <ArrowLeftRight size={24} color="$color" />
-          <Text fontFamily="$interMedium" fontSize="$3">
-            Transfer
           </Text>
         </YStack>
       </XStack>
