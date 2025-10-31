@@ -16,11 +16,23 @@ export function TransferFund() {
   const router = useRouter();
 
   const handleDeposit = () => {
-    router.navigate('/(main)/deposit/deposit-tokens');
+    router.navigate({
+      pathname: '/(main)/deposit/deposit-hl-bridge',
+      params: {
+        symbol: 'USDC',
+        chain: 'arbitrum',
+      },
+    });
   };
 
   const handleWithdraw = () => {
-    router.navigate('/(main)/withdraw/withdraw-tokens');
+    router.navigate({
+      pathname: '/(main)/withdraw/withdraw-hl-bridge',
+      params: {
+        symbol: 'USDC',
+        chain: 'arbitrum',
+      },
+    });
   };
 
   const handleTransfer = () => {
