@@ -1,6 +1,6 @@
 import { defaultConfig } from '@tamagui/config/v4';
 import { createTamagui, createFont } from 'tamagui';
-import { themes } from './theme/custom';
+import { themes } from './lib/riverrun/theme/custom';
 import { Platform } from 'react-native';
 import { createAnimations } from '@tamagui/animations-moti';
 
