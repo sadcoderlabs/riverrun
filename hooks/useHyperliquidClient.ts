@@ -1,6 +1,6 @@
 import * as hl from '@nktkas/hyperliquid';
 import { SymbolConverter } from '@nktkas/hyperliquid/utils';
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useMemo } from 'react';
 import { Alert } from 'react-native';
 
 import { DEFAULT_AGENT_NAME, getOrCreateAgentSigner } from '@/lib/hyperliquid/agent';
@@ -52,12 +52,6 @@ interface UseHyperliquidClientResult {
 
 export function useHyperliquidClient(): UseHyperliquidClientResult {
   const { getProvider, address: walletAddress } = useActiveWallet();
-
-  // Store singleton function references to prevent unnecessary re-renders
-  // These functions don't depend on any state and should have stable references
-  const getInfoClientRef = useRef(getInfoClient);
-  const getSubscriptionClientRef = useRef(getSubscriptionClient);
-  const getSymbolConverterRef = useRef(getSymbolConverter);
 
   // Helper function to check if agent is approved
   const checkAgentApproval = useCallback(
@@ -195,10 +189,9 @@ export function useHyperliquidClient(): UseHyperliquidClientResult {
     () => ({
       getAgentExchangeClient,
       getMasterExchangeClient,
-      // Use refs for singleton functions to maintain stable references
-      getInfoClient: getInfoClientRef.current,
-      getSubscriptionClient: getSubscriptionClientRef.current,
-      getSymbolConverter: getSymbolConverterRef.current,
+      getInfoClient,
+      getSubscriptionClient,
+      getSymbolConverter,
     }),
     [getAgentExchangeClient, getMasterExchangeClient],
   );
