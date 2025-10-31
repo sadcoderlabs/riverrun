@@ -19,7 +19,7 @@ export function CoinInfo({ coin }: CoinInfoProps) {
   const [isChart, setIsChart] = useState(false);
 
   // Format market display (e.g., "BTC-USD")
-  const marketDisplay = formatMarketId(coin, 'perp');
+  const marketDisplay = useMemo(() => formatMarketId(coin, 'perp'), [coin]);
 
   // Subscribe to real-time asset context data
   const { data: assetCtx, isLoading, error } = useActiveAssetCtx({ coin });
