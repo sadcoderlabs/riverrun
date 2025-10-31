@@ -1,85 +1,31 @@
-import { useEffect, useMemo, useState } from 'react';
-import { DEPOSIT_TOKENS, DepositToken, CHAINS } from '../constants/deposit-tokens';
-import {
-  EstimateFeesResponse,
-  fetchEstimateFees,
-  getDepositEta,
-} from '@/lib/hyper-unit/unit-protocol-api';
+import { useMemo, useState } from 'react';
+import { DEPOSIT_TOKENS, DepositToken } from '../constants/deposit-tokens';
 
 /**
  * Hook for managing deposit token list and search functionality
  *
  * Provides filtered token list based on search query and token selection handler
- * Fetches real-time estimation times from Unit Protocol API
  */
 export function useDepositTokens() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [estimates, setEstimates] = useState<EstimateFeesResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // Fetch estimation fees on mount
-  useEffect(() => {
-    async function loadEstimates() {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const data = await fetchEstimateFees();
-        setEstimates(data);
-      } catch (err) {
-        console.error('Failed to load estimate fees:', err);
-        setError('Failed to load estimation times');
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    loadEstimates();
-  }, []);
-
-  // Update tokens with real-time estimation times
-  const tokensWithEstimates = useMemo(() => {
-    if (!estimates) {
-      return DEPOSIT_TOKENS;
-    }
-
-    return DEPOSIT_TOKENS.map(token => {
-      // Update estimation times for each support chain
-      const updatedSupportChains = token.supportChains.map(supportChain => {
-        const chainInfo = CHAINS[supportChain.chain];
-        const depositEta = getDepositEta(chainInfo.unitChainType, estimates);
-        return {
-          ...supportChain,
-          estimatedTime: depositEta, // Add estimated time from API
-        };
-      });
-
-      return {
-        ...token,
-        supportChains: updatedSupportChains,
-      };
-    });
-  }, [estimates]);
 
   // Filter tokens based on search query
   const filteredTokens = useMemo(() => {
     if (!searchQuery.trim()) {
-      return tokensWithEstimates;
+      return DEPOSIT_TOKENS;
     }
 
     const query = searchQuery.toLowerCase();
-    return tokensWithEstimates.filter(
+    return DEPOSIT_TOKENS.filter(
       token =>
         token.symbol.toLowerCase().includes(query) || token.fullName.toLowerCase().includes(query),
     );
-  }, [searchQuery, tokensWithEstimates]);
+  }, [searchQuery]);
 
   /**
    * Handle token selection
-   * This will be used to navigate to Unit Protocol or initiate deposit flow
    */
   const selectToken = (token: DepositToken) => {
-    // TODO: Implement Unit Protocol integration
     console.log('Selected token:', token.symbol);
   };
 
@@ -88,7 +34,5 @@ export function useDepositTokens() {
     searchQuery,
     setSearchQuery,
     selectToken,
-    isLoading,
-    error,
   };
 }

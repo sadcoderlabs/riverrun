@@ -46,26 +46,14 @@ export default function SelectSourceChainPage() {
     const selectedChain = token.supportChains.find(sc => sc.chain === chainName);
     if (!selectedChain) return;
 
-    // Navigate to different pages based on deposit method
-    if (selectedChain.depositMethod === 'hyperliquid-bridge') {
-      // USDC goes to Hyperliquid Bridge page
-      router.push({
-        pathname: '/(main)/deposit/deposit-hl-bridge',
-        params: {
-          symbol: token.symbol,
-          chain: chainName,
-        },
-      });
-    } else {
-      // BTC/ETH/SOL go to Unit Bridge page
-      router.push({
-        pathname: '/(main)/deposit/deposit-unit-bridge',
-        params: {
-          symbol: token.symbol,
-          chain: chainName,
-        },
-      });
-    }
+    // Navigate to Hyperliquid Bridge page
+    router.push({
+      pathname: '/(main)/deposit/deposit-hl-bridge',
+      params: {
+        symbol: token.symbol,
+        chain: chainName,
+      },
+    });
   };
 
   return (

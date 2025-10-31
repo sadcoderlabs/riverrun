@@ -12,12 +12,11 @@ import { Text, XStack, YStack } from 'tamagui';
  * Deposit Screen
  *
  * Allows users to select a token to deposit to their Hyperliquid account
- * Powered by Unit Protocol integration
  */
 export default function DepositScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { tokens, searchQuery, setSearchQuery, isLoading, error } = useDepositTokens();
+  const { tokens, searchQuery, setSearchQuery } = useDepositTokens();
 
   // Handle token selection - navigates to chain selection page
   const handleSelectToken = (token: DepositToken) => {
@@ -56,43 +55,23 @@ export default function DepositScreen() {
       {/* Description */}
       <YStack paddingHorizontal="$4" paddingVertical="$3">
         <Text fontSize="$3" color="$gray11">
-          Select a token to deposit to your Hyperliquid account. Powered by Unit Protocol.
+          Select a token to deposit to your Hyperliquid account.
         </Text>
       </YStack>
 
       {/* Search Bar */}
       <DepositSearchBar value={searchQuery} onChangeText={setSearchQuery} />
 
-      {/* Loading State */}
-      {isLoading && (
-        <YStack flex={1} alignItems="center" justifyContent="center" padding="$4">
-          <Text fontSize="$3" color="$gray11">
-            Loading estimation times...
-          </Text>
-        </YStack>
-      )}
-
-      {/* Error State */}
-      {error && !isLoading && (
-        <YStack padding="$4">
-          <Text fontSize="$3" color="$red10">
-            {error}
-          </Text>
-        </YStack>
-      )}
-
       {/* Token List */}
-      {!isLoading && (
-        <FlatList
-          data={tokens}
-          keyExtractor={item => item.symbol}
-          renderItem={({ item }) => (
-            <DepositTokenItem token={item} onPress={() => handleSelectToken(item)} />
-          )}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 20 }}
-        />
-      )}
+      <FlatList
+        data={tokens}
+        keyExtractor={item => item.symbol}
+        renderItem={({ item }) => (
+          <DepositTokenItem token={item} onPress={() => handleSelectToken(item)} />
+        )}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 20 }}
+      />
     </YStack>
   );
 }

@@ -11,14 +11,13 @@ interface WithdrawToken {
   symbol: string;
   fullName: string;
   icon: string;
-  withdrawMethod: 'hyperliquid-bridge' | 'unit-protocol';
+  withdrawMethod: 'hyperliquid-bridge';
   chain: string;
 }
 
 /**
  * Available tokens for withdrawal
  * USDC: via Hyperliquid Bridge
- * ETH, BTC, SOL: via Unit Protocol
  */
 const WITHDRAW_TOKENS: WithdrawToken[] = [
   {
@@ -27,27 +26,6 @@ const WITHDRAW_TOKENS: WithdrawToken[] = [
     icon: '💵',
     withdrawMethod: 'hyperliquid-bridge',
     chain: 'arbitrum',
-  },
-  {
-    symbol: 'ETH',
-    fullName: 'Ethereum',
-    icon: 'Ξ',
-    withdrawMethod: 'unit-protocol',
-    chain: 'ethereum',
-  },
-  {
-    symbol: 'BTC',
-    fullName: 'Bitcoin',
-    icon: '₿',
-    withdrawMethod: 'unit-protocol',
-    chain: 'bitcoin',
-  },
-  {
-    symbol: 'SOL',
-    fullName: 'Solana',
-    icon: '◎',
-    withdrawMethod: 'unit-protocol',
-    chain: 'solana',
   },
 ];
 
@@ -107,26 +85,16 @@ export default function WithdrawScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  // Handle token selection - navigates to appropriate bridge page
+  // Handle token selection - navigates to Hyperliquid bridge page
   const handleSelectToken = (token: WithdrawToken) => {
     console.log('Navigating to withdraw page:', token.withdrawMethod, token.symbol, token.chain);
-    if (token.withdrawMethod === 'hyperliquid-bridge') {
-      router.push({
-        pathname: '/(main)/withdraw/withdraw-hl-bridge',
-        params: {
-          symbol: token.symbol,
-          chain: token.chain,
-        },
-      });
-    } else {
-      router.push({
-        pathname: '/(main)/withdraw/withdraw-unit-bridge',
-        params: {
-          symbol: token.symbol,
-          chain: token.chain,
-        },
-      });
-    }
+    router.push({
+      pathname: '/(main)/withdraw/withdraw-hl-bridge',
+      params: {
+        symbol: token.symbol,
+        chain: token.chain,
+      },
+    });
   };
 
   return (
@@ -156,7 +124,7 @@ export default function WithdrawScreen() {
       {/* Description */}
       <YStack paddingHorizontal="$4" paddingVertical="$3">
         <Text fontSize="$3" color="$gray11">
-          Select a token to withdraw from your exchange account. Powered by Unit Protocol.
+          Withdraw USDC from your exchange account to Arbitrum.
         </Text>
       </YStack>
 
