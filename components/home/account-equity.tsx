@@ -2,7 +2,7 @@ import { Eye, EyeOff, Info } from '@tamagui/lucide-icons';
 import React, { useState } from 'react';
 import { Button, Popover, Spinner, Text, XStack, YStack, useTheme } from 'tamagui';
 import { CardContainer } from '../global/card-container';
-import { useWebData2 } from '@/hooks/useWebData2';
+import { useWebData2 } from '@/lib/hyperliquid/hooks';
 
 export function AccountEquity() {
   const [isHidden, setIsHidden] = useState(false);

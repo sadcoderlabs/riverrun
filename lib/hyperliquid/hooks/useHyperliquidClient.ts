@@ -4,7 +4,7 @@ import { useCallback, useMemo } from 'react';
 import { Alert } from 'react-native';
 
 import { DEFAULT_AGENT_NAME, getOrCreateAgentSigner } from '@/lib/hyperliquid/agent';
-import { useActiveWallet } from './useActiveWallet';
+import { useActiveWallet } from '@/lib/riverrun/hooks/useActiveWallet';
 
 // Singleton instances - shared across all hook usages
 let transport: hl.HttpTransport | undefined;

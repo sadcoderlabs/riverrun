@@ -1,5 +1,5 @@
 import AdaptiveSelect from '@/components/global/adaptive-select';
-import { useOrderBook, type OrderBookLevel } from '@/hooks/useOrderBook';
+import { useOrderBook, type OrderBookLevel } from '@/lib/hyperliquid/hooks';
 import {
   buildPrecisionMenu,
   type NSigFigs,

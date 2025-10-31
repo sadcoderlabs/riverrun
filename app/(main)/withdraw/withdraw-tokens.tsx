@@ -54,13 +54,7 @@ const WITHDRAW_TOKENS: WithdrawToken[] = [
 /**
  * Withdraw Token Item Component
  */
-function WithdrawTokenItem({
-  token,
-  onPress,
-}: {
-  token: WithdrawToken;
-  onPress: () => void;
-}) {
+function WithdrawTokenItem({ token, onPress }: { token: WithdrawToken; onPress: () => void }) {
   return (
     <XStack
       paddingVertical="$3.5"

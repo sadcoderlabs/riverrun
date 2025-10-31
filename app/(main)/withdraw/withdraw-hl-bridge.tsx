@@ -6,8 +6,8 @@ import * as Clipboard from 'expo-clipboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, Input, Spinner, Text, XStack, YStack } from 'tamagui';
 import { toast } from 'sonner-native';
-import { useActiveWallet } from '@/hooks/useActiveWallet';
-import { useHyperliquidWithdraw } from '@/hooks/useHyperliquidWithdraw';
+import { useActiveWallet } from '@/lib/riverrun/hooks';
+import { useHyperliquidWithdraw } from '@/lib/hyperliquid/hooks';
 
 // Helper function to shorten address (first 5 and last 5 characters)
 function shortenAddress(address: string, chars: number = 5): string {

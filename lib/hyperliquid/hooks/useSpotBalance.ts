@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 import { useHyperliquidClient } from './useHyperliquidClient';
-import { useActiveWallet } from './useActiveWallet';
+import { useActiveWallet } from '@/lib/riverrun/hooks/useActiveWallet';
 
 interface SpotToken {
   name: string;
@@ -9,21 +9,10 @@ interface SpotToken {
   weiDecimals: number;
   index: number;
   tokenId: string;
-  evmContract: string | null;
-}
-
-interface SpotBalance {
-  coin: {
-    name: string;
-    szDecimals: number;
-    weiDecimals: number;
-    index: number;
-    tokenId: string;
-    evmContract: string | null;
-  };
-  hold: string;
-  token: number;
-  total: string;
+  evmContract: {
+    address: `0x${string}`;
+    evm_extra_wei_decimals: number;
+  } | null;
 }
 
 interface UseSpotBalanceResult {
@@ -66,9 +55,7 @@ export function useSpotBalance(tokenSymbol: string): UseSpotBalanceResult {
       const spotMeta = await infoClient.spotMeta();
 
       // Find token by symbol
-      const token = spotMeta.tokens.find(
-        t => t.name.toUpperCase() === tokenSymbol.toUpperCase(),
-      );
+      const token = spotMeta.tokens.find(t => t.name.toUpperCase() === tokenSymbol.toUpperCase());
 
       if (!token) {
         throw new Error(`Token ${tokenSymbol} not found in spot meta`);
@@ -81,7 +68,7 @@ export function useSpotBalance(tokenSymbol: string): UseSpotBalanceResult {
         weiDecimals: token.weiDecimals,
         index: token.index,
         tokenId: token.tokenId,
-        evmContract: token.evmContract || null,
+        evmContract: token.evmContract ?? null,
       });
 
       // Step 2: Get user's spot balances
@@ -89,7 +76,8 @@ export function useSpotBalance(tokenSymbol: string): UseSpotBalanceResult {
 
       // Find balance for this token by index
       const tokenBalance = spotState.balances.find(
-        (b: SpotBalance) => b.token === token.index,
+        (b: { coin: string; token: number; total: string; hold: string; entryNtl: string }) =>
+          b.token === token.index,
       );
 
       if (tokenBalance) {

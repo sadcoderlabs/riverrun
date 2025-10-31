@@ -1,8 +1,8 @@
 import * as hl from '@nktkas/hyperliquid';
 import { useEffect, useState } from 'react';
 import { ScrollView, Spinner, Text, View, XStack, YStack } from 'tamagui';
-import { useHyperliquidClient } from '@/hooks/useHyperliquidClient';
-import { useActiveWallet } from '@/hooks/useActiveWallet';
+import { useHyperliquidClient } from '@/lib/hyperliquid/hooks';
+import { useActiveWallet } from '@/lib/riverrun/hooks';
 
 type Position = hl.ClearinghouseStateResponse['assetPositions'][number]['position'];
 

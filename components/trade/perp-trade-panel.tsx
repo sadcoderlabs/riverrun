@@ -7,8 +7,8 @@ import { LimitOrderForm, MarketOrderForm, OrderTypeSelector } from '@/components
 import { OrderBook } from '@/components/trade/OrderBook';
 import { roundPrice } from '@/components/trade/price-utils';
 import { TpSlInput } from '@/components/trade/tp-sl-input';
-import { useActiveAssetData } from '@/hooks/useActiveAssetData';
-import { useHyperliquidClient } from '@/hooks/useHyperliquidClient';
+import { useActiveAssetData } from '@/lib/hyperliquid/hooks';
+import { useHyperliquidClient } from '@/lib/hyperliquid/hooks';
 import { Checkbox } from '@tamagui/checkbox';
 import { Check } from '@tamagui/lucide-icons';
 import { useCallback, useEffect, useMemo, useState } from 'react';

@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { Alert } from 'react-native';
 import { useHyperliquidClient } from './useHyperliquidClient';
-import { useActiveWallet } from './useActiveWallet';
+import { useActiveWallet } from '@/lib/riverrun/hooks/useActiveWallet';
 
 // Minimum withdrawal amount in USDC
 export const MIN_WITHDRAW_AMOUNT = 2;
@@ -74,10 +74,7 @@ export function useHyperliquidWithdraw(): UseHyperliquidWithdrawResult {
       // Validate minimum withdrawal amount
       const numAmount = parseFloat(amount);
       if (numAmount < MIN_WITHDRAW_AMOUNT) {
-        Alert.alert(
-          'Amount Too Low',
-          `Minimum withdrawal amount is ${MIN_WITHDRAW_AMOUNT} USDC`,
-        );
+        Alert.alert('Amount Too Low', `Minimum withdrawal amount is ${MIN_WITHDRAW_AMOUNT} USDC`);
         return false;
       }
 

@@ -1,4 +1,4 @@
-import { useActiveWallet } from '@/hooks/useActiveWallet';
+import { useActiveWallet } from '@/lib/riverrun/hooks';
 import { Redirect } from 'expo-router';
 
 export default function Index() {

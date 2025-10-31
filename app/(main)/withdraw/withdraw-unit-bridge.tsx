@@ -6,10 +6,10 @@ import * as Clipboard from 'expo-clipboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, Input, Spinner, Text, XStack, YStack } from 'tamagui';
 import { toast } from 'sonner-native';
-import { useActiveWallet } from '@/hooks/useActiveWallet';
+import { useActiveWallet } from '@/lib/riverrun/hooks';
 import { useUnitWithdrawalAddress } from '@/lib/hyper-unit/hooks/useUnitWithdrawalAddress';
-import { useSpotBalance } from '@/hooks/useSpotBalance';
-import { useSpotSend } from '@/hooks/useSpotSend';
+import { useSpotBalance } from '@/lib/hyperliquid/hooks';
+import { useSpotSend } from '@/lib/hyperliquid/hooks';
 import { useEstimateFees } from '@/lib/hyper-unit/hooks/useEstimateFees';
 import type { DestinationChain, Asset } from '@/lib/hyper-unit/api';
 

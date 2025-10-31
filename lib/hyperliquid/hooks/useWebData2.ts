@@ -1,6 +1,6 @@
 import * as hl from '@nktkas/hyperliquid';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useActiveWallet } from './useActiveWallet';
+import { useActiveWallet } from '@/lib/riverrun/hooks/useActiveWallet';
 import { useHyperliquidClient } from './useHyperliquidClient';
 
 // Use the actual types from the SDK

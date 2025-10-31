@@ -1,6 +1,6 @@
-import { useHyperliquidClient } from '@/hooks/useHyperliquidClient';
-import { useOrderUpdates } from '@/hooks/useOrderUpdates';
-import { useActiveWallet } from '@/hooks/useActiveWallet';
+import { useHyperliquidClient } from '@/lib/hyperliquid/hooks';
+import { useOrderUpdates } from '@/lib/hyperliquid/hooks';
+import { useActiveWallet } from '@/lib/riverrun/hooks';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner-native';
 import { Button, Spinner, Text, XStack, YStack } from 'tamagui';

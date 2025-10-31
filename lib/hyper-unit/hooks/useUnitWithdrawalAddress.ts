@@ -1,9 +1,5 @@
 import { useEffect, useState } from 'react';
-import {
-  generateWithdrawalAddress,
-  type DestinationChain,
-  type Asset,
-} from '../api';
+import { generateWithdrawalAddress, type DestinationChain, type Asset } from '../api';
 
 interface UseUnitWithdrawalAddressResult {
   address: string | null;

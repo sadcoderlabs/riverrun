@@ -1,4 +1,4 @@
-import { useActiveWallet } from '@/hooks/useActiveWallet';
+import { useActiveWallet } from '@/lib/riverrun/hooks';
 import { Copy, Settings, User } from '@tamagui/lucide-icons';
 import * as Clipboard from 'expo-clipboard';
 import { Link } from 'expo-router';

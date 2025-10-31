@@ -10,8 +10,8 @@ import {
   useFonts,
 } from '@expo-google-fonts/inter';
 
-import { useThemePreference } from '@/hooks/useThemePreference';
-import { useActiveWallet } from '@/hooks/useActiveWallet';
+import { useThemePreference } from '@/lib/riverrun/hooks';
+import { useActiveWallet } from '@/lib/riverrun/hooks';
 import { ActionSheetProvider } from '@expo/react-native-action-sheet';
 import { PrivyProvider } from '@privy-io/expo';
 import { PrivyElements } from '@privy-io/expo/ui';

@@ -1,4 +1,4 @@
-import { type AvailableWallet } from '@/hooks/useWalletManager';
+import { type AvailableWallet } from '@/lib/riverrun/hooks';
 import { Check, Wallet } from '@tamagui/lucide-icons';
 import { styled, Text, useTheme, XStack, YStack } from 'tamagui';
 

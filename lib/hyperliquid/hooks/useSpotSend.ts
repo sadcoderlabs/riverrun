@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { Alert } from 'react-native';
 import { useHyperliquidClient } from './useHyperliquidClient';
-import { useActiveWallet } from './useActiveWallet';
+import { useActiveWallet } from '@/lib/riverrun/hooks/useActiveWallet';
 
 interface UseSpotSendResult {
   send: (destination: string, token: string, amount: string) => Promise<boolean>;

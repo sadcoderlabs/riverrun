@@ -1,4 +1,4 @@
-import { useHyperliquidClient } from '@/hooks/useHyperliquidClient';
+import { useHyperliquidClient } from '@/lib/hyperliquid/hooks';
 import { useCallback, useEffect, useState } from 'react';
 import { Modal, Pressable, StyleSheet } from 'react-native';
 import { toast } from 'sonner-native';

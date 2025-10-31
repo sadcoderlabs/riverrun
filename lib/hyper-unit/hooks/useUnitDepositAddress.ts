@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { useActiveWallet } from '@/hooks/useActiveWallet';
+import { useActiveWallet } from '@/lib/riverrun/hooks';
 import {
   generateDepositAddress,
   type SourceChain,
