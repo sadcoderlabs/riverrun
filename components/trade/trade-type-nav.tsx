@@ -1,4 +1,4 @@
-import { useRouter, usePathname } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { XStack, Text } from 'tamagui';
 
 type TradeType = 'perp' | 'spot' | 'equities' | 'swap';
@@ -10,7 +10,6 @@ interface TradeTypeNavProps {
 
 export function TradeTypeNav({ currentType, asset = 'BTC' }: TradeTypeNavProps) {
   const router = useRouter();
-  const pathname = usePathname();
 
   const tabs: { key: TradeType; label: string; enabled: boolean }[] = [
     { key: 'perp', label: 'Perps', enabled: true },
@@ -24,7 +23,12 @@ export function TradeTypeNav({ currentType, asset = 'BTC' }: TradeTypeNavProps) 
     if (type === currentType) return;
 
     // Navigate to the new trade type with the same asset
-    router.replace(`/trade/${type}/${asset}` as any);
+    // Note: perp uses [coin], spot uses [market]
+    if (type === 'perp') {
+      router.replace(`/trade/perp/${asset}` as any);
+    } else if (type === 'spot') {
+      router.replace(`/trade/spot/${asset}` as any);
+    }
   };
 
   return (

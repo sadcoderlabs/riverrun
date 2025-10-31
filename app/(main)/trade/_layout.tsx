@@ -1,48 +1,91 @@
 import { TradeTypeNav } from '@/components/trade/trade-type-nav';
-import { Stack, useLocalSearchParams, useSegments } from 'expo-router';
+import { Slot, useLocalSearchParams, useSegments } from 'expo-router';
+import { View, StyleSheet } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  interpolate,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { YStack } from 'tamagui';
 
+const NAV_HEIGHT = 48;
+
 /**
- * Trade Layout
+ * Trade Layout with Collapsing Navbar
  *
- * Responsibility: Provide Trade Type Navigation (Perps/Spot/Equities/Swap)
- * This layout is specific to trade pages and adds:
- * - Top navigation for switching between trade types
- * - Safe area padding for top (to account for status bar)
- * - Handles routing for perp/[asset] and spot/[market]
+ * Features:
+ * - TradeTypeNav (Perps/Spot/Equities/Swap) at the top
+ * - Navbar dims when content scrolls over it
+ * - Content translates up to visually cover navbar when scrolling
+ * - All elements stay within safe area
  */
 export default function TradeLayout() {
   const insets = useSafeAreaInsets();
   const segments = useSegments();
   const params = useLocalSearchParams();
 
-  // Extract trade type (perp/spot) and asset from segments
+  // Extract trade type and asset from route params
   const tradeType = (segments[2] as 'perp' | 'spot') || 'perp';
-  const asset = (params.asset as string) || 'BTC';
+  const asset =
+    (params.coin as string) || (params.market as string) || (params.asset as string) || 'BTC';
+
+  // Track scroll position
+  const scrollY = useSharedValue(0);
+  const onScroll = useAnimatedScrollHandler({
+    onScroll: e => {
+      scrollY.value = e.contentOffset.y;
+    },
+  });
+
+  // Navbar opacity: fade from 1.0 to 0.3 as content scrolls over it
+  const navbarOpacity = useAnimatedStyle(() => ({
+    opacity: interpolate(scrollY.value, [0, NAV_HEIGHT], [1, 0.3]),
+  }));
+
+  // Content translateY: move content up to visually cover navbar
+  const contentTransform = useAnimatedStyle(() => ({
+    transform: [{ translateY: -Math.min(scrollY.value, NAV_HEIGHT) }],
+  }));
 
   return (
-    <YStack flex={1} backgroundColor="$gray3">
-      {/* Trade Type Navigation - Fixed at top */}
-      <YStack
-        paddingTop={insets.top}
-        borderBottomWidth={1}
-        borderBottomColor="$gray8"
-        backgroundColor="$gray3"
-      >
-        <TradeTypeNav currentType={tradeType} asset={asset} />
-      </YStack>
+    <View style={styles.container}>
+      {/* Navbar - Fixed position, always clickable */}
+      <View style={{ paddingTop: insets.top }}>
+        <Animated.View style={navbarOpacity}>
+          <YStack
+            height={NAV_HEIGHT}
+            borderBottomWidth={1}
+            borderBottomColor="$gray8"
+            backgroundColor="$gray3"
+          >
+            <TradeTypeNav currentType={tradeType} asset={asset} />
+          </YStack>
+        </Animated.View>
+      </View>
 
-      {/* Content from child routes (perp/[asset], spot/[market]) */}
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          animation: 'none', // Disable navigation animation for instant market switching
-        }}
-      >
-        <Stack.Screen name="perp/[asset]/index" />
-        <Stack.Screen name="spot/[market]/(tab)/index" />
-      </Stack>
-    </YStack>
+      {/* Scrollable Content - Translates up when scrolling */}
+      <Animated.View style={[styles.scrollContainer, contentTransform]}>
+        <Animated.ScrollView
+          onScroll={onScroll}
+          scrollEventThrottle={16}
+          contentInsetAdjustmentBehavior="never"
+          showsVerticalScrollIndicator={true}
+        >
+          <Slot />
+        </Animated.ScrollView>
+      </Animated.View>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#111',
+  },
+  scrollContainer: {
+    flex: 1,
+  },
+});
