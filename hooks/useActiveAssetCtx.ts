@@ -102,7 +102,8 @@ export function useActiveAssetCtx({ coin }: UseActiveAssetCtxParams): UseActiveA
       isMounted = false;
       void cleanup();
     };
-  }, [coin, cleanup, getSubscriptionClient]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [coin]);
 
   return {
     data,

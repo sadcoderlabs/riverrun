@@ -105,7 +105,8 @@ export function useActiveAssetData({ coin }: UseActiveAssetDataParams): UseActiv
       isMounted = false;
       void cleanup();
     };
-  }, [address, coin, isAuthenticated, cleanup, getSubscriptionClient]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [address, coin, isAuthenticated]);
 
   return {
     data,

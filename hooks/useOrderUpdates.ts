@@ -181,7 +181,8 @@ export function useOrderUpdates(): UseOrderUpdatesResult {
       isMounted = false;
       void cleanup();
     };
-  }, [address, isAuthenticated, cleanup, getSubscriptionClient, getInfoClient]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [address, isAuthenticated]);
 
   return {
     orders,

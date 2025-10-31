@@ -126,7 +126,8 @@ export function useOrderBook({ coin, nSigFigs }: UseOrderBookParams): UseOrderBo
       isMounted = false;
       void cleanup();
     };
-  }, [coin, nSigFigs, cleanup, getSubscriptionClient]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [coin, nSigFigs]);
 
   return {
     data,

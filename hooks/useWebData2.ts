@@ -153,7 +153,8 @@ export function useWebData2(): UseWebData2Result {
       isMounted = false;
       void cleanup();
     };
-  }, [address, isAuthenticated, cleanup, getSubscriptionClient, getInfoClient, calculateSpotValue]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [address, isAuthenticated]);
 
   // Calculate account values
   const perpAccountValue = data?.clearinghouseState?.marginSummary?.accountValue
