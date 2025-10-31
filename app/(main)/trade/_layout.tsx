@@ -1,5 +1,7 @@
+import { CoinInfo } from '@/components/trade/coin-info';
 import { TradeTypeNav } from '@/components/trade/trade-type-nav';
 import { Slot, useLocalSearchParams, useSegments } from 'expo-router';
+import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -25,11 +27,15 @@ export default function TradeLayout() {
   const insets = useSafeAreaInsets();
   const segments = useSegments();
   const params = useLocalSearchParams();
+  const [coinInfoHeight, setCoinInfoHeight] = React.useState(0);
 
   // Extract trade type and asset from route params
   const tradeType = (segments[2] as 'perp' | 'spot') || 'perp';
   const asset =
     (params.coin as string) || (params.market as string) || (params.asset as string) || 'BTC';
+
+  // Check if current route is perp trade (for showing CoinInfo)
+  const isPerpTrade = tradeType === 'perp' && segments[3] !== undefined;
 
   // Track scroll position
   const scrollY = useSharedValue(0);
@@ -67,11 +73,23 @@ export default function TradeLayout() {
 
       {/* Scrollable Content - Translates up when scrolling */}
       <Animated.View style={[styles.scrollContainer, contentTransform]}>
+        {/* Sticky CoinInfo Header (for perp trade only) */}
+        {isPerpTrade && (
+          <View
+            style={styles.stickyHeader}
+            onLayout={e => setCoinInfoHeight(e.nativeEvent.layout.height)}
+          >
+            <CoinInfo coin={asset} />
+          </View>
+        )}
+
+        {/* Scrollable Content */}
         <Animated.ScrollView
           onScroll={onScroll}
           scrollEventThrottle={16}
           contentInsetAdjustmentBehavior="never"
           showsVerticalScrollIndicator={true}
+          contentContainerStyle={isPerpTrade ? { paddingTop: coinInfoHeight } : undefined}
         >
           <Slot />
         </Animated.ScrollView>
@@ -87,5 +105,13 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flex: 1,
+  },
+  stickyHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1,
+    backgroundColor: '#111',
   },
 });

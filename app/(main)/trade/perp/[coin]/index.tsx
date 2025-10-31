@@ -1,4 +1,3 @@
-import { CoinInfo } from '@/components/trade/coin-info';
 import { PerpTabs } from '@/components/trade/perp-tabs';
 import { PerpTradePanel } from '@/components/trade/perp-trade-panel';
 import { useLocalSearchParams } from 'expo-router';
@@ -9,9 +8,6 @@ export default function PerpTradeIndex() {
 
   return (
     <YStack backgroundColor="$gray3">
-      {/* Market Information Section with Chart */}
-      <CoinInfo coin={coin} />
-
       {/* PERP Trade Panel - includes Order Book and Place Order UI */}
       <PerpTradePanel coin={coin} />
 
