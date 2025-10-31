@@ -9,12 +9,12 @@ export default function PerpTradeIndex() {
 
   return (
     <YStack flex={1} backgroundColor="$gray3">
-      {/* Market Information Section with Chart - Fixed at top */}
-      <CoinInfo coin={coin} />
-
       {/* Scrollable content */}
       <ScrollView flex={1}>
         <YStack>
+          {/* Market Information Section with Chart */}
+          <CoinInfo coin={coin} />
+
           {/* PERP Trade Panel - includes Order Book and Place Order UI */}
           <PerpTradePanel coin={coin} />
 
