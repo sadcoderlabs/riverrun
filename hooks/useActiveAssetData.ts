@@ -71,7 +71,7 @@ export function useActiveAssetData({ coin }: UseActiveAssetDataParams): UseActiv
         // Cleanup any existing subscription
         await cleanup();
 
-        // Get subscription client from hook
+        // Get subscription client
         const subscriptionClient = getSubscriptionClient();
 
         // Subscribe to activeAssetData
@@ -105,8 +105,7 @@ export function useActiveAssetData({ coin }: UseActiveAssetDataParams): UseActiv
       isMounted = false;
       void cleanup();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [address, coin, isAuthenticated]);
+  }, [address, coin, isAuthenticated, cleanup, getSubscriptionClient]);
 
   return {
     data,

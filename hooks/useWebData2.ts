@@ -111,8 +111,6 @@ export function useWebData2(): UseWebData2Result {
         // Step 1: Fetch initial data using InfoClient
         const infoClient = getInfoClient();
         const initialData = await infoClient.webData2({ user: address });
-        // Use optional chaining because spotState may not exist for accounts with no spot positions
-        const initialSpotValue = calculateSpotValue(initialData.spotState?.balances);
 
         if (isMounted) {
           setData(initialData);
@@ -153,8 +151,7 @@ export function useWebData2(): UseWebData2Result {
       isMounted = false;
       void cleanup();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [address, isAuthenticated]);
+  }, [address, isAuthenticated, cleanup, getSubscriptionClient, getInfoClient]);
 
   // Calculate account values
   const perpAccountValue = data?.clearinghouseState?.marginSummary?.accountValue

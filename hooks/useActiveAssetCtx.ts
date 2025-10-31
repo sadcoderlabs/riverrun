@@ -69,7 +69,7 @@ export function useActiveAssetCtx({ coin }: UseActiveAssetCtxParams): UseActiveA
         // Cleanup any existing subscription
         await cleanup();
 
-        // Get subscription client from hook
+        // Get subscription client
         const subscriptionClient = getSubscriptionClient();
 
         // Subscribe to activeAssetCtx
@@ -102,8 +102,7 @@ export function useActiveAssetCtx({ coin }: UseActiveAssetCtxParams): UseActiveA
       isMounted = false;
       void cleanup();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [coin]);
+  }, [coin, cleanup, getSubscriptionClient]);
 
   return {
     data,

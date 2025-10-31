@@ -80,7 +80,7 @@ export function useOrderBook({ coin, nSigFigs }: UseOrderBookParams): UseOrderBo
         // Cleanup any existing subscription
         await cleanup();
 
-        // Get subscription client from hook
+        // Get subscription client
         const subscriptionClient = getSubscriptionClient();
 
         // Subscribe to l2Book with precision parameter
@@ -126,8 +126,7 @@ export function useOrderBook({ coin, nSigFigs }: UseOrderBookParams): UseOrderBo
       isMounted = false;
       void cleanup();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [coin, nSigFigs]);
+  }, [coin, nSigFigs, cleanup, getSubscriptionClient]);
 
   return {
     data,
