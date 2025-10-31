@@ -4,7 +4,7 @@ import {
   EstimateFeesResponse,
   fetchEstimateFees,
   getDepositEta,
-} from '../services/unit-protocol-api';
+} from '@/lib/hyper-unit/unit-protocol-api';
 
 /**
  * Hook for managing deposit token list and search functionality

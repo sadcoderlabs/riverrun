@@ -6,7 +6,7 @@ import * as Clipboard from 'expo-clipboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, Input, Spinner, Text, XStack, YStack } from 'tamagui';
 import { toast } from 'sonner-native';
-import { DEPOSIT_TOKENS, ChainName } from '@/lib/transfer-fund/constants/deposit-tokens';
+import { DEPOSIT_TOKENS, ChainName } from '@/lib/riverrun/transfer-fund/constants/deposit-tokens';
 import { useActiveWallet } from '@/lib/riverrun/hooks';
 import { useArbitrumUSDCBalance, ARBITRUM_USDC_ADDRESS } from '@/lib/riverrun/hooks';
 

@@ -1,4 +1,4 @@
-import { DepositToken } from '../constants/deposit-tokens';
+import { DepositToken } from '@/lib/riverrun/transfer-fund/constants/deposit-tokens';
 
 /**
  * Unit Protocol Service

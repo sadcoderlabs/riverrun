@@ -1,6 +1,6 @@
 import { ChevronRight } from '@tamagui/lucide-icons';
 import { Text, XStack, YStack } from 'tamagui';
-import { DepositToken, CHAINS } from '@/lib/transfer-fund/constants/deposit-tokens';
+import { DepositToken, CHAINS } from '@/lib/riverrun/transfer-fund/constants/deposit-tokens';
 
 export interface DepositTokenItemProps {
   token: DepositToken;

@@ -3,7 +3,11 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, XStack, YStack } from 'tamagui';
-import { DEPOSIT_TOKENS, CHAINS, ChainName } from '@/lib/transfer-fund/constants/deposit-tokens';
+import {
+  DEPOSIT_TOKENS,
+  CHAINS,
+  ChainName,
+} from '@/lib/riverrun/transfer-fund/constants/deposit-tokens';
 
 /**
  * Select Source Chain Page

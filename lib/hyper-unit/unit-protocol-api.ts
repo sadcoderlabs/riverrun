@@ -1,4 +1,4 @@
-import { UnitChainType } from '../constants/deposit-tokens';
+import { UnitChainType } from '@/lib/riverrun/transfer-fund/constants/deposit-tokens';
 
 /**
  * Unit Protocol API Base URL

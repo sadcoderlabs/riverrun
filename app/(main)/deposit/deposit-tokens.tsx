@@ -1,7 +1,7 @@
 import { DepositSearchBar } from '@/components/home/transfer-fund/deposit/deposit-search-bar';
 import { DepositTokenItem } from '@/components/home/transfer-fund/deposit/deposit-token-item';
-import { useDepositTokens } from '@/lib/transfer-fund/hooks/useDepositTokens';
-import { DepositToken } from '@/lib/transfer-fund/constants/deposit-tokens';
+import { useDepositTokens } from '@/lib/riverrun/transfer-fund/hooks/useDepositTokens';
+import { DepositToken } from '@/lib/riverrun/transfer-fund/constants/deposit-tokens';
 import { ArrowLeft } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 import { FlatList } from 'react-native';
