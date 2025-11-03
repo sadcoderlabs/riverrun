@@ -5,6 +5,8 @@ import * as hl from '@nktkas/hyperliquid';
 import { Input } from '@/components/global/input';
 import { useHyperliquidClient, useOrder } from '@/lib/hyperliquid/hooks';
 import { formatSize } from '@/lib/hyperliquid/format/formatSize';
+import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
+import { formatValue } from '@/lib/hyperliquid/format/formatValue';
 
 type Position = hl.ClearinghouseStateResponse['assetPositions'][number]['position'];
 
@@ -34,7 +36,7 @@ export default function ClosePositionModal({
   const [limitPrice, setLimitPrice] = useState<string>('');
   const [assetSize, setAssetSize] = useState<string>('');
   const [usdSize, setUsdSize] = useState<string>('');
-  const [szDecimals, setSzDecimals] = useState<number>(4);
+  const [szDecimals, setSzDecimals] = useState<number | undefined>(undefined);
 
   // Fetch szDecimals when position changes
   useEffect(() => {
@@ -57,11 +59,53 @@ export default function ClosePositionModal({
       setSizeUnit('asset');
       setPercentage(100);
       setLimitPrice('');
-      updateSizeFromPercentage(100);
     }
   }, [open, position]);
 
+  // Update size when szDecimals changes (after fetching)
+  useEffect(() => {
+    if (open && position && percentage > 0 && szDecimals !== undefined) {
+      const szi = Number(position.szi);
+      const positionSize = Math.abs(szi);
+      const markPrice = Number(position.markPx);
+      const closeSize = (positionSize * percentage) / 100;
+      const closeValue = closeSize * markPrice;
+      setAssetSize(formatSize(closeSize, szDecimals, false));
+      setUsdSize(closeValue.toFixed(2));
+    }
+  }, [szDecimals, open, position, percentage]);
+
   if (!position) return null;
+
+  // Show loading if szDecimals not yet loaded
+  if (szDecimals === undefined) {
+    return (
+      <Modal
+        visible={open}
+        transparent
+        animationType="slide"
+        onRequestClose={() => onOpenChange(false)}
+        statusBarTranslucent
+      >
+        <Pressable style={styles.overlay} onPress={() => onOpenChange(false)}>
+          <Pressable style={styles.contentContainer} onPress={e => e.stopPropagation()}>
+            <YStack
+              flex={1}
+              backgroundColor="$background"
+              borderTopLeftRadius="$6"
+              borderTopRightRadius="$6"
+              justifyContent="center"
+              alignItems="center"
+            >
+              <Text fontSize="$4" color="$color9">
+                Loading...
+              </Text>
+            </YStack>
+          </Pressable>
+        </Pressable>
+      </Modal>
+    );
+  }
 
   const szi = Number(position.szi);
   const positionSize = Math.abs(szi);
@@ -117,18 +161,6 @@ export default function ClosePositionModal({
   const closeSize = parseFloat(assetSize) || 0;
   const estimatedPnl = (markPrice - entryPrice) * closeSize * (isLong ? 1 : -1);
   const estimatedPnlPercentage = (percentage / 100) * unrealizedPnl;
-
-  const formatNumber = (num: number, decimals = 2) => {
-    return !isNaN(num) ? num.toFixed(decimals) : '0';
-  };
-
-  const formatCompactNumber = (num: number) => {
-    if (isNaN(num)) return '0';
-    if (Math.abs(num) >= 1000) {
-      return num.toFixed(0);
-    }
-    return num.toFixed(2);
-  };
 
   return (
     <Modal
@@ -209,7 +241,7 @@ export default function ClosePositionModal({
                   Entry
                 </Text>
                 <Text fontSize="$3" fontFamily="$interMedium">
-                  {formatCompactNumber(entryPrice)}
+                  {formatPrice(entryPrice, szDecimals, true)}
                 </Text>
               </YStack>
               <YStack flex={1} gap="$0.5">
@@ -217,7 +249,7 @@ export default function ClosePositionModal({
                   Mark
                 </Text>
                 <Text fontSize="$3" fontFamily="$interMedium">
-                  {formatCompactNumber(markPrice)}
+                  {formatPrice(markPrice, szDecimals, true)}
                 </Text>
               </YStack>
               <YStack flex={1} gap="$0.5" alignItems="flex-end">
@@ -229,7 +261,7 @@ export default function ClosePositionModal({
                   fontFamily="$interMedium"
                   color={unrealizedPnl >= 0 ? '$green10' : '$red10'}
                 >
-                  {unrealizedPnl >= 0 ? '+' : ''}${formatNumber(unrealizedPnl, 2)}
+                  {unrealizedPnl >= 0 ? '+' : ''}${formatValue(unrealizedPnl, 2)}
                 </Text>
               </YStack>
             </XStack>
@@ -247,7 +279,7 @@ export default function ClosePositionModal({
                 >
                   <Text
                     fontFamily="$interSemiBold"
-                    color={orderType === 'market' ? 'white' : '$color'}
+                    color={orderType === 'market' ? '$gray1' : '$color'}
                   >
                     Market
                   </Text>
@@ -261,7 +293,7 @@ export default function ClosePositionModal({
                 >
                   <Text
                     fontFamily="$interSemiBold"
-                    color={orderType === 'limit' ? 'white' : '$color'}
+                    color={orderType === 'limit' ? '$gray1' : '$color'}
                   >
                     Limit
                   </Text>
@@ -321,7 +353,7 @@ export default function ClosePositionModal({
                       <Text
                         fontSize="$2"
                         fontFamily="$interSemiBold"
-                        color={sizeUnit === 'asset' ? 'white' : '$color'}
+                        color={sizeUnit === 'asset' ? '$gray1' : '$color'}
                       >
                         {position.coin}
                       </Text>
@@ -336,7 +368,7 @@ export default function ClosePositionModal({
                       <Text
                         fontSize="$2"
                         fontFamily="$interSemiBold"
-                        color={sizeUnit === 'usd' ? 'white' : '$color'}
+                        color={sizeUnit === 'usd' ? '$gray1' : '$color'}
                       >
                         USD
                       </Text>
@@ -375,6 +407,14 @@ export default function ClosePositionModal({
                       keyboardType="numeric"
                       returnKeyType="done"
                       textAlign="right"
+                      onFocus={e => {
+                        // Select all text when focused so cursor goes to the end
+                        const input = e.target as any;
+                        if (input?.setSelectionRange) {
+                          const length = percentage.toFixed(0).length;
+                          setTimeout(() => input.setSelectionRange(length, length), 0);
+                        }
+                      }}
                     />
                     <Text fontSize="$3" fontFamily="$interMedium" color="$color9">
                       %
@@ -400,15 +440,12 @@ export default function ClosePositionModal({
                   fontFamily="$interSemiBold"
                   color={estimatedPnlPercentage >= 0 ? '$green10' : '$red10'}
                 >
-                  {estimatedPnlPercentage >= 0 ? '+' : ''}${formatNumber(estimatedPnlPercentage, 2)}
+                  {estimatedPnlPercentage >= 0 ? '+' : ''}${formatValue(estimatedPnlPercentage, 2)}
                 </Text>
               </XStack>
-            </YStack>
 
-            {/* Confirm Button */}
-            <XStack paddingHorizontal="$4" paddingBottom="$4" paddingTop="$2">
+              {/* Confirm Button */}
               <Button
-                flex={1}
                 size="$4"
                 backgroundColor={isLong ? '$red9' : '$green9'}
                 onPress={async () => {
@@ -461,7 +498,7 @@ export default function ClosePositionModal({
                     : `Confirm ${orderType === 'market' ? 'Market' : 'Limit'} Close`}
                 </Text>
               </Button>
-            </XStack>
+            </YStack>
           </YStack>
         </Pressable>
       </Pressable>
