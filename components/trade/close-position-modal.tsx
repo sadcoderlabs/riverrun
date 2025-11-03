@@ -74,7 +74,7 @@ export default function ClosePositionModal({
   const updateSizeFromPercentage = (pct: number) => {
     const closeSize = (positionSize * pct) / 100;
     const closeValue = closeSize * markPrice;
-    setAssetSize(formatSize(closeSize, szDecimals));
+    setAssetSize(formatSize(closeSize, szDecimals, false));
     setUsdSize(closeValue.toFixed(2));
   };
 
@@ -104,7 +104,7 @@ export default function ClosePositionModal({
       const assetValue = numValue / markPrice;
       const pct = Math.min((assetValue / positionSize) * 100, 100);
       setPercentage(pct);
-      setAssetSize(formatSize(assetValue, szDecimals));
+      setAssetSize(formatSize(assetValue, szDecimals, false));
     }
   };
 
@@ -201,7 +201,7 @@ export default function ClosePositionModal({
                   Size
                 </Text>
                 <Text fontSize="$3" fontFamily="$interMedium">
-                  {formatSize(positionSize, szDecimals)}
+                  {formatSize(positionSize, szDecimals, true)}
                 </Text>
               </YStack>
               <YStack flex={1} gap="$0.5">
