@@ -73,28 +73,45 @@ function countSignificantFigures(num: number): number {
 }
 
 /**
- * Format price for display according to the 5-sig-fig padding rule
+ * Count integer digits in a number
+ *
+ * @param num - Number to count integer digits for
+ * @returns Number of integer digits
+ */
+function countIntegerDigits(num: number): number {
+  if (num === 0) return 1;
+  return Math.floor(Math.abs(num)).toString().length;
+}
+
+/**
+ * Format price for display according to Hyperliquid rules
  *
  * This function is for Perp markets (MAX_DECIMALS_PERP = 6).
  * For Spot markets, use formatSpotPrice instead.
  *
- * Rule: If significant figures < 5, pad decimals to reach 5 sig figs
- * (constrained by maxDecimalPlaces = MAX_DECIMALS_PERP - szDecimals)
+ * Hyperliquid Rules:
+ * 1. Prices can have up to 5 significant figures
+ * 2. Decimal places cannot exceed MAX_DECIMALS_PERP - szDecimals
+ * 3. Integer prices are ALWAYS allowed, regardless of significant figures
+ *    (e.g., 123456 is valid even though 12345.6 is not)
+ *
+ * Implementation:
+ * - If integer part has >= 5 digits: round to integer (no decimals allowed)
+ * - If integer part has < 5 digits: allow decimals up to 5 total sig figs
+ * - If total sig figs < 5: pad with decimals to reach 5 sig figs
  *
  * Examples for Perp markets:
- * - ETH (sz=4, maxDecimalPlaces=2):
- *   - "4219" → 4 sig figs → pad 1 decimal → "4219.0"
- *   - "123" → 3 sig figs → pad 2 decimals → "123.00"
- *   - "4219.5" → 5 sig figs → no padding → "4219.5"
- *   - "4219.50" → 5 sig figs → remove trailing zero → "4219.5"
- *
  * - BTC (sz=5, maxDecimalPlaces=1):
- *   - "114971" → 6 sig figs → no padding → "114971"
+ *   - "106307" → integer with 6 digits → "106307" (allowed)
+ *   - "106307.5" → would be 6 sig figs → "106308" (round to integer)
+ *   - "1234.5" → 5 sig figs, integer part < 5 digits → "1234.5" (allowed)
  *   - "1149" → 4 sig figs → pad 1 decimal → "1149.0"
  *
- * - DOGE (sz=0, maxDecimalPlaces=6):
- *   - "0.2" → 1 sig fig → pad 4 decimals → "0.20000"
- *   - "0.20359" → 5 sig figs → no padding → "0.20359"
+ * - ETH (sz=4, maxDecimalPlaces=2):
+ *   - "12345" → integer with 5 digits → "12345" (allowed)
+ *   - "12345.67" → would be 7 sig figs → "12346" (round to integer)
+ *   - "1234.56" → 6 sig figs, integer part < 5 digits → "1234.6" (1 decimal)
+ *   - "123.45" → 5 sig figs → "123.45" (allowed)
  *
  * @param price - Price from API (string or number)
  * @param szDecimals - Asset's szDecimals (from Hyperliquid meta)
@@ -122,10 +139,38 @@ export function formatPrice(
   // Calculate maximum allowed decimal places for Perp markets
   const maxDecimalPlaces = Math.max(0, MAX_DECIMALS_PERP - szDecimals);
 
-  // Count current significant figures
+  // Count integer digits and current significant figures
+  const integerDigits = countIntegerDigits(priceNum);
   const currentSigFigs = countSignificantFigures(priceNum);
 
-  // Determine how many decimal places to show
+  // Rule: Integer prices are always allowed
+  // If price >= 1 AND integer part already has >= 5 digits, we must round to integer
+  if (priceNum >= 1 && integerDigits >= 5) {
+    const rounded = Math.round(priceNum);
+    let formatted = rounded.toString();
+
+    // Add thousand separators if requested
+    if (thousandsSeparator) {
+      formatted = formatted.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+
+    return formatted;
+  }
+
+  // For numbers < 1 OR integer part has < 5 digits, we can allow decimals
+  // Calculate how many decimal places we can use
+  let allowedDecimalPlaces: number;
+
+  if (priceNum >= 1) {
+    // Integer part has < 5 digits, limited by remaining sig figs
+    const remainingSigFigs = 5 - integerDigits;
+    allowedDecimalPlaces = Math.min(remainingSigFigs, maxDecimalPlaces);
+  } else {
+    // Number < 1, use full maxDecimalPlaces (for DOGE, etc.)
+    allowedDecimalPlaces = maxDecimalPlaces;
+  }
+
+  // Determine target decimal places
   let targetDecimalPlaces: number;
 
   if (currentSigFigs < 5) {
@@ -137,11 +182,11 @@ export function formatPrice(
     const decimalIndex = str.indexOf('.');
     const currentDecimalPlaces = decimalIndex === -1 ? 0 : str.length - decimalIndex - 1;
 
-    // Target decimal places = current + needed (but capped by max)
-    targetDecimalPlaces = Math.min(currentDecimalPlaces + needToAdd, maxDecimalPlaces);
+    // Target decimal places = current + needed (but capped by allowed)
+    targetDecimalPlaces = Math.min(currentDecimalPlaces + needToAdd, allowedDecimalPlaces);
   } else {
-    // Already have >= 5 sig figs, use max decimal places then remove trailing zeros
-    targetDecimalPlaces = maxDecimalPlaces;
+    // Already have >= 5 sig figs, use allowed decimal places then remove trailing zeros
+    targetDecimalPlaces = allowedDecimalPlaces;
   }
 
   // Format with target decimal places

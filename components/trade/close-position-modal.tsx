@@ -28,7 +28,7 @@ export default function ClosePositionModal({
   onOpenChange,
   position,
 }: ClosePositionModalProps) {
-  const { getSymbolConverter } = useHyperliquidClient();
+  const { getSymbolConverter, getInfoClient } = useHyperliquidClient();
   const { placeCloseMarketOrder, placeCloseLimitOrder, isPlacingOrder } = useOrder();
   const [orderType, setOrderType] = useState<OrderType>('market');
   const [sizeUnit, setSizeUnit] = useState<SizeUnit>('asset');
@@ -152,9 +152,20 @@ export default function ClosePositionModal({
     }
   };
 
-  const handleMidPrice = () => {
-    // Set to mid-market price (same as mark price for now)
-    setLimitPrice(formatPrice(markPrice, szDecimals, false));
+  const handleMidPrice = async () => {
+    try {
+      // Get mid price from allMids API
+      const infoClient = getInfoClient();
+      const allMids = await infoClient.allMids();
+      const midPrice = allMids[position.coin];
+
+      if (midPrice) {
+        // Format mid price without thousand separators for valid order price
+        setLimitPrice(formatPrice(midPrice, szDecimals, false));
+      }
+    } catch (error) {
+      console.error('Failed to fetch mid price:', error);
+    }
   };
 
   // Calculate estimated PnL for the close

@@ -11,14 +11,14 @@ describe('formatPrice', () => {
 
     it('should handle string input', () => {
       expect(formatPrice('100.5', 2, false)).toBe('100.50');
-      // 1000.123 has 7 sig figs, gets truncated to maxDecimalPlaces=3
-      expect(formatPrice('1000.123', 3, false)).toBe('1000.123');
+      // 1000.123 has 7 sig figs, integer part has 4 digits, so limited to 1 decimal (5 total sig figs)
+      expect(formatPrice('1000.123', 3, false)).toBe('1000.1');
     });
 
     it('should handle number input', () => {
       expect(formatPrice(100.5, 2, false)).toBe('100.50');
-      // 1000.123 has 7 sig figs, gets truncated to maxDecimalPlaces=3
-      expect(formatPrice(1000.123, 3, false)).toBe('1000.123');
+      // 1000.123 has 7 sig figs, integer part has 4 digits, so limited to 1 decimal (5 total sig figs)
+      expect(formatPrice(1000.123, 3, false)).toBe('1000.1');
     });
   });
 
@@ -188,8 +188,8 @@ describe('formatPrice', () => {
     it('should add thousands separators with decimals', () => {
       expect(formatPrice('4219.5', 4, true)).toBe('4,219.5');
       expect(formatPrice('114971', 5, true)).toBe('114,971');
-      // 1000.123 has 7 sig figs, gets truncated to maxDecimalPlaces=3
-      expect(formatPrice('1000.123', 3, true)).toBe('1,000.123');
+      // 1000.123 has 7 sig figs, integer part has 4 digits, so limited to 1 decimal (5 total sig figs)
+      expect(formatPrice('1000.123', 3, true)).toBe('1,000.1');
     });
 
     it('should not add separators for numbers less than 1000', () => {
@@ -257,6 +257,42 @@ describe('formatPrice', () => {
 
       // szDecimals=5 → maxDecimalPlaces=1
       expect(formatPrice('1149', 5, false)).toBe('1149.0');
+    });
+  });
+
+  describe('Integer prices always allowed rule', () => {
+    it('should allow integer prices regardless of significant figures', () => {
+      // BTC: szDecimals=5, maxDecimalPlaces=1
+      // Integer price with 6 sig figs is allowed
+      expect(formatPrice('123456', 5, false)).toBe('123456');
+      expect(formatPrice('106307', 5, false)).toBe('106307');
+    });
+
+    it('should not allow decimals when integer part already has 5+ sig figs', () => {
+      // BTC: szDecimals=5, maxDecimalPlaces=1
+      // 106307.5 would have 6 sig figs, not allowed since integer part already has 5+ sig figs
+      // Should round to integer
+      expect(formatPrice('106307.5', 5, false)).toBe('106308');
+      expect(formatPrice('106307.4', 5, false)).toBe('106307');
+      expect(formatPrice('123456.7', 5, false)).toBe('123457');
+    });
+
+    it('should allow decimals when integer part has < 5 sig figs', () => {
+      // BTC: szDecimals=5, maxDecimalPlaces=1
+      // 1234.5 has 5 sig figs total (4 integer + 1 decimal), allowed
+      expect(formatPrice('1234.5', 5, false)).toBe('1234.5');
+      // 9999.9 has 5 sig figs total, allowed
+      expect(formatPrice('9999.9', 5, false)).toBe('9999.9');
+    });
+
+    it('should apply same rule to other assets', () => {
+      // ETH: szDecimals=4, maxDecimalPlaces=2
+      // 12345.67 would have 7 sig figs, should be limited
+      expect(formatPrice('12345.67', 4, false)).toBe('12346');
+      // 1234.56 has 6 sig figs, should allow 1 decimal
+      expect(formatPrice('1234.56', 4, false)).toBe('1234.6');
+      // 123.45 has 5 sig figs, fully allowed
+      expect(formatPrice('123.45', 4, false)).toBe('123.45');
     });
   });
 });
