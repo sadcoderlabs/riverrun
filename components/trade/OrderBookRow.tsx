@@ -37,7 +37,7 @@ export const OrderBookRow = memo(function OrderBookRow({
   // This removes trailing zeros: "4180.60" → "4180.6"
   // Why? Due to 5-sig-fig rule, "4180.6" is already 5 sig figs,
   // so "4180.60" would be redundant
-  const formattedPrice = formatPrice(price, szDecimals);
+  const formattedPrice = formatPrice(price, szDecimals, true);
 
   // Format size for display
   const sizeNum = parseFloat(size);
