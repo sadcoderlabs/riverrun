@@ -114,7 +114,7 @@ export default function PositionsTab() {
 
   return (
     <ScrollView flex={1}>
-      <YStack padding="$4" gap="$3">
+      <YStack gap="$2">
         {positions.map((position, index) => {
           const szi = Number(position.szi);
           const unrealizedPnl = Number(position.unrealizedPnl);
@@ -128,49 +128,50 @@ export default function PositionsTab() {
           return (
             <YStack
               key={`${position.coin}-${index}`}
-              padding="$4"
+              padding="$3"
               backgroundColor="$gray2"
-              borderRadius="$4"
+              borderRadius="$3"
               borderWidth={1}
               borderColor="$gray5"
-              gap="$3"
+              gap="$2"
             >
-              {/* Header: Coin name and mode badge */}
-              <XStack justifyContent="space-between" alignItems="center">
-                <XStack gap="$2" alignItems="center">
-                  <Text fontSize="$6" fontFamily="$interSemiBold">
-                    {position.coin}
+              {/* Header Section */}
+              <XStack justifyContent="space-between" alignItems="flex-start">
+                {/* Left: Coin name, badge, and direction/leverage */}
+                <YStack gap="$1">
+                  <XStack gap="$2" alignItems="center">
+                    <Text fontSize="$5" fontFamily="$interSemiBold">
+                      {position.coin}-USD
+                    </Text>
+                    {position.leverage.type === 'cross' && (
+                      <View
+                        backgroundColor="orange"
+                        paddingHorizontal="$1.5"
+                        paddingVertical="$0.5"
+                        borderRadius="$2"
+                      >
+                        <Text fontSize="$1" fontFamily="$interMedium" color="white">
+                          CROSS
+                        </Text>
+                      </View>
+                    )}
+                  </XStack>
+                  <Text
+                    fontSize="$3"
+                    color={positionSide === 'Long' ? '$green10' : '$red10'}
+                    fontFamily="$interSemiBold"
+                  >
+                    {positionSide} {leverage}x
                   </Text>
-                  {position.leverage.type === 'cross' && (
-                    <View
-                      backgroundColor="orange"
-                      paddingHorizontal="$2"
-                      paddingVertical="$1"
-                      borderRadius="$2"
-                    >
-                      <Text fontSize="$1" fontFamily="$interMedium" color="white">
-                        CROSS
-                      </Text>
-                    </View>
-                  )}
-                </XStack>
-              </XStack>
+                </YStack>
 
-              {/* Direction, Leverage and Unrealized PnL */}
-              <XStack justifyContent="space-between" alignItems="center">
-                <Text
-                  fontSize="$4"
-                  color={positionSide === 'Long' ? '$green10' : '$red10'}
-                  fontFamily="$interSemiBold"
-                >
-                  {positionSide} {leverage}x
-                </Text>
-                <YStack alignItems="flex-end">
-                  <Text fontSize="$2" color="$color9">
+                {/* Right: Unrealized PnL */}
+                <YStack alignItems="flex-end" gap="$0.5">
+                  <Text fontSize="$1" color="$color9">
                     Unrealised P&L
                   </Text>
                   <Text
-                    fontSize="$5"
+                    fontSize="$4"
                     fontFamily="$interSemiBold"
                     color={isPnlPositive ? '$green10' : '$red10'}
                   >
@@ -180,87 +181,80 @@ export default function PositionsTab() {
                 </YStack>
               </XStack>
 
-              {/* Metrics Grid */}
-              <YStack gap="$2">
-                {/* Row 1: SIZE and VALUE */}
-                <XStack justifyContent="space-between">
-                  <YStack flex={1} gap="$1">
-                    <Text fontSize="$2" color="$color9">
+              {/* Metrics Grid - 2 Rows x 4 Columns */}
+              <YStack gap="$1.5">
+                {/* Row 1: SIZE | ENTRY | MARK | MARGIN */}
+                <XStack gap="$2">
+                  <YStack flex={1}>
+                    <Text fontSize="$1" color="$color9">
                       SIZE
                     </Text>
-                    <Text fontSize="$3" fontFamily="$interMedium">
+                    <Text fontSize="$2" fontFamily="$interMedium" numberOfLines={1}>
                       {formatNumber(Math.abs(szi), 4)}
                     </Text>
                   </YStack>
-                  <YStack flex={1} gap="$1" alignItems="flex-end">
-                    <Text fontSize="$2" color="$color9">
-                      VALUE
+                  <YStack flex={1}>
+                    <Text fontSize="$1" color="$color9">
+                      ENTRY
                     </Text>
-                    <Text fontSize="$3" fontFamily="$interMedium">
-                      ${formatCompactNumber(position.positionValue)}
+                    <Text fontSize="$2" fontFamily="$interMedium" numberOfLines={1}>
+                      {formatCompactNumber(position.entryPx)}
+                    </Text>
+                  </YStack>
+                  <YStack flex={1}>
+                    <Text fontSize="$1" color="$color9">
+                      MARK
+                    </Text>
+                    <Text fontSize="$2" fontFamily="$interMedium" numberOfLines={1}>
+                      {formatCompactNumber(position.markPx)}
+                    </Text>
+                  </YStack>
+                  <YStack flex={1}>
+                    <Text fontSize="$1" color="$color9">
+                      MARGIN
+                    </Text>
+                    <Text fontSize="$2" fontFamily="$interMedium" numberOfLines={1}>
+                      {formatNumber(Number(position.marginUsed))}
                     </Text>
                   </YStack>
                 </XStack>
 
-                {/* Row 2: ENTRY and FUNDING */}
-                <XStack justifyContent="space-between">
-                  <YStack flex={1} gap="$1">
-                    <Text fontSize="$2" color="$color9">
-                      ENTRY
+                {/* Row 2: VALUE | FUNDING | LIQ PRICE | MODE */}
+                <XStack gap="$2">
+                  <YStack flex={1}>
+                    <Text fontSize="$1" color="$color9">
+                      VALUE
                     </Text>
-                    <Text fontSize="$3" fontFamily="$interMedium">
-                      {formatCompactNumber(position.entryPx)}
+                    <Text fontSize="$2" fontFamily="$interMedium" numberOfLines={1}>
+                      ${formatCompactNumber(position.positionValue)}
                     </Text>
                   </YStack>
-                  <YStack flex={1} gap="$1" alignItems="flex-end">
-                    <Text fontSize="$2" color="$color9">
+                  <YStack flex={1}>
+                    <Text fontSize="$1" color="$color9">
                       FUNDING
                     </Text>
                     <Text
-                      fontSize="$3"
+                      fontSize="$2"
                       fontFamily="$interMedium"
                       color={isFundingPositive ? '$green10' : '$red10'}
+                      numberOfLines={1}
                     >
                       {isFundingPositive ? '+' : ''}${formatNumber(funding)}
                     </Text>
                   </YStack>
-                </XStack>
-
-                {/* Row 3: MARK and LIQ PRICE */}
-                <XStack justifyContent="space-between">
-                  <YStack flex={1} gap="$1">
-                    <Text fontSize="$2" color="$color9">
-                      MARK
-                    </Text>
-                    <Text fontSize="$3" fontFamily="$interMedium">
-                      {formatCompactNumber(position.markPx)}
-                    </Text>
-                  </YStack>
-                  <YStack flex={1} gap="$1" alignItems="flex-end">
-                    <Text fontSize="$2" color="$color9">
+                  <YStack flex={1}>
+                    <Text fontSize="$1" color="$color9">
                       LIQ PRICE
                     </Text>
-                    <Text fontSize="$3" fontFamily="$interMedium">
+                    <Text fontSize="$2" fontFamily="$interMedium" numberOfLines={1}>
                       {position.liquidationPx ? formatCompactNumber(position.liquidationPx) : 'NA'}
                     </Text>
                   </YStack>
-                </XStack>
-
-                {/* Row 4: MARGIN and MODE */}
-                <XStack justifyContent="space-between">
-                  <YStack flex={1} gap="$1">
-                    <Text fontSize="$2" color="$color9">
-                      MARGIN
-                    </Text>
-                    <Text fontSize="$3" fontFamily="$interMedium">
-                      {formatNumber(Number(position.marginUsed))}
-                    </Text>
-                  </YStack>
-                  <YStack flex={1} gap="$1" alignItems="flex-end">
-                    <Text fontSize="$2" color="$color9">
+                  <YStack flex={1}>
+                    <Text fontSize="$1" color="$color9">
                       MODE
                     </Text>
-                    <Text fontSize="$3" fontFamily="$interMedium">
+                    <Text fontSize="$2" fontFamily="$interMedium" numberOfLines={1}>
                       {marginMode}
                     </Text>
                   </YStack>
@@ -268,11 +262,11 @@ export default function PositionsTab() {
               </YStack>
 
               {/* Action Buttons */}
-              <XStack gap="$2" marginTop="$2">
-                <Button flex={1} size="$3" variant="outlined" disabled>
+              <XStack gap="$2" marginTop="$1">
+                <Button flex={1} size="$2" variant="outlined" disabled>
                   Set TP/SL
                 </Button>
-                <Button flex={1} size="$3" backgroundColor="$red9" disabled>
+                <Button flex={1} size="$2" backgroundColor="$red9" disabled>
                   Close position
                 </Button>
               </XStack>
