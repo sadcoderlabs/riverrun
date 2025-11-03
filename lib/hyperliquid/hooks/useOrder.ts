@@ -5,15 +5,6 @@ import { roundPrice } from '@/components/trade/price-utils';
 import { useHyperliquidClient } from './useHyperliquidClient';
 
 /**
- * Position type with mark price for close orders
- */
-type Position = hl.ClearinghouseStateResponse['assetPositions'][number]['position'];
-
-interface PositionWithMarkPrice extends Position {
-  markPx: string;
-}
-
-/**
  * Parameters for opening a market order
  */
 export interface MarketOrderParams {
@@ -36,13 +27,23 @@ export interface LimitOrderParams {
 }
 
 /**
- * Parameters for closing a position (market or limit)
+ * Parameters for closing a position with market order
  */
-export interface CloseOrderParams {
-  position: PositionWithMarkPrice;
-  size: string; // Can be calculated from percentage in the caller
-  orderType: 'market' | 'limit';
-  limitPrice?: string; // Required for limit orders
+export interface CloseMarketOrderParams {
+  coin: string; // Asset symbol (e.g., 'BTC', 'ETH')
+  side: 'Long' | 'Short'; // Order side: Long = buy (close short), Short = sell (close long)
+  size: string; // Size to close
+  marketPrice: number; // Current market price for extreme price calculation
+}
+
+/**
+ * Parameters for closing a position with limit order
+ */
+export interface CloseLimitOrderParams {
+  coin: string; // Asset symbol (e.g., 'BTC', 'ETH')
+  side: 'Long' | 'Short'; // Order side: Long = buy (close short), Short = sell (close long)
+  size: string; // Size to close
+  price: string; // Limit price
 }
 
 /**
@@ -60,7 +61,8 @@ export interface UseOrderResult {
   // Order placement methods
   placeMarketOrder: (params: MarketOrderParams) => Promise<boolean>;
   placeLimitOrder: (params: LimitOrderParams) => Promise<boolean>;
-  placeCloseOrder: (params: CloseOrderParams) => Promise<boolean>;
+  placeCloseMarketOrder: (params: CloseMarketOrderParams) => Promise<boolean>;
+  placeCloseLimitOrder: (params: CloseLimitOrderParams) => Promise<boolean>;
   cancelOrder: (params: CancelOrderParams) => Promise<boolean>;
 
   // State
@@ -277,14 +279,14 @@ export function useOrder(): UseOrderResult {
   );
 
   /**
-   * Close a position (market or limit)
+   * Close a position with market order
    *
    * Key differences from opening orders:
-   * - Direction is inverted: closing long = sell, closing short = buy
-   * - Reduce-only is set to true to prevent position flip
+   * - Reduce-only is always set to true to prevent position flip
+   * - Uses extreme price (±5%) for immediate execution
    */
-  const placeCloseOrder = useCallback(
-    async (params: CloseOrderParams): Promise<boolean> => {
+  const placeCloseMarketOrder = useCallback(
+    async (params: CloseMarketOrderParams): Promise<boolean> => {
       setIsPlacingOrder(true);
       setError(null);
 
@@ -300,62 +302,44 @@ export function useOrder(): UseOrderResult {
 
         // 2. Get asset metadata
         const converter = await getSymbolConverter();
-        const assetId = converter.getAssetId(params.position.coin);
-        const szDecimals = converter.getSzDecimals(params.position.coin);
+        const assetId = converter.getAssetId(params.coin);
+        const szDecimals = converter.getSzDecimals(params.coin);
 
         // Validation
         if (assetId === undefined) {
-          throw new Error(`Unable to find asset ID for ${params.position.coin}`);
+          throw new Error(`Unable to find asset ID for ${params.coin}`);
         }
         if (szDecimals === undefined) {
-          throw new Error(`Unable to find size decimals for ${params.position.coin}`);
+          throw new Error(`Unable to find size decimals for ${params.coin}`);
         }
 
-        // 3. Determine position direction and invert for close order
-        const szi = Number(params.position.szi);
-        const isPositionLong = szi > 0;
-        const isCloseOrderLong = !isPositionLong; // Invert: close long = sell, close short = buy
+        // 3. Calculate extreme price for market order
+        const isLong = params.side === 'Long';
+        const extremePrice = isLong
+          ? params.marketPrice * 1.05 // Buy: 5% above market
+          : params.marketPrice * 0.95; // Sell: 5% below market
+        const price = roundPrice(extremePrice, szDecimals, false);
 
-        // 4. Calculate price based on order type
-        let price: string;
-        if (params.orderType === 'market') {
-          // Market close: use extreme price
-          const markPrice = Number(params.position.markPx);
-          const extremePrice = isCloseOrderLong
-            ? markPrice * 1.05 // Buy: 5% above market
-            : markPrice * 0.95; // Sell: 5% below market
-          price = roundPrice(extremePrice, szDecimals, false);
-        } else {
-          // Limit close: use user-specified price
-          if (!params.limitPrice) {
-            throw new Error('Limit price is required for limit close orders');
-          }
-          price = params.limitPrice;
-        }
-
-        // 5. Round size to asset-specific decimals
+        // 4. Round size to asset-specific decimals
         const roundedSize = parseFloat(params.size).toFixed(szDecimals);
 
-        // 6. Build order parameters
+        // 5. Build order parameters
         const orderParams = {
           a: assetId,
-          b: isCloseOrderLong,
+          b: isLong,
           p: price,
           s: roundedSize,
           r: true, // Always reduce-only for close orders
-          t:
-            params.orderType === 'market'
-              ? { limit: { tif: 'Ioc' as const } } // Immediate-Or-Cancel
-              : { limit: { tif: 'Gtc' as const } }, // Good-Till-Cancel
+          t: { limit: { tif: 'Ioc' as const } }, // Immediate-Or-Cancel
         };
 
-        // 7. Execute order
+        // 6. Execute order
         const response = await exchangeClient.order({
           orders: [orderParams],
           grouping: 'na',
         });
 
-        // 8. Check for errors in response
+        // 7. Check for errors in response
         if (response.response.data.statuses && response.response.data.statuses.length > 0) {
           const status = response.response.data.statuses[0];
           if ('error' in status && typeof status.error === 'string') {
@@ -367,18 +351,108 @@ export function useOrder(): UseOrderResult {
           }
         }
 
-        // 9. Success
-        const orderTypeText = params.orderType === 'market' ? 'Market' : 'Limit';
-        const priceText = params.orderType === 'limit' ? ` @ ${price}` : '';
-        toast.success('Close Order Placed', {
-          description: `${orderTypeText} close for ${params.size} ${params.position.coin}${priceText}`,
+        // 8. Success
+        toast.success('Market Close Order Placed', {
+          description: `Market close for ${params.size} ${params.coin}`,
         });
         return true;
       } catch (err) {
-        console.error('[useOrder.placeCloseOrder] Error:', err);
-        const errorMessage = err instanceof Error ? err.message : 'Failed to place close order';
+        console.error('[useOrder.placeCloseMarketOrder] Error:', err);
+        const errorMessage =
+          err instanceof Error ? err.message : 'Failed to place market close order';
         setError(errorMessage);
-        toast.error('Close Order Failed', {
+        toast.error('Market Close Order Failed', {
+          description: errorMessage,
+        });
+        return false;
+      } finally {
+        setIsPlacingOrder(false);
+      }
+    },
+    [getAgentExchangeClient, getSymbolConverter],
+  );
+
+  /**
+   * Close a position with limit order
+   *
+   * Key differences from opening orders:
+   * - Reduce-only is always set to true to prevent position flip
+   * - Uses user-specified price
+   */
+  const placeCloseLimitOrder = useCallback(
+    async (params: CloseLimitOrderParams): Promise<boolean> => {
+      setIsPlacingOrder(true);
+      setError(null);
+
+      try {
+        // 1. Get agent exchange client
+        const exchangeClient = await getAgentExchangeClient();
+        if (!exchangeClient) {
+          toast.info('Cancelled', {
+            description: 'Order placement was cancelled',
+          });
+          return false;
+        }
+
+        // 2. Get asset metadata
+        const converter = await getSymbolConverter();
+        const assetId = converter.getAssetId(params.coin);
+        const szDecimals = converter.getSzDecimals(params.coin);
+
+        // Validation
+        if (assetId === undefined) {
+          throw new Error(`Unable to find asset ID for ${params.coin}`);
+        }
+        if (szDecimals === undefined) {
+          throw new Error(`Unable to find size decimals for ${params.coin}`);
+        }
+
+        // 3. Use user-specified price
+        const price = params.price;
+
+        // 4. Round size to asset-specific decimals
+        const roundedSize = parseFloat(params.size).toFixed(szDecimals);
+
+        // 5. Build order parameters
+        const isLong = params.side === 'Long';
+        const orderParams = {
+          a: assetId,
+          b: isLong,
+          p: price,
+          s: roundedSize,
+          r: true, // Always reduce-only for close orders
+          t: { limit: { tif: 'Gtc' as const } }, // Good-Till-Cancel
+        };
+
+        // 6. Execute order
+        const response = await exchangeClient.order({
+          orders: [orderParams],
+          grouping: 'na',
+        });
+
+        // 7. Check for errors in response
+        if (response.response.data.statuses && response.response.data.statuses.length > 0) {
+          const status = response.response.data.statuses[0];
+          if ('error' in status && typeof status.error === 'string') {
+            toast.error('Order Failed', {
+              description: status.error,
+            });
+            setError(status.error);
+            return false;
+          }
+        }
+
+        // 8. Success
+        toast.success('Limit Close Order Placed', {
+          description: `Limit close for ${params.size} ${params.coin} @ ${price}`,
+        });
+        return true;
+      } catch (err) {
+        console.error('[useOrder.placeCloseLimitOrder] Error:', err);
+        const errorMessage =
+          err instanceof Error ? err.message : 'Failed to place limit close order';
+        setError(errorMessage);
+        toast.error('Limit Close Order Failed', {
           description: errorMessage,
         });
         return false;
@@ -449,7 +523,8 @@ export function useOrder(): UseOrderResult {
   return {
     placeMarketOrder,
     placeLimitOrder,
-    placeCloseOrder,
+    placeCloseMarketOrder,
+    placeCloseLimitOrder,
     cancelOrder,
     isPlacingOrder,
     isCanceling,

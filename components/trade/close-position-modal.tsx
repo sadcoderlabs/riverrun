@@ -27,7 +27,7 @@ export default function ClosePositionModal({
   position,
 }: ClosePositionModalProps) {
   const { getSymbolConverter } = useHyperliquidClient();
-  const { placeCloseOrder, isPlacingOrder } = useOrder();
+  const { placeCloseMarketOrder, placeCloseLimitOrder, isPlacingOrder } = useOrder();
   const [orderType, setOrderType] = useState<OrderType>('market');
   const [sizeUnit, setSizeUnit] = useState<SizeUnit>('asset');
   const [percentage, setPercentage] = useState<number>(100);
@@ -427,12 +427,25 @@ export default function ClosePositionModal({
                   }
 
                   // Place close order
-                  const success = await placeCloseOrder({
-                    position,
-                    size: assetSize,
-                    orderType,
-                    limitPrice: orderType === 'limit' ? limitPrice : undefined,
-                  });
+                  // Determine order side: close long position = sell (Short), close short position = buy (Long)
+                  const closeSide = isLong ? 'Short' : 'Long';
+
+                  let success: boolean;
+                  if (orderType === 'market') {
+                    success = await placeCloseMarketOrder({
+                      coin: position.coin,
+                      side: closeSide,
+                      size: assetSize,
+                      marketPrice: markPrice,
+                    });
+                  } else {
+                    success = await placeCloseLimitOrder({
+                      coin: position.coin,
+                      side: closeSide,
+                      size: assetSize,
+                      price: limitPrice,
+                    });
+                  }
 
                   // Close modal on success
                   if (success) {
