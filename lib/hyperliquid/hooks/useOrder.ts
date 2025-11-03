@@ -5,6 +5,27 @@ import { roundPrice } from '@/components/trade/price-utils';
 import { useHyperliquidClient } from './useHyperliquidClient';
 
 /**
+ * Validate that a size string has the correct number of decimal places
+ * @param size - Size as string (e.g., "0.123")
+ * @param maxDecimals - Maximum allowed decimal places (szDecimals)
+ * @throws Error if size has more decimals than allowed
+ */
+function validateSizeDecimals(size: string, maxDecimals: number, coin: string): void {
+  const parts = size.split('.');
+  if (parts.length > 2) {
+    throw new Error(`Invalid size format for ${coin}: ${size}`);
+  }
+  if (parts.length === 2) {
+    const decimalPlaces = parts[1].length;
+    if (decimalPlaces > maxDecimals) {
+      throw new Error(
+        `Size for ${coin} has too many decimal places. Maximum allowed: ${maxDecimals}, got: ${decimalPlaces}`,
+      );
+    }
+  }
+}
+
+/**
  * Parameters for opening a market order
  */
 export interface MarketOrderParams {
@@ -32,8 +53,8 @@ export interface LimitOrderParams {
 export interface CloseMarketOrderParams {
   coin: string; // Asset symbol (e.g., 'BTC', 'ETH')
   side: 'Long' | 'Short'; // Order side: Long = buy (close short), Short = sell (close long)
-  size: string; // Size to close
-  marketPrice: number; // Current market price for extreme price calculation
+  size: string; // Size to close (must match asset's decimal precision)
+  marketPrice: string; // Current market price for extreme price calculation
 }
 
 /**
@@ -313,22 +334,23 @@ export function useOrder(): UseOrderResult {
           throw new Error(`Unable to find size decimals for ${params.coin}`);
         }
 
-        // 3. Calculate extreme price for market order
-        const isLong = params.side === 'Long';
-        const extremePrice = isLong
-          ? params.marketPrice * 1.05 // Buy: 5% above market
-          : params.marketPrice * 0.95; // Sell: 5% below market
-        const price = roundPrice(extremePrice, szDecimals, false);
+        // 3. Validate size decimals
+        validateSizeDecimals(params.size, szDecimals, params.coin);
 
-        // 4. Round size to asset-specific decimals
-        const roundedSize = parseFloat(params.size).toFixed(szDecimals);
+        // 4. Calculate extreme price for market order
+        const isLong = params.side === 'Long';
+        const marketPriceNum = parseFloat(params.marketPrice);
+        const extremePrice = isLong
+          ? marketPriceNum * 1.05 // Buy: 5% above market
+          : marketPriceNum * 0.95; // Sell: 5% below market
+        const price = roundPrice(extremePrice, szDecimals, false);
 
         // 5. Build order parameters
         const orderParams = {
           a: assetId,
           b: isLong,
           p: price,
-          s: roundedSize,
+          s: params.size, // Use size as-is after validation
           r: true, // Always reduce-only for close orders
           t: { limit: { tif: 'Ioc' as const } }, // Immediate-Or-Cancel
         };
@@ -407,11 +429,11 @@ export function useOrder(): UseOrderResult {
           throw new Error(`Unable to find size decimals for ${params.coin}`);
         }
 
-        // 3. Use user-specified price
-        const price = params.price;
+        // 3. Validate size decimals
+        validateSizeDecimals(params.size, szDecimals, params.coin);
 
-        // 4. Round size to asset-specific decimals
-        const roundedSize = parseFloat(params.size).toFixed(szDecimals);
+        // 4. Use user-specified price
+        const price = params.price;
 
         // 5. Build order parameters
         const isLong = params.side === 'Long';
@@ -419,7 +441,7 @@ export function useOrder(): UseOrderResult {
           a: assetId,
           b: isLong,
           p: price,
-          s: roundedSize,
+          s: params.size, // Use size as-is after validation
           r: true, // Always reduce-only for close orders
           t: { limit: { tif: 'Gtc' as const } }, // Good-Till-Cancel
         };

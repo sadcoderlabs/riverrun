@@ -436,7 +436,7 @@ export default function ClosePositionModal({
                       coin: position.coin,
                       side: closeSide,
                       size: assetSize,
-                      marketPrice: markPrice,
+                      marketPrice: position.markPx, // Use string directly from position
                     });
                   } else {
                     success = await placeCloseLimitOrder({
