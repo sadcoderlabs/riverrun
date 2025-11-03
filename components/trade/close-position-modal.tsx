@@ -154,13 +154,40 @@ export default function ClosePositionModal({
 
   const handleMidPrice = () => {
     // Set to mid-market price (same as mark price for now)
-    setLimitPrice(markPrice.toFixed(2));
+    setLimitPrice(formatPrice(markPrice, szDecimals, false));
   };
 
   // Calculate estimated PnL for the close
   const closeSize = parseFloat(assetSize) || 0;
   const estimatedPnl = (markPrice - entryPrice) * closeSize * (isLong ? 1 : -1);
-  const estimatedPnlPercentage = (percentage / 100) * unrealizedPnl;
+
+  // For limit orders, calculate PnL based on limit price
+  let estimatedPnlPercentage: number | null;
+  if (orderType === 'limit') {
+    const limitPriceNum = parseFloat(limitPrice);
+    if (!limitPrice || isNaN(limitPriceNum) || limitPriceNum <= 0) {
+      estimatedPnlPercentage = null; // Invalid price
+    } else {
+      estimatedPnlPercentage = (limitPriceNum - entryPrice) * closeSize * (isLong ? 1 : -1);
+    }
+  } else {
+    estimatedPnlPercentage = (percentage / 100) * unrealizedPnl;
+  }
+
+  // Check if order is valid
+  const isOrderValid = (() => {
+    const sizeNum = parseFloat(assetSize);
+    if (!assetSize || isNaN(sizeNum) || sizeNum <= 0) {
+      return false;
+    }
+    if (orderType === 'limit') {
+      const priceNum = parseFloat(limitPrice);
+      if (!limitPrice || isNaN(priceNum) || priceNum <= 0) {
+        return false;
+      }
+    }
+    return true;
+  })();
 
   return (
     <Modal
@@ -321,7 +348,7 @@ export default function ClosePositionModal({
                       onPress={handleMidPrice}
                       pressStyle={{ opacity: 0.8 }}
                     >
-                      <Text fontFamily="$interSemiBold" color="white">
+                      <Text fontFamily="$interSemiBold" color="$gray1">
                         MID
                       </Text>
                     </Button>
@@ -435,19 +462,28 @@ export default function ClosePositionModal({
                 <Text fontSize="$2" color="$color9">
                   Estimated PNL:
                 </Text>
-                <Text
-                  fontSize="$3"
-                  fontFamily="$interSemiBold"
-                  color={estimatedPnlPercentage >= 0 ? '$green10' : '$red10'}
-                >
-                  {estimatedPnlPercentage >= 0 ? '+' : ''}${formatValue(estimatedPnlPercentage, 2)}
-                </Text>
+                {estimatedPnlPercentage !== null ? (
+                  <Text
+                    fontSize="$3"
+                    fontFamily="$interSemiBold"
+                    color={estimatedPnlPercentage >= 0 ? '$green10' : '$red10'}
+                  >
+                    {estimatedPnlPercentage >= 0 ? '+' : ''}$
+                    {formatValue(estimatedPnlPercentage, 2)}
+                  </Text>
+                ) : (
+                  <Text fontSize="$3" fontFamily="$interSemiBold" color="$color9">
+                    N/A
+                  </Text>
+                )}
               </XStack>
 
               {/* Confirm Button */}
               <Button
                 size="$4"
                 backgroundColor={isLong ? '$red9' : '$green9'}
+                disabled={!isOrderValid || isPlacingOrder}
+                opacity={!isOrderValid || isPlacingOrder ? 0.5 : 1}
                 onPress={async () => {
                   // Validate size
                   const sizeNum = parseFloat(assetSize);
@@ -489,7 +525,6 @@ export default function ClosePositionModal({
                     onOpenChange(false);
                   }
                 }}
-                disabled={isPlacingOrder}
                 pressStyle={{ opacity: 0.8 }}
               >
                 <Text fontSize="$4" fontFamily="$interSemiBold" color="white">
