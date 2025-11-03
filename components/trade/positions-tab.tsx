@@ -3,12 +3,17 @@ import { useEffect, useMemo, useState } from 'react';
 import { Button, ScrollView, Spinner, Text, View, XStack, YStack } from 'tamagui';
 import { useHyperliquidClient, useWebData2 } from '@/lib/hyperliquid/hooks';
 import { useActiveWallet } from '@/lib/riverrun/hooks';
+import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
+import { formatSize } from '@/lib/hyperliquid/format/formatSize';
+import { formatValue } from '@/lib/hyperliquid/format/formatValue';
+import { formatPercent } from '@/lib/hyperliquid/format/formatPercent';
 import ClosePositionModal from './close-position-modal';
 
 type Position = hl.ClearinghouseStateResponse['assetPositions'][number]['position'];
 
 interface PositionWithMarkPrice extends Position {
   markPx: string;
+  szDecimals: number;
 }
 
 export default function PositionsTab() {
@@ -21,24 +26,29 @@ export default function PositionsTab() {
   const [closeModalOpen, setCloseModalOpen] = useState(false);
   const [selectedPosition, setSelectedPosition] = useState<PositionWithMarkPrice | null>(null);
 
-  // Fetch market data (mark prices) separately
-  const [markPriceMap, setMarkPriceMap] = useState<Map<string, string>>(new Map());
+  // Fetch market data (mark prices and szDecimals) separately
+  const [marketDataMap, setMarketDataMap] = useState<
+    Map<string, { markPx: string; szDecimals: number }>
+  >(new Map());
 
   useEffect(() => {
     const fetchMarketData = async () => {
       try {
         const metaAndAssetCtxs = await getInfoClient().metaAndAssetCtxs();
 
-        // Create a map of coin -> mark price for quick lookup
-        const priceMap = new Map<string, string>();
+        // Create a map of coin -> {markPx, szDecimals} for quick lookup
+        const dataMap = new Map<string, { markPx: string; szDecimals: number }>();
         metaAndAssetCtxs[0].universe.forEach((asset, index) => {
           const assetCtx = metaAndAssetCtxs[1][index];
           if (assetCtx) {
-            priceMap.set(asset.name, assetCtx.markPx);
+            dataMap.set(asset.name, {
+              markPx: assetCtx.markPx,
+              szDecimals: asset.szDecimals,
+            });
           }
         });
 
-        setMarkPriceMap(priceMap);
+        setMarketDataMap(dataMap);
       } catch (err) {
         console.error('Error fetching market data:', err);
       }
@@ -60,11 +70,15 @@ export default function PositionsTab() {
 
     return webData.clearinghouseState.assetPositions
       .filter(asset => asset.position && Number(asset.position.szi) !== 0)
-      .map(asset => ({
-        ...asset.position,
-        markPx: markPriceMap.get(asset.position.coin) || '0',
-      }));
-  }, [webData, markPriceMap]);
+      .map(asset => {
+        const marketData = marketDataMap.get(asset.position.coin);
+        return {
+          ...asset.position,
+          markPx: marketData?.markPx || '0',
+          szDecimals: marketData?.szDecimals || 0,
+        };
+      });
+  }, [webData, marketDataMap]);
 
   if (!isAuthenticated || !address) {
     return (
@@ -99,20 +113,6 @@ export default function PositionsTab() {
     );
   }
 
-  const formatNumber = (num: number | string, decimals = 2) => {
-    const value = typeof num === 'string' ? parseFloat(num) : num;
-    return !isNaN(value) ? value.toFixed(decimals) : '-';
-  };
-
-  const formatCompactNumber = (num: number | string) => {
-    const value = typeof num === 'string' ? parseFloat(num) : num;
-    if (isNaN(value)) return '-';
-    if (Math.abs(value) >= 1000) {
-      return value.toFixed(0);
-    }
-    return value.toFixed(2);
-  };
-
   return (
     <ScrollView flex={1}>
       <YStack gap="$2">
@@ -123,7 +123,12 @@ export default function PositionsTab() {
           const isPnlPositive = unrealizedPnl >= 0;
           const leverage = position.leverage.value;
           const marginMode = position.leverage.type === 'cross' ? 'CROSS' : 'ISOLATED';
-          const funding = Number(position.cumFunding.sinceOpen);
+          // Funding from API is from funding rate perspective
+          // For Long: positive cumFunding = you paid (negative cash flow)
+          // For Short: positive cumFunding = you received (positive cash flow)
+          // So we need to invert for Long positions
+          const fundingFromApi = Number(position.cumFunding.sinceOpen);
+          const funding = szi > 0 ? -fundingFromApi : fundingFromApi;
           const isFundingPositive = funding >= 0;
 
           return (
@@ -176,8 +181,9 @@ export default function PositionsTab() {
                     fontFamily="$interSemiBold"
                     color={isPnlPositive ? '$green10' : '$red10'}
                   >
-                    {isPnlPositive ? '+' : ''}${formatNumber(unrealizedPnl)} (
-                    {formatNumber((unrealizedPnl / Number(position.marginUsed)) * 100)}%)
+                    {isPnlPositive ? '+' : ''}${formatValue(unrealizedPnl, 2)} (
+                    {isPnlPositive ? '+' : ''}
+                    {formatPercent((unrealizedPnl / Number(position.marginUsed)) * 100, 1)})
                   </Text>
                 </YStack>
               </XStack>
@@ -191,7 +197,7 @@ export default function PositionsTab() {
                       SIZE
                     </Text>
                     <Text fontSize="$2" fontFamily="$interMedium" numberOfLines={1}>
-                      {formatNumber(Math.abs(szi), 4)}
+                      {formatSize(Math.abs(szi), position.szDecimals, true)}
                     </Text>
                   </YStack>
                   <YStack flex={1}>
@@ -199,7 +205,7 @@ export default function PositionsTab() {
                       ENTRY
                     </Text>
                     <Text fontSize="$2" fontFamily="$interMedium" numberOfLines={1}>
-                      {formatCompactNumber(position.entryPx)}
+                      {formatPrice(position.entryPx, position.szDecimals, true)}
                     </Text>
                   </YStack>
                   <YStack flex={1}>
@@ -207,7 +213,7 @@ export default function PositionsTab() {
                       MARK
                     </Text>
                     <Text fontSize="$2" fontFamily="$interMedium" numberOfLines={1}>
-                      {formatCompactNumber(position.markPx)}
+                      {formatPrice(position.markPx, position.szDecimals, true)}
                     </Text>
                   </YStack>
                   <YStack flex={1}>
@@ -215,7 +221,7 @@ export default function PositionsTab() {
                       MARGIN
                     </Text>
                     <Text fontSize="$2" fontFamily="$interMedium" numberOfLines={1}>
-                      {formatNumber(Number(position.marginUsed))}
+                      {formatValue(position.marginUsed, 2)}
                     </Text>
                   </YStack>
                 </XStack>
@@ -227,7 +233,7 @@ export default function PositionsTab() {
                       VALUE
                     </Text>
                     <Text fontSize="$2" fontFamily="$interMedium" numberOfLines={1}>
-                      ${formatCompactNumber(position.positionValue)}
+                      ${formatValue(position.positionValue, 2)}
                     </Text>
                   </YStack>
                   <YStack flex={1}>
@@ -240,7 +246,7 @@ export default function PositionsTab() {
                       color={isFundingPositive ? '$green10' : '$red10'}
                       numberOfLines={1}
                     >
-                      {isFundingPositive ? '+' : ''}${formatNumber(funding)}
+                      {isFundingPositive ? '+' : '-'}${formatValue(Math.abs(funding), 2)}
                     </Text>
                   </YStack>
                   <YStack flex={1}>
@@ -248,7 +254,9 @@ export default function PositionsTab() {
                       LIQ PRICE
                     </Text>
                     <Text fontSize="$2" fontFamily="$interMedium" numberOfLines={1}>
-                      {position.liquidationPx ? formatCompactNumber(position.liquidationPx) : 'NA'}
+                      {position.liquidationPx
+                        ? formatPrice(position.liquidationPx, position.szDecimals, true)
+                        : 'NA'}
                     </Text>
                   </YStack>
                   <YStack flex={1}>
