@@ -2,9 +2,11 @@ import OrdersTab from '@/components/trade/orders-tab';
 import PositionsTab from '@/components/trade/positions-tab';
 import { useState } from 'react';
 import { Text, XStack, YStack } from 'tamagui';
+import { usePositionCount } from '@/lib/hyperliquid/hooks';
 
 export function PerpTabs() {
   const [activeTab, setActiveTab] = useState<'orders' | 'positions' | 'history'>('orders');
+  const positionCount = usePositionCount();
 
   return (
     <YStack borderTopWidth={1} borderTopColor="$gray8" backgroundColor="$background">
@@ -19,6 +21,7 @@ export function PerpTabs() {
           label="Positions"
           isActive={activeTab === 'positions'}
           onPress={() => setActiveTab('positions')}
+          count={positionCount}
         />
         <TabItem
           label="History"
@@ -50,9 +53,10 @@ interface TabItemProps {
   label: string;
   isActive: boolean;
   onPress: () => void;
+  count?: number;
 }
 
-function TabItem({ label, isActive, onPress }: TabItemProps) {
+function TabItem({ label, isActive, onPress, count }: TabItemProps) {
   return (
     <XStack
       flex={1}
@@ -63,6 +67,7 @@ function TabItem({ label, isActive, onPress }: TabItemProps) {
       pressStyle={{ opacity: 0.7 }}
       borderBottomWidth={isActive ? 2 : 0}
       borderBottomColor={isActive ? '$accent9' : 'transparent'}
+      gap="$2"
     >
       <Text
         fontFamily={isActive ? '$interSemiBold' : '$interRegular'}
@@ -71,6 +76,25 @@ function TabItem({ label, isActive, onPress }: TabItemProps) {
       >
         {label}
       </Text>
+      {count !== undefined && count > 0 && (
+        <XStack
+          paddingHorizontal="$2"
+          paddingVertical="$0.5"
+          borderRadius="$10"
+          backgroundColor={isActive ? '$accent3' : '$gray8'}
+          minWidth={20}
+          justifyContent="center"
+          alignItems="center"
+        >
+          <Text
+            fontSize="$1"
+            fontFamily="$interSemiBold"
+            color={isActive ? '$accent11' : '$color'}
+          >
+            {count}
+          </Text>
+        </XStack>
+      )}
     </XStack>
   );
 }
