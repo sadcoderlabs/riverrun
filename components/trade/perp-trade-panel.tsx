@@ -5,10 +5,8 @@ import { useOrderForm } from '@/components/trade/hooks/use-order-form';
 import { LeverageSelector } from '@/components/trade/leverage-selector';
 import { LimitOrderForm, MarketOrderForm, OrderTypeSelector } from '@/components/trade/order-forms';
 import { OrderBook } from '@/components/trade/OrderBook';
-import { roundPrice } from '@/components/trade/price-utils';
 import { TpSlInput } from '@/components/trade/tp-sl-input';
-import { useActiveAssetData } from '@/lib/hyperliquid/hooks';
-import { useHyperliquidClient } from '@/lib/hyperliquid/hooks';
+import { useActiveAssetData, useHyperliquidClient, useOrder } from '@/lib/hyperliquid/hooks';
 import { Checkbox } from '@tamagui/checkbox';
 import { Check } from '@tamagui/lucide-icons';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -21,7 +19,8 @@ interface PerpTradePanelProps {
 }
 
 export function PerpTradePanel({ coin }: PerpTradePanelProps) {
-  const { getSymbolConverter, getAgentExchangeClient } = useHyperliquidClient();
+  const { getSymbolConverter } = useHyperliquidClient();
+  const { placeMarketOrder, placeLimitOrder, isPlacingOrder } = useOrder();
 
   // Subscribe to active asset data (leverage, margin mode) from WebSocket
   const { data: activeAssetData, isLoading: isLoadingAssetData } = useActiveAssetData({
@@ -78,13 +77,8 @@ export function PerpTradePanel({ coin }: PerpTradePanelProps) {
   const [tpValue, setTpValue] = useState('');
   const [slValue, setSlValue] = useState('');
 
-  // Loading state for placing orders
-  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
-
   // Handler for Place Order button
   const handlePlaceOrder = useCallback(async () => {
-    if (isPlacingOrder) return;
-
     const data = form.getValues();
 
     // Check if size is valid
@@ -103,118 +97,32 @@ export function PerpTradePanel({ coin }: PerpTradePanelProps) {
       return;
     }
 
-    setIsPlacingOrder(true);
-
-    try {
-      // Get ExchangeClient
-      const exchangeClient = await getAgentExchangeClient();
-      if (!exchangeClient) {
-        // User cancelled signing
-        toast.info('Cancelled', {
-          description: 'Order placement was cancelled',
-        });
-        return;
-      }
-
-      // Get assetId from coin symbol
-      const converter = await getSymbolConverter();
-      const assetId = converter.getAssetId(coin);
-
-      if (assetId === undefined) {
-        toast.error('Invalid Asset', {
-          description: `Unable to find asset ID for ${coin}`,
-        });
-        return;
-      }
-
-      // Get szDecimals for the asset to properly round the size
-      const assetSzDecimals = converter.getSzDecimals(coin);
-      if (assetSzDecimals === undefined) {
-        toast.error('Invalid Asset', {
-          description: `Unable to find size decimals for ${coin}`,
-        });
-        return;
-      }
-
-      // Round size to the required decimal places for this asset
-      const rawSize = parseFloat(data.size);
-      const roundedSize = rawSize.toFixed(assetSzDecimals);
-
-      // Calculate price based on order type
-      const isLong = data.orderSide === 'Long';
-      let price: string;
-
-      if (data.orderType === 'Market') {
-        // Market order: use extreme price to ensure immediate execution
-        // Buy: price above market, Sell: price below market
-        const extremePrice = isLong
-          ? marketPrice * 1.05 // 5% above market for buys
-          : marketPrice * 0.95; // 5% below market for sells
-        // Round the price according to Hyperliquid rules
-        price = roundPrice(extremePrice, assetSzDecimals, false);
-      } else {
-        // Limit order: use user-specified price (no rounding)
-        price = data.limitPrice || '0';
-      }
-
-      // Prepare order parameters
-      // Size is rounded here before submitting, price is user-specified
-      const orderParams = {
-        a: assetId, // asset ID
-        b: isLong, // true for long (buy), false for short (sell)
-        p: price, // price (user-specified, not rounded)
-        s: roundedSize, // size (rounded to szDecimals)
-        r: data.reduceOnly, // reduce-only
-        t:
-          data.orderType === 'Market'
-            ? { limit: { tif: 'Ioc' as const } } // Market order: Immediate-Or-Cancel
-            : { limit: { tif: 'Gtc' as const } }, // Limit order: Good-Till-Cancel
-      };
-
-      // Place the order
-      const response = await exchangeClient.order({
-        orders: [orderParams],
-        grouping: 'na',
+    // Place order using the appropriate method
+    if (data.orderType === 'Market') {
+      await placeMarketOrder({
+        coin,
+        side: data.orderSide,
+        size: data.size,
+        reduceOnly: data.reduceOnly,
+        marketPrice,
       });
-
-      console.log('[handlePlaceOrder] Order response:', response);
-
-      // Check if response contains errors
-      if (response.response.data.statuses && response.response.data.statuses.length > 0) {
-        const status = response.response.data.statuses[0];
-
-        // Check if the status contains an error
-        if ('error' in status && typeof status.error === 'string') {
-          toast.error('Order Failed', {
-            description: status.error,
-          });
-          return;
-        }
-      }
-
-      // Show success toast
-      toast.success('Order Placed', {
-        description: `${data.orderType} ${data.orderSide} order for ${data.size} ${coin}`,
+    } else {
+      await placeLimitOrder({
+        coin,
+        side: data.orderSide,
+        size: data.size,
+        limitPrice: data.limitPrice || '0',
+        reduceOnly: data.reduceOnly,
       });
-
-      // WebSocket will automatically update the orders list
-    } catch (err) {
-      console.error('[handlePlaceOrder] Error placing order:', err);
-      const errorMessage =
-        err instanceof Error ? err.message : 'Failed to place order. Please try again.';
-      toast.error('Order Failed', {
-        description: errorMessage,
-      });
-    } finally {
-      setIsPlacingOrder(false);
     }
   }, [
     coin,
     form,
-    validation.hasValidLimitPrice,
     validation.hasValidSize,
-    isPlacingOrder,
+    validation.hasValidLimitPrice,
     marketPrice,
+    placeMarketOrder,
+    placeLimitOrder,
   ]);
 
   // Format number with 2 decimal places

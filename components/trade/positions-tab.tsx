@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Button, ScrollView, Spinner, Text, View, XStack, YStack } from 'tamagui';
 import { useHyperliquidClient } from '@/lib/hyperliquid/hooks';
 import { useActiveWallet } from '@/lib/riverrun/hooks';
+import ClosePositionModal from './close-position-modal';
 
 type Position = hl.ClearinghouseStateResponse['assetPositions'][number]['position'];
 
@@ -16,6 +17,8 @@ export default function PositionsTab() {
   const [positions, setPositions] = useState<PositionWithMarkPrice[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [closeModalOpen, setCloseModalOpen] = useState(false);
+  const [selectedPosition, setSelectedPosition] = useState<PositionWithMarkPrice | null>(null);
 
   useEffect(() => {
     const fetchPositions = async () => {
@@ -266,7 +269,16 @@ export default function PositionsTab() {
                 <Button flex={1} size="$2" variant="outlined" disabled>
                   Set TP/SL
                 </Button>
-                <Button flex={1} size="$2" backgroundColor="$red9" disabled>
+                <Button
+                  flex={1}
+                  size="$2"
+                  backgroundColor="$red9"
+                  onPress={() => {
+                    setSelectedPosition(position);
+                    setCloseModalOpen(true);
+                  }}
+                  pressStyle={{ opacity: 0.8 }}
+                >
                   Close position
                 </Button>
               </XStack>
@@ -274,6 +286,12 @@ export default function PositionsTab() {
           );
         })}
       </YStack>
+
+      <ClosePositionModal
+        open={closeModalOpen}
+        onOpenChange={setCloseModalOpen}
+        position={selectedPosition}
+      />
     </ScrollView>
   );
 }

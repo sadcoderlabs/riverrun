@@ -2,6 +2,7 @@ export * from './useActiveAssetCtx';
 export * from './useActiveAssetData';
 export * from './useHyperliquidClient';
 export * from './useHyperliquidWithdraw';
+export * from './useOrder';
 export * from './useOrderBook';
 export * from './useOrderUpdates';
 export * from './useSpotBalance';
