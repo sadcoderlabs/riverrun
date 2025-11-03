@@ -1,6 +1,7 @@
 import { CoinInfo } from '@/components/trade/coin-info';
 import { TradeTypeNav } from '@/components/trade/trade-type-nav';
-import { Slot, usePathname, useSegments } from 'expo-router';
+import { PerpTabs } from '@/components/trade/perp-tabs';
+import { Slot, usePathname, useRouter, useSegments } from 'expo-router';
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import Animated, {
@@ -11,6 +12,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { YStack } from 'tamagui';
+import { useSelectedCoinStore } from '@/lib/riverrun/store';
 
 const NAV_HEIGHT = 48;
 
@@ -27,22 +29,40 @@ export default function TradeLayout() {
   const insets = useSafeAreaInsets();
   const segments = useSegments();
   const pathname = usePathname();
+  const router = useRouter();
   const [coinInfoHeight, setCoinInfoHeight] = React.useState(0);
+
+  // Zustand store for selected coin
+  const { selectedCoin, setSelectedCoin } = useSelectedCoinStore();
 
   // Extract trade type and asset from route params
   const tradeType = (segments[2] as 'perp' | 'spot') || 'perp';
 
-  // IMPORTANT: Extract asset from pathname directly, NOT from useLocalSearchParams()
-  // useLocalSearchParams() can cache old values at the layout level and doesn't update
-  // immediately when router.replace() is called. Using pathname ensures we always get
-  // the current route value, which is critical for updating CoinInfo when switching markets.
+  // Extract asset from pathname
   // pathname format: /trade/perp/BTC or /(main)/trade/perp/BTC
   const pathSegments = pathname.split('/').filter(Boolean);
   const assetFromPath = pathSegments[pathSegments.length - 1];
-  const asset = (assetFromPath || 'BTC').toUpperCase();
+  const assetFromUrl = (assetFromPath || 'BTC').toUpperCase();
 
-  // Check if current route is perp trade (for showing CoinInfo)
+  // Check if current route is perp trade (for showing CoinInfo and PerpTabs)
   const isPerpTrade = tradeType === 'perp' && segments[3] !== undefined;
+
+  // Sync pathname to store (when URL changes externally, e.g., browser back/forward)
+  React.useEffect(() => {
+    if (isPerpTrade && assetFromUrl && assetFromUrl !== selectedCoin) {
+      setSelectedCoin(assetFromUrl);
+    }
+  }, [assetFromUrl, isPerpTrade, selectedCoin, setSelectedCoin]);
+
+  // Sync store to URL (when selectedCoin changes from user interaction)
+  React.useEffect(() => {
+    if (isPerpTrade && selectedCoin && selectedCoin !== assetFromUrl) {
+      router.setParams({ coin: selectedCoin });
+    }
+  }, [selectedCoin, assetFromUrl, isPerpTrade, router]);
+
+  // Use selectedCoin for display, fallback to assetFromUrl
+  const displayCoin = selectedCoin || assetFromUrl;
 
   // Track scroll position
   const scrollY = useSharedValue(0);
@@ -73,7 +93,7 @@ export default function TradeLayout() {
             borderBottomColor="$gray8"
             backgroundColor="$gray3"
           >
-            <TradeTypeNav currentType={tradeType} asset={asset} />
+            <TradeTypeNav currentType={tradeType} asset={displayCoin} />
           </YStack>
         </Animated.View>
       </View>
@@ -86,7 +106,7 @@ export default function TradeLayout() {
             style={styles.stickyHeader}
             onLayout={e => setCoinInfoHeight(e.nativeEvent.layout.height)}
           >
-            <CoinInfo coin={asset} />
+            <CoinInfo coin={displayCoin} />
           </View>
         )}
 
@@ -101,6 +121,9 @@ export default function TradeLayout() {
           <Slot />
         </Animated.ScrollView>
       </Animated.View>
+
+      {/* PerpTabs - Fixed at bottom, persists across market switches */}
+      {isPerpTrade && <PerpTabs />}
     </View>
   );
 }

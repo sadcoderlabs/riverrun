@@ -102,11 +102,7 @@ function TabItem({ label, isActive, onPress, count }: TabItemProps) {
           justifyContent="center"
           alignItems="center"
         >
-          <Text
-            fontSize="$1"
-            fontFamily="$interSemiBold"
-            color={isActive ? '$accent11' : '$color'}
-          >
+          <Text fontSize="$1" fontFamily="$interSemiBold" color={isActive ? '$accent11' : '$color'}>
             {count}
           </Text>
         </XStack>

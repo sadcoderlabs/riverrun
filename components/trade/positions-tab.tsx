@@ -8,7 +8,7 @@ import { formatSize } from '@/lib/hyperliquid/format/formatSize';
 import { formatValue } from '@/lib/hyperliquid/format/formatValue';
 import { formatPercent } from '@/lib/hyperliquid/format/formatPercent';
 import ClosePositionModal from './close-position-modal';
-import { useRouter } from 'expo-router';
+import { useSelectedCoinStore } from '@/lib/riverrun/store';
 
 type Position = hl.ClearinghouseStateResponse['assetPositions'][number]['position'];
 
@@ -20,7 +20,7 @@ interface PositionWithMarkPrice extends Position {
 export default function PositionsTab() {
   const { address, isAuthenticated } = useActiveWallet();
   const { getInfoClient } = useHyperliquidClient();
-  const router = useRouter();
+  const { setSelectedCoin } = useSelectedCoinStore();
 
   // Subscribe to real-time WebSocket updates
   const { data: webData, isLoading, error: webError } = useWebData2();
@@ -28,9 +28,10 @@ export default function PositionsTab() {
   const [closeModalOpen, setCloseModalOpen] = useState(false);
   const [selectedPosition, setSelectedPosition] = useState<PositionWithMarkPrice | null>(null);
 
-  // Navigate to specific market when position card is clicked
+  // Switch market when position card is clicked (without full page reload)
   const handlePositionClick = (coin: string) => {
-    router.replace(`/trade/perp/${coin}?tab=positions`);
+    setSelectedCoin(coin);
+    // Note: URL will be synced by TradeLayout's useEffect
   };
 
   // Fetch market data (mark prices and szDecimals) separately
