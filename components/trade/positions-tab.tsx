@@ -1,7 +1,7 @@
 import * as hl from '@nktkas/hyperliquid';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button, ScrollView, Spinner, Text, View, XStack, YStack } from 'tamagui';
-import { useHyperliquidClient } from '@/lib/hyperliquid/hooks';
+import { useHyperliquidClient, useWebData2 } from '@/lib/hyperliquid/hooks';
 import { useActiveWallet } from '@/lib/riverrun/hooks';
 import ClosePositionModal from './close-position-modal';
 
@@ -14,59 +14,57 @@ interface PositionWithMarkPrice extends Position {
 export default function PositionsTab() {
   const { address, isAuthenticated } = useActiveWallet();
   const { getInfoClient } = useHyperliquidClient();
-  const [positions, setPositions] = useState<PositionWithMarkPrice[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+
+  // Subscribe to real-time WebSocket updates
+  const { data: webData, isLoading, error: webError } = useWebData2();
+
   const [closeModalOpen, setCloseModalOpen] = useState(false);
   const [selectedPosition, setSelectedPosition] = useState<PositionWithMarkPrice | null>(null);
 
+  // Fetch market data (mark prices) separately
+  const [markPriceMap, setMarkPriceMap] = useState<Map<string, string>>(new Map());
+
   useEffect(() => {
-    const fetchPositions = async () => {
-      if (!address || !isAuthenticated) {
-        setPositions([]);
-        setLoading(false);
-        return;
-      }
-
+    const fetchMarketData = async () => {
       try {
-        setLoading(true);
-        setError(null);
-
-        // Fetch both clearinghouse state and market data
-        const [clearinghouseState, metaAndAssetCtxs] = await Promise.all([
-          getInfoClient().clearinghouseState({ user: address }),
-          getInfoClient().metaAndAssetCtxs(),
-        ]);
+        const metaAndAssetCtxs = await getInfoClient().metaAndAssetCtxs();
 
         // Create a map of coin -> mark price for quick lookup
-        const markPriceMap = new Map<string, string>();
+        const priceMap = new Map<string, string>();
         metaAndAssetCtxs[0].universe.forEach((asset, index) => {
           const assetCtx = metaAndAssetCtxs[1][index];
           if (assetCtx) {
-            markPriceMap.set(asset.name, assetCtx.markPx);
+            priceMap.set(asset.name, assetCtx.markPx);
           }
         });
 
-        // Filter and enrich positions with mark price
-        const userPositions = clearinghouseState.assetPositions
-          .filter(asset => asset.position && Number(asset.position.szi) !== 0)
-          .map(asset => ({
-            ...asset.position,
-            markPx: markPriceMap.get(asset.position.coin) || '0',
-          }));
-
-        setPositions(userPositions);
+        setMarkPriceMap(priceMap);
       } catch (err) {
-        console.error('Error fetching positions:', err);
-        setError('Failed to fetch positions');
-        setPositions([]);
-      } finally {
-        setLoading(false);
+        console.error('Error fetching market data:', err);
       }
     };
 
-    fetchPositions();
-  }, [address, isAuthenticated, getInfoClient]);
+    if (isAuthenticated) {
+      fetchMarketData();
+      // Refresh mark prices every 5 seconds
+      const interval = setInterval(fetchMarketData, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [isAuthenticated, getInfoClient]);
+
+  // Extract and enrich positions from WebSocket data
+  const positions = useMemo<PositionWithMarkPrice[]>(() => {
+    if (!webData?.clearinghouseState?.assetPositions) {
+      return [];
+    }
+
+    return webData.clearinghouseState.assetPositions
+      .filter(asset => asset.position && Number(asset.position.szi) !== 0)
+      .map(asset => ({
+        ...asset.position,
+        markPx: markPriceMap.get(asset.position.coin) || '0',
+      }));
+  }, [webData, markPriceMap]);
 
   if (!isAuthenticated || !address) {
     return (
@@ -76,7 +74,7 @@ export default function PositionsTab() {
     );
   }
 
-  if (loading) {
+  if (isLoading) {
     return (
       <View flex={1} justifyContent="center" alignItems="center">
         <Spinner size="large" />
@@ -85,10 +83,10 @@ export default function PositionsTab() {
     );
   }
 
-  if (error) {
+  if (webError) {
     return (
       <View flex={1} justifyContent="center" alignItems="center" padding="$4">
-        <Text color="$red10">{error}</Text>
+        <Text color="$red10">{webError.message}</Text>
       </View>
     );
   }
