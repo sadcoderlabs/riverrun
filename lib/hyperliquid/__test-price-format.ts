@@ -3,7 +3,7 @@
  * Run with: npx tsx lib/hyperliquid/__test-price-format.ts
  */
 
-import { formatPrice } from './price-format';
+import { formatPrice } from './format/formatPrice';
 
 interface TestCase {
   coin: string;

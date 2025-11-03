@@ -4,7 +4,7 @@ import { Button, Slider, Text, XStack, YStack } from 'tamagui';
 import * as hl from '@nktkas/hyperliquid';
 import { Input } from '@/components/global/input';
 import { useHyperliquidClient, useOrder } from '@/lib/hyperliquid/hooks';
-import { formatSize } from '@/lib/hyperliquid/price-format';
+import { formatSize } from '@/lib/hyperliquid/format/formatSize';
 
 type Position = hl.ClearinghouseStateResponse['assetPositions'][number]['position'];
 
