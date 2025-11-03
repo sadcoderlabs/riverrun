@@ -119,11 +119,11 @@ export default function TradeLayout() {
           contentContainerStyle={isPerpTrade ? { paddingTop: coinInfoHeight } : undefined}
         >
           <Slot />
+
+          {/* PerpTabs - Inside ScrollView for full-page scrolling, still persists across market switches */}
+          {isPerpTrade && <PerpTabs />}
         </Animated.ScrollView>
       </Animated.View>
-
-      {/* PerpTabs - Fixed at bottom, persists across market switches */}
-      {isPerpTrade && <PerpTabs />}
     </View>
   );
 }

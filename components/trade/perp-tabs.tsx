@@ -47,14 +47,10 @@ export function PerpTabs() {
       </XStack>
 
       {/* Tab Content */}
-      <YStack minHeight={120} padding="$4">
+      <YStack padding="$4">
         {activeTab === 'orders' && <OrdersTab />}
 
-        {activeTab === 'positions' && (
-          <YStack flex={1}>
-            <PositionsTab />
-          </YStack>
-        )}
+        {activeTab === 'positions' && <PositionsTab />}
 
         {activeTab === 'history' && (
           <TabPlaceholder title="History" message="Your trading history will appear here" />
