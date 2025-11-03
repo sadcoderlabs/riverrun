@@ -8,6 +8,7 @@ import { formatSize } from '@/lib/hyperliquid/format/formatSize';
 import { formatValue } from '@/lib/hyperliquid/format/formatValue';
 import { formatPercent } from '@/lib/hyperliquid/format/formatPercent';
 import ClosePositionModal from './close-position-modal';
+import { useRouter } from 'expo-router';
 
 type Position = hl.ClearinghouseStateResponse['assetPositions'][number]['position'];
 
@@ -19,12 +20,18 @@ interface PositionWithMarkPrice extends Position {
 export default function PositionsTab() {
   const { address, isAuthenticated } = useActiveWallet();
   const { getInfoClient } = useHyperliquidClient();
+  const router = useRouter();
 
   // Subscribe to real-time WebSocket updates
   const { data: webData, isLoading, error: webError } = useWebData2();
 
   const [closeModalOpen, setCloseModalOpen] = useState(false);
   const [selectedPosition, setSelectedPosition] = useState<PositionWithMarkPrice | null>(null);
+
+  // Navigate to specific market when position card is clicked
+  const handlePositionClick = (coin: string) => {
+    router.replace(`/trade/perp/${coin}?tab=positions`);
+  };
 
   // Fetch market data (mark prices and szDecimals) separately
   const [marketDataMap, setMarketDataMap] = useState<
@@ -140,6 +147,9 @@ export default function PositionsTab() {
               borderWidth={1}
               borderColor="$gray5"
               gap="$2"
+              onPress={() => handlePositionClick(position.coin)}
+              pressStyle={{ opacity: 0.7, backgroundColor: '$gray3' }}
+              cursor="pointer"
             >
               {/* Header Section */}
               <XStack justifyContent="space-between" alignItems="flex-start">
@@ -279,7 +289,8 @@ export default function PositionsTab() {
                   flex={1}
                   size="$2"
                   backgroundColor="$red9"
-                  onPress={() => {
+                  onPress={(e: any) => {
+                    e.stopPropagation();
                     setSelectedPosition(position);
                     setCloseModalOpen(true);
                   }}

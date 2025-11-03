@@ -1,12 +1,28 @@
 import OrdersTab from '@/components/trade/orders-tab';
 import PositionsTab from '@/components/trade/positions-tab';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Text, XStack, YStack } from 'tamagui';
 import { usePositionCount } from '@/lib/hyperliquid/hooks';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 
 export function PerpTabs() {
+  const router = useRouter();
+  const params = useLocalSearchParams<{ tab?: string }>();
   const [activeTab, setActiveTab] = useState<'orders' | 'positions' | 'history'>('orders');
   const positionCount = usePositionCount();
+
+  // Sync activeTab with URL params
+  useEffect(() => {
+    if (params.tab && ['orders', 'positions', 'history'].includes(params.tab)) {
+      setActiveTab(params.tab as 'orders' | 'positions' | 'history');
+    }
+  }, [params.tab]);
+
+  const handleTabChange = (tab: 'orders' | 'positions' | 'history') => {
+    setActiveTab(tab);
+    // Update URL params without navigation
+    router.setParams({ tab });
+  };
 
   return (
     <YStack borderTopWidth={1} borderTopColor="$gray8" backgroundColor="$background">
@@ -15,18 +31,18 @@ export function PerpTabs() {
         <TabItem
           label="Orders"
           isActive={activeTab === 'orders'}
-          onPress={() => setActiveTab('orders')}
+          onPress={() => handleTabChange('orders')}
         />
         <TabItem
           label="Positions"
           isActive={activeTab === 'positions'}
-          onPress={() => setActiveTab('positions')}
+          onPress={() => handleTabChange('positions')}
           count={positionCount}
         />
         <TabItem
           label="History"
           isActive={activeTab === 'history'}
-          onPress={() => setActiveTab('history')}
+          onPress={() => handleTabChange('history')}
         />
       </XStack>
 
