@@ -10,7 +10,7 @@ import { formatSize } from '@/lib/hyperliquid/format/formatSize';
 import { useState, useMemo, useEffect } from 'react';
 import { toast } from 'sonner-native';
 import { Button, Spinner, Text, View, XStack, YStack } from 'tamagui';
-import type { OrderNode } from '@/lib/hyperliquid/types/orders';
+import type { Order, OrderNode } from '@/lib/hyperliquid/types/orders';
 import { calculateOrderMetrics } from '@/lib/hyperliquid/utils/order-calculations';
 import { isMarketOrder, getOrderType } from '@/lib/hyperliquid/utils/order-type-utils';
 import type { SymbolConverter } from '@nktkas/hyperliquid/utils';
@@ -41,7 +41,7 @@ function formatTimestamp(timestamp: number): string {
 /**
  * Get order direction based on side and type
  */
-function getOrderDirection(order: OrderNode['order']): string {
+function getOrderDirection(order: Order): string {
   const orderType = getOrderType(order);
   const isBuy = order.side === 'B';
 
@@ -215,8 +215,8 @@ export function OrdersTabContent() {
   const { address, isAuthenticated } = useActiveWallet();
   const { getAgentExchangeClient, getSymbolConverter } = useHyperliquidClient();
 
-  // Use flat orders list from useOrderUpdates
-  const { flatOrders, isLoading, error } = useOrderUpdates();
+  // Get orders from useOrderUpdates (simplified flat structure)
+  const { orders, isLoading, error } = useOrderUpdates();
 
   const [cancelError, setCancelError] = useState<string | undefined>(undefined);
   const [cancelingOrderIds, setCancelingOrderIds] = useState<Record<number, boolean>>({});
@@ -240,7 +240,7 @@ export function OrdersTabContent() {
   // Filter and sort orders
   const sortedOrders = useMemo(() => {
     // Filter for open orders only
-    let openOrders = flatOrders.filter(node => node.status === 'open');
+    let openOrders = orders.filter(node => node.status === 'open');
 
     // Apply direction filter
     if (filter === 'long') {
@@ -257,7 +257,7 @@ export function OrdersTabContent() {
 
     // Sort by timestamp (most recent first)
     return openOrders.sort((a, b) => b.order.timestamp - a.order.timestamp);
-  }, [flatOrders, filter]);
+  }, [orders, filter]);
 
   // Handle order cancellation
   const handleCancelOrder = async (oid: number) => {
@@ -274,7 +274,7 @@ export function OrdersTabContent() {
       }
 
       // Find the order to get coin symbol
-      const orderToCancel = flatOrders.find(node => node.order.oid === oid);
+      const orderToCancel = orders.find(node => node.order.oid === oid);
       if (!orderToCancel) {
         throw new Error('Order not found');
       }

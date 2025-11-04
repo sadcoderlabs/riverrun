@@ -17,10 +17,8 @@ import type { Order, OrderNode, OrderStatus, ApiOrderResponse } from '../types/o
 // ============================================================================
 
 export interface UseOrderUpdatesResult {
-  /** Orders in tree structure with children */
-  orderTree: OrderNode[];
-  /** Flattened view of all orders (for convenience) */
-  flatOrders: OrderNode[];
+  /** All orders in flat array (simplified from previous tree structure) */
+  orders: OrderNode[];
   /** Loading state */
   isLoading: boolean;
   /** Error state */
@@ -61,75 +59,35 @@ function transformApiOrder(apiOrder: ApiOrderResponse): Order {
 }
 
 /**
- * Transform API order response to OrderNode (with children)
+ * Transform API order response to OrderNode (simplified - no children processing)
  */
 function transformToOrderNode(apiOrder: ApiOrderResponse, status: OrderStatus = 'open'): OrderNode {
   const order = transformApiOrder(apiOrder);
-
-  // Process children recursively
-  const children: OrderNode[] = [];
-  if (apiOrder.children && apiOrder.children.length > 0) {
-    apiOrder.children.forEach(childApiOrder => {
-      children.push(transformToOrderNode(childApiOrder, status));
-    });
-  }
 
   return {
     order,
     status,
     statusTimestamp: apiOrder.timestamp,
-    children,
   };
 }
 
 /**
- * Flatten order tree to array (depth-first traversal)
- * Uses a Set to ensure each order appears only once (by oid)
+ * Build a Map from orders array for efficient lookups by oid
  */
-export function flattenOrderTree(orderTree: OrderNode[]): OrderNode[] {
-  const result: OrderNode[] = [];
-  const seenOids = new Set<number>();
-
-  function traverse(node: OrderNode) {
-    // Only add if we haven't seen this oid before
-    if (!seenOids.has(node.order.oid)) {
-      seenOids.add(node.order.oid);
-      result.push(node);
-    }
-
-    // Recursively add children
-    node.children.forEach(traverse);
-  }
-
-  orderTree.forEach(traverse);
-  return result;
+function buildOrderMap(orders: OrderNode[]): Map<number, OrderNode> {
+  return new Map(orders.map(node => [node.order.oid, node]));
 }
 
 /**
- * Build a Map from order tree for efficient lookups by oid
+ * Update orders array with new updates (simplified - no tree logic)
+ * Returns new orders array with updates applied
  */
-function buildOrderMap(orderTree: OrderNode[]): Map<number, OrderNode> {
-  const map = new Map<number, OrderNode>();
-
-  function addToMap(node: OrderNode) {
-    map.set(node.order.oid, node);
-    node.children.forEach(addToMap);
-  }
-
-  orderTree.forEach(addToMap);
-  return map;
-}
-
-/**
- * Update or insert order node in tree
- * Returns new tree with updates applied
- */
-function updateOrderTree(
-  currentTree: OrderNode[],
+function updateOrders(
+  currentOrders: OrderNode[],
   updates: Array<{ order: ApiOrderResponse; status?: string }>,
 ): OrderNode[] {
   // Build map of current orders for efficient lookup
-  const orderMap = buildOrderMap(currentTree);
+  const orderMap = buildOrderMap(currentOrders);
 
   // Process each update
   updates.forEach(update => {
@@ -137,40 +95,18 @@ function updateOrderTree(
     // Use status from update if available, otherwise default to 'open'
     const status = (update.status as OrderStatus) || 'open';
 
-    const updatedNode = transformToOrderNode(apiUpdate, status);
-
-    // If order is canceled, remove it from the map
+    // If order is canceled or filled, remove it from the map
     if (status === 'canceled' || status === 'filled') {
-      orderMap.delete(updatedNode.order.oid);
-      // Also remove children
-      updatedNode.children.forEach(child => {
-        orderMap.delete(child.order.oid);
-      });
+      orderMap.delete(apiUpdate.oid);
     } else {
-      // Update map
+      // Update or insert order
+      const updatedNode = transformToOrderNode(apiUpdate, status);
       orderMap.set(updatedNode.order.oid, updatedNode);
-
-      // Also update children in map
-      updatedNode.children.forEach(child => {
-        orderMap.set(child.order.oid, child);
-      });
     }
   });
 
-  // Rebuild tree from map
-  // Keep only root orders (orders that are not children of any other order)
-  const allOrders = Array.from(orderMap.values());
-  const childOids = new Set<number>();
-
-  // Collect all child order IDs
-  allOrders.forEach(node => {
-    node.children.forEach(child => {
-      childOids.add(child.order.oid);
-    });
-  });
-
-  // Filter to get only root orders
-  return allOrders.filter(node => !childOids.has(node.order.oid));
+  // Return flat array of orders
+  return Array.from(orderMap.values());
 }
 
 // ============================================================================
@@ -180,7 +116,7 @@ function updateOrderTree(
 export function useOrderUpdates(): UseOrderUpdatesResult {
   const { address, isAuthenticated } = useActiveWallet();
   const { getSubscriptionClient, getInfoClient } = useHyperliquidClient();
-  const [orderTree, setOrderTree] = useState<OrderNode[]>([]);
+  const [orders, setOrders] = useState<OrderNode[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | undefined>(undefined);
 
@@ -212,7 +148,7 @@ export function useOrderUpdates(): UseOrderUpdatesResult {
       }
       console.log('[useOrderUpdates] Conditions not met, skipping subscription');
       setIsLoading(false);
-      setOrderTree([]);
+      setOrders([]);
       return;
     }
 
@@ -241,16 +177,15 @@ export function useOrderUpdates(): UseOrderUpdatesResult {
           orders: openOrdersResponse,
         });
 
-        // Transform to OrderNode tree structure
-        const initialOrderTree: OrderNode[] = openOrdersResponse.map(apiOrder =>
+        // Transform to OrderNode array (flat structure)
+        const initialOrders: OrderNode[] = openOrdersResponse.map(apiOrder =>
           transformToOrderNode(apiOrder, 'open'),
         );
 
         if (isMounted) {
-          setOrderTree(initialOrderTree);
-          console.log('[useOrderUpdates] Set initial order tree:', {
-            rootOrders: initialOrderTree.length,
-            totalOrders: flattenOrderTree(initialOrderTree).length,
+          setOrders(initialOrders);
+          console.log('[useOrderUpdates] Set initial orders:', {
+            count: initialOrders.length,
           });
         }
 
@@ -270,23 +205,22 @@ export function useOrderUpdates(): UseOrderUpdatesResult {
             });
 
             if (isMounted) {
-              setOrderTree(prevTree => {
+              setOrders(prevOrders => {
                 // Keep the full update structure (includes status)
                 const updates = orderUpdates.map(update => ({
                   order: update.order as ApiOrderResponse,
                   status: update.status as string | undefined,
                 }));
 
-                // Update tree
-                const newTree = updateOrderTree(prevTree, updates);
+                // Update orders array
+                const newOrders = updateOrders(prevOrders, updates);
 
-                console.log('[useOrderUpdates] Updated order tree:', {
-                  rootOrders: newTree.length,
-                  totalOrders: flattenOrderTree(newTree).length,
+                console.log('[useOrderUpdates] Updated orders:', {
+                  count: newOrders.length,
                   updates: orderUpdates,
                 });
 
-                return newTree;
+                return newOrders;
               });
             }
           },
@@ -318,12 +252,8 @@ export function useOrderUpdates(): UseOrderUpdatesResult {
     };
   }, [address, isAuthenticated, cleanup, getSubscriptionClient, getInfoClient]);
 
-  // Return tree and flattened view
-  const flatOrders = flattenOrderTree(orderTree);
-
   return {
-    orderTree,
-    flatOrders,
+    orders,
     isLoading,
     error,
   };

@@ -115,17 +115,18 @@ export interface OrderUpdate {
 }
 
 // ============================================================================
-// Order Node Types (tree structure)
+// Order Node Types (simplified - no tree structure)
 // ============================================================================
 
 /**
- * Order node in tree structure, containing children (TP/SL orders)
+ * Order node with status information (flat structure)
+ * Note: Previously included children array for tree structure,
+ * but all consumers use flat list so simplified to remove complexity
  */
 export interface OrderNode {
   order: Order;
   status: OrderStatus;
   statusTimestamp: number;
-  children: OrderNode[];
 }
 
 // ============================================================================
