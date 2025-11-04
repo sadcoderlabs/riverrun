@@ -147,7 +147,7 @@ function OrderCard({ orderNode, onCancel, canceling, symbolConverter }: OrderCar
           Type
         </Text>
         <Text fontSize="$2" fontFamily="$interMedium">
-          {orderType || 'Unknown'}
+          {order.orderType || orderType || 'Unknown'}
         </Text>
       </XStack>
 

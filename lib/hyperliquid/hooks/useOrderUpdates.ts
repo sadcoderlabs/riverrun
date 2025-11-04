@@ -6,11 +6,11 @@
  * Returns orders in a tree structure preserving parent-child relationships
  */
 
+import { useActiveWallet } from '@/lib/riverrun/hooks/useActiveWallet';
 import * as hl from '@nktkas/hyperliquid';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { ApiOrderResponse, Order, OrderNode, OrderStatus, OrderType } from '../types/orders';
 import { useHyperliquidClient } from './useHyperliquidClient';
-import { useActiveWallet } from '@/lib/riverrun/hooks/useActiveWallet';
-import type { Order, OrderNode, OrderStatus, ApiOrderResponse } from '../types/orders';
 
 // ============================================================================
 // Hook Interface
@@ -30,32 +30,86 @@ export interface UseOrderUpdatesResult {
 // ============================================================================
 
 /**
+ * Infer order type from partial WebSocket data
+ * WebSocket updates don't include orderType, so we infer from available fields
+ */
+function inferOrderType(apiOrder: ApiOrderResponse): OrderType {
+  // If orderType is provided, use it
+  if (apiOrder.orderType) {
+    return apiOrder.orderType;
+  }
+
+  // Check if it's a trigger order
+  const hasTrigger =
+    apiOrder.isTrigger === true ||
+    (apiOrder.triggerPx && apiOrder.triggerPx !== '0.0' && apiOrder.triggerPx !== '0');
+
+  if (hasTrigger) {
+    // Trigger order - need to determine if it's Stop or Take Profit
+    // For now, default to Stop Market (most common)
+    // Note: Without more data, we can't reliably distinguish Stop vs TP
+    return apiOrder.limitPx === '0' || apiOrder.limitPx === '0.0' ? 'Stop Market' : 'Stop Limit';
+  }
+
+  // Regular order - check if Market or Limit
+  // Market orders typically have tif='FrontendMarket' or very high/low limitPx
+  if (apiOrder.tif === 'FrontendMarket' || apiOrder.tif === 'LiquidationMarket') {
+    return 'Market';
+  }
+
+  // Default to Limit order
+  return 'Limit';
+}
+
+/**
  * Transform API order response to typed Order
  */
 function transformApiOrder(apiOrder: ApiOrderResponse): Order {
-  // Create base order structure
-  const order: Order = {
-    coin: apiOrder.coin,
-    side: apiOrder.side,
-    limitPx: apiOrder.limitPx,
-    sz: apiOrder.sz,
-    oid: apiOrder.oid,
-    timestamp: apiOrder.timestamp,
-    origSz: apiOrder.origSz,
-    cloid: apiOrder.cloid ?? undefined,
-    reduceOnly: apiOrder.reduceOnly,
-    orderType: apiOrder.orderType,
-    tif: apiOrder.tif,
-  } as Order;
+  // Infer order type if not provided (WebSocket case)
+  const orderType = inferOrderType(apiOrder);
+  const isTrigger =
+    apiOrder.isTrigger === true ||
+    (apiOrder.triggerPx && apiOrder.triggerPx !== '0.0' && apiOrder.triggerPx !== '0');
 
-  // Add trigger-specific fields if this is a trigger order
-  if (apiOrder.isTrigger) {
-    (order as any).isTrigger = true;
-    (order as any).triggerPx = apiOrder.triggerPx;
-    (order as any).triggerCondition = apiOrder.triggerCondition;
+  // Build order based on whether it's a trigger order
+  if (isTrigger) {
+    // Build TriggerOrder
+    const order: Order = {
+      coin: apiOrder.coin,
+      side: apiOrder.side,
+      limitPx: apiOrder.limitPx,
+      sz: apiOrder.sz,
+      oid: apiOrder.oid,
+      timestamp: apiOrder.timestamp,
+      origSz: apiOrder.origSz,
+      cloid: apiOrder.cloid ?? undefined,
+      reduceOnly: apiOrder.reduceOnly ?? false,
+      orderType: orderType as any, // Use inferred type
+      tif: apiOrder.tif ?? null,
+      isTrigger: true,
+      triggerPx: apiOrder.triggerPx || '0.0',
+      triggerCondition: apiOrder.triggerCondition || 'N/A',
+    };
+
+    return order;
+  } else {
+    // Build RegularOrder
+    const order: Order = {
+      coin: apiOrder.coin,
+      side: apiOrder.side,
+      limitPx: apiOrder.limitPx,
+      sz: apiOrder.sz,
+      oid: apiOrder.oid,
+      timestamp: apiOrder.timestamp,
+      origSz: apiOrder.origSz,
+      cloid: apiOrder.cloid ?? undefined,
+      reduceOnly: apiOrder.reduceOnly ?? false,
+      orderType: orderType as any, // Use inferred type
+      tif: apiOrder.tif ?? null,
+    };
+
+    return order;
   }
-
-  return order;
 }
 
 /**
@@ -81,10 +135,13 @@ function buildOrderMap(orders: OrderNode[]): Map<number, OrderNode> {
 /**
  * Update orders array with new updates (simplified - no tree logic)
  * Returns new orders array with updates applied
+ *
+ * Note: WebSocket updates provide only partial order data (coin, side, sz, etc.)
+ * but NOT orderType, isTrigger, triggerPx, etc. We must preserve existing order data.
  */
 function updateOrders(
   currentOrders: OrderNode[],
-  updates: Array<{ order: ApiOrderResponse; status?: string }>,
+  updates: { order: ApiOrderResponse; status?: string }[],
 ): OrderNode[] {
   // Build map of current orders for efficient lookup
   const orderMap = buildOrderMap(currentOrders);
@@ -99,9 +156,33 @@ function updateOrders(
     if (status === 'canceled' || status === 'filled') {
       orderMap.delete(apiUpdate.oid);
     } else {
-      // Update or insert order
-      const updatedNode = transformToOrderNode(apiUpdate, status);
-      orderMap.set(updatedNode.order.oid, updatedNode);
+      // Check if this is an existing order
+      const existingNode = orderMap.get(apiUpdate.oid);
+
+      if (existingNode) {
+        // Merge WebSocket update with existing order data
+        // WebSocket provides: coin, side, limitPx, sz, oid, timestamp, origSz
+        // Preserve from existing: orderType, isTrigger, triggerPx, triggerCondition, tif, reduceOnly, cloid
+        const mergedOrder: Order = {
+          ...existingNode.order,
+          // Update only the fields provided by WebSocket
+          sz: apiUpdate.sz,
+          limitPx: apiUpdate.limitPx,
+          timestamp: apiUpdate.timestamp,
+        };
+
+        const updatedNode: OrderNode = {
+          order: mergedOrder,
+          status,
+          statusTimestamp: apiUpdate.timestamp,
+        };
+
+        orderMap.set(apiUpdate.oid, updatedNode);
+      } else {
+        // New order from WebSocket - transform normally
+        const updatedNode = transformToOrderNode(apiUpdate, status);
+        orderMap.set(updatedNode.order.oid, updatedNode);
+      }
     }
   });
 
@@ -204,6 +285,20 @@ export function useOrderUpdates(): UseOrderUpdatesResult {
               orders: orderUpdates,
             });
 
+            // Debug: Check first update structure
+            if (orderUpdates.length > 0) {
+              console.log('[useOrderUpdates] WebSocket update structure:', {
+                firstUpdate: orderUpdates[0],
+                hasOrder: 'order' in orderUpdates[0],
+                orderKeys: orderUpdates[0].order ? Object.keys(orderUpdates[0].order) : [],
+                orderType: orderUpdates[0].order?.orderType,
+                isTrigger: orderUpdates[0].order?.isTrigger,
+                triggerPx: orderUpdates[0].order?.triggerPx,
+                tif: orderUpdates[0].order?.tif,
+                reduceOnly: orderUpdates[0].order?.reduceOnly,
+              });
+            }
+
             if (isMounted) {
               setOrders(prevOrders => {
                 // Keep the full update structure (includes status)
@@ -219,6 +314,37 @@ export function useOrderUpdates(): UseOrderUpdatesResult {
                   count: newOrders.length,
                   updates: orderUpdates,
                 });
+
+                // Check if we received any new orders (not in prevOrders)
+                const prevOrderIds = new Set(prevOrders.map(node => node.order.oid));
+                const hasNewOrders = orderUpdates.some(
+                  update => update.status === 'open' && !prevOrderIds.has(update.order.oid),
+                );
+
+                // If we have new orders, refresh all open orders to get complete data
+                if (hasNewOrders) {
+                  console.log('[useOrderUpdates] Detected new order, refreshing complete data...');
+                  void (async () => {
+                    try {
+                      const openOrdersResponse = (await infoClient.frontendOpenOrders({
+                        user: address,
+                      })) as ApiOrderResponse[];
+
+                      const refreshedOrders: OrderNode[] = openOrdersResponse.map(apiOrder =>
+                        transformToOrderNode(apiOrder, 'open'),
+                      );
+
+                      if (isMounted) {
+                        setOrders(refreshedOrders);
+                        console.log('[useOrderUpdates] Refreshed with complete data:', {
+                          count: refreshedOrders.length,
+                        });
+                      }
+                    } catch (err) {
+                      console.error('[useOrderUpdates] Error refreshing orders:', err);
+                    }
+                  })();
+                }
 
                 return newOrders;
               });
