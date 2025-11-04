@@ -107,23 +107,10 @@ export function isRegularOrder(order: Order): order is RegularOrder {
 
 /**
  * Order with status information from WebSocket or API
+ * Note: This type is kept for potential future use, but current implementation
+ * focuses on open orders only and uses Order directly
  */
 export interface OrderUpdate {
-  order: Order;
-  status: OrderStatus;
-  statusTimestamp: number;
-}
-
-// ============================================================================
-// Order Node Types (simplified - no tree structure)
-// ============================================================================
-
-/**
- * Order node with status information (flat structure)
- * Note: Previously included children array for tree structure,
- * but all consumers use flat list so simplified to remove complexity
- */
-export interface OrderNode {
   order: Order;
   status: OrderStatus;
   statusTimestamp: number;

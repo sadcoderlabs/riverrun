@@ -9,7 +9,7 @@
 import { useActiveWallet } from '@/lib/riverrun/hooks/useActiveWallet';
 import * as hl from '@nktkas/hyperliquid';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { ApiOrderResponse, Order, OrderNode, OrderStatus, OrderType } from '../types/orders';
+import type { ApiOrderResponse, Order, OrderStatus, OrderType } from '../types/orders';
 import { useHyperliquidClient } from './useHyperliquidClient';
 
 // ============================================================================
@@ -17,8 +17,8 @@ import { useHyperliquidClient } from './useHyperliquidClient';
 // ============================================================================
 
 export interface UseOrderUpdatesResult {
-  /** All orders in flat array (simplified from previous tree structure) */
-  orders: OrderNode[];
+  /** All open orders in flat array */
+  orders: Order[];
   /** Loading state */
   isLoading: boolean;
   /** Error state */
@@ -113,36 +113,30 @@ function transformApiOrder(apiOrder: ApiOrderResponse): Order {
 }
 
 /**
- * Transform API order response to OrderNode (simplified - no children processing)
+ * Transform API order response to Order (simplified - direct transformation)
  */
-function transformToOrderNode(apiOrder: ApiOrderResponse, status: OrderStatus = 'open'): OrderNode {
-  const order = transformApiOrder(apiOrder);
-
-  return {
-    order,
-    status,
-    statusTimestamp: apiOrder.timestamp,
-  };
+function transformToOrder(apiOrder: ApiOrderResponse): Order {
+  return transformApiOrder(apiOrder);
 }
 
 /**
  * Build a Map from orders array for efficient lookups by oid
  */
-function buildOrderMap(orders: OrderNode[]): Map<number, OrderNode> {
-  return new Map(orders.map(node => [node.order.oid, node]));
+function buildOrderMap(orders: Order[]): Map<number, Order> {
+  return new Map(orders.map(order => [order.oid, order]));
 }
 
 /**
- * Update orders array with new updates (simplified - no tree logic)
+ * Update orders array with new updates (simplified)
  * Returns new orders array with updates applied
  *
  * Note: WebSocket updates provide only partial order data (coin, side, sz, etc.)
  * but NOT orderType, isTrigger, triggerPx, etc. We must preserve existing order data.
  */
 function updateOrders(
-  currentOrders: OrderNode[],
+  currentOrders: Order[],
   updates: { order: ApiOrderResponse; status?: string }[],
-): OrderNode[] {
+): Order[] {
   // Build map of current orders for efficient lookup
   const orderMap = buildOrderMap(currentOrders);
 
@@ -157,31 +151,25 @@ function updateOrders(
       orderMap.delete(apiUpdate.oid);
     } else {
       // Check if this is an existing order
-      const existingNode = orderMap.get(apiUpdate.oid);
+      const existingOrder = orderMap.get(apiUpdate.oid);
 
-      if (existingNode) {
+      if (existingOrder) {
         // Merge WebSocket update with existing order data
         // WebSocket provides: coin, side, limitPx, sz, oid, timestamp, origSz
         // Preserve from existing: orderType, isTrigger, triggerPx, triggerCondition, tif, reduceOnly, cloid
         const mergedOrder: Order = {
-          ...existingNode.order,
+          ...existingOrder,
           // Update only the fields provided by WebSocket
           sz: apiUpdate.sz,
           limitPx: apiUpdate.limitPx,
           timestamp: apiUpdate.timestamp,
         };
 
-        const updatedNode: OrderNode = {
-          order: mergedOrder,
-          status,
-          statusTimestamp: apiUpdate.timestamp,
-        };
-
-        orderMap.set(apiUpdate.oid, updatedNode);
+        orderMap.set(apiUpdate.oid, mergedOrder);
       } else {
         // New order from WebSocket - transform normally
-        const updatedNode = transformToOrderNode(apiUpdate, status);
-        orderMap.set(updatedNode.order.oid, updatedNode);
+        const newOrder = transformToOrder(apiUpdate);
+        orderMap.set(newOrder.oid, newOrder);
       }
     }
   });
@@ -197,7 +185,7 @@ function updateOrders(
 export function useOrderUpdates(): UseOrderUpdatesResult {
   const { address, isAuthenticated } = useActiveWallet();
   const { getSubscriptionClient, getInfoClient } = useHyperliquidClient();
-  const [orders, setOrders] = useState<OrderNode[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | undefined>(undefined);
 
@@ -240,9 +228,9 @@ export function useOrderUpdates(): UseOrderUpdatesResult {
           user: address,
         })) as ApiOrderResponse[];
 
-        // Transform to OrderNode array (flat structure)
-        const initialOrders: OrderNode[] = openOrdersResponse.map(apiOrder =>
-          transformToOrderNode(apiOrder, 'open'),
+        // Transform to Order array (flat structure)
+        const initialOrders: Order[] = openOrdersResponse.map(apiOrder =>
+          transformToOrder(apiOrder),
         );
 
         if (isMounted) {
@@ -269,7 +257,7 @@ export function useOrderUpdates(): UseOrderUpdatesResult {
                 const newOrders = updateOrders(prevOrders, updates);
 
                 // Check if we received any new orders (not in prevOrders)
-                const prevOrderIds = new Set(prevOrders.map(node => node.order.oid));
+                const prevOrderIds = new Set(prevOrders.map(order => order.oid));
                 const hasNewOrders = orderUpdates.some(
                   update => update.status === 'open' && !prevOrderIds.has(update.order.oid),
                 );
@@ -282,8 +270,8 @@ export function useOrderUpdates(): UseOrderUpdatesResult {
                         user: address,
                       })) as ApiOrderResponse[];
 
-                      const refreshedOrders: OrderNode[] = openOrdersResponse.map(apiOrder =>
-                        transformToOrderNode(apiOrder, 'open'),
+                      const refreshedOrders: Order[] = openOrdersResponse.map(apiOrder =>
+                        transformToOrder(apiOrder),
                       );
 
                       if (isMounted) {
@@ -332,4 +320,4 @@ export function useOrderUpdates(): UseOrderUpdatesResult {
 }
 
 // Re-export types for convenience
-export type { Order, OrderNode } from '../types/orders';
+export type { Order } from '../types/orders';

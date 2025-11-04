@@ -196,24 +196,23 @@ export function OrdersTabContent() {
 
   // Filter and sort orders
   const sortedOrders = useMemo(() => {
-    // Filter for open orders only
-    let openOrders = orders.filter(node => node.status === 'open');
-
     // Apply direction filter
+    let filteredOrders = orders;
+
     if (filter === 'long') {
-      openOrders = openOrders.filter(node => {
-        const direction = getOrderDirection(node.order);
+      filteredOrders = orders.filter(order => {
+        const direction = getOrderDirection(order);
         return direction === 'Long' || direction === 'Close Short';
       });
     } else if (filter === 'short') {
-      openOrders = openOrders.filter(node => {
-        const direction = getOrderDirection(node.order);
+      filteredOrders = orders.filter(order => {
+        const direction = getOrderDirection(order);
         return direction === 'Short' || direction === 'Close Long';
       });
     }
 
-    // Sort by timestamp (most recent first) and extract orders
-    return openOrders.sort((a, b) => b.order.timestamp - a.order.timestamp).map(node => node.order);
+    // Sort by timestamp (most recent first)
+    return filteredOrders.sort((a, b) => b.timestamp - a.timestamp);
   }, [orders, filter]);
 
   // Handle order cancellation
@@ -222,16 +221,14 @@ export function OrdersTabContent() {
 
     try {
       // Find the order to get coin symbol
-      const orderNode = orders.find(node => node.order.oid === oid);
-      if (!orderNode) {
+      const order = orders.find(o => o.oid === oid);
+      if (!order) {
         throw new Error('Order not found');
       }
 
-      const orderToCancel = orderNode.order;
-
       // Use the hook's cancelOrder method
       await cancelOrder({
-        coin: orderToCancel.coin,
+        coin: order.coin,
         orderId: oid,
       });
 
