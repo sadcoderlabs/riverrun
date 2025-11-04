@@ -144,7 +144,7 @@ export function OrderBook({ coin, szDecimals, markPx, onPriceClick }: OrderBookP
   }
 
   return (
-    <YStack flex={1} backgroundColor="$background">
+    <YStack flex={1} backgroundColor="$background" borderWidth={0}>
       {/* Selectors Row - Precision & Size Unit Dropdowns */}
       <XStack
         paddingHorizontal="$1.5"
@@ -152,8 +152,6 @@ export function OrderBook({ coin, szDecimals, markPx, onPriceClick }: OrderBookP
         backgroundColor="$background"
         justifyContent="space-between"
         alignItems="center"
-        borderBottomWidth={1}
-        borderBottomColor="$gray8"
       >
         {/* Precision Dropdown - dynamically generated based on price and szDecimals */}
         <AdaptiveSelect

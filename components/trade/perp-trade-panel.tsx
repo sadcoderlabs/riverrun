@@ -142,9 +142,9 @@ export function PerpTradePanel({ coin }: PerpTradePanelProps) {
   );
 
   return (
-    <XStack>
+    <XStack borderWidth={0}>
       {/* Left Side - Order Book */}
-      <YStack flex={5} backgroundColor="$background" borderRightWidth={1} borderRightColor="$gray8">
+      <YStack flex={5} backgroundColor="$background" borderWidth={0}>
         <OrderBook
           coin={coin}
           szDecimals={szDecimals}
