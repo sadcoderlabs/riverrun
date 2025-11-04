@@ -182,6 +182,60 @@ function updateOrders(
   return Array.from(orderMap.values());
 }
 
+/**
+ * Check if an update contains an order that was immediately rejected/canceled
+ * (never existed in our current orders and came with failed status)
+ */
+function hasImmediatelyCanceledOrders(
+  currentOrders: Order[],
+  updates: { order: ApiOrderResponse; status?: string }[],
+): boolean {
+  const currentOrderIds = new Set(currentOrders.map(order => order.oid));
+
+  // All possible rejected/canceled status values from Hyperliquid API
+  // Source: https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint#query-order-status-by-oid-or-cloid
+  const failedStatuses = [
+    // User canceled
+    'canceled',
+    // System rejected at placement
+    'rejected',
+    'tickRejected',
+    'minTradeNtlRejected',
+    'perpMarginRejected',
+    'reduceOnlyRejected',
+    'badAloPxRejected',
+    'iocCancelRejected',
+    'badTriggerPxRejected',
+    'marketOrderNoLiquidityRejected',
+    'positionIncreaseAtOpenInterestCapRejected',
+    'positionFlipAtOpenInterestCapRejected',
+    'tooAggressiveAtOpenInterestCapRejected',
+    'openInterestIncreaseRejected',
+    'insufficientSpotBalanceRejected',
+    'oracleRejected',
+    'perpMaxPositionRejected',
+    // System canceled after placement
+    'marginCanceled',
+    'vaultWithdrawalCanceled',
+    'openInterestCapCanceled',
+    'selfTradeCanceled',
+    'reduceOnlyCanceled',
+    'siblingFilledCanceled',
+    'delistedCanceled',
+    'liquidatedCanceled',
+    'scheduledCancel',
+  ];
+
+  return updates.some(update => {
+    const status = update.status;
+    const oid = update.order.oid;
+
+    // If this is a new order (not in current orders) and it has a failed status
+    // This indicates a failed order that was rejected by the system
+    return !currentOrderIds.has(oid) && status && failedStatuses.includes(status);
+  });
+}
+
 // ============================================================================
 // Main Hook
 // ============================================================================
@@ -256,6 +310,58 @@ export function useOrderUpdates(): UseOrderUpdatesResult {
                   order: update.order as ApiOrderResponse,
                   status: update.status as string | undefined,
                 }));
+
+                // Check if any orders were immediately rejected/canceled (failed orders)
+                // These are orders that never existed in prevOrders and came with failed status
+                const hasFailedOrders = hasImmediatelyCanceledOrders(prevOrders, updates);
+
+                // If we detect failed orders, filter them out
+                // This prevents orders that were rejected by the API from appearing in the UI
+                if (hasFailedOrders) {
+                  const prevOrderIds = new Set(prevOrders.map(order => order.oid));
+
+                  // All possible rejected/canceled status values (same as hasImmediatelyCanceledOrders)
+                  const failedStatuses = [
+                    'canceled',
+                    'rejected',
+                    'tickRejected',
+                    'minTradeNtlRejected',
+                    'perpMarginRejected',
+                    'reduceOnlyRejected',
+                    'badAloPxRejected',
+                    'iocCancelRejected',
+                    'badTriggerPxRejected',
+                    'marketOrderNoLiquidityRejected',
+                    'positionIncreaseAtOpenInterestCapRejected',
+                    'positionFlipAtOpenInterestCapRejected',
+                    'tooAggressiveAtOpenInterestCapRejected',
+                    'openInterestIncreaseRejected',
+                    'insufficientSpotBalanceRejected',
+                    'oracleRejected',
+                    'perpMaxPositionRejected',
+                    'marginCanceled',
+                    'vaultWithdrawalCanceled',
+                    'openInterestCapCanceled',
+                    'selfTradeCanceled',
+                    'reduceOnlyCanceled',
+                    'siblingFilledCanceled',
+                    'delistedCanceled',
+                    'liquidatedCanceled',
+                    'scheduledCancel',
+                  ];
+
+                  // Filter out the failed orders from updates
+                  const validUpdates = updates.filter(update => {
+                    const status = update.status;
+                    const oid = update.order.oid;
+                    // Keep only orders that either existed before OR don't have a failed status
+                    const isFailed = status && failedStatuses.includes(status);
+                    return prevOrderIds.has(oid) || !isFailed;
+                  });
+
+                  // Update orders with only valid updates
+                  return updateOrders(prevOrders, validUpdates);
+                }
 
                 // Update orders array
                 const newOrders = updateOrders(prevOrders, updates);
