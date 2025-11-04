@@ -209,25 +209,15 @@ export function useOrderUpdates(): UseOrderUpdatesResult {
       try {
         await subscriptionRef.current.unsubscribe();
       } catch (err) {
-        console.error('[useOrderUpdates] Error unsubscribing from orderUpdates:', err);
+        // Silently handle unsubscribe errors
       }
       subscriptionRef.current = null;
     }
   }, []);
 
   useEffect(() => {
-    console.log('[useOrderUpdates] Effect triggered:', {
-      isAuthenticated,
-      address,
-      hasAddress: !!address,
-    });
-
     // Don't subscribe if conditions aren't met
     if (!isAuthenticated || !address) {
-      if (!address && isAuthenticated) {
-        console.warn('[useOrderUpdates] Wallet authenticated but address not available');
-      }
-      console.log('[useOrderUpdates] Conditions not met, skipping subscription');
       setIsLoading(false);
       setOrders([]);
       return;
@@ -239,24 +229,16 @@ export function useOrderUpdates(): UseOrderUpdatesResult {
 
     const setupSubscription = async () => {
       try {
-        console.log('[useOrderUpdates] Setting up subscription for user:', address);
-
         // Cleanup any existing subscription
         await cleanup();
 
         // Step 1: Fetch initial open orders using InfoClient
         const infoClient = getInfoClient();
-        console.log('[useOrderUpdates] Fetching initial open orders...');
 
         // Use frontendOpenOrders to get full order data including orderType, triggerCondition, etc.
         const openOrdersResponse = (await infoClient.frontendOpenOrders({
           user: address,
         })) as ApiOrderResponse[];
-
-        console.log('[useOrderUpdates] Initial open orders fetched:', {
-          count: openOrdersResponse.length,
-          orders: openOrdersResponse,
-        });
 
         // Transform to OrderNode array (flat structure)
         const initialOrders: OrderNode[] = openOrdersResponse.map(apiOrder =>
@@ -265,40 +247,16 @@ export function useOrderUpdates(): UseOrderUpdatesResult {
 
         if (isMounted) {
           setOrders(initialOrders);
-          console.log('[useOrderUpdates] Set initial orders:', {
-            count: initialOrders.length,
-          });
         }
 
         // Step 2: Subscribe to orderUpdates WebSocket for incremental updates
         const subscriptionClient = getSubscriptionClient();
-        console.log('[useOrderUpdates] Setting up WebSocket subscription...');
 
         const subscription = await subscriptionClient.orderUpdates(
           {
             user: address,
           },
           (orderUpdates: any[]) => {
-            console.log('[useOrderUpdates] Received incremental updates:', {
-              count: orderUpdates.length,
-              isMounted,
-              orders: orderUpdates,
-            });
-
-            // Debug: Check first update structure
-            if (orderUpdates.length > 0) {
-              console.log('[useOrderUpdates] WebSocket update structure:', {
-                firstUpdate: orderUpdates[0],
-                hasOrder: 'order' in orderUpdates[0],
-                orderKeys: orderUpdates[0].order ? Object.keys(orderUpdates[0].order) : [],
-                orderType: orderUpdates[0].order?.orderType,
-                isTrigger: orderUpdates[0].order?.isTrigger,
-                triggerPx: orderUpdates[0].order?.triggerPx,
-                tif: orderUpdates[0].order?.tif,
-                reduceOnly: orderUpdates[0].order?.reduceOnly,
-              });
-            }
-
             if (isMounted) {
               setOrders(prevOrders => {
                 // Keep the full update structure (includes status)
@@ -310,11 +268,6 @@ export function useOrderUpdates(): UseOrderUpdatesResult {
                 // Update orders array
                 const newOrders = updateOrders(prevOrders, updates);
 
-                console.log('[useOrderUpdates] Updated orders:', {
-                  count: newOrders.length,
-                  updates: orderUpdates,
-                });
-
                 // Check if we received any new orders (not in prevOrders)
                 const prevOrderIds = new Set(prevOrders.map(node => node.order.oid));
                 const hasNewOrders = orderUpdates.some(
@@ -323,7 +276,6 @@ export function useOrderUpdates(): UseOrderUpdatesResult {
 
                 // If we have new orders, refresh all open orders to get complete data
                 if (hasNewOrders) {
-                  console.log('[useOrderUpdates] Detected new order, refreshing complete data...');
                   void (async () => {
                     try {
                       const openOrdersResponse = (await infoClient.frontendOpenOrders({
@@ -336,9 +288,6 @@ export function useOrderUpdates(): UseOrderUpdatesResult {
 
                       if (isMounted) {
                         setOrders(refreshedOrders);
-                        console.log('[useOrderUpdates] Refreshed with complete data:', {
-                          count: refreshedOrders.length,
-                        });
                       }
                     } catch (err) {
                       console.error('[useOrderUpdates] Error refreshing orders:', err);
@@ -352,12 +301,10 @@ export function useOrderUpdates(): UseOrderUpdatesResult {
           },
         );
 
-        console.log('[useOrderUpdates] WebSocket subscription successful');
         subscriptionRef.current = subscription;
 
         if (isMounted) {
           setIsLoading(false);
-          console.log('[useOrderUpdates] Ready to receive updates');
         }
       } catch (err) {
         if (isMounted) {
@@ -372,7 +319,6 @@ export function useOrderUpdates(): UseOrderUpdatesResult {
 
     // Cleanup on unmount or when dependencies change
     return () => {
-      console.log('[useOrderUpdates] Cleaning up subscription');
       isMounted = false;
       void cleanup();
     };
