@@ -3,6 +3,7 @@
 ## Overview
 
 This document explains the architecture of the trade layout system, focusing on how we achieve:
+
 - Full-page scrolling with no nested scroll conflicts
 - Market switching without reloading the Positions tab
 - Optimal performance with minimal WebSocket reconnections
@@ -10,12 +11,14 @@ This document explains the architecture of the trade layout system, focusing on 
 ## Problem Statement
 
 When users trade perpetual futures, they need to:
+
 1. View and interact with the trading panel (order book, place orders)
 2. Monitor their positions in real-time
 3. Switch between markets quickly without losing context
 4. Scroll through all content smoothly
 
 **Previous Issues:**
+
 - Switching markets caused full page reload → lost scroll position and tab state
 - Nested ScrollViews created tiny 120px scroll area for positions
 - Frequent API calls triggered rate limiting
@@ -57,18 +60,21 @@ When users trade perpetual futures, they need to:
 ### Three-Layer Architecture
 
 #### Layer 1: Fixed Navigation (Top)
+
 - **Component**: `TradeTypeNav` (Perps/Spot/Equities/Swap)
 - **Position**: Fixed at top with safe area insets
 - **Behavior**: Fades out (opacity: 1.0 → 0.3) when scrolling
 - **Implementation**: `Animated.View` with opacity interpolation
 
 #### Layer 2: Sticky Information (Header)
+
 - **Component**: `CoinInfo` (price, 24h change, funding rate)
 - **Position**: `position: absolute` at top
 - **Behavior**: Always visible, updates when market changes
 - **Implementation**: Absolute positioning with `zIndex: 1`
 
 #### Layer 3: Scrollable Content (Main)
+
 - **Components**: `PerpTradePanel` + `PerpTabs`
 - **Position**: Inside single `Animated.ScrollView`
 - **Behavior**: Unified scrolling experience
@@ -99,6 +105,7 @@ When users trade perpetual futures, they need to:
 ```
 
 **Why it works:**
+
 - In Expo Router, `_layout.tsx` is the parent component (mounts once)
 - `[coin]/index.tsx` is the child (remounts when `[coin]` changes)
 - Components in Layout persist across route changes
@@ -154,6 +161,7 @@ useEffect(() => {
 ```
 
 **Benefits**:
+
 - Browser back/forward buttons work
 - Deep linking works (share URL)
 - URL always reflects current state
@@ -165,14 +173,22 @@ useEffect(() => {
 ```tsx
 // ❌ NESTED SCROLLING (Before)
 <Layout>
-  <ScrollView>  {/* Outer: scrolls TradePanel */}
+  <ScrollView>
+    {' '}
+    {/* Outer: scrolls TradePanel */}
     <PerpTradePanel />
   </ScrollView>
 
-  <PerpTabs>  {/* Fixed at bottom */}
-    <YStack minHeight={120}>  {/* Only 120px! */}
+  <PerpTabs>
+    {' '}
+    {/* Fixed at bottom */}
+    <YStack minHeight={120}>
+      {' '}
+      {/* Only 120px! */}
       <PositionsTab>
-        <ScrollView>  {/* Inner: scrolls positions - CONFLICT! */}
+        <ScrollView>
+          {' '}
+          {/* Inner: scrolls positions - CONFLICT! */}
           ...
         </ScrollView>
       </PositionsTab>
@@ -186,12 +202,18 @@ useEffect(() => {
 ```tsx
 // ✅ SINGLE SCROLLVIEW (Now)
 <Layout>
-  <ScrollView>  {/* Unified scrolling */}
+  <ScrollView>
+    {' '}
+    {/* Unified scrolling */}
     <PerpTradePanel />
     <PerpTabs>
-      <YStack>  {/* No height constraint */}
+      <YStack>
+        {' '}
+        {/* No height constraint */}
         <PositionsTab>
-          <YStack>  {/* No ScrollView */}
+          <YStack>
+            {' '}
+            {/* No ScrollView */}
             ...
           </YStack>
         </PositionsTab>
@@ -202,6 +224,7 @@ useEffect(() => {
 ```
 
 **Why React Native doesn't support nested scrolling**:
+
 - System can't determine which ScrollView user wants to scroll
 - Creates conflicts and poor UX
 - Solution: Use single parent ScrollView, child components return static content
@@ -229,7 +252,9 @@ lib/riverrun/store/
 ## Component Responsibilities
 
 ### TradeLayout (`_layout.tsx`)
+
 **Responsibilities**:
+
 - Manage selected coin state (sync URL ↔ store)
 - Render fixed navigation (TradeTypeNav)
 - Render sticky header (CoinInfo)
@@ -237,40 +262,50 @@ lib/riverrun/store/
 - Handle scroll animations (navbar fade, content translation)
 
 **Key Props Passed**:
+
 - `coin` → CoinInfo, TradeTypeNav
 - None → PerpTabs (reads from store internally)
 
 ### PerpTabs (`perp-tabs.tsx`)
+
 **Responsibilities**:
+
 - Manage active tab state (sync URL tab param)
 - Render tab headers (Orders/Positions/History)
 - Render tab content conditionally
 - Display position count badge
 
 **State Management**:
+
 - `activeTab`: Local state + URL params
 - `positionCount`: From `usePositionCount` hook
 
 ### PositionsTab (`positions-tab.tsx`)
+
 **Responsibilities**:
+
 - Subscribe to WebSocket account data (`useWebData2`)
 - Fetch and display positions with mark prices
 - Handle position card clicks (update store, not router)
 - Render ClosePositionModal
 
 **Key Features**:
+
 - No internal ScrollView (relies on parent)
 - Click position → `setSelectedCoin(coin)` (not `router.replace`)
 - WebSocket stays connected across market switches
 
 ### PerpTradePanel (`perp-trade-panel.tsx`)
+
 **Responsibilities**:
+
 - Display order book for selected market
 - Render order forms (Market/Limit)
 - Handle order placement
 - Subscribe to market-specific WebSocket data
 
 **WebSocket Subscriptions**:
+
 - `useActiveAssetData(coin)` - resubscribes when coin changes
 - `useOrderBook(coin)` - resubscribes when coin changes
 
@@ -280,13 +315,14 @@ lib/riverrun/store/
 
 ```tsx
 // PositionsTab: Account-wide, stays connected
-const { data: webData } = useWebData2();  // ✓ No reconnect
+const { data: webData } = useWebData2(); // ✓ No reconnect
 
 // PerpTradePanel: Market-specific, only reconnects when coin changes
-const { data: activeAssetData } = useActiveAssetData({ coin });  // ✓ Smart reconnect
+const { data: activeAssetData } = useActiveAssetData({ coin }); // ✓ Smart reconnect
 ```
 
 **Performance Gains**:
+
 - 50% fewer WebSocket connections
 - No rate limiting from Hyperliquid API
 - Positions data updates in real-time without interruption
@@ -311,6 +347,7 @@ const positions = useMemo<PositionWithMarkPrice[]>(() => {
 ### 3. Animated ScrollView
 
 Using `Animated.ScrollView` instead of regular `ScrollView`:
+
 - Animations run on UI thread (doesn't block JS thread)
 - 60fps smooth scrolling
 - Efficient opacity and transform animations
@@ -324,6 +361,7 @@ Using `Animated.ScrollView` instead of regular `ScrollView`:
 **Decided**: Use `position: absolute` for CoinInfo
 
 **Reasons**:
+
 - Need precise control over sticky behavior
 - CoinInfo must always be visible (not just when scrolled to top)
 - More flexible for custom animations
@@ -334,15 +372,17 @@ Using `Animated.ScrollView` instead of regular `ScrollView`:
 **User Requirement**: Tab headers should scroll away with content
 
 **Benefits**:
+
 - More screen space for content
 - Matches standard trading app UX patterns
 - Simpler implementation
 
 **Future Enhancement** (if needed):
+
 ```tsx
 <Animated.ScrollView stickyHeaderIndices={[1]}>
   <PerpTradePanel />
-  <TabHeaders />  {/* Would become sticky */}
+  <TabHeaders /> {/* Would become sticky */}
   <TabContent />
 </Animated.ScrollView>
 ```
@@ -350,12 +390,14 @@ Using `Animated.ScrollView` instead of regular `ScrollView`:
 ### Why Zustand over React Context?
 
 **Advantages of Zustand**:
+
 - Fewer re-renders (only subscribing components update)
 - Cleaner API
 - Better DevTools support
 - Consistency with existing codebase
 
 **Context would work but**:
+
 - More boilerplate code
 - Every context consumer re-renders on any state change
 - Less optimal for frequent updates
@@ -365,29 +407,34 @@ Using `Animated.ScrollView` instead of regular `ScrollView`:
 When modifying this architecture, test:
 
 ### Basic Functionality
+
 - [ ] Full page scrolling works smoothly
 - [ ] All positions are visible (no 120px constraint)
 - [ ] CoinInfo stays sticky at top
 - [ ] TradeTypeNav fades on scroll
 
 ### Market Switching
+
 - [ ] Click position → switches market
 - [ ] PerpTabs doesn't reload (scroll position preserved)
 - [ ] Position count updates in real-time
 - [ ] WebSocket stays connected
 
 ### Navigation
+
 - [ ] Direct URL navigation works (e.g., `/trade/perp/ETH`)
 - [ ] Browser back/forward buttons work
 - [ ] URL reflects current market
 - [ ] Deep linking works
 
 ### Tab Management
+
 - [ ] Switch between tabs preserves scroll position
 - [ ] Tab state persists in URL (?tab=positions)
 - [ ] Position count badge updates correctly
 
 ### Performance
+
 - [ ] No excessive WebSocket reconnections
 - [ ] Smooth 60fps scrolling
 - [ ] No memory leaks on repeated market switches
@@ -462,6 +509,7 @@ When modifying this architecture, test:
 ## Change Log
 
 ### 2024-11-04
+
 - Initial architecture implementation
 - Implemented single ScrollView pattern
 - Added Zustand store for market selection

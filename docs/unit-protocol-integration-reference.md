@@ -83,29 +83,29 @@ Tokens arrive in user's external wallet
 
 ### Supported Chains & Assets
 
-| Asset | Symbol | Source Chain (Deposits) | Destination Chain (Withdrawals) | Hyperliquid Spot Token |
-|-------|--------|-------------------------|--------------------------------|------------------------|
-| Bitcoin | BTC | bitcoin | bitcoin | UBTC |
-| Ethereum | ETH | ethereum | ethereum | UETH |
-| Solana | SOL | solana | solana | USOL |
+| Asset    | Symbol | Source Chain (Deposits) | Destination Chain (Withdrawals) | Hyperliquid Spot Token |
+| -------- | ------ | ----------------------- | ------------------------------- | ---------------------- |
+| Bitcoin  | BTC    | bitcoin                 | bitcoin                         | UBTC                   |
+| Ethereum | ETH    | ethereum                | ethereum                        | UETH                   |
+| Solana   | SOL    | solana                  | solana                          | USOL                   |
 
 ### Minimum Amounts
 
 | Asset | Min Deposit | Min Withdrawal |
-|-------|-------------|----------------|
-| BTC | 0.002 | 0.002 |
-| ETH | 0.05 | 0.05 |
-| SOL | 0.1 | 0.2 |
+| ----- | ----------- | -------------- |
+| BTC   | 0.002       | 0.002          |
+| ETH   | 0.05        | 0.05           |
+| SOL   | 0.1         | 0.2            |
 
 ### Typical Processing Times
 
-| Chain | Deposit ETA | Withdrawal ETA |
-|-------|-------------|----------------|
-| Bitcoin | ~21 minutes | ~21 minutes |
-| Ethereum | ~3 minutes | ~7 minutes |
-| Solana | ~1 minute | ~1 minute |
+| Chain    | Deposit ETA | Withdrawal ETA |
+| -------- | ----------- | -------------- |
+| Bitcoin  | ~21 minutes | ~21 minutes    |
+| Ethereum | ~3 minutes  | ~7 minutes     |
+| Solana   | ~1 minute   | ~1 minute      |
 
-*Note: ETAs are fetched in real-time from `/v2/estimate-fees` endpoint*
+_Note: ETAs are fetched in real-time from `/v2/estimate-fees` endpoint_
 
 ---
 
@@ -127,16 +127,19 @@ type Asset = 'btc' | 'eth' | 'sol';
 ### 1. Generate Deposit Address
 
 **Endpoint:**
+
 ```
 GET /gen/{srcChain}/hyperliquid/{asset}/{dstAddr}
 ```
 
 **Parameters:**
+
 - `srcChain`: Source chain (bitcoin | ethereum | solana)
 - `asset`: Asset symbol (btc | eth | sol)
 - `dstAddr`: User's Hyperliquid wallet address (0x...)
 
 **Example Request:**
+
 ```typescript
 const url = 'https://api.hyperunit.xyz/gen/bitcoin/hyperliquid/btc/0xUSER_HYPERLIQUID_ADDRESS';
 
@@ -151,6 +154,7 @@ const data = await response.json();
 ```
 
 **Example Response:**
+
 ```json
 {
   "address": "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
@@ -164,12 +168,14 @@ const data = await response.json();
 ```
 
 **Key Points:**
+
 - The `address` field is the deposit address on the source chain
 - This address is **permanent** and deterministic (same address for same inputs)
 - Users can reuse this address for multiple deposits
 - No expiration time
 
 **Implementation:**
+
 ```typescript
 export interface GenerateAddressResponse {
   address: string;
@@ -214,16 +220,19 @@ export async function generateDepositAddress(
 ### 2. Generate Withdrawal Address
 
 **Endpoint:**
+
 ```
 GET /gen/hyperliquid/{dstChain}/{asset}/{dstAddr}
 ```
 
 **Parameters:**
+
 - `dstChain`: Destination chain (bitcoin | ethereum | solana)
 - `asset`: Asset symbol (btc | eth | sol)
 - `dstAddr`: Destination address on target chain (e.g., user's Ethereum address: 0x...)
 
 **Example Request:**
+
 ```typescript
 const url = 'https://api.hyperunit.xyz/gen/hyperliquid/ethereum/eth/0xUSER_ETHEREUM_ADDRESS';
 
@@ -238,6 +247,7 @@ const data = await response.json();
 ```
 
 **Example Response:**
+
 ```json
 {
   "address": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
@@ -251,6 +261,7 @@ const data = await response.json();
 ```
 
 **Key Points:**
+
 - The `address` field is a **Hyperliquid address** (not a destination chain address)
 - This is an intermediary address controlled by Unit Protocol
 - User must send tokens to this address using Hyperliquid's `spotSend` API
@@ -258,6 +269,7 @@ const data = await response.json();
 - Address is tied to the specific destination address provided
 
 **Implementation:**
+
 ```typescript
 export async function generateWithdrawalAddress(
   dstChain: DestinationChain,
@@ -288,6 +300,7 @@ export async function generateWithdrawalAddress(
 ```
 
 **Withdrawal Flow with Hyperliquid spotSend:**
+
 ```typescript
 // 1. User enters destination address (validated)
 const destinationAddress = '0xUSER_ETHEREUM_ADDRESS';
@@ -309,6 +322,7 @@ await spotSend(unitAddress, tokenIdentifier, amount);
 ### 3. Estimate Fees & ETAs
 
 **Endpoint:**
+
 ```
 GET /v2/estimate-fees
 ```
@@ -316,6 +330,7 @@ GET /v2/estimate-fees
 **No parameters required**
 
 **Example Request:**
+
 ```typescript
 const url = 'https://api.hyperunit.xyz/v2/estimate-fees';
 
@@ -330,6 +345,7 @@ const data = await response.json();
 ```
 
 **Example Response:**
+
 ```json
 {
   "bitcoin": {
@@ -374,10 +390,11 @@ const data = await response.json();
 ```
 
 **TypeScript Interface:**
+
 ```typescript
 export interface ChainFeeEstimate {
-  depositEta: string;      // e.g., "21m", "3m", "1m"
-  depositFee: number;      // Fee in native token units
+  depositEta: string; // e.g., "21m", "3m", "1m"
+  depositFee: number; // Fee in native token units
   withdrawalEta: string;
   withdrawalFee: number;
 }
@@ -402,6 +419,7 @@ export interface EstimateFeesResponse {
 ```
 
 **Implementation:**
+
 ```typescript
 export async function fetchEstimateFees(): Promise<EstimateFeesResponse> {
   const url = `${BASE_URL}/v2/estimate-fees`;
@@ -425,7 +443,10 @@ export function getDepositEta(chain: SourceChain, estimates: EstimateFeesRespons
   return estimates[chain]?.depositEta || null;
 }
 
-export function getWithdrawalEta(chain: DestinationChain, estimates: EstimateFeesResponse): string | null {
+export function getWithdrawalEta(
+  chain: DestinationChain,
+  estimates: EstimateFeesResponse,
+): string | null {
   return estimates[chain]?.withdrawalEta || null;
 }
 ```
@@ -435,14 +456,17 @@ export function getWithdrawalEta(chain: DestinationChain, estimates: EstimateFee
 ### 4. Get Operations History (Optional)
 
 **Endpoint:**
+
 ```
 GET /operations/{address}
 ```
 
 **Parameters:**
+
 - `address`: Hyperliquid wallet address
 
 **Example Request:**
+
 ```typescript
 const url = 'https://api.hyperunit.xyz/operations/0xUSER_HYPERLIQUID_ADDRESS';
 
@@ -457,6 +481,7 @@ const data = await response.json();
 ```
 
 **Example Response:**
+
 ```json
 [
   {
@@ -475,11 +500,12 @@ const data = await response.json();
 ```
 
 **TypeScript Interface:**
+
 ```typescript
 export interface Operation {
   id: string;
-  type: string;           // "deposit" | "withdrawal"
-  status: string;         // "pending" | "completed" | "failed"
+  type: string; // "deposit" | "withdrawal"
+  status: string; // "pending" | "completed" | "failed"
   amount: string;
   asset: string;
   srcChain: string;
@@ -501,11 +527,13 @@ export interface Operation {
 **Purpose:** Generate and manage deposit addresses for the user's Hyperliquid wallet.
 
 **File Structure:**
+
 ```
 lib/hyper-unit/hooks/useUnitDepositAddress.ts
 ```
 
 **Implementation:**
+
 ```typescript
 import { useEffect, useState, useCallback } from 'react';
 import { useActiveWallet } from '@/lib/riverrun/hooks';
@@ -574,6 +602,7 @@ export function useUnitDepositAddress(
 ```
 
 **Usage Example:**
+
 ```typescript
 // In a deposit page component
 const { address, isLoading, error } = useUnitDepositAddress('bitcoin', 'btc');
@@ -590,11 +619,13 @@ if (address) return <Text>Deposit to: {address}</Text>;
 **Purpose:** Generate withdrawal addresses dynamically based on user input.
 
 **File Structure:**
+
 ```
 lib/hyper-unit/hooks/useUnitWithdrawalAddress.ts
 ```
 
 **Implementation:**
+
 ```typescript
 import { useEffect, useState } from 'react';
 import { generateWithdrawalAddress, type DestinationChain, type Asset } from '../api';
@@ -656,6 +687,7 @@ export function useUnitWithdrawalAddress(
 ```
 
 **Usage Example:**
+
 ```typescript
 // In a withdrawal page component
 const [recipientAddress, setRecipientAddress] = useState('');
@@ -664,7 +696,7 @@ const isValidAddress = validateAddress(recipientAddress); // Custom validation
 const {
   address: unitAddress,
   isLoading,
-  error
+  error,
 } = useUnitWithdrawalAddress(
   isValidAddress ? 'ethereum' : null,
   isValidAddress ? 'eth' : null,
@@ -681,11 +713,13 @@ const {
 **Purpose:** Fetch and manage fee estimates and ETAs for all chains.
 
 **File Structure:**
+
 ```
 lib/hyper-unit/hooks/useEstimateFees.ts
 ```
 
 **Implementation:**
+
 ```typescript
 import { useEffect, useState, useCallback } from 'react';
 import {
@@ -760,6 +794,7 @@ export function useEstimateFees(): UseEstimateFeesResult {
 ```
 
 **Usage Example:**
+
 ```typescript
 // In deposit token list
 const { getDepositEtaForChain, isLoading } = useEstimateFees();
@@ -777,10 +812,12 @@ const ethEta = getDepositEtaForChain('ethereum'); // "3m"
 **Route:** `/(main)/deposit/deposit-unit-bridge`
 
 **URL Parameters:**
+
 - `symbol`: Token symbol (BTC | ETH | SOL)
 - `chain`: Chain name (bitcoin | ethereum | solana)
 
 **Key Features:**
+
 ```typescript
 // URL params
 const params = useLocalSearchParams<{ symbol: string; chain: string }>();
@@ -797,6 +834,7 @@ const depositEta = getDepositEtaForChain(chainInfo.unitChainType as SourceChain)
 ```
 
 **UI Elements:**
+
 1. **Token Display:** Icon + full name
 2. **Instructions:** "Use the address below to receive {token} to your exchange account"
 3. **ETA Display:** "Est. completion time: {depositEta}"
@@ -806,6 +844,7 @@ const depositEta = getDepositEtaForChain(chainInfo.unitChainType as SourceChain)
 7. **Important Warning:** Loss of funds warning for amounts below minimum
 
 **Address Validation:**
+
 - None required (display-only)
 - Show loading state while generating
 - Handle errors gracefully
@@ -817,10 +856,12 @@ const depositEta = getDepositEtaForChain(chainInfo.unitChainType as SourceChain)
 **Route:** `/(main)/withdraw/withdraw-unit-bridge`
 
 **URL Parameters:**
+
 - `symbol`: Token symbol (BTC | ETH | SOL)
 - `chain`: Chain name (bitcoin | ethereum | solana)
 
 **Key Features:**
+
 ```typescript
 // Token configuration
 const TOKEN_INFO = {
@@ -845,9 +886,13 @@ const TOKEN_INFO = {
 const { balance, tokenInfo, refreshBalance } = useSpotBalance(tokenInfo.spotTokenName);
 
 // Generate withdrawal address
-const { address: unitWithdrawalAddress, isLoading, error } = useUnitWithdrawalAddress(
-  isRecipientValid ? tokenInfo.network as DestinationChain : null,
-  isRecipientValid ? params.symbol?.toLowerCase() as Asset : null,
+const {
+  address: unitWithdrawalAddress,
+  isLoading,
+  error,
+} = useUnitWithdrawalAddress(
+  isRecipientValid ? (tokenInfo.network as DestinationChain) : null,
+  isRecipientValid ? (params.symbol?.toLowerCase() as Asset) : null,
   isRecipientValid ? recipientAddress : null,
 );
 
@@ -858,6 +903,7 @@ await spotSend(unitWithdrawalAddress, tokenIdentifier, amount);
 ```
 
 **Address Validation:**
+
 ```typescript
 function isValidAddress(address: string, network: string): boolean {
   if (network === 'ethereum') {
@@ -872,6 +918,7 @@ function isValidAddress(address: string, network: string): boolean {
 ```
 
 **UI Elements:**
+
 1. **Recipient Address Input:**
    - Input field with paste button
    - Real-time validation with error messages
@@ -892,6 +939,7 @@ function isValidAddress(address: string, network: string): boolean {
 ### 3. Token List Integration
 
 **Deposit Token Configuration:**
+
 ```typescript
 // lib/riverrun/transfer-fund/constants/deposit-tokens.ts
 export const DEPOSIT_TOKENS = [
@@ -953,6 +1001,7 @@ export const CHAINS = {
 ```
 
 **Routing Logic:**
+
 ```typescript
 // In select-source-chain.tsx
 if (selectedChain.depositMethod === 'unit-protocol') {
@@ -964,6 +1013,7 @@ if (selectedChain.depositMethod === 'unit-protocol') {
 ```
 
 **Withdraw Token List:**
+
 ```typescript
 // app/(main)/withdraw/withdraw-tokens.tsx
 const WITHDRAW_TOKENS = [
@@ -1042,12 +1092,13 @@ export const MIN_WITHDRAWAL_AMOUNTS = {
 ### Hyperliquid Spot Token Mapping
 
 | Asset | Hyperliquid Spot Token Name |
-|-------|---------------------------|
-| BTC | UBTC |
-| ETH | UETH |
-| SOL | USOL |
+| ----- | --------------------------- |
+| BTC   | UBTC                        |
+| ETH   | UETH                        |
+| SOL   | USOL                        |
 
 **Important:** Use the correct token name when calling `useSpotBalance` and `spotSend`:
+
 ```typescript
 const { balance } = useSpotBalance('UETH'); // Not just 'ETH'
 const tokenIdentifier = `${spotTokenInfo.name}:${spotTokenInfo.tokenId}`;
@@ -1077,6 +1128,7 @@ await spotSend(address, tokenIdentifier, amount);
 #### Phase 1: Set Up Core API Layer
 
 1. **Create API module** (`lib/hyper-unit/api.ts`):
+
    ```typescript
    - Define types (SourceChain, DestinationChain, Asset)
    - Implement generateDepositAddress()
@@ -1113,6 +1165,7 @@ await spotSend(address, tokenIdentifier, amount);
 #### Phase 3: Configure Token System
 
 6. **Update `deposit-tokens.ts`:**
+
    ```typescript
    - Add BTC, ETH, SOL to DEPOSIT_TOKENS
    - Set depositMethod: 'unit-protocol'
@@ -1145,6 +1198,7 @@ await spotSend(address, tokenIdentifier, amount);
 #### Phase 5: Wire Up Routing
 
 10. **Update `select-source-chain.tsx`:**
+
     ```typescript
     if (depositMethod === 'unit-protocol') {
       router.push({
@@ -1156,7 +1210,7 @@ await spotSend(address, tokenIdentifier, amount);
 
 11. **Update `withdraw-tokens.tsx`:**
     ```typescript
-    const handleTokenPress = (token) => {
+    const handleTokenPress = token => {
       router.push({
         pathname: token.route,
         params: { symbol: token.symbol, chain: token.network },
@@ -1189,6 +1243,7 @@ await spotSend(address, tokenIdentifier, amount);
 #### Phase 7: Documentation & MCP
 
 15. **Add MCP server** (optional):
+
     ```json
     {
       "mcpServers": {
@@ -1285,6 +1340,7 @@ await spotSend(address, tokenIdentifier, amount);
 ## Support & Troubleshooting
 
 ### Official Resources
+
 - **Documentation:** https://docs.hyperunit.xyz
 - **API Docs:** https://docs.hyperunit.xyz/developers/api
 - **Discord/Support:** Check Unit Protocol website
@@ -1292,17 +1348,20 @@ await spotSend(address, tokenIdentifier, amount);
 ### Common Issues
 
 **Issue:** Deposit address not generating
+
 - Check user is authenticated with Hyperliquid wallet
 - Verify API endpoint is correct and accessible
 - Check network connectivity
 
 **Issue:** Withdrawal not arriving
+
 - Verify transaction was sent to correct Unit Protocol address
 - Check minimum amount was met
 - Wait for full ETA period
 - Contact Unit Protocol support with transaction hash
 
 **Issue:** "Invalid address" error
+
 - Double-check address format matches network
 - Remove any whitespace from input
 - Try a different destination address
@@ -1311,9 +1370,9 @@ await spotSend(address, tokenIdentifier, amount);
 
 ## Change Log
 
-| Date | Change | Reason |
-|------|--------|--------|
-| 2025-10-31 | Integration removed | Focus on USDC perpetual trading only |
+| Date       | Change                 | Reason                                  |
+| ---------- | ---------------------- | --------------------------------------- |
+| 2025-10-31 | Integration removed    | Focus on USDC perpetual trading only    |
 | 2024-XX-XX | Initial implementation | Support spot token deposits/withdrawals |
 
 ---

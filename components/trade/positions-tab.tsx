@@ -320,11 +320,7 @@ export default function PositionsTab() {
         onOpenChange={setCloseModalOpen}
         position={selectedPosition}
       />
-      <TpSlModal
-        open={tpSlModalOpen}
-        onOpenChange={setTpSlModalOpen}
-        position={selectedPosition}
-      />
+      <TpSlModal open={tpSlModalOpen} onOpenChange={setTpSlModalOpen} position={selectedPosition} />
     </YStack>
   );
 }

@@ -92,3 +92,131 @@ export function getOrderDirection(order: Order): string {
   // For regular orders
   return isBuy ? 'Long' : 'Short';
 }
+
+// ============================================================================
+// TP/SL Order Placement Helpers
+// ============================================================================
+
+import type { PlaceOrderParams } from '../hooks/useOrder';
+import {
+  calculateSlPriceFromPercent,
+  calculateTpPriceFromPercent,
+  validateSlPrice,
+  validateTpPrice,
+} from './tpsl-utils';
+
+/**
+ * TP/SL input data from UI
+ */
+export interface TpSlInputs {
+  tpValue: string;
+  tpUnit: 'USD' | '%';
+  slValue: string;
+  slUnit: 'USD' | '%';
+  entryPrice: number;
+  isLong: boolean;
+  szDecimals: number;
+}
+
+/**
+ * Calculate TP/SL trigger prices from UI inputs
+ *
+ * Converts percentage inputs to USD prices using formatPrice
+ * Returns undefined if no TP/SL values are provided
+ *
+ * @param inputs - TP/SL values from UI (can be USD or %)
+ * @returns TP/SL configuration object or undefined
+ */
+export function calculateTpSlPrices(inputs: TpSlInputs): PlaceOrderParams['tpSl'] | undefined {
+  const result: NonNullable<PlaceOrderParams['tpSl']> = {};
+
+  // Process TP
+  if (inputs.tpValue) {
+    const tpNum = parseFloat(inputs.tpValue);
+    if (isFinite(tpNum) && tpNum > 0) {
+      result.tpTriggerPrice =
+        inputs.tpUnit === '%'
+          ? calculateTpPriceFromPercent(inputs.entryPrice, tpNum, inputs.isLong, inputs.szDecimals)
+          : inputs.tpValue;
+    }
+  }
+
+  // Process SL
+  if (inputs.slValue) {
+    const slNum = parseFloat(inputs.slValue);
+    if (isFinite(slNum) && slNum > 0) {
+      result.slTriggerPrice =
+        inputs.slUnit === '%'
+          ? calculateSlPriceFromPercent(inputs.entryPrice, slNum, inputs.isLong, inputs.szDecimals)
+          : inputs.slValue;
+    }
+  }
+
+  // Return undefined if no TP/SL was provided
+  return Object.keys(result).length > 0 ? result : undefined;
+}
+
+/**
+ * Validation result for TP/SL prices
+ */
+export interface TpSlValidationResult {
+  valid: boolean;
+  error?: {
+    title: string;
+    description: string;
+  };
+}
+
+/**
+ * Validate TP/SL trigger prices
+ *
+ * Ensures TP/SL prices are valid relative to entry price:
+ * - Long TP must be > entry
+ * - Long SL must be < entry
+ * - Short TP must be < entry
+ * - Short SL must be > entry
+ *
+ * @param tpSl - TP/SL configuration to validate
+ * @param entryPrice - Expected entry price
+ * @param isLong - Position direction
+ * @returns Validation result with error details if invalid
+ */
+export function validateTpSl(
+  tpSl: PlaceOrderParams['tpSl'],
+  entryPrice: number,
+  isLong: boolean,
+): TpSlValidationResult {
+  if (!tpSl) {
+    return { valid: true };
+  }
+
+  // Validate TP
+  if (tpSl.tpTriggerPrice) {
+    const tpValid = validateTpPrice(tpSl.tpTriggerPrice, entryPrice, isLong);
+    if (!tpValid.valid) {
+      return {
+        valid: false,
+        error: {
+          title: 'Invalid TP',
+          description: tpValid.error || 'Invalid take profit price',
+        },
+      };
+    }
+  }
+
+  // Validate SL
+  if (tpSl.slTriggerPrice) {
+    const slValid = validateSlPrice(tpSl.slTriggerPrice, entryPrice, isLong);
+    if (!slValid.valid) {
+      return {
+        valid: false,
+        error: {
+          title: 'Invalid SL',
+          description: slValid.error || 'Invalid stop loss price',
+        },
+      };
+    }
+  }
+
+  return { valid: true };
+}

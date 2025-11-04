@@ -19,9 +19,8 @@ import {
   calculateSlPriceFromPercent,
   calculateTpPercentFromPrice,
   calculateTpPriceFromPercent,
-  validateSlPrice,
-  validateTpPrice,
 } from '@/lib/hyperliquid/utils/tpsl-utils';
+import { calculateTpSlPrices, validateTpSl } from '@/lib/hyperliquid/utils/order-utils';
 
 import { Checkbox } from '@tamagui/checkbox';
 import { Check } from '@tamagui/lucide-icons';
@@ -36,7 +35,7 @@ interface PerpTradePanelProps {
 
 export function PerpTradePanel({ coin }: PerpTradePanelProps) {
   const { getSymbolConverter } = useHyperliquidClient();
-  const { placeMarketOrder, placeLimitOrder, placeOrderWithTpSl, isPlacingOrder } = useOrder();
+  const { placeOrder, isPlacingOrder } = useOrder();
 
   // Subscribe to active asset data (leverage, margin mode) from WebSocket
   const { data: activeAssetData, isLoading: isLoadingAssetData } = useActiveAssetData({
@@ -187,7 +186,7 @@ export function PerpTradePanel({ coin }: PerpTradePanelProps) {
   const handlePlaceOrder = useCallback(async () => {
     const data = form.getValues();
 
-    // Check if size is valid
+    // Validation
     if (!validation.hasValidSize) {
       toast.error('Size Required', {
         description: 'Please enter an order size',
@@ -195,7 +194,6 @@ export function PerpTradePanel({ coin }: PerpTradePanelProps) {
       return;
     }
 
-    // Check if limit price is valid for Limit orders
     if (!validation.hasValidLimitPrice) {
       toast.error('Invalid Price', {
         description: 'Please enter a valid limit price',
@@ -205,96 +203,46 @@ export function PerpTradePanel({ coin }: PerpTradePanelProps) {
 
     const isLong = data.orderSide === 'Long';
 
-    // If TP/SL is enabled, use atomic order placement
+    // Calculate TP/SL prices if enabled
+    let tpSl: { tpTriggerPrice?: string; slTriggerPrice?: string } | undefined;
     if (tpSlEnabled && (tpValue || slValue)) {
-      // Calculate trigger prices from user input
-      let tpTriggerPrice: string | undefined;
-      let slTriggerPrice: string | undefined;
-
-      const entryPrice = entryPriceForTpSl;
-
-      // Process TP
-      if (tpValue) {
-        const tpNum = parseFloat(tpValue);
-        if (isFinite(tpNum) && tpNum > 0) {
-          // Convert to price if in percentage mode
-          if (tpUnit === '%') {
-            tpTriggerPrice = calculateTpPriceFromPercent(entryPrice, tpNum, isLong, szDecimals);
-          } else {
-            tpTriggerPrice = tpValue;
-          }
-
-          // Validate TP price
-          const tpValid = validateTpPrice(tpTriggerPrice, entryPrice, isLong);
-          if (!tpValid.valid) {
-            toast.error('Invalid TP', {
-              description: tpValid.error,
-            });
-            return;
-          }
-        }
-      }
-
-      // Process SL
-      if (slValue) {
-        const slNum = parseFloat(slValue);
-        if (isFinite(slNum) && slNum > 0) {
-          // Convert to price if in percentage mode
-          if (slUnit === '%') {
-            slTriggerPrice = calculateSlPriceFromPercent(entryPrice, slNum, isLong, szDecimals);
-          } else {
-            slTriggerPrice = slValue;
-          }
-
-          // Validate SL price
-          const slValid = validateSlPrice(slTriggerPrice, entryPrice, isLong);
-          if (!slValid.valid) {
-            toast.error('Invalid SL', {
-              description: slValid.error,
-            });
-            return;
-          }
-        }
-      }
-
-      // Place atomic order with TP/SL
-      const orderSuccess = await placeOrderWithTpSl({
-        coin,
-        side: data.orderSide,
-        size: data.size,
-        orderType: data.orderType,
-        limitPrice: data.limitPrice || undefined,
-        marketPrice: data.orderType === 'Market' ? marketPrice : undefined,
-        reduceOnly: data.reduceOnly,
-        tpTriggerPrice,
-        slTriggerPrice,
+      tpSl = calculateTpSlPrices({
+        tpValue,
+        tpUnit,
+        slValue,
+        slUnit,
+        entryPrice: entryPriceForTpSl,
+        isLong,
+        szDecimals,
       });
 
-      // Reset TP/SL inputs after successful placement
-      if (orderSuccess) {
-        setTpSlEnabled(false);
-        setTpValue('');
-        setSlValue('');
-      }
-    } else {
-      // No TP/SL - use regular order placement
-      if (data.orderType === 'Market') {
-        await placeMarketOrder({
-          coin,
-          side: data.orderSide,
-          size: data.size,
-          reduceOnly: data.reduceOnly,
-          marketPrice,
+      // Validate TP/SL
+      const validation = validateTpSl(tpSl, entryPriceForTpSl, isLong);
+      if (!validation.valid && validation.error) {
+        toast.error(validation.error.title, {
+          description: validation.error.description,
         });
-      } else {
-        await placeLimitOrder({
-          coin,
-          side: data.orderSide,
-          size: data.size,
-          limitPrice: data.limitPrice || '0',
-          reduceOnly: data.reduceOnly,
-        });
+        return;
       }
+    }
+
+    // Single unified call
+    const orderSuccess = await placeOrder({
+      coin,
+      side: data.orderSide,
+      size: data.size,
+      orderType: data.orderType,
+      limitPrice: data.limitPrice || undefined,
+      marketPrice: data.orderType === 'Market' ? marketPrice : undefined,
+      reduceOnly: data.reduceOnly,
+      tpSl,
+    });
+
+    // Reset TP/SL inputs after successful placement
+    if (orderSuccess && tpSlEnabled) {
+      setTpSlEnabled(false);
+      setTpValue('');
+      setSlValue('');
     }
   }, [
     coin,
@@ -302,9 +250,7 @@ export function PerpTradePanel({ coin }: PerpTradePanelProps) {
     validation.hasValidSize,
     validation.hasValidLimitPrice,
     marketPrice,
-    placeMarketOrder,
-    placeLimitOrder,
-    placeOrderWithTpSl,
+    placeOrder,
     tpSlEnabled,
     tpValue,
     tpUnit,
