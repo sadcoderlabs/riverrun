@@ -65,13 +65,6 @@ export function OrderBook({ coin, szDecimals, markPx, onPriceClick }: OrderBookP
 
   const { data, isLoading, error } = useOrderBook({ coin, nSigFigs: effectiveNSigFigs });
 
-  // Calculate max size for depth percentage calculation
-  const maxSize = useMemo(() => {
-    if (!data) return 0;
-    const allSizes = [...data.bids, ...data.asks].map(level => parseFloat(level.sz));
-    return Math.max(...allSizes, 0);
-  }, [data]);
-
   // Prepare asks data (reversed for top-down display, limited to 10)
   const reversedAsks = useMemo(() => {
     if (!data?.asks) return [];
@@ -84,18 +77,59 @@ export function OrderBook({ coin, szDecimals, markPx, onPriceClick }: OrderBookP
     return data.bids.slice(0, 10);
   }, [data?.bids]);
 
-  // Render individual order book row
-  const renderOrderBookRow = (item: OrderBookLevel, type: 'bid' | 'ask') => {
-    const depthPercentage = maxSize > 0 ? (parseFloat(item.sz) / maxSize) * 100 : 0;
+  // Calculate total liquidity for cumulative depth calculation
+  const totalLiquidity = useMemo(() => {
+    if (!reversedAsks.length && !limitedBids.length) return 0;
+    const allVisibleSizes = [...reversedAsks, ...limitedBids].map(level => parseFloat(level.sz));
+    return allVisibleSizes.reduce((sum, size) => sum + size, 0);
+  }, [reversedAsks, limitedBids]);
 
+  // Calculate cumulative depth for asks (from best ask price going up)
+  const asksWithCumulative = useMemo(() => {
+    if (!reversedAsks.length || totalLiquidity === 0) return [];
+
+    let cumulative = 0;
+    // reversedAsks is already reversed, so we need to accumulate from the end (best price)
+    return reversedAsks.map((ask, index) => {
+      // Accumulate from the best price (last item in reversedAsks array)
+      const fromBestPrice = reversedAsks.slice(index);
+      cumulative = fromBestPrice.reduce((sum, a) => sum + parseFloat(a.sz), 0);
+      return {
+        ...ask,
+        cumulativePercentage: (cumulative / totalLiquidity) * 100,
+      };
+    });
+  }, [reversedAsks, totalLiquidity]);
+
+  // Calculate cumulative depth for bids (from best bid price going down)
+  const bidsWithCumulative = useMemo(() => {
+    if (!limitedBids.length || totalLiquidity === 0) return [];
+
+    return limitedBids.map((bid, index) => {
+      // Accumulate from best price (index 0) to current
+      const cumulative = limitedBids
+        .slice(0, index + 1)
+        .reduce((sum, b) => sum + parseFloat(b.sz), 0);
+      return {
+        ...bid,
+        cumulativePercentage: (cumulative / totalLiquidity) * 100,
+      };
+    });
+  }, [limitedBids, totalLiquidity]);
+
+  // Render individual order book row
+  const renderOrderBookRow = (
+    item: OrderBookLevel & { cumulativePercentage: number },
+    type: 'bid' | 'ask',
+  ) => {
     // Calculate display size based on unit
     let displaySize: string;
     if (sizeUnit === 'usd') {
-      // USD mode: calculate USD value
+      // USD mode: calculate USD value and format as integer with thousand separators
       const sizeInUsd = parseFloat(item.sz) * parseFloat(item.px);
-      displaySize = sizeInUsd.toString();
+      displaySize = formatSizeFixedDecimals(sizeInUsd, 0, true);
     } else {
-      // Asset mode: format with fixed decimals for alignment
+      // Asset mode: format with fixed decimals for alignment, no thousand separators
       displaySize = formatSizeFixedDecimals(item.sz, szDecimals, false);
     }
 
@@ -105,7 +139,7 @@ export function OrderBook({ coin, szDecimals, markPx, onPriceClick }: OrderBookP
         price={item.px}
         size={displaySize}
         type={type}
-        depthPercentage={depthPercentage}
+        depthPercentage={item.cumulativePercentage}
         szDecimals={szDecimals}
         sizeUnit={sizeUnit}
         onPress={() => onPriceClick?.(item.px)}
@@ -251,7 +285,7 @@ export function OrderBook({ coin, szDecimals, markPx, onPriceClick }: OrderBookP
       <YStack flex={1}>
         {/* Asks Section (Top) - Red theme */}
         <FlatList
-          data={reversedAsks}
+          data={asksWithCumulative}
           renderItem={({ item }) => renderOrderBookRow(item, 'ask')}
           keyExtractor={(item, index) => `ask-${item.px}-${index}`}
           scrollEnabled={false}
@@ -260,7 +294,7 @@ export function OrderBook({ coin, szDecimals, markPx, onPriceClick }: OrderBookP
 
         {/* Bids Section (Bottom) - Green theme */}
         <FlatList
-          data={limitedBids}
+          data={bidsWithCumulative}
           renderItem={({ item }) => renderOrderBookRow(item, 'bid')}
           keyExtractor={(item, index) => `bid-${item.px}-${index}`}
           scrollEnabled={false}

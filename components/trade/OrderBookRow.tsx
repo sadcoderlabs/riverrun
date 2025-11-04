@@ -54,27 +54,11 @@ export const OrderBookRow = memo(function OrderBookRow({
   // so "4180.60" would be redundant
   const formattedPrice = formatPrice(price, szDecimals, true);
 
-  // Format size for display
-  const sizeNum = parseFloat(size);
-
   // Format size based on unit
-  let formattedSize: string;
-  if (sizeUnit === 'asset') {
-    // Asset mode: size is already formatted with fixed decimals from OrderBook component
-    formattedSize = size;
-  } else {
-    // USD mode: format with K suffix for large numbers
-    if (sizeNum >= 1000) {
-      // Large numbers: show with K suffix and 2 decimals
-      formattedSize = (sizeNum / 1000).toFixed(2) + 'k';
-    } else if (sizeNum >= 1) {
-      // Medium numbers: 3 decimal places
-      formattedSize = sizeNum.toFixed(3);
-    } else {
-      // Small numbers: 6 decimal places
-      formattedSize = sizeNum.toFixed(6);
-    }
-  }
+  // Both asset and USD modes: size is already formatted with formatSizeFixedDecimals
+  // - Asset mode: fixed decimals based on szDecimals (e.g., "12.01400" for BTC)
+  // - USD mode: integer with thousand separators (e.g., "1,234")
+  const formattedSize = size;
 
   return (
     <XStack
@@ -86,16 +70,15 @@ export const OrderBookRow = memo(function OrderBookRow({
       onPress={onPress}
       pressStyle={{ opacity: 0.7 }}
     >
-      {/* Depth Bar Background */}
+      {/* Depth Bar Background - Unified direction from right to left */}
       <YStack
         position="absolute"
-        right={isBid ? 0 : undefined}
-        left={isBid ? undefined : 0}
+        right={0}
         top={0}
         bottom={0}
         width={`${depthPercentage}%`}
         backgroundColor={isBid ? '$green3' : '$red3'}
-        opacity={0.3}
+        opacity={0.6}
         zIndex={0}
       />
 
