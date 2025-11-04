@@ -6,7 +6,8 @@ import { LeverageSelector } from '@/components/trade/leverage-selector';
 import { LimitOrderForm, MarketOrderForm, OrderTypeSelector } from '@/components/trade/order-forms';
 import { OrderBook } from '@/components/trade/OrderBook';
 import { TpSlInput } from '@/components/trade/tp-sl-input';
-import { useActiveAssetData, useHyperliquidClient, useOrder } from '@/lib/hyperliquid/hooks';
+import { formatSize } from '@/lib/hyperliquid/format/formatSize';
+import { useActiveAssetData, useHyperliquidClient, useOrder, useWebData2 } from '@/lib/hyperliquid/hooks';
 import { Checkbox } from '@tamagui/checkbox';
 import { Check } from '@tamagui/lucide-icons';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -26,6 +27,9 @@ export function PerpTradePanel({ coin }: PerpTradePanelProps) {
   const { data: activeAssetData, isLoading: isLoadingAssetData } = useActiveAssetData({
     coin,
   });
+
+  // Subscribe to WebData2 to get position data
+  const { data: webData } = useWebData2();
 
   // Get szDecimals for the asset
   const [szDecimals, setSzDecimals] = useState<number>(4); // Default to 4 decimals
@@ -130,6 +134,23 @@ export function PerpTradePanel({ coin }: PerpTradePanelProps) {
     return num.toFixed(2);
   };
 
+  // Get current position for this coin
+  const currentPosition = useMemo(() => {
+    if (!webData?.clearinghouseState?.assetPositions) {
+      return null;
+    }
+
+    const position = webData.clearinghouseState.assetPositions.find(
+      asset => asset.position.coin === coin
+    );
+
+    if (!position || Number(position.position.szi) === 0) {
+      return null;
+    }
+
+    return position.position;
+  }, [webData, coin]);
+
   // Handle order book price click - update limit price when in Limit order mode
   const handleOrderBookPriceClick = useCallback(
     (price: string) => {
@@ -165,7 +186,7 @@ export function PerpTradePanel({ coin }: PerpTradePanelProps) {
             <Text fontFamily="$interRegular" fontSize="$2" color="$gray10">
               Available to trade
             </Text>
-            <Text fontFamily="$interSemiBold" fontSize="$4" color="$color">
+            <Text fontFamily="$interSemiBold" fontSize="$3" color="$color">
               {isLoadingAssetData ? (
                 <Text color="$gray10">Loading...</Text>
               ) : (
@@ -175,11 +196,26 @@ export function PerpTradePanel({ coin }: PerpTradePanelProps) {
           </XStack>
 
           {/* Current Position */}
-          <YStack gap="$0.5">
+          <XStack justifyContent="space-between" alignItems="center">
             <Text fontFamily="$interRegular" fontSize="$2" color="$gray10">
               Current Position
             </Text>
-          </YStack>
+            <Text
+              fontFamily="$interSemiBold"
+              fontSize="$3"
+              color={
+                currentPosition
+                  ? Number(currentPosition.szi) > 0
+                    ? '$green10'
+                    : '$red10'
+                  : '$color'
+              }
+            >
+              {currentPosition
+                ? `${formatSize(Math.abs(Number(currentPosition.szi)), szDecimals, false)} ${coin}`
+                : `0 ${coin}`}
+            </Text>
+          </XStack>
 
           {/* Order Type Selector */}
           <OrderTypeSelector
