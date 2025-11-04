@@ -48,15 +48,19 @@ export function PerpTabs() {
         />
       </XStack>
 
-      {/* Tab Content */}
+      {/* Tab Content - All tabs stay mounted, only visibility changes */}
       <YStack padding="$4">
-        {activeTab === 'orders' && <OrdersTab />}
+        <YStack display={activeTab === 'orders' ? 'flex' : 'none'}>
+          <OrdersTab />
+        </YStack>
 
-        {activeTab === 'positions' && <PositionsTab />}
+        <YStack display={activeTab === 'positions' ? 'flex' : 'none'}>
+          <PositionsTab />
+        </YStack>
 
-        {activeTab === 'history' && (
+        <YStack display={activeTab === 'history' ? 'flex' : 'none'}>
           <TabPlaceholder title="History" message="Your trading history will appear here" />
-        )}
+        </YStack>
       </YStack>
     </YStack>
   );
