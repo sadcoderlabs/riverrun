@@ -6,25 +6,21 @@
 import { useHyperliquidClient, useOrderUpdates } from '@/lib/hyperliquid/hooks';
 import { useActiveWallet } from '@/lib/riverrun/hooks';
 import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
-import { formatValue } from '@/lib/hyperliquid/format/formatValue';
-import { useState, useMemo } from 'react';
+import { formatSize } from '@/lib/hyperliquid/format/formatSize';
+import { useState, useMemo, useEffect } from 'react';
 import { toast } from 'sonner-native';
 import { Button, Spinner, Text, View, XStack, YStack } from 'tamagui';
 import type { OrderNode } from '@/lib/hyperliquid/types/orders';
 import { calculateOrderMetrics } from '@/lib/hyperliquid/utils/order-calculations';
-import {
-  getOrderTypeLabel,
-  isMarketOrder,
-  getOrderType,
-} from '@/lib/hyperliquid/utils/order-type-utils';
-import { parseTriggerCondition } from '@/lib/hyperliquid/utils/trigger-utils';
+import { isMarketOrder, getOrderType } from '@/lib/hyperliquid/utils/order-type-utils';
+import type { SymbolConverter } from '@nktkas/hyperliquid/utils';
 
 // ============================================================================
 // Helper Functions
 // ============================================================================
 
 /**
- * Format timestamp to MM-DD-YYYY HH:MM:SS
+ * Format timestamp to YYYY-MM-DD HH:MM:SS (24-hour format)
  */
 function formatTimestamp(timestamp: number): string {
   const date = new Date(timestamp);
@@ -32,14 +28,30 @@ function formatTimestamp(timestamp: number): string {
     return '-';
   }
 
+  const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
-  const year = date.getFullYear();
   const hours = String(date.getHours()).padStart(2, '0');
   const minutes = String(date.getMinutes()).padStart(2, '0');
   const seconds = String(date.getSeconds()).padStart(2, '0');
 
-  return `${month}-${day}-${year} ${hours}:${minutes}:${seconds}`;
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+}
+
+/**
+ * Get order direction based on side and type
+ */
+function getOrderDirection(order: OrderNode['order']): string {
+  const orderType = getOrderType(order);
+  const isBuy = order.side === 'B';
+
+  // For trigger orders (Stop/TP), they're reduce-only
+  if (orderType.includes('Stop') || orderType.includes('Take Profit')) {
+    return isBuy ? 'Close Short' : 'Close Long';
+  }
+
+  // For regular orders
+  return isBuy ? 'Long' : 'Short';
 }
 
 // ============================================================================
@@ -50,15 +62,24 @@ interface OrderCardProps {
   orderNode: OrderNode;
   onCancel: (oid: number) => Promise<void>;
   canceling: boolean;
+  symbolConverter: SymbolConverter | null;
 }
 
-function OrderCard({ orderNode, onCancel, canceling }: OrderCardProps) {
+function OrderCard({ orderNode, onCancel, canceling, symbolConverter }: OrderCardProps) {
   const { order } = orderNode;
   const metrics = calculateOrderMetrics(order);
   const orderType = getOrderType(order);
-  const typeLabel = getOrderTypeLabel(order);
-  const triggerCondition = parseTriggerCondition(order);
+  const direction = getOrderDirection(order);
   const isMarket = isMarketOrder(orderType);
+
+  // Get szDecimals for proper size formatting
+  const szDecimals = symbolConverter?.getSzDecimals(order.coin) ?? 4;
+
+  // Get raw trigger condition if it exists
+  const triggerCondition =
+    'triggerCondition' in order && order.triggerCondition && order.triggerCondition !== 'N/A'
+      ? order.triggerCondition
+      : null;
 
   const isBuy = order.side === 'B';
 
@@ -69,8 +90,6 @@ function OrderCard({ orderNode, onCancel, canceling }: OrderCardProps) {
       borderRadius="$3"
       borderWidth={1}
       borderColor="$gray5"
-      marginHorizontal="$4"
-      marginTop="$3"
       gap="$2"
     >
       {/* Header row: Coin + PERP badge, and Cancel button */}
@@ -101,27 +120,44 @@ function OrderCard({ orderNode, onCancel, canceling }: OrderCardProps) {
         </Button>
       </XStack>
 
-      {/* Order Type + Direction Row */}
-      <XStack>
-        <Text fontSize="$3" fontFamily="$interSemiBold" color={isBuy ? '$green10' : '$red10'}>
-          {typeLabel}
+      {/* Time Row */}
+      <XStack justifyContent="space-between" alignItems="center">
+        <Text fontSize="$2" color="$color9">
+          Time
         </Text>
-      </XStack>
-
-      {/* Timestamp Row */}
-      <XStack justifyContent="flex-end">
-        <Text fontSize="$1" color="$color9">
+        <Text fontSize="$2" fontFamily="$interMedium">
           {formatTimestamp(order.timestamp)}
         </Text>
       </XStack>
 
-      {/* Filled / Amount Row */}
+      {/* Type Row */}
       <XStack justifyContent="space-between" alignItems="center">
         <Text fontSize="$2" color="$color9">
-          Filled / Amount (USD)
+          Type
         </Text>
         <Text fontSize="$2" fontFamily="$interMedium">
-          {formatValue(metrics.filledUSD, 2)} / {formatValue(metrics.totalUSD, 2)}
+          {orderType}
+        </Text>
+      </XStack>
+
+      {/* Direction Row */}
+      <XStack justifyContent="space-between" alignItems="center">
+        <Text fontSize="$2" color="$color9">
+          Direction
+        </Text>
+        <Text fontSize="$2" fontFamily="$interSemiBold" color={isBuy ? '$green10' : '$red10'}>
+          {direction}
+        </Text>
+      </XStack>
+
+      {/* Filled Size / Size Row */}
+      <XStack justifyContent="space-between" alignItems="center">
+        <Text fontSize="$2" color="$color9">
+          Filled Size / Size
+        </Text>
+        <Text fontSize="$2" fontFamily="$interMedium">
+          {formatSize(metrics.filledSize, szDecimals, true)} /{' '}
+          {formatSize(metrics.size, szDecimals, true)} {order.coin}
         </Text>
       </XStack>
 
@@ -135,29 +171,25 @@ function OrderCard({ orderNode, onCancel, canceling }: OrderCardProps) {
         </Text>
       </XStack>
 
-      {/* Conditions Row - show for trigger orders (Stop/TP) */}
-      {triggerCondition && (
-        <XStack justifyContent="space-between" alignItems="center">
-          <Text fontSize="$2" color="$color9">
-            Conditions
-          </Text>
-          <Text fontSize="$2" fontFamily="$interMedium">
-            {triggerCondition.formatted}
-          </Text>
-        </XStack>
-      )}
+      {/* Trigger Conditions Row - always show */}
+      <XStack justifyContent="space-between" alignItems="center">
+        <Text fontSize="$2" color="$color9">
+          Trigger Conditions
+        </Text>
+        <Text fontSize="$2" fontFamily="$interMedium">
+          {triggerCondition || '-'}
+        </Text>
+      </XStack>
 
-      {/* Reduce Only Row - only if true */}
-      {order.reduceOnly && (
-        <XStack justifyContent="space-between" alignItems="center">
-          <Text fontSize="$2" color="$color9">
-            Reduce Only
-          </Text>
-          <Text fontSize="$2" fontFamily="$interMedium">
-            True
-          </Text>
-        </XStack>
-      )}
+      {/* Reduce Only Row - always show */}
+      <XStack justifyContent="space-between" alignItems="center">
+        <Text fontSize="$2" color="$color9">
+          Reduce Only
+        </Text>
+        <Text fontSize="$2" fontFamily="$interMedium">
+          {order.reduceOnly ? 'True' : 'False'}
+        </Text>
+      </XStack>
     </YStack>
   );
 }
@@ -175,6 +207,20 @@ export function OrdersTabContent() {
 
   const [cancelError, setCancelError] = useState<string | undefined>(undefined);
   const [cancelingOrderIds, setCancelingOrderIds] = useState<Record<number, boolean>>({});
+  const [symbolConverter, setSymbolConverter] = useState<SymbolConverter | null>(null);
+
+  // Load SymbolConverter
+  useEffect(() => {
+    let isMounted = true;
+    getSymbolConverter().then(converter => {
+      if (isMounted) {
+        setSymbolConverter(converter);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [getSymbolConverter]);
 
   // Filter and sort orders
   const sortedOrders = useMemo(() => {
@@ -279,33 +325,29 @@ export function OrdersTabContent() {
 
   // Render flat list of orders
   return (
-    <YStack>
-      <YStack paddingBottom="$4">
-        {cancelError && (
-          <YStack
-            borderRadius="$2"
-            backgroundColor="$red4"
-            borderColor="$red8"
-            borderWidth={1}
-            padding="$3"
-            mx="$4"
-            mt="$4"
-            mb="$2"
-          >
-            <Text color="$red10" fontFamily="$interMedium">
-              {cancelError}
-            </Text>
-          </YStack>
-        )}
-        {sortedOrders.map(orderNode => (
-          <OrderCard
-            key={`order-${orderNode.order.oid}`}
-            orderNode={orderNode}
-            onCancel={handleCancelOrder}
-            canceling={cancelingOrderIds[orderNode.order.oid] ?? false}
-          />
-        ))}
-      </YStack>
+    <YStack gap="$2" paddingBottom="$4">
+      {cancelError && (
+        <YStack
+          borderRadius="$2"
+          backgroundColor="$red4"
+          borderColor="$red8"
+          borderWidth={1}
+          padding="$3"
+        >
+          <Text color="$red10" fontFamily="$interMedium">
+            {cancelError}
+          </Text>
+        </YStack>
+      )}
+      {sortedOrders.map(orderNode => (
+        <OrderCard
+          key={`order-${orderNode.order.oid}`}
+          orderNode={orderNode}
+          onCancel={handleCancelOrder}
+          canceling={cancelingOrderIds[orderNode.order.oid] ?? false}
+          symbolConverter={symbolConverter}
+        />
+      ))}
     </YStack>
   );
 }
