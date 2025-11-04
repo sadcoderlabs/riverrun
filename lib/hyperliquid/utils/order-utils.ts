@@ -4,6 +4,8 @@
  */
 
 import type { Order, OrderMetrics, OrderType } from '../types/orders';
+import type { PlaceOrderParams } from '../hooks/useOrder';
+import { calculatePriceFromPercent, validateSlPrice, validateTpPrice } from './tpsl-utils';
 
 // ============================================================================
 // Type Checking
@@ -97,14 +99,6 @@ export function getOrderDirection(order: Order): string {
 // TP/SL Order Placement Helpers
 // ============================================================================
 
-import type { PlaceOrderParams } from '../hooks/useOrder';
-import {
-  calculateSlPriceFromPercent,
-  calculateTpPriceFromPercent,
-  validateSlPrice,
-  validateTpPrice,
-} from './tpsl-utils';
-
 /**
  * TP/SL input data from UI
  */
@@ -136,7 +130,13 @@ export function calculateTpSlPrices(inputs: TpSlInputs): PlaceOrderParams['tpSl'
     if (isFinite(tpNum) && tpNum > 0) {
       result.tpTriggerPrice =
         inputs.tpUnit === '%'
-          ? calculateTpPriceFromPercent(inputs.entryPrice, tpNum, inputs.isLong, inputs.szDecimals)
+          ? calculatePriceFromPercent(
+              inputs.entryPrice,
+              tpNum,
+              inputs.isLong,
+              'tp',
+              inputs.szDecimals,
+            )
           : inputs.tpValue;
     }
   }
@@ -147,7 +147,13 @@ export function calculateTpSlPrices(inputs: TpSlInputs): PlaceOrderParams['tpSl'
     if (isFinite(slNum) && slNum > 0) {
       result.slTriggerPrice =
         inputs.slUnit === '%'
-          ? calculateSlPriceFromPercent(inputs.entryPrice, slNum, inputs.isLong, inputs.szDecimals)
+          ? calculatePriceFromPercent(
+              inputs.entryPrice,
+              slNum,
+              inputs.isLong,
+              'sl',
+              inputs.szDecimals,
+            )
           : inputs.slValue;
     }
   }

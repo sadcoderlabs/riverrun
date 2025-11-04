@@ -7,123 +7,76 @@
 import { formatPrice } from '../format/formatPrice';
 
 /**
- * Calculate Take Profit price from percentage gain
+ * Type of TP/SL order
+ */
+export type TpSlType = 'tp' | 'sl';
+
+/**
+ * Unified price calculation from percentage
+ * Handles both TP and SL based on type
  *
  * @param entryPrice - Entry price of the position
- * @param percentGain - Percentage gain (e.g., 10 for 10%)
+ * @param percent - Percentage gain/loss (e.g., 10 for 10%)
  * @param isLong - True for long positions, false for short
+ * @param type - 'tp' for Take Profit, 'sl' for Stop Loss
  * @param szDecimals - Size decimals for the asset (used to calculate price decimals)
- * @returns TP trigger price formatted with formatPrice (no thousand separators)
+ * @returns Trigger price formatted with formatPrice (no thousand separators)
  *
  * Examples:
- * - Long: entryPrice=100, percentGain=10 → 110 (10% above entry)
- * - Short: entryPrice=100, percentGain=10 → 90 (10% below entry)
+ * - TP Long: entryPrice=100, percent=10, isLong=true, type='tp' → 110 (10% above entry)
+ * - TP Short: entryPrice=100, percent=10, isLong=false, type='tp' → 90 (10% below entry)
+ * - SL Long: entryPrice=100, percent=5, isLong=true, type='sl' → 95 (5% below entry)
+ * - SL Short: entryPrice=100, percent=5, isLong=false, type='sl' → 105 (5% above entry)
  */
-export function calculateTpPriceFromPercent(
+export function calculatePriceFromPercent(
   entryPrice: number,
-  percentGain: number,
+  percent: number,
   isLong: boolean,
+  type: TpSlType,
   szDecimals: number,
 ): string {
-  let price: number;
-  if (isLong) {
-    // Long TP: price increases by percentGain
-    price = entryPrice * (1 + percentGain / 100);
-  } else {
-    // Short TP: price decreases by percentGain
-    price = entryPrice * (1 - percentGain / 100);
-  }
+  // TP: Long increases, Short decreases
+  // SL: Long decreases, Short increases
+  const shouldIncrease = (type === 'tp' && isLong) || (type === 'sl' && !isLong);
 
-  // Format price without thousand separators for API compatibility
+  const price = shouldIncrease
+    ? entryPrice * (1 + percent / 100)
+    : entryPrice * (1 - percent / 100);
+
   return formatPrice(price, szDecimals, false);
 }
 
 /**
- * Calculate Stop Loss price from percentage loss
+ * Unified percentage calculation from price
+ * Handles both TP and SL based on type
  *
  * @param entryPrice - Entry price of the position
- * @param percentLoss - Percentage loss (e.g., 5 for 5%)
+ * @param targetPrice - Target trigger price (TP or SL)
  * @param isLong - True for long positions, false for short
- * @param szDecimals - Size decimals for the asset (used to calculate price decimals)
- * @returns SL trigger price formatted with formatPrice (no thousand separators)
+ * @param type - 'tp' for Take Profit, 'sl' for Stop Loss
+ * @returns Percentage gain/loss as string with 2 decimal places
  *
  * Examples:
- * - Long: entryPrice=100, percentLoss=5 → 95 (5% below entry)
- * - Short: entryPrice=100, percentLoss=5 → 105 (5% above entry)
+ * - TP Long: entryPrice=100, targetPrice=110, isLong=true, type='tp' → "10.00" (10% gain)
+ * - TP Short: entryPrice=100, targetPrice=90, isLong=false, type='tp' → "10.00" (10% gain)
+ * - SL Long: entryPrice=100, targetPrice=95, isLong=true, type='sl' → "5.00" (5% loss)
+ * - SL Short: entryPrice=100, targetPrice=105, isLong=false, type='sl' → "5.00" (5% loss)
  */
-export function calculateSlPriceFromPercent(
+export function calculatePercentFromPrice(
   entryPrice: number,
-  percentLoss: number,
+  targetPrice: number,
   isLong: boolean,
-  szDecimals: number,
+  type: TpSlType,
 ): string {
-  let price: number;
-  if (isLong) {
-    // Long SL: price decreases by percentLoss
-    price = entryPrice * (1 - percentLoss / 100);
-  } else {
-    // Short SL: price increases by percentLoss
-    price = entryPrice * (1 + percentLoss / 100);
-  }
+  // TP: Long increases, Short decreases
+  // SL: Long decreases, Short increases
+  const shouldIncrease = (type === 'tp' && isLong) || (type === 'sl' && !isLong);
 
-  // Format price without thousand separators for API compatibility
-  return formatPrice(price, szDecimals, false);
-}
+  const percent = shouldIncrease
+    ? ((targetPrice - entryPrice) / entryPrice) * 100
+    : ((entryPrice - targetPrice) / entryPrice) * 100;
 
-/**
- * Calculate Take Profit percentage from price
- *
- * @param entryPrice - Entry price of the position
- * @param tpPrice - Take Profit trigger price
- * @param isLong - True for long positions, false for short
- * @returns Percentage gain
- *
- * Examples:
- * - Long: entryPrice=100, tpPrice=110 → 10 (10% gain)
- * - Short: entryPrice=100, tpPrice=90 → 10 (10% gain)
- */
-export function calculateTpPercentFromPrice(
-  entryPrice: number,
-  tpPrice: number,
-  isLong: boolean,
-): string {
-  if (isLong) {
-    // Long: (tpPrice - entryPrice) / entryPrice * 100
-    const percent = ((tpPrice - entryPrice) / entryPrice) * 100;
-    return percent.toFixed(2);
-  } else {
-    // Short: (entryPrice - tpPrice) / entryPrice * 100
-    const percent = ((entryPrice - tpPrice) / entryPrice) * 100;
-    return percent.toFixed(2);
-  }
-}
-
-/**
- * Calculate Stop Loss percentage from price
- *
- * @param entryPrice - Entry price of the position
- * @param slPrice - Stop Loss trigger price
- * @param isLong - True for long positions, false for short
- * @returns Percentage loss
- *
- * Examples:
- * - Long: entryPrice=100, slPrice=95 → 5 (5% loss)
- * - Short: entryPrice=100, slPrice=105 → 5 (5% loss)
- */
-export function calculateSlPercentFromPrice(
-  entryPrice: number,
-  slPrice: number,
-  isLong: boolean,
-): string {
-  if (isLong) {
-    // Long: (entryPrice - slPrice) / entryPrice * 100
-    const percent = ((entryPrice - slPrice) / entryPrice) * 100;
-    return percent.toFixed(2);
-  } else {
-    // Short: (slPrice - entryPrice) / entryPrice * 100
-    const percent = ((slPrice - entryPrice) / entryPrice) * 100;
-    return percent.toFixed(2);
-  }
+  return percent.toFixed(2);
 }
 
 /**

@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Check } from '@tamagui/lucide-icons';
 import { Checkbox } from '@tamagui/checkbox';
-import { Input, Text, XStack, YStack } from 'tamagui';
+import { Text, XStack, YStack } from 'tamagui';
+import { PricePercentInput } from './price-percent-input';
 import {
-  calculateSlPercentFromPrice,
-  calculateSlPriceFromPercent,
-  calculateTpPercentFromPrice,
-  calculateTpPriceFromPercent,
+  calculatePercentFromPrice,
+  calculatePriceFromPercent,
+  type TpSlType,
 } from '@/lib/hyperliquid/utils/tpsl-utils';
 import { calculateTpSlPrices, validateTpSl } from '@/lib/hyperliquid/utils/order-utils';
 
@@ -97,63 +97,49 @@ export function TpSlInput({ entryPrice, isLong, szDecimals, onChange }: TpSlInpu
     }
   }, []);
 
-  // TP unit toggle with bidirectional conversion
-  const toggleTpUnit = useCallback(() => {
-    const newUnit: UnitType = tpUnit === 'USD' ? '%' : 'USD';
+  // Generic unit toggle with bidirectional conversion
+  const createUnitToggle = useCallback(
+    (
+      type: TpSlType,
+      currentValue: string,
+      currentUnit: UnitType,
+      setValue: (value: string) => void,
+      setUnit: (unit: UnitType) => void,
+    ) => {
+      return () => {
+        const newUnit: UnitType = currentUnit === 'USD' ? '%' : 'USD';
 
-    // Convert existing value to new unit
-    if (tpValue && entryPrice > 0) {
-      const currentValue = parseFloat(tpValue);
-      if (isFinite(currentValue)) {
-        let convertedValue: string;
-        if (newUnit === '%' && tpUnit === 'USD') {
-          // USD → %
-          convertedValue = calculateTpPercentFromPrice(entryPrice, currentValue, isLong);
-        } else if (newUnit === 'USD' && tpUnit === '%') {
-          // % → USD
-          convertedValue = calculateTpPriceFromPercent(
-            entryPrice,
-            currentValue,
-            isLong,
-            szDecimals,
-          );
-        } else {
-          convertedValue = tpValue;
+        // Convert existing value to new unit
+        if (currentValue && entryPrice > 0) {
+          const parsedValue = parseFloat(currentValue);
+          if (isFinite(parsedValue)) {
+            let convertedValue: string;
+            if (newUnit === '%' && currentUnit === 'USD') {
+              // USD → %
+              convertedValue = calculatePercentFromPrice(entryPrice, parsedValue, isLong, type);
+            } else if (newUnit === 'USD' && currentUnit === '%') {
+              // % → USD
+              convertedValue = calculatePriceFromPercent(
+                entryPrice,
+                parsedValue,
+                isLong,
+                type,
+                szDecimals,
+              );
+            } else {
+              convertedValue = currentValue;
+            }
+            setValue(convertedValue);
+          }
         }
-        setTpValue(convertedValue);
-      }
-    }
-    setTpUnit(newUnit);
-  }, [tpValue, tpUnit, entryPrice, isLong, szDecimals]);
+        setUnit(newUnit);
+      };
+    },
+    [entryPrice, isLong, szDecimals],
+  );
 
-  // SL unit toggle with bidirectional conversion
-  const toggleSlUnit = useCallback(() => {
-    const newUnit: UnitType = slUnit === 'USD' ? '%' : 'USD';
-
-    // Convert existing value to new unit
-    if (slValue && entryPrice > 0) {
-      const currentValue = parseFloat(slValue);
-      if (isFinite(currentValue)) {
-        let convertedValue: string;
-        if (newUnit === '%' && slUnit === 'USD') {
-          // USD → %
-          convertedValue = calculateSlPercentFromPrice(entryPrice, currentValue, isLong);
-        } else if (newUnit === 'USD' && slUnit === '%') {
-          // % → USD
-          convertedValue = calculateSlPriceFromPercent(
-            entryPrice,
-            currentValue,
-            isLong,
-            szDecimals,
-          );
-        } else {
-          convertedValue = slValue;
-        }
-        setSlValue(convertedValue);
-      }
-    }
-    setSlUnit(newUnit);
-  }, [slValue, slUnit, entryPrice, isLong, szDecimals]);
+  const toggleTpUnit = createUnitToggle('tp', tpValue, tpUnit, setTpValue, setTpUnit);
+  const toggleSlUnit = createUnitToggle('sl', slValue, slUnit, setSlValue, setSlUnit);
 
   return (
     <YStack gap="$2">
@@ -172,97 +158,20 @@ export function TpSlInput({ entryPrice, isLong, szDecimals, onChange }: TpSlInpu
       {/* TP/SL Input Fields */}
       {enabled && (
         <YStack gap="$2.5">
-          {/* TP Input */}
-          <YStack gap="$1.5">
-            <Text fontFamily="$interRegular" fontSize="$2" color="$gray10">
-              {tpUnit === 'USD' ? 'TP Price' : 'TP (%)'}
-            </Text>
-            <XStack
-              backgroundColor="$gray3"
-              borderRadius="$3"
-              paddingVertical="$1.5"
-              paddingHorizontal="$2.5"
-              borderColor="$gray8"
-              borderWidth={1}
-              alignItems="center"
-              height="$3"
-            >
-              <Input
-                flex={1}
-                placeholder={tpUnit === 'USD' ? '0.0' : '0'}
-                value={tpValue}
-                onChangeText={setTpValue}
-                keyboardType="decimal-pad"
-                returnKeyType="done"
-                fontSize="$3"
-                fontFamily="$interRegular"
-                borderWidth={0}
-                paddingHorizontal={0}
-                paddingVertical={0}
-                backgroundColor="transparent"
-              />
-              <XStack
-                backgroundColor="$gray5"
-                borderRadius="$2"
-                paddingHorizontal="$2"
-                paddingVertical="$1"
-                onPress={toggleTpUnit}
-                pressStyle={{ opacity: 0.7 }}
-                cursor="pointer"
-                marginLeft="$2"
-              >
-                <Text fontFamily="$interSemiBold" fontSize="$2" color="$color">
-                  {tpUnit}
-                </Text>
-              </XStack>
-            </XStack>
-          </YStack>
-
-          {/* SL Input */}
-          <YStack gap="$1.5">
-            <Text fontFamily="$interRegular" fontSize="$2" color="$gray10">
-              {slUnit === 'USD' ? 'SL Price' : 'SL (%)'}
-            </Text>
-            <XStack
-              backgroundColor="$gray3"
-              borderRadius="$3"
-              paddingVertical="$1.5"
-              paddingHorizontal="$2.5"
-              borderColor="$gray8"
-              borderWidth={1}
-              alignItems="center"
-              height="$3"
-            >
-              <Input
-                flex={1}
-                placeholder={slUnit === 'USD' ? '0.0' : '0'}
-                value={slValue}
-                onChangeText={setSlValue}
-                keyboardType="decimal-pad"
-                returnKeyType="done"
-                fontSize="$3"
-                fontFamily="$interRegular"
-                borderWidth={0}
-                paddingHorizontal={0}
-                paddingVertical={0}
-                backgroundColor="transparent"
-              />
-              <XStack
-                backgroundColor="$gray5"
-                borderRadius="$2"
-                paddingHorizontal="$2"
-                paddingVertical="$1"
-                onPress={toggleSlUnit}
-                pressStyle={{ opacity: 0.7 }}
-                cursor="pointer"
-                marginLeft="$2"
-              >
-                <Text fontFamily="$interSemiBold" fontSize="$2" color="$color">
-                  {slUnit}
-                </Text>
-              </XStack>
-            </XStack>
-          </YStack>
+          <PricePercentInput
+            label="TP"
+            value={tpValue}
+            unit={tpUnit}
+            onValueChange={setTpValue}
+            onUnitToggle={toggleTpUnit}
+          />
+          <PricePercentInput
+            label="SL"
+            value={slValue}
+            unit={slUnit}
+            onValueChange={setSlValue}
+            onUnitToggle={toggleSlUnit}
+          />
         </YStack>
       )}
     </YStack>
