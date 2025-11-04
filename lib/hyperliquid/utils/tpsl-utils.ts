@@ -88,82 +88,59 @@ export interface ValidationResult {
 }
 
 /**
- * Validate Take Profit price
+ * Unified validation for TP/SL prices
+ * Handles both TP and SL based on type
  *
  * Rules:
- * - Long TP: must be > entry price
- * - Short TP: must be < entry price
+ * - Long TP: must be > entry price (price increases to take profit)
+ * - Short TP: must be < entry price (price decreases to take profit)
+ * - Long SL: must be < entry price (price decreases to stop loss)
+ * - Short SL: must be > entry price (price increases to stop loss)
  *
- * @param tpPrice - Take Profit trigger price
- * @param entryPrice - Entry price
+ * @param price - Trigger price (TP or SL)
+ * @param entryPrice - Entry price of the position
  * @param isLong - True for long positions, false for short
+ * @param type - 'tp' for Take Profit, 'sl' for Stop Loss
  * @returns Validation result with error message if invalid
+ *
+ * Examples:
+ * - validatePrice(110, 100, true, 'tp') → valid (Long TP above entry)
+ * - validatePrice(90, 100, true, 'tp') → invalid (Long TP below entry)
+ * - validatePrice(90, 100, false, 'tp') → valid (Short TP below entry)
+ * - validatePrice(95, 100, true, 'sl') → valid (Long SL below entry)
+ * - validatePrice(105, 100, false, 'sl') → valid (Short SL above entry)
  */
-export function validateTpPrice(
-  tpPrice: string | number,
+export function validatePrice(
+  price: string | number,
   entryPrice: number,
   isLong: boolean,
+  type: TpSlType,
 ): ValidationResult {
-  const tp = typeof tpPrice === 'string' ? parseFloat(tpPrice) : tpPrice;
+  const parsed = typeof price === 'string' ? parseFloat(price) : price;
 
-  if (!isFinite(tp) || tp <= 0) {
-    return { valid: false, error: 'TP price must be a valid positive number' };
+  if (!isFinite(parsed) || parsed <= 0) {
+    return {
+      valid: false,
+      error: `${type.toUpperCase()} price must be a valid positive number`,
+    };
   }
 
-  if (isLong) {
-    if (tp <= entryPrice) {
+  // TP: Long increases, Short decreases
+  // SL: Long decreases, Short increases
+  const shouldBeHigher = (type === 'tp' && isLong) || (type === 'sl' && !isLong);
+
+  if (shouldBeHigher) {
+    if (parsed <= entryPrice) {
       return {
         valid: false,
-        error: `Long TP must be above entry price (${entryPrice})`,
+        error: `${isLong ? 'Long' : 'Short'} ${type.toUpperCase()} must be above entry price (${entryPrice})`,
       };
     }
   } else {
-    if (tp >= entryPrice) {
+    if (parsed >= entryPrice) {
       return {
         valid: false,
-        error: `Short TP must be below entry price (${entryPrice})`,
-      };
-    }
-  }
-
-  return { valid: true };
-}
-
-/**
- * Validate Stop Loss price
- *
- * Rules:
- * - Long SL: must be < entry price
- * - Short SL: must be > entry price
- *
- * @param slPrice - Stop Loss trigger price
- * @param entryPrice - Entry price
- * @param isLong - True for long positions, false for short
- * @returns Validation result with error message if invalid
- */
-export function validateSlPrice(
-  slPrice: string | number,
-  entryPrice: number,
-  isLong: boolean,
-): ValidationResult {
-  const sl = typeof slPrice === 'string' ? parseFloat(slPrice) : slPrice;
-
-  if (!isFinite(sl) || sl <= 0) {
-    return { valid: false, error: 'SL price must be a valid positive number' };
-  }
-
-  if (isLong) {
-    if (sl >= entryPrice) {
-      return {
-        valid: false,
-        error: `Long SL must be below entry price (${entryPrice})`,
-      };
-    }
-  } else {
-    if (sl <= entryPrice) {
-      return {
-        valid: false,
-        error: `Short SL must be above entry price (${entryPrice})`,
+        error: `${isLong ? 'Long' : 'Short'} ${type.toUpperCase()} must be below entry price (${entryPrice})`,
       };
     }
   }

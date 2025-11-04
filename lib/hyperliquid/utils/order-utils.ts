@@ -5,7 +5,7 @@
 
 import type { Order, OrderMetrics, OrderType } from '../types/orders';
 import type { PlaceOrderParams } from '../hooks/useOrder';
-import { calculatePriceFromPercent, validateSlPrice, validateTpPrice } from './tpsl-utils';
+import { calculatePriceFromPercent, validatePrice } from './tpsl-utils';
 
 // ============================================================================
 // Type Checking
@@ -198,7 +198,7 @@ export function validateTpSl(
 
   // Validate TP
   if (tpSl.tpTriggerPrice) {
-    const tpValid = validateTpPrice(tpSl.tpTriggerPrice, entryPrice, isLong);
+    const tpValid = validatePrice(tpSl.tpTriggerPrice, entryPrice, isLong, 'tp');
     if (!tpValid.valid) {
       return {
         valid: false,
@@ -212,7 +212,7 @@ export function validateTpSl(
 
   // Validate SL
   if (tpSl.slTriggerPrice) {
-    const slValid = validateSlPrice(tpSl.slTriggerPrice, entryPrice, isLong);
+    const slValid = validatePrice(tpSl.slTriggerPrice, entryPrice, isLong, 'sl');
     if (!slValid.valid) {
       return {
         valid: false,
