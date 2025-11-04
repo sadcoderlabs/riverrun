@@ -230,15 +230,14 @@ export function OrderBook({ coin, szDecimals, markPx, onPriceClick }: OrderBookP
       <XStack
         paddingHorizontal="$1.5"
         paddingVertical="$0.75"
-        backgroundColor="$gray2"
         justifyContent="space-between"
         alignItems="center"
       >
-        <Text fontFamily="$interMedium" fontSize="$1" color="$gray10" minWidth={70}>
+        <Text fontFamily="$interMedium" fontSize="$2" color="$gray10" minWidth={70}>
           Price (USD)
         </Text>
 
-        <Text fontFamily="$interMedium" fontSize="$1" color="$gray10" textAlign="right" width={70}>
+        <Text fontFamily="$interMedium" fontSize="$2" color="$gray10" textAlign="right" width={70}>
           Size
         </Text>
       </XStack>
