@@ -7,50 +7,16 @@ import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
 import { formatSize } from '@/lib/hyperliquid/format/formatSize';
 import { useHyperliquidClient, useOrder, useOrderUpdates } from '@/lib/hyperliquid/hooks';
 import type { Order } from '@/lib/hyperliquid/types/orders';
-import { calculateOrderMetrics, isMarketOrder } from '@/lib/hyperliquid/utils';
+import {
+  calculateOrderMetrics,
+  formatTimestamp,
+  getOrderDirection,
+  isMarketOrder,
+} from '@/lib/hyperliquid/utils';
 import { useActiveWallet } from '@/lib/riverrun/hooks';
 import type { SymbolConverter } from '@nktkas/hyperliquid/utils';
 import { useEffect, useMemo, useState } from 'react';
 import { Button, Spinner, Text, View, XStack, YStack } from 'tamagui';
-
-// ============================================================================
-// Helper Functions
-// ============================================================================
-
-/**
- * Format timestamp to YYYY-MM-DD HH:MM:SS (24-hour format)
- */
-function formatTimestamp(timestamp: number): string {
-  const date = new Date(timestamp);
-  if (Number.isNaN(date.getTime())) {
-    return '-';
-  }
-
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  const seconds = String(date.getSeconds()).padStart(2, '0');
-
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-}
-
-/**
- * Get order direction based on side and type
- */
-function getOrderDirection(order: Order): string {
-  const isBuy = order.side === 'B';
-  const orderType = order.orderType;
-
-  // For trigger orders (Stop/TP), they're reduce-only
-  if (orderType.includes('Stop') || orderType.includes('Take Profit')) {
-    return isBuy ? 'Close Short' : 'Close Long';
-  }
-
-  // For regular orders
-  return isBuy ? 'Long' : 'Short';
-}
 
 // ============================================================================
 // Order Card Component
