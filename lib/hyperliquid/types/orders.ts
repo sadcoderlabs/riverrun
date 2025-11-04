@@ -1,6 +1,5 @@
 /**
- * Comprehensive type definitions for Hyperliquid orders
- * Eliminates the need for 'as any' casts and provides full type safety
+ * Type definitions for Hyperliquid orders
  */
 
 // ============================================================================
@@ -26,20 +25,6 @@ export type OrderStatus =
   | 'marginCanceled';
 
 export type TimeInForce = 'Gtc' | 'Ioc' | 'Alo' | 'FrontendMarket' | 'LiquidationMarket';
-
-export type OrderDirection = 'Buy' | 'Sell' | 'Close Long' | 'Close Short';
-
-// ============================================================================
-// Trigger Condition Types
-// ============================================================================
-
-export type TriggerOperator = 'above' | 'below';
-
-export interface ParsedTriggerCondition {
-  operator: TriggerOperator;
-  price: string;
-  formatted: string; // e.g., "Price ≤ 97,000"
-}
 
 // ============================================================================
 // Order Interfaces
@@ -87,35 +72,6 @@ export interface RegularOrder extends BaseOrder {
  */
 export type Order = TriggerOrder | RegularOrder;
 
-/**
- * Type guard to check if order is a trigger order
- */
-export function isTriggerOrder(order: Order): order is TriggerOrder {
-  return order.isTrigger === true;
-}
-
-/**
- * Type guard to check if order is a regular order
- */
-export function isRegularOrder(order: Order): order is RegularOrder {
-  return !order.isTrigger;
-}
-
-// ============================================================================
-// Order Update Types (with status)
-// ============================================================================
-
-/**
- * Order with status information from WebSocket or API
- * Note: This type is kept for potential future use, but current implementation
- * focuses on open orders only and uses Order directly
- */
-export interface OrderUpdate {
-  order: Order;
-  status: OrderStatus;
-  statusTimestamp: number;
-}
-
 // ============================================================================
 // Calculated Order Metrics
 // ============================================================================
@@ -131,25 +87,6 @@ export interface OrderMetrics {
   filledUSD: number;
   totalUSD: number;
   fillPercentage: number;
-}
-
-/**
- * Display information for an order
- */
-export interface OrderDisplay {
-  type: OrderType;
-  direction: OrderDirection;
-  typeLabel: string; // e.g., "Buy Limit", "Close Long Stop Market"
-  triggerCondition: ParsedTriggerCondition | null;
-  isMarketOrder: boolean;
-}
-
-/**
- * Order with calculated metrics and display info
- */
-export interface OrderWithMetrics extends OrderUpdate {
-  metrics: OrderMetrics;
-  display: OrderDisplay;
 }
 
 // ============================================================================
