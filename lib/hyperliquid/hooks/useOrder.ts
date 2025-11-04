@@ -76,6 +76,13 @@ export interface CancelOrderParams {
 }
 
 /**
+ * Parameters for canceling multiple orders
+ */
+export interface CancelOrdersParams {
+  orders: Array<{ coin: string; orderId: number }>;
+}
+
+/**
  * Result type for the useOrder hook
  */
 export interface UseOrderResult {
@@ -84,7 +91,10 @@ export interface UseOrderResult {
   placeLimitOrder: (params: LimitOrderParams) => Promise<boolean>;
   placeCloseMarketOrder: (params: CloseMarketOrderParams) => Promise<boolean>;
   placeCloseLimitOrder: (params: CloseLimitOrderParams) => Promise<boolean>;
+
+  // Order cancellation methods
   cancelOrder: (params: CancelOrderParams) => Promise<boolean>;
+  cancelOrders: (params: CancelOrdersParams) => Promise<boolean>;
 
   // State
   isPlacingOrder: boolean;
@@ -486,7 +496,7 @@ export function useOrder(): UseOrderResult {
   );
 
   /**
-   * Cancel an open order
+   * Cancel a single order
    */
   const cancelOrder = useCallback(
     async (params: CancelOrderParams): Promise<boolean> => {
@@ -542,12 +552,77 @@ export function useOrder(): UseOrderResult {
     [getAgentExchangeClient, getSymbolConverter],
   );
 
+  /**
+   * Cancel multiple orders in a single transaction
+   */
+  const cancelOrders = useCallback(
+    async (params: CancelOrdersParams): Promise<boolean> => {
+      setIsCanceling(true);
+      setError(null);
+
+      try {
+        // 1. Get agent exchange client
+        const exchangeClient = await getAgentExchangeClient();
+        if (!exchangeClient) {
+          toast.info('Cancelled', {
+            description: 'Order cancellation was cancelled',
+          });
+          return false;
+        }
+
+        // 2. Get asset metadata
+        const converter = await getSymbolConverter();
+
+        // 3. Build cancels array
+        const cancels = params.orders
+          .map(order => {
+            const assetId = converter.getAssetId(order.coin);
+            if (assetId === undefined) {
+              console.error(`Unable to find asset ID for ${order.coin}`);
+              return null;
+            }
+            return {
+              a: assetId,
+              o: order.orderId,
+            };
+          })
+          .filter((cancel): cancel is { a: number; o: number } => cancel !== null);
+
+        // Validation
+        if (cancels.length === 0) {
+          throw new Error('No valid orders to cancel');
+        }
+
+        // 4. Execute cancellation
+        await exchangeClient.cancel({ cancels });
+
+        // 5. Success
+        toast.success('Orders Cancelled', {
+          description: `Successfully cancelled ${cancels.length} order${cancels.length > 1 ? 's' : ''}`,
+        });
+        return true;
+      } catch (err) {
+        console.error('[useOrder.cancelOrders] Error:', err);
+        const errorMessage = err instanceof Error ? err.message : 'Failed to cancel orders';
+        setError(errorMessage);
+        toast.error('Cancellation Failed', {
+          description: errorMessage,
+        });
+        return false;
+      } finally {
+        setIsCanceling(false);
+      }
+    },
+    [getAgentExchangeClient, getSymbolConverter],
+  );
+
   return {
     placeMarketOrder,
     placeLimitOrder,
     placeCloseMarketOrder,
     placeCloseLimitOrder,
     cancelOrder,
+    cancelOrders,
     isPlacingOrder,
     isCanceling,
     error,

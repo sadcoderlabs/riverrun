@@ -5,13 +5,12 @@
 
 import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
 import { formatSize } from '@/lib/hyperliquid/format/formatSize';
-import { useHyperliquidClient, useOrderUpdates } from '@/lib/hyperliquid/hooks';
+import { useHyperliquidClient, useOrder, useOrderUpdates } from '@/lib/hyperliquid/hooks';
 import type { Order } from '@/lib/hyperliquid/types/orders';
 import { calculateOrderMetrics, isMarketOrder } from '@/lib/hyperliquid/utils';
 import { useActiveWallet } from '@/lib/riverrun/hooks';
 import type { SymbolConverter } from '@nktkas/hyperliquid/utils';
 import { useEffect, useMemo, useState } from 'react';
-import { toast } from 'sonner-native';
 import { Button, Spinner, Text, View, XStack, YStack } from 'tamagui';
 
 // ============================================================================
@@ -204,16 +203,17 @@ type OrderFilter = 'all' | 'long' | 'short';
 
 export function OrdersTabContent() {
   const { address, isAuthenticated } = useActiveWallet();
-  const { getAgentExchangeClient, getSymbolConverter } = useHyperliquidClient();
+  const { getSymbolConverter } = useHyperliquidClient();
 
   // Get orders from useOrderUpdates (simplified flat structure)
   const { orders, isLoading, error } = useOrderUpdates();
 
-  const [cancelError, setCancelError] = useState<string | undefined>(undefined);
-  const [cancelingOrderIds, setCancelingOrderIds] = useState<Record<number, boolean>>({});
+  // Get order operations from useOrder hook
+  const { cancelOrder, cancelOrders, isCanceling, error: cancelError } = useOrder();
+
   const [symbolConverter, setSymbolConverter] = useState<SymbolConverter | null>(null);
   const [filter, setFilter] = useState<OrderFilter>('all');
-  const [isCancelingAll, setIsCancelingAll] = useState(false);
+  const [cancelingOrderIds, setCancelingOrderIds] = useState<Record<number, boolean>>({});
 
   // Load SymbolConverter
   useEffect(() => {
@@ -252,18 +252,9 @@ export function OrdersTabContent() {
 
   // Handle order cancellation
   const handleCancelOrder = async (oid: number) => {
-    setCancelError(undefined);
     setCancelingOrderIds(prev => ({ ...prev, [oid]: true }));
 
     try {
-      const exchangeClient = await getAgentExchangeClient();
-      if (!exchangeClient) {
-        toast.info('Cancelled', {
-          description: 'Order cancellation was cancelled',
-        });
-        return;
-      }
-
       // Find the order to get coin symbol
       const orderNode = orders.find(node => node.order.oid === oid);
       if (!orderNode) {
@@ -272,35 +263,13 @@ export function OrdersTabContent() {
 
       const orderToCancel = orderNode.order;
 
-      // Get asset ID from coin symbol using SymbolConverter
-      const converter = await getSymbolConverter();
-      const assetId = converter.getAssetId(orderToCancel.coin);
-
-      if (assetId === undefined) {
-        throw new Error(`Unable to determine asset index for ${orderToCancel.coin}`);
-      }
-
-      await exchangeClient.cancel({
-        cancels: [
-          {
-            a: assetId,
-            o: oid,
-          },
-        ],
-      });
-
-      toast.success('Order Cancelled', {
-        description: `Successfully cancelled order for ${orderToCancel.coin}`,
+      // Use the hook's cancelOrder method
+      await cancelOrder({
+        coin: orderToCancel.coin,
+        orderId: oid,
       });
 
       // WebSocket will automatically update the orders list
-    } catch (err) {
-      console.error('Error canceling order:', err);
-      const errorMessage = 'Failed to cancel order. Please try again.';
-      setCancelError(errorMessage);
-      toast.error('Cancel Failed', {
-        description: errorMessage,
-      });
     } finally {
       setCancelingOrderIds(prev => {
         const next = { ...prev };
@@ -316,57 +285,15 @@ export function OrdersTabContent() {
       return;
     }
 
-    setCancelError(undefined);
-    setIsCancelingAll(true);
+    // Use the hook's cancelOrders method
+    await cancelOrders({
+      orders: sortedOrders.map(order => ({
+        coin: order.coin,
+        orderId: order.oid,
+      })),
+    });
 
-    try {
-      const exchangeClient = await getAgentExchangeClient();
-      if (!exchangeClient) {
-        toast.info('Cancelled', {
-          description: 'Order cancellation was cancelled',
-        });
-        return;
-      }
-
-      const converter = await getSymbolConverter();
-
-      // Build cancels array for all filtered orders
-      const cancels = sortedOrders
-        .map(order => {
-          const assetId = converter.getAssetId(order.coin);
-          if (assetId === undefined) {
-            console.error(`Unable to determine asset index for ${order.coin}`);
-            return null;
-          }
-          return {
-            a: assetId,
-            o: order.oid,
-          };
-        })
-        .filter((cancel): cancel is { a: number; o: number } => cancel !== null);
-
-      if (cancels.length === 0) {
-        throw new Error('No valid orders to cancel');
-      }
-
-      await exchangeClient.cancel({ cancels });
-
-      const filterText = filter === 'all' ? 'all' : filter;
-      toast.success('Orders Cancelled', {
-        description: `Successfully cancelled ${cancels.length} ${filterText} order${cancels.length > 1 ? 's' : ''}`,
-      });
-
-      // WebSocket will automatically update the orders list
-    } catch (err) {
-      console.error('Error canceling all orders:', err);
-      const errorMessage = 'Failed to cancel orders. Please try again.';
-      setCancelError(errorMessage);
-      toast.error('Cancel Failed', {
-        description: errorMessage,
-      });
-    } finally {
-      setIsCancelingAll(false);
-    }
+    // WebSocket will automatically update the orders list
   };
 
   // Render states
@@ -444,11 +371,11 @@ export function OrdersTabContent() {
           size="$2"
           backgroundColor="$red9"
           color="white"
-          disabled={isCancelingAll || sortedOrders.length === 0}
+          disabled={isCanceling || sortedOrders.length === 0}
           onPress={handleCancelAllOrders}
           pressStyle={{ opacity: 0.8 }}
         >
-          {isCancelingAll ? 'Canceling...' : `Cancel All (${sortedOrders.length})`}
+          {isCanceling ? 'Canceling...' : `Cancel All (${sortedOrders.length})`}
         </Button>
       </XStack>
 
