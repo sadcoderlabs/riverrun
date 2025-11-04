@@ -9,6 +9,7 @@ import * as hl from '@nktkas/hyperliquid';
 import { useEffect, useMemo, useState } from 'react';
 import { Button, Spinner, Text, View, XStack, YStack } from 'tamagui';
 import ClosePositionModal from './close-position-modal';
+import TpSlModal from './tp-sl-modal';
 
 type Position = hl.ClearinghouseStateResponse['assetPositions'][number]['position'];
 
@@ -26,6 +27,7 @@ export default function PositionsTab() {
   const { data: webData, isLoading, error: webError } = useWebData2();
 
   const [closeModalOpen, setCloseModalOpen] = useState(false);
+  const [tpSlModalOpen, setTpSlModalOpen] = useState(false);
   const [selectedPosition, setSelectedPosition] = useState<PositionWithMarkPrice | null>(null);
 
   // Switch market when position card is clicked (without full page reload)
@@ -282,7 +284,17 @@ export default function PositionsTab() {
 
             {/* Action Buttons */}
             <XStack gap="$2" marginTop="$1">
-              <Button flex={1} size="$2" variant="outlined" disabled>
+              <Button
+                flex={1}
+                size="$2"
+                variant="outlined"
+                onPress={(e: any) => {
+                  e.stopPropagation();
+                  setSelectedPosition(position);
+                  setTpSlModalOpen(true);
+                }}
+                pressStyle={{ opacity: 0.8 }}
+              >
                 Set TP/SL
               </Button>
               <Button
@@ -306,6 +318,11 @@ export default function PositionsTab() {
       <ClosePositionModal
         open={closeModalOpen}
         onOpenChange={setCloseModalOpen}
+        position={selectedPosition}
+      />
+      <TpSlModal
+        open={tpSlModalOpen}
+        onOpenChange={setTpSlModalOpen}
         position={selectedPosition}
       />
     </YStack>

@@ -83,6 +83,21 @@ export interface CancelOrdersParams {
 }
 
 /**
+ * Parameters for placing TP/SL orders on a position
+ */
+export interface TpSlOrderParams {
+  coin: string; // Asset symbol
+  isLong: boolean; // Position direction
+  size: string; // Order size (entire position or configured amount)
+  // Take Profit parameters (optional)
+  tpTriggerPrice?: string; // Trigger price for TP
+  tpLimitPrice?: string; // Limit price for TP (if not provided, market order with 10% slippage)
+  // Stop Loss parameters (optional)
+  slTriggerPrice?: string; // Trigger price for SL
+  slLimitPrice?: string; // Limit price for SL (if not provided, market order with 10% slippage)
+}
+
+/**
  * Result type for the useOrder hook
  */
 export interface UseOrderResult {
@@ -91,6 +106,7 @@ export interface UseOrderResult {
   placeLimitOrder: (params: LimitOrderParams) => Promise<boolean>;
   placeCloseMarketOrder: (params: CloseMarketOrderParams) => Promise<boolean>;
   placeCloseLimitOrder: (params: CloseLimitOrderParams) => Promise<boolean>;
+  placeTpSlOrders: (params: TpSlOrderParams) => Promise<boolean>;
 
   // Order cancellation methods
   cancelOrder: (params: CancelOrderParams) => Promise<boolean>;
@@ -616,11 +632,159 @@ export function useOrder(): UseOrderResult {
     [getAgentExchangeClient, getSymbolConverter],
   );
 
+  /**
+   * Place TP/SL orders for a position
+   *
+   * Creates trigger orders that automatically close a position when profit/loss targets are reached.
+   * - TP/SL orders are reduce-only by default
+   * - Market TP/SL have 10% slippage tolerance
+   * - Limit TP/SL allow precise control over execution price
+   * - Uses "positionTpsl" grouping for position-linked TP/SL
+   */
+  const placeTpSlOrders = useCallback(
+    async (params: TpSlOrderParams): Promise<boolean> => {
+      setIsPlacingOrder(true);
+      setError(null);
+
+      try {
+        // 1. Get agent exchange client
+        const exchangeClient = await getAgentExchangeClient();
+        if (!exchangeClient) {
+          toast.info('Cancelled', {
+            description: 'Order placement was cancelled',
+          });
+          return false;
+        }
+
+        // 2. Get asset metadata
+        const converter = await getSymbolConverter();
+        const assetId = converter.getAssetId(params.coin);
+        const szDecimals = converter.getSzDecimals(params.coin);
+
+        // Validation
+        if (assetId === undefined) {
+          throw new Error(`Unable to find asset ID for ${params.coin}`);
+        }
+        if (szDecimals === undefined) {
+          throw new Error(`Unable to find size decimals for ${params.coin}`);
+        }
+
+        // Validate at least one TP or SL is provided
+        if (!params.tpTriggerPrice && !params.slTriggerPrice) {
+          throw new Error('At least one of TP or SL must be provided');
+        }
+
+        // 3. Validate size decimals
+        validateSizeDecimals(params.size, szDecimals, params.coin);
+
+        // 4. Build TP/SL orders
+        const orders: any[] = [];
+
+        // Take Profit order (close long = sell, close short = buy)
+        if (params.tpTriggerPrice) {
+          const tpIsBuy = !params.isLong; // TP for long = sell, TP for short = buy
+          const tpOrder = {
+            a: assetId,
+            b: tpIsBuy,
+            p: params.tpLimitPrice || params.tpTriggerPrice, // Use limit price or trigger price
+            s: params.size,
+            r: true, // Reduce-only
+            t: {
+              trigger: {
+                isMarket: !params.tpLimitPrice, // Market if no limit price
+                triggerPx: params.tpTriggerPrice,
+                tpsl: 'tp' as const,
+              },
+            },
+          };
+          orders.push(tpOrder);
+        }
+
+        // Stop Loss order (close long = sell, close short = buy)
+        if (params.slTriggerPrice) {
+          const slIsBuy = !params.isLong; // SL for long = sell, SL for short = buy
+          const slOrder = {
+            a: assetId,
+            b: slIsBuy,
+            p: params.slLimitPrice || params.slTriggerPrice, // Use limit price or trigger price
+            s: params.size,
+            r: true, // Reduce-only
+            t: {
+              trigger: {
+                isMarket: !params.slLimitPrice, // Market if no limit price
+                triggerPx: params.slTriggerPrice,
+                tpsl: 'sl' as const,
+              },
+            },
+          };
+          orders.push(slOrder);
+        }
+
+        // 5. Execute orders with positionTpsl grouping
+        const response = await exchangeClient.order({
+          orders,
+          grouping: 'positionTpsl',
+        });
+
+        // 6. Check for errors in response
+        if (response.response.data.statuses && response.response.data.statuses.length > 0) {
+          const errors = response.response.data.statuses
+            .filter(
+              status =>
+                status !== null &&
+                typeof status === 'object' &&
+                'error' in status &&
+                typeof status.error === 'string',
+            )
+            .map(status => (status as any).error);
+
+          if (errors.length > 0) {
+            toast.error('TP/SL Order Failed', {
+              description: errors.join(', '),
+            });
+            setError(errors.join(', '));
+            return false;
+          }
+        }
+
+        // 7. Success
+        const orderDescriptions = [];
+        if (params.tpTriggerPrice) {
+          orderDescriptions.push(
+            `TP @ ${params.tpTriggerPrice}${params.tpLimitPrice ? ` (limit: ${params.tpLimitPrice})` : ' (market)'}`,
+          );
+        }
+        if (params.slTriggerPrice) {
+          orderDescriptions.push(
+            `SL @ ${params.slTriggerPrice}${params.slLimitPrice ? ` (limit: ${params.slLimitPrice})` : ' (market)'}`,
+          );
+        }
+
+        toast.success('TP/SL Orders Placed', {
+          description: orderDescriptions.join(', '),
+        });
+        return true;
+      } catch (err) {
+        console.error('[useOrder.placeTpSlOrders] Error:', err);
+        const errorMessage = err instanceof Error ? err.message : 'Failed to place TP/SL orders';
+        setError(errorMessage);
+        toast.error('TP/SL Order Failed', {
+          description: errorMessage,
+        });
+        return false;
+      } finally {
+        setIsPlacingOrder(false);
+      }
+    },
+    [getAgentExchangeClient, getSymbolConverter],
+  );
+
   return {
     placeMarketOrder,
     placeLimitOrder,
     placeCloseMarketOrder,
     placeCloseLimitOrder,
+    placeTpSlOrders,
     cancelOrder,
     cancelOrders,
     isPlacingOrder,
