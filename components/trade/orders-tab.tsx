@@ -26,10 +26,22 @@ interface OrderCardProps {
   order: Order;
   onCancel: (oid: number) => Promise<void>;
   canceling: boolean;
-  symbolConverter: SymbolConverter | null;
+  getSymbolConverter: () => Promise<SymbolConverter>;
 }
 
-function OrderCard({ order, onCancel, canceling, symbolConverter }: OrderCardProps) {
+function OrderCard({ order, onCancel, canceling, getSymbolConverter }: OrderCardProps) {
+  const [szDecimals, setSzDecimals] = useState(4);
+
+  // Load szDecimals for this coin
+  useEffect(() => {
+    getSymbolConverter().then(converter => {
+      const decimals = converter.getSzDecimals(order.coin);
+      if (decimals !== undefined) {
+        setSzDecimals(decimals);
+      }
+    });
+  }, [getSymbolConverter, order.coin]);
+
   // Early return if order data is invalid
   if (!order.coin) {
     return null;
@@ -38,9 +50,6 @@ function OrderCard({ order, onCancel, canceling, symbolConverter }: OrderCardPro
   const metrics = calculateOrderMetrics(order);
   const direction = getOrderDirection(order);
   const isMarket = isMarketOrder(order.orderType);
-
-  // Get szDecimals for proper size formatting
-  const szDecimals = symbolConverter?.getSzDecimals(order.coin) ?? 4;
 
   // Get raw trigger condition if it exists
   const triggerCondition =
@@ -177,22 +186,8 @@ export function OrdersTabContent() {
   // Get order operations from useOrder hook
   const { cancelOrder, cancelOrders, isCanceling, error: cancelError } = useOrder();
 
-  const [symbolConverter, setSymbolConverter] = useState<SymbolConverter | null>(null);
   const [filter, setFilter] = useState<OrderFilter>('all');
   const [cancelingOrderIds, setCancelingOrderIds] = useState<Record<number, boolean>>({});
-
-  // Load SymbolConverter
-  useEffect(() => {
-    let isMounted = true;
-    getSymbolConverter().then(converter => {
-      if (isMounted) {
-        setSymbolConverter(converter);
-      }
-    });
-    return () => {
-      isMounted = false;
-    };
-  }, [getSymbolConverter]);
 
   // Filter and sort orders
   const sortedOrders = useMemo(() => {
@@ -361,7 +356,7 @@ export function OrdersTabContent() {
           order={order}
           onCancel={handleCancelOrder}
           canceling={cancelingOrderIds[order.oid] ?? false}
-          symbolConverter={symbolConverter}
+          getSymbolConverter={getSymbolConverter}
         />
       ))}
     </YStack>
