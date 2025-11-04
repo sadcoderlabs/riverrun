@@ -64,44 +64,52 @@ export function CoinInfo({ coin }: CoinInfoProps) {
 
   return (
     <>
-      <YStack padding="$3" gap="$2">
-        {/* First row: Menu icon, Market ID, and Chart icon */}
-        <XStack justifyContent="space-between" alignItems="center">
-          <XStack
-            alignItems="center"
-            gap="$2"
-            onPress={() => setMarketSelectorOpen(true)}
-            pressStyle={{ opacity: 0.7 }}
-            padding="$1"
-          >
-            <Menu size="$1.5" color="$color" />
-            <Text fontFamily="$interSemiBold" fontSize="$4" color="$color">
-              {marketDisplay}
-            </Text>
-          </XStack>
-          <XStack onPress={() => setIsChart(!isChart)} pressStyle={{ opacity: 0.7 }} padding="$1">
-            <CandlestickChart size="$1.5" color={isChart ? '$gray9' : '$color'} />
-          </XStack>
-        </XStack>
+      <YStack paddingHorizontal="$3" paddingTop="$2.5" paddingBottom="$2">
+        {/* Single row with left and right stacks */}
+        <XStack justifyContent="space-between" alignItems="stretch">
+          {/* Left side: Market selector and Price info stacked vertically */}
+          <YStack gap="$1.5" justifyContent="space-between" flex={1}>
+            {/* Market selector */}
+            <XStack
+              alignItems="center"
+              gap="$2"
+              onPress={() => setMarketSelectorOpen(true)}
+              pressStyle={{ opacity: 0.7 }}
+            >
+              <Menu size="$1.5" color="$color" />
+              <Text fontFamily="$interSemiBold" fontSize="$4" color="$color">
+                {marketDisplay}
+              </Text>
+            </XStack>
 
-        {/* Second row: Price info and Funding Rate */}
-        <XStack justifyContent="space-between" alignItems="flex-start">
-          <XStack gap="$2" alignItems="baseline">
-            <Text fontFamily="$interSemiBold" fontSize="$5" color="$color">
-              ${formatPrice(marketData.price)}
-            </Text>
-            <Text fontFamily="$interMedium" fontSize="$3" color={isPriceUp ? '$green9' : '$red9'}>
-              {isPriceUp ? '+' : ''}
-              {marketData.priceChange.toFixed(2)}%
-            </Text>
-          </XStack>
-          <YStack alignItems="flex-end">
-            <Text fontFamily="$interRegular" fontSize="$2" color="$gray10">
-              Funding
-            </Text>
-            <Text fontFamily="$interSemiBold" fontSize="$3" color="$color">
-              {marketData.fundingRate.toFixed(4)}%
-            </Text>
+            {/* Price info */}
+            <XStack gap="$2" alignItems="baseline">
+              <Text fontFamily="$interSemiBold" fontSize="$6" color="$color">
+                ${formatPrice(marketData.price)}
+              </Text>
+              <Text fontFamily="$interMedium" fontSize="$4" color={isPriceUp ? '$green9' : '$red9'}>
+                {isPriceUp ? '+' : ''}
+                {marketData.priceChange.toFixed(2)}%
+              </Text>
+            </XStack>
+          </YStack>
+
+          {/* Right side: Chart icon and Funding info stacked vertically */}
+          <YStack gap="$1.5" justifyContent="space-between" alignItems="flex-end">
+            {/* Chart icon */}
+            <XStack onPress={() => setIsChart(!isChart)} pressStyle={{ opacity: 0.7 }}>
+              <CandlestickChart size="$1.5" color={isChart ? '$gray9' : '$color'} />
+            </XStack>
+
+            {/* Funding info */}
+            <YStack alignItems="flex-end" gap="$0.5">
+              <Text fontFamily="$interRegular" fontSize="$2" color="$gray10">
+                Funding
+              </Text>
+              <Text fontFamily="$interSemiBold" fontSize="$3" color="$color">
+                {marketData.fundingRate.toFixed(4)}%
+              </Text>
+            </YStack>
           </YStack>
         </XStack>
       </YStack>
