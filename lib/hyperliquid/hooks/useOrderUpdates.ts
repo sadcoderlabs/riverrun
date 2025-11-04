@@ -208,7 +208,7 @@ export function useOrderUpdates(): UseOrderUpdatesResult {
     if (subscriptionRef.current) {
       try {
         await subscriptionRef.current.unsubscribe();
-      } catch (err) {
+      } catch {
         // Silently handle unsubscribe errors
       }
       subscriptionRef.current = null;
