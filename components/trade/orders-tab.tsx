@@ -3,17 +3,16 @@
  * Displays user's open orders in a flat list with ability to cancel
  */
 
-import { useHyperliquidClient, useOrderUpdates } from '@/lib/hyperliquid/hooks';
-import { useActiveWallet } from '@/lib/riverrun/hooks';
 import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
 import { formatSize } from '@/lib/hyperliquid/format/formatSize';
-import { useState, useMemo, useEffect } from 'react';
+import { useHyperliquidClient, useOrderUpdates } from '@/lib/hyperliquid/hooks';
+import type { Order } from '@/lib/hyperliquid/types/orders';
+import { calculateOrderMetrics, isMarketOrder } from '@/lib/hyperliquid/utils';
+import { useActiveWallet } from '@/lib/riverrun/hooks';
+import type { SymbolConverter } from '@nktkas/hyperliquid/utils';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner-native';
 import { Button, Spinner, Text, View, XStack, YStack } from 'tamagui';
-import type { Order, OrderNode } from '@/lib/hyperliquid/types/orders';
-import { calculateOrderMetrics } from '@/lib/hyperliquid/utils/order-calculations';
-import { isMarketOrder, getOrderType } from '@/lib/hyperliquid/utils/order-type-utils';
-import type { SymbolConverter } from '@nktkas/hyperliquid/utils';
 
 // ============================================================================
 // Helper Functions
@@ -42,13 +41,8 @@ function formatTimestamp(timestamp: number): string {
  * Get order direction based on side and type
  */
 function getOrderDirection(order: Order): string {
-  const orderType = getOrderType(order);
   const isBuy = order.side === 'B';
-
-  // Check if orderType is valid
-  if (!orderType) {
-    return isBuy ? 'Long' : 'Short';
-  }
+  const orderType = order.orderType;
 
   // For trigger orders (Stop/TP), they're reduce-only
   if (orderType.includes('Stop') || orderType.includes('Take Profit')) {
@@ -64,24 +58,21 @@ function getOrderDirection(order: Order): string {
 // ============================================================================
 
 interface OrderCardProps {
-  orderNode: OrderNode;
+  order: Order;
   onCancel: (oid: number) => Promise<void>;
   canceling: boolean;
   symbolConverter: SymbolConverter | null;
 }
 
-function OrderCard({ orderNode, onCancel, canceling, symbolConverter }: OrderCardProps) {
-  const { order } = orderNode;
-
+function OrderCard({ order, onCancel, canceling, symbolConverter }: OrderCardProps) {
   // Early return if order data is invalid
-  if (!order || !order.coin) {
+  if (!order.coin) {
     return null;
   }
 
   const metrics = calculateOrderMetrics(order);
-  const orderType = getOrderType(order);
   const direction = getOrderDirection(order);
-  const isMarket = orderType ? isMarketOrder(orderType) : false;
+  const isMarket = isMarketOrder(order.orderType);
 
   // Get szDecimals for proper size formatting
   const szDecimals = symbolConverter?.getSzDecimals(order.coin) ?? 4;
@@ -147,7 +138,7 @@ function OrderCard({ orderNode, onCancel, canceling, symbolConverter }: OrderCar
           Type
         </Text>
         <Text fontSize="$2" fontFamily="$interMedium">
-          {order.orderType || orderType || 'Unknown'}
+          {order.orderType}
         </Text>
       </XStack>
 
@@ -255,8 +246,8 @@ export function OrdersTabContent() {
       });
     }
 
-    // Sort by timestamp (most recent first)
-    return openOrders.sort((a, b) => b.order.timestamp - a.order.timestamp);
+    // Sort by timestamp (most recent first) and extract orders
+    return openOrders.sort((a, b) => b.order.timestamp - a.order.timestamp).map(node => node.order);
   }, [orders, filter]);
 
   // Handle order cancellation
@@ -274,17 +265,19 @@ export function OrdersTabContent() {
       }
 
       // Find the order to get coin symbol
-      const orderToCancel = orders.find(node => node.order.oid === oid);
-      if (!orderToCancel) {
+      const orderNode = orders.find(node => node.order.oid === oid);
+      if (!orderNode) {
         throw new Error('Order not found');
       }
 
+      const orderToCancel = orderNode.order;
+
       // Get asset ID from coin symbol using SymbolConverter
       const converter = await getSymbolConverter();
-      const assetId = converter.getAssetId(orderToCancel.order.coin);
+      const assetId = converter.getAssetId(orderToCancel.coin);
 
       if (assetId === undefined) {
-        throw new Error(`Unable to determine asset index for ${orderToCancel.order.coin}`);
+        throw new Error(`Unable to determine asset index for ${orderToCancel.coin}`);
       }
 
       await exchangeClient.cancel({
@@ -297,7 +290,7 @@ export function OrdersTabContent() {
       });
 
       toast.success('Order Cancelled', {
-        description: `Successfully cancelled order for ${orderToCancel.order.coin}`,
+        description: `Successfully cancelled order for ${orderToCancel.coin}`,
       });
 
       // WebSocket will automatically update the orders list
@@ -339,15 +332,15 @@ export function OrdersTabContent() {
 
       // Build cancels array for all filtered orders
       const cancels = sortedOrders
-        .map(node => {
-          const assetId = converter.getAssetId(node.order.coin);
+        .map(order => {
+          const assetId = converter.getAssetId(order.coin);
           if (assetId === undefined) {
-            console.error(`Unable to determine asset index for ${node.order.coin}`);
+            console.error(`Unable to determine asset index for ${order.coin}`);
             return null;
           }
           return {
             a: assetId,
-            o: node.order.oid,
+            o: order.oid,
           };
         })
         .filter((cancel): cancel is { a: number; o: number } => cancel !== null);
@@ -472,12 +465,12 @@ export function OrdersTabContent() {
           </Text>
         </YStack>
       )}
-      {sortedOrders.map(orderNode => (
+      {sortedOrders.map(order => (
         <OrderCard
-          key={`order-${orderNode.order.oid}`}
-          orderNode={orderNode}
+          key={`order-${order.oid}`}
+          order={order}
           onCancel={handleCancelOrder}
-          canceling={cancelingOrderIds[orderNode.order.oid] ?? false}
+          canceling={cancelingOrderIds[order.oid] ?? false}
           symbolConverter={symbolConverter}
         />
       ))}

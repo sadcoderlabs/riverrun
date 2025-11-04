@@ -4,4 +4,3 @@
 
 export * from './order-type-utils';
 export * from './order-calculations';
-export * from './trigger-utils';
