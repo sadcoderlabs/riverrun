@@ -274,7 +274,7 @@ export function OrderBook({ coin, szDecimals, markPx, onPriceClick }: OrderBookP
         alignItems="center"
       >
         <Text fontFamily="$interMedium" fontSize="$2" color="$gray10" minWidth={70}>
-          Price (USD)
+          Price
         </Text>
 
         <Text fontFamily="$interMedium" fontSize="$2" color="$gray10" textAlign="right" width={70}>
