@@ -7,6 +7,7 @@ import { LimitOrderForm, MarketOrderForm, OrderTypeSelector } from '@/components
 import { OrderBook } from '@/components/trade/OrderBook';
 import { TpSlInput } from '@/components/trade/tp-sl-input';
 import { formatSize } from '@/lib/hyperliquid/format/formatSize';
+import { formatValue } from '@/lib/hyperliquid/format/formatValue';
 import {
   useActiveAssetData,
   useHyperliquidClient,
@@ -135,10 +136,6 @@ export function PerpTradePanel({ coin }: PerpTradePanelProps) {
     placeLimitOrder,
   ]);
 
-  // Format number with 2 decimal places
-  const formatNumber = (num: number) => {
-    return num.toFixed(2);
-  };
 
   // Get current position for this coin
   const currentPosition = useMemo(() => {
@@ -196,7 +193,7 @@ export function PerpTradePanel({ coin }: PerpTradePanelProps) {
               {isLoadingAssetData ? (
                 <Text color="$gray10">Loading...</Text>
               ) : (
-                `$${formatNumber(availableToTrade)}`
+                `$${formatValue(availableToTrade, 2)}`
               )}
             </Text>
           </XStack>
