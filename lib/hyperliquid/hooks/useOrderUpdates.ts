@@ -94,6 +94,7 @@ function transformApiOrder(apiOrder: ApiOrderResponse): Order {
     return order;
   } else {
     // Build RegularOrder
+    // Note: Triggered Stop/TP orders have isTrigger=false but still contain triggerCondition
     const order: Order = {
       coin: apiOrder.coin,
       side: apiOrder.side,
@@ -106,6 +107,9 @@ function transformApiOrder(apiOrder: ApiOrderResponse): Order {
       reduceOnly: apiOrder.reduceOnly ?? false,
       orderType: orderType as any, // Use inferred type
       tif: apiOrder.tif ?? null,
+      // Preserve trigger information even for non-trigger orders (e.g., triggered stop/TP orders)
+      triggerPx: apiOrder.triggerPx,
+      triggerCondition: apiOrder.triggerCondition,
     };
 
     return order;

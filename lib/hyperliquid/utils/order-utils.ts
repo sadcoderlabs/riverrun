@@ -28,11 +28,11 @@ export function isMarketOrder(orderType: OrderType): boolean {
  */
 export function calculateOrderMetrics(order: Order): OrderMetrics {
   const price = parseFloat(order.limitPx);
-  const size = parseFloat(order.sz);
-  const origSize = parseFloat(order.origSz);
+  const remainingSize = parseFloat(order.sz); // Current remaining unfilled size
+  const origSize = parseFloat(order.origSz); // Original order size
 
   // Calculate filled amount
-  const filledSize = origSize - size;
+  const filledSize = origSize - remainingSize;
   const filledUSD = filledSize * price;
   const totalUSD = origSize * price;
 
@@ -41,7 +41,7 @@ export function calculateOrderMetrics(order: Order): OrderMetrics {
 
   return {
     price,
-    size,
+    size: origSize, // Return original size for display (Filled / Total)
     origSize,
     filledSize,
     filledUSD,

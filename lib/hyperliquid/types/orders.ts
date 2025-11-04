@@ -59,11 +59,12 @@ export interface TriggerOrder extends BaseOrder {
 
 /**
  * Regular orders (Market, Limit)
+ * Also includes triggered Stop/TP orders (where isTrigger becomes false after triggering)
  */
 export interface RegularOrder extends BaseOrder {
   isTrigger?: false;
-  triggerPx?: '0.0';
-  triggerCondition?: 'N/A';
+  triggerPx?: string;
+  triggerCondition?: string;
   orderType: 'Market' | 'Limit';
 }
 

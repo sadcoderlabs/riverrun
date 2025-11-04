@@ -54,9 +54,16 @@ function OrderCard({ order, onCancel, onPress, canceling, getSymbolConverter }: 
   const direction = getOrderDirection(order);
   const isMarket = isMarketOrder(order.orderType);
 
-  // Get raw trigger condition if it exists
+  // Get trigger condition if it exists and is meaningful
+  // Show trigger condition for:
+  // 1. Active trigger orders (isTrigger=true)
+  // 2. Triggered Stop/TP orders (orderType contains Stop/TP and triggerCondition is set)
   const triggerCondition =
-    'triggerCondition' in order && order.triggerCondition && order.triggerCondition !== 'N/A'
+    'triggerCondition' in order &&
+    order.triggerCondition &&
+    order.triggerCondition !== 'N/A' &&
+    order.triggerCondition !== '0.0' &&
+    order.triggerCondition !== ''
       ? order.triggerCondition
       : null;
 
