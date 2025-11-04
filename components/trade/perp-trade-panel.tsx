@@ -5,7 +5,11 @@ import { useOrderForm } from '@/components/trade/hooks/use-order-form';
 import { LeverageSelector } from '@/components/trade/leverage-selector';
 import { LimitOrderForm, MarketOrderForm, OrderTypeSelector } from '@/components/trade/order-forms';
 import { OrderBook } from '@/components/trade/OrderBook';
-import { TpSlInput, type TpSlInputRef } from '@/components/trade/tp-sl-input';
+import {
+  TpSlInput,
+  type TpSlResult,
+  type TpSlValidationResult,
+} from '@/components/trade/tp-sl-input';
 import { formatSize } from '@/lib/hyperliquid/format/formatSize';
 import { formatValue } from '@/lib/hyperliquid/format/formatValue';
 import {
@@ -14,11 +18,10 @@ import {
   useOrder,
   useWebData2,
 } from '@/lib/hyperliquid/hooks';
-import { calculateTpSlPrices, validateTpSl } from '@/lib/hyperliquid/utils/order-utils';
 
 import { Checkbox } from '@tamagui/checkbox';
 import { Check } from '@tamagui/lucide-icons';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useWatch } from 'react-hook-form';
 import { toast } from 'sonner-native';
 import { Button, Text, XStack, YStack } from 'tamagui';
@@ -84,8 +87,9 @@ export function PerpTradePanel({ coin }: PerpTradePanelProps) {
     [activeAssetData?.markPx],
   );
 
-  // TP/SL ref to access internal state
-  const tpSlRef = useRef<TpSlInputRef>(null);
+  // TP/SL state: stores result and validation from TpSlInput component
+  const [tpSlResult, setTpSlResult] = useState<TpSlResult | undefined>(undefined);
+  const [tpSlValidation, setTpSlValidation] = useState<TpSlValidationResult>({ isValid: true });
 
   // Get entry price for TP/SL calculations
   const entryPriceForTpSl = useMemo(() => {
@@ -96,6 +100,15 @@ export function PerpTradePanel({ coin }: PerpTradePanelProps) {
       return limit > 0 ? limit : marketPrice;
     }
   }, [orderType, marketPrice, limitPrice]);
+
+  // Handler for TP/SL changes
+  const handleTpSlChange = useCallback(
+    (result: TpSlResult | undefined, validation: TpSlValidationResult) => {
+      setTpSlResult(result);
+      setTpSlValidation(validation);
+    },
+    [],
+  );
 
   // Handler for Place Order button
   const handlePlaceOrder = useCallback(async () => {
@@ -116,35 +129,16 @@ export function PerpTradePanel({ coin }: PerpTradePanelProps) {
       return;
     }
 
-    const isLong = data.orderSide === 'Long';
-
-    // Get TP/SL configuration from component
-    const tpSlConfig = tpSlRef.current?.getConfig();
-    let tpSl: { tpTriggerPrice?: string; slTriggerPrice?: string } | undefined;
-
-    if (tpSlConfig?.enabled && (tpSlConfig.tpValue || tpSlConfig.slValue)) {
-      tpSl = calculateTpSlPrices({
-        tpValue: tpSlConfig.tpValue,
-        tpUnit: tpSlConfig.tpUnit,
-        slValue: tpSlConfig.slValue,
-        slUnit: tpSlConfig.slUnit,
-        entryPrice: entryPriceForTpSl,
-        isLong,
-        szDecimals,
+    // Check TP/SL validation
+    if (!tpSlValidation.isValid) {
+      toast.error(tpSlValidation.errorTitle || 'Invalid TP/SL', {
+        description: tpSlValidation.errorDescription || 'Please check your TP/SL values',
       });
-
-      // Validate TP/SL
-      const validation = validateTpSl(tpSl, entryPriceForTpSl, isLong);
-      if (!validation.valid && validation.error) {
-        toast.error(validation.error.title, {
-          description: validation.error.description,
-        });
-        return;
-      }
+      return;
     }
 
-    // Single unified call
-    const orderSuccess = await placeOrder({
+    // Single unified call - tpSlResult is already calculated and validated
+    await placeOrder({
       coin,
       side: data.orderSide,
       size: data.size,
@@ -152,13 +146,8 @@ export function PerpTradePanel({ coin }: PerpTradePanelProps) {
       limitPrice: data.limitPrice || undefined,
       marketPrice: data.orderType === 'Market' ? marketPrice : undefined,
       reduceOnly: data.reduceOnly,
-      tpSl,
+      tpSl: tpSlResult,
     });
-
-    // Reset TP/SL inputs after successful placement
-    if (orderSuccess && tpSlConfig?.enabled) {
-      tpSlRef.current?.reset();
-    }
   }, [
     coin,
     form,
@@ -166,8 +155,8 @@ export function PerpTradePanel({ coin }: PerpTradePanelProps) {
     validation.hasValidLimitPrice,
     marketPrice,
     placeOrder,
-    entryPriceForTpSl,
-    szDecimals,
+    tpSlResult,
+    tpSlValidation,
   ]);
 
   // Get current position for this coin
@@ -333,10 +322,10 @@ export function PerpTradePanel({ coin }: PerpTradePanelProps) {
 
           {/* TP/SL */}
           <TpSlInput
-            ref={tpSlRef}
             entryPrice={entryPriceForTpSl}
             isLong={orderSide === 'Long'}
             szDecimals={szDecimals}
+            onChange={handleTpSlChange}
           />
 
           {/* Reduce-Only */}
