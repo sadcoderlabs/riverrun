@@ -45,6 +45,11 @@ function getOrderDirection(order: OrderNode['order']): string {
   const orderType = getOrderType(order);
   const isBuy = order.side === 'B';
 
+  // Check if orderType is valid
+  if (!orderType) {
+    return isBuy ? 'Long' : 'Short';
+  }
+
   // For trigger orders (Stop/TP), they're reduce-only
   if (orderType.includes('Stop') || orderType.includes('Take Profit')) {
     return isBuy ? 'Close Short' : 'Close Long';
@@ -67,10 +72,16 @@ interface OrderCardProps {
 
 function OrderCard({ orderNode, onCancel, canceling, symbolConverter }: OrderCardProps) {
   const { order } = orderNode;
+
+  // Early return if order data is invalid
+  if (!order || !order.coin) {
+    return null;
+  }
+
   const metrics = calculateOrderMetrics(order);
   const orderType = getOrderType(order);
   const direction = getOrderDirection(order);
-  const isMarket = isMarketOrder(orderType);
+  const isMarket = orderType ? isMarketOrder(orderType) : false;
 
   // Get szDecimals for proper size formatting
   const szDecimals = symbolConverter?.getSzDecimals(order.coin) ?? 4;
@@ -136,7 +147,7 @@ function OrderCard({ orderNode, onCancel, canceling, symbolConverter }: OrderCar
           Type
         </Text>
         <Text fontSize="$2" fontFamily="$interMedium">
-          {orderType}
+          {orderType || 'Unknown'}
         </Text>
       </XStack>
 
@@ -198,6 +209,8 @@ function OrderCard({ orderNode, onCancel, canceling, symbolConverter }: OrderCar
 // Main Component
 // ============================================================================
 
+type OrderFilter = 'all' | 'long' | 'short';
+
 export function OrdersTabContent() {
   const { address, isAuthenticated } = useActiveWallet();
   const { getAgentExchangeClient, getSymbolConverter } = useHyperliquidClient();
@@ -208,6 +221,8 @@ export function OrdersTabContent() {
   const [cancelError, setCancelError] = useState<string | undefined>(undefined);
   const [cancelingOrderIds, setCancelingOrderIds] = useState<Record<number, boolean>>({});
   const [symbolConverter, setSymbolConverter] = useState<SymbolConverter | null>(null);
+  const [filter, setFilter] = useState<OrderFilter>('all');
+  const [isCancelingAll, setIsCancelingAll] = useState(false);
 
   // Load SymbolConverter
   useEffect(() => {
@@ -225,11 +240,24 @@ export function OrdersTabContent() {
   // Filter and sort orders
   const sortedOrders = useMemo(() => {
     // Filter for open orders only
-    const openOrders = flatOrders.filter(node => node.status === 'open');
+    let openOrders = flatOrders.filter(node => node.status === 'open');
+
+    // Apply direction filter
+    if (filter === 'long') {
+      openOrders = openOrders.filter(node => {
+        const direction = getOrderDirection(node.order);
+        return direction === 'Long' || direction === 'Close Short';
+      });
+    } else if (filter === 'short') {
+      openOrders = openOrders.filter(node => {
+        const direction = getOrderDirection(node.order);
+        return direction === 'Short' || direction === 'Close Long';
+      });
+    }
 
     // Sort by timestamp (most recent first)
     return openOrders.sort((a, b) => b.order.timestamp - a.order.timestamp);
-  }, [flatOrders]);
+  }, [flatOrders, filter]);
 
   // Handle order cancellation
   const handleCancelOrder = async (oid: number) => {
@@ -289,6 +317,65 @@ export function OrdersTabContent() {
     }
   };
 
+  // Handle cancel all filtered orders
+  const handleCancelAllOrders = async () => {
+    if (sortedOrders.length === 0) {
+      return;
+    }
+
+    setCancelError(undefined);
+    setIsCancelingAll(true);
+
+    try {
+      const exchangeClient = await getAgentExchangeClient();
+      if (!exchangeClient) {
+        toast.info('Cancelled', {
+          description: 'Order cancellation was cancelled',
+        });
+        return;
+      }
+
+      const converter = await getSymbolConverter();
+
+      // Build cancels array for all filtered orders
+      const cancels = sortedOrders
+        .map(node => {
+          const assetId = converter.getAssetId(node.order.coin);
+          if (assetId === undefined) {
+            console.error(`Unable to determine asset index for ${node.order.coin}`);
+            return null;
+          }
+          return {
+            a: assetId,
+            o: node.order.oid,
+          };
+        })
+        .filter((cancel): cancel is { a: number; o: number } => cancel !== null);
+
+      if (cancels.length === 0) {
+        throw new Error('No valid orders to cancel');
+      }
+
+      await exchangeClient.cancel({ cancels });
+
+      const filterText = filter === 'all' ? 'all' : filter;
+      toast.success('Orders Cancelled', {
+        description: `Successfully cancelled ${cancels.length} ${filterText} order${cancels.length > 1 ? 's' : ''}`,
+      });
+
+      // WebSocket will automatically update the orders list
+    } catch (err) {
+      console.error('Error canceling all orders:', err);
+      const errorMessage = 'Failed to cancel orders. Please try again.';
+      setCancelError(errorMessage);
+      toast.error('Cancel Failed', {
+        description: errorMessage,
+      });
+    } finally {
+      setIsCancelingAll(false);
+    }
+  };
+
   // Render states
   if (!isAuthenticated || !address) {
     return (
@@ -326,6 +413,52 @@ export function OrdersTabContent() {
   // Render flat list of orders
   return (
     <YStack gap="$2" paddingBottom="$4">
+      {/* Filter and Cancel All Section */}
+      <XStack justifyContent="space-between" alignItems="center" paddingBottom="$2">
+        {/* Filter Buttons */}
+        <XStack gap="$2">
+          <Button
+            size="$2"
+            backgroundColor={filter === 'all' ? '$accent9' : '$gray5'}
+            color={filter === 'all' ? 'white' : '$color'}
+            onPress={() => setFilter('all')}
+            pressStyle={{ opacity: 0.8 }}
+          >
+            All
+          </Button>
+          <Button
+            size="$2"
+            backgroundColor={filter === 'long' ? '$green10' : '$gray5'}
+            color={filter === 'long' ? 'white' : '$color'}
+            onPress={() => setFilter('long')}
+            pressStyle={{ opacity: 0.8 }}
+          >
+            Long
+          </Button>
+          <Button
+            size="$2"
+            backgroundColor={filter === 'short' ? '$red10' : '$gray5'}
+            color={filter === 'short' ? 'white' : '$color'}
+            onPress={() => setFilter('short')}
+            pressStyle={{ opacity: 0.8 }}
+          >
+            Short
+          </Button>
+        </XStack>
+
+        {/* Cancel All Button */}
+        <Button
+          size="$2"
+          backgroundColor="$red9"
+          color="white"
+          disabled={isCancelingAll || sortedOrders.length === 0}
+          onPress={handleCancelAllOrders}
+          pressStyle={{ opacity: 0.8 }}
+        >
+          {isCancelingAll ? 'Canceling...' : `Cancel All (${sortedOrders.length})`}
+        </Button>
+      </XStack>
+
       {cancelError && (
         <YStack
           borderRadius="$2"

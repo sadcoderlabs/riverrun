@@ -124,21 +124,37 @@ function buildOrderMap(orderTree: OrderNode[]): Map<number, OrderNode> {
  * Update or insert order node in tree
  * Returns new tree with updates applied
  */
-function updateOrderTree(currentTree: OrderNode[], updates: ApiOrderResponse[]): OrderNode[] {
+function updateOrderTree(
+  currentTree: OrderNode[],
+  updates: Array<{ order: ApiOrderResponse; status?: string }>,
+): OrderNode[] {
   // Build map of current orders for efficient lookup
   const orderMap = buildOrderMap(currentTree);
 
   // Process each update
-  updates.forEach(apiUpdate => {
-    const updatedNode = transformToOrderNode(apiUpdate, 'open');
+  updates.forEach(update => {
+    const apiUpdate = update.order;
+    // Use status from update if available, otherwise default to 'open'
+    const status = (update.status as OrderStatus) || 'open';
 
-    // Update map
-    orderMap.set(updatedNode.order.oid, updatedNode);
+    const updatedNode = transformToOrderNode(apiUpdate, status);
 
-    // Also update children in map
-    updatedNode.children.forEach(child => {
-      orderMap.set(child.order.oid, child);
-    });
+    // If order is canceled, remove it from the map
+    if (status === 'canceled' || status === 'filled') {
+      orderMap.delete(updatedNode.order.oid);
+      // Also remove children
+      updatedNode.children.forEach(child => {
+        orderMap.delete(child.order.oid);
+      });
+    } else {
+      // Update map
+      orderMap.set(updatedNode.order.oid, updatedNode);
+
+      // Also update children in map
+      updatedNode.children.forEach(child => {
+        orderMap.set(child.order.oid, child);
+      });
+    }
   });
 
   // Rebuild tree from map
@@ -255,15 +271,19 @@ export function useOrderUpdates(): UseOrderUpdatesResult {
 
             if (isMounted) {
               setOrderTree(prevTree => {
-                // Transform updates to API format
-                const apiUpdates = orderUpdates.map(update => update.order as ApiOrderResponse);
+                // Keep the full update structure (includes status)
+                const updates = orderUpdates.map(update => ({
+                  order: update.order as ApiOrderResponse,
+                  status: update.status as string | undefined,
+                }));
 
                 // Update tree
-                const newTree = updateOrderTree(prevTree, apiUpdates);
+                const newTree = updateOrderTree(prevTree, updates);
 
                 console.log('[useOrderUpdates] Updated order tree:', {
                   rootOrders: newTree.length,
                   totalOrders: flattenOrderTree(newTree).length,
+                  updates: orderUpdates,
                 });
 
                 return newTree;
