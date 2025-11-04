@@ -310,7 +310,7 @@ export function OrdersTabContent() {
           <Button
             size="$2"
             backgroundColor={filter === 'all' ? '$accent9' : '$gray5'}
-            color={filter === 'all' ? 'white' : '$color'}
+            color={filter === 'all' ? '$accent1' : '$color'}
             onPress={() => setFilter('all')}
             pressStyle={{ opacity: 0.8 }}
           >
@@ -319,7 +319,7 @@ export function OrdersTabContent() {
           <Button
             size="$2"
             backgroundColor={filter === 'long' ? '$green10' : '$gray5'}
-            color={filter === 'long' ? 'white' : '$color'}
+            color={filter === 'long' ? '$green1' : '$color'}
             onPress={() => setFilter('long')}
             pressStyle={{ opacity: 0.8 }}
           >
@@ -328,7 +328,7 @@ export function OrdersTabContent() {
           <Button
             size="$2"
             backgroundColor={filter === 'short' ? '$red10' : '$gray5'}
-            color={filter === 'short' ? 'white' : '$color'}
+            color={filter === 'short' ? '$red1' : '$color'}
             onPress={() => setFilter('short')}
             pressStyle={{ opacity: 0.8 }}
           >
