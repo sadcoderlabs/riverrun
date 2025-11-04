@@ -15,6 +15,7 @@ import {
   isMarketOrder,
 } from '@/lib/hyperliquid/utils';
 import { useActiveWallet } from '@/lib/riverrun/hooks';
+import { useSelectedCoinStore } from '@/lib/riverrun/store';
 import type { SymbolConverter } from '@nktkas/hyperliquid/utils';
 import { useEffect, useMemo, useState } from 'react';
 import { Button, Spinner, Text, View, XStack, YStack } from 'tamagui';
@@ -26,11 +27,12 @@ import { Button, Spinner, Text, View, XStack, YStack } from 'tamagui';
 interface OrderCardProps {
   order: Order;
   onCancel: (oid: number) => Promise<void>;
+  onPress: () => void;
   canceling: boolean;
   getSymbolConverter: () => Promise<SymbolConverter>;
 }
 
-function OrderCard({ order, onCancel, canceling, getSymbolConverter }: OrderCardProps) {
+function OrderCard({ order, onCancel, onPress, canceling, getSymbolConverter }: OrderCardProps) {
   const [szDecimals, setSzDecimals] = useState(4);
 
   // Load szDecimals for this coin
@@ -68,6 +70,9 @@ function OrderCard({ order, onCancel, canceling, getSymbolConverter }: OrderCard
       borderWidth={1}
       borderColor="$gray5"
       gap="$2"
+      onPress={onPress}
+      pressStyle={{ opacity: 0.7, backgroundColor: '$gray3' }}
+      cursor="pointer"
     >
       {/* Header row: Coin + PERP badge, and Cancel button */}
       <XStack justifyContent="space-between" alignItems="center">
@@ -190,6 +195,7 @@ type OrderFilter = 'all' | 'long' | 'short';
 export function OrdersTabContent() {
   const { address, isAuthenticated } = useActiveWallet();
   const { getSymbolConverter } = useHyperliquidClient();
+  const { setSelectedCoin } = useSelectedCoinStore();
 
   // Get orders from useOrderUpdates (simplified flat structure)
   const { orders, isLoading, error } = useOrderUpdates();
@@ -220,6 +226,12 @@ export function OrdersTabContent() {
     // Sort by timestamp (most recent first)
     return filteredOrders.sort((a, b) => b.timestamp - a.timestamp);
   }, [orders, filter]);
+
+  // Switch market when order card is clicked (without full page reload)
+  const handleOrderClick = (coin: string) => {
+    setSelectedCoin(coin);
+    // Note: URL will be synced by TradeLayout's useEffect
+  };
 
   // Handle order cancellation
   const handleCancelOrder = async (oid: number) => {
@@ -374,6 +386,7 @@ export function OrdersTabContent() {
             key={`order-${order.oid}`}
             order={order}
             onCancel={handleCancelOrder}
+            onPress={() => handleOrderClick(order.coin)}
             canceling={cancelingOrderIds[order.oid] ?? false}
             getSymbolConverter={getSymbolConverter}
           />

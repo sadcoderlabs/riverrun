@@ -1,7 +1,7 @@
 import { MarketListItem } from '@/components/trade/market-list-item';
 import { useMarketsStore } from '@/lib/riverrun/store/use-markets-store';
+import { useSelectedCoinStore } from '@/lib/riverrun/store';
 import { Search } from '@tamagui/lucide-icons';
-import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FlatList, Modal, Pressable, RefreshControl, StyleSheet } from 'react-native';
 import { Input, Spinner, Text, XStack, YStack } from 'tamagui';
@@ -12,7 +12,7 @@ interface MarketSelectorModalProps {
 }
 
 export function MarketSelectorModal({ open, onOpenChange }: MarketSelectorModalProps) {
-  const router = useRouter();
+  const { setSelectedCoin } = useSelectedCoinStore();
 
   // Get state and actions from store
   const { markets, favorites, isLoading, initialize, refreshMarkets, toggleFavorite } =
@@ -72,10 +72,10 @@ export function MarketSelectorModal({ open, onOpenChange }: MarketSelectorModalP
       onOpenChange(false);
       // Extract asset name from marketId (e.g., "BTC-USD" -> "BTC")
       const asset = marketId.replace('-USD', '').replace('/USDC', '').split('/')[0];
-      // Replace current route with new asset (default to perp)
-      router.replace(`/(main)/trade/perp/${asset}`);
+      // Update selected coin (URL will be synced by TradeLayout's useEffect)
+      setSelectedCoin(asset);
     },
-    [router, onOpenChange],
+    [setSelectedCoin, onOpenChange],
   );
 
   const handleToggleFavorite = useCallback(
