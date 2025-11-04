@@ -156,7 +156,7 @@ export function PerpTradePanel({ coin }: PerpTradePanelProps) {
       {/* Right Side - Trading Panel */}
       <YStack flex={7} backgroundColor="$background">
         {/* Trading Form */}
-        <YStack padding="$3" gap="$2.5">
+        <YStack paddingHorizontal="$3" paddingTop="$1" paddingBottom="$3" gap="$2.5">
           {/* Leverage & Margin Type Selector */}
           <LeverageSelector leverage={leverage} marginMode={marginMode} coin={coin} />
 
