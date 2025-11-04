@@ -98,6 +98,23 @@ export interface TpSlOrderParams {
 }
 
 /**
+ * Parameters for placing an order with atomic TP/SL (using normalTpsl grouping)
+ */
+export interface OrderWithTpSlParams {
+  // Parent order parameters
+  coin: string;
+  side: 'Long' | 'Short';
+  size: string;
+  orderType: 'Market' | 'Limit';
+  limitPrice?: string; // Required if orderType === 'Limit'
+  marketPrice?: number; // Required if orderType === 'Market'
+  reduceOnly?: boolean;
+  // TP/SL parameters (at least one must be provided)
+  tpTriggerPrice?: string;
+  slTriggerPrice?: string;
+}
+
+/**
  * Result type for the useOrder hook
  */
 export interface UseOrderResult {
@@ -107,6 +124,7 @@ export interface UseOrderResult {
   placeCloseMarketOrder: (params: CloseMarketOrderParams) => Promise<boolean>;
   placeCloseLimitOrder: (params: CloseLimitOrderParams) => Promise<boolean>;
   placeTpSlOrders: (params: TpSlOrderParams) => Promise<boolean>;
+  placeOrderWithTpSl: (params: OrderWithTpSlParams) => Promise<boolean>; // NEW: Atomic order + TP/SL
 
   // Order cancellation methods
   cancelOrder: (params: CancelOrderParams) => Promise<boolean>;
@@ -779,12 +797,195 @@ export function useOrder(): UseOrderResult {
     [getAgentExchangeClient, getSymbolConverter],
   );
 
+  /**
+   * Place an order with atomic TP/SL using normalTpsl grouping
+   *
+   * This creates a parent-child relationship where:
+   * - Parent order (market/limit) + TP/SL children are sent in a single API call
+   * - If parent fills immediately → TP/SL orders are placed
+   * - If parent doesn't fill → TP/SL remain inactive
+   * - If parent is canceled unfilled → TP/SL are automatically canceled
+   *
+   * This achieves atomic-like behavior: no position without TP/SL protection
+   */
+  const placeOrderWithTpSl = useCallback(
+    async (params: OrderWithTpSlParams): Promise<boolean> => {
+      setIsPlacingOrder(true);
+      setError(null);
+
+      try {
+        // 1. Validate parameters
+        if (!params.tpTriggerPrice && !params.slTriggerPrice) {
+          throw new Error('At least one of TP or SL must be provided');
+        }
+
+        if (params.orderType === 'Market' && !params.marketPrice) {
+          throw new Error('Market price is required for market orders');
+        }
+
+        if (params.orderType === 'Limit' && !params.limitPrice) {
+          throw new Error('Limit price is required for limit orders');
+        }
+
+        // 2. Get agent exchange client
+        const exchangeClient = await getAgentExchangeClient();
+        if (!exchangeClient) {
+          toast.info('Cancelled', {
+            description: 'Order placement was cancelled',
+          });
+          return false;
+        }
+
+        // 3. Get asset metadata
+        const converter = await getSymbolConverter();
+        const assetId = converter.getAssetId(params.coin);
+        const szDecimals = converter.getSzDecimals(params.coin);
+
+        // Validation
+        if (assetId === undefined) {
+          throw new Error(`Unable to find asset ID for ${params.coin}`);
+        }
+        if (szDecimals === undefined) {
+          throw new Error(`Unable to find size decimals for ${params.coin}`);
+        }
+
+        // 4. Validate size decimals
+        validateSizeDecimals(params.size, szDecimals, params.coin);
+
+        // 5. Build parent order
+        const isLong = params.side === 'Long';
+        const roundedSize = parseFloat(params.size).toFixed(szDecimals);
+        const orders: any[] = [];
+
+        if (params.orderType === 'Market') {
+          // Market order: use extreme price (±5% to ensure immediate execution)
+          const extremePrice = isLong
+            ? params.marketPrice! * 1.05 // 5% above market for buys
+            : params.marketPrice! * 0.95; // 5% below market for sells
+          const price = roundPrice(extremePrice, szDecimals, false);
+
+          orders.push({
+            a: assetId,
+            b: isLong,
+            p: price,
+            s: roundedSize,
+            r: params.reduceOnly ?? false,
+            t: { limit: { tif: 'Ioc' as const } }, // Immediate-Or-Cancel
+          });
+        } else {
+          // Limit order
+          orders.push({
+            a: assetId,
+            b: isLong,
+            p: params.limitPrice,
+            s: roundedSize,
+            r: params.reduceOnly ?? false,
+            t: { limit: { tif: 'Gtc' as const } }, // Good-Til-Cancel
+          });
+        }
+
+        // 6. Build TP/SL child orders
+        // Take Profit order (close long = sell, close short = buy)
+        if (params.tpTriggerPrice) {
+          const tpIsBuy = !isLong; // TP for long = sell, TP for short = buy
+          orders.push({
+            a: assetId,
+            b: tpIsBuy,
+            p: params.tpTriggerPrice,
+            s: roundedSize,
+            r: true, // Reduce-only
+            t: {
+              trigger: {
+                isMarket: true, // Market order for TP (10% slippage handled by Hyperliquid)
+                triggerPx: params.tpTriggerPrice,
+                tpsl: 'tp' as const,
+              },
+            },
+          });
+        }
+
+        // Stop Loss order (close long = sell, close short = buy)
+        if (params.slTriggerPrice) {
+          const slIsBuy = !isLong; // SL for long = sell, SL for short = buy
+          orders.push({
+            a: assetId,
+            b: slIsBuy,
+            p: params.slTriggerPrice,
+            s: roundedSize,
+            r: true, // Reduce-only
+            t: {
+              trigger: {
+                isMarket: true, // Market order for SL (10% slippage handled by Hyperliquid)
+                triggerPx: params.slTriggerPrice,
+                tpsl: 'sl' as const,
+              },
+            },
+          });
+        }
+
+        // 7. Execute order with normalTpsl grouping (atomic behavior)
+        const response = await exchangeClient.order({
+          orders,
+          grouping: 'normalTpsl', // KEY: Creates parent-child relationship
+        });
+
+        // 8. Check for errors in response
+        if (response.response.data.statuses && response.response.data.statuses.length > 0) {
+          const errors = response.response.data.statuses
+            .filter(
+              status =>
+                status !== null &&
+                typeof status === 'object' &&
+                'error' in status &&
+                typeof status.error === 'string',
+            )
+            .map(status => (status as any).error);
+
+          if (errors.length > 0) {
+            toast.error('Order Failed', {
+              description: errors.join(', '),
+            });
+            setError(errors.join(', '));
+            return false;
+          }
+        }
+
+        // 9. Success
+        const orderType = params.orderType === 'Market' ? 'Market' : 'Limit';
+        const tpSlDescriptions = [];
+        if (params.tpTriggerPrice) {
+          tpSlDescriptions.push(`TP @ ${params.tpTriggerPrice}`);
+        }
+        if (params.slTriggerPrice) {
+          tpSlDescriptions.push(`SL @ ${params.slTriggerPrice}`);
+        }
+
+        toast.success('Order Placed', {
+          description: `${orderType} ${params.side} order for ${params.size} ${params.coin} with ${tpSlDescriptions.join(', ')}`,
+        });
+        return true;
+      } catch (err) {
+        console.error('[useOrder.placeOrderWithTpSl] Error:', err);
+        const errorMessage = err instanceof Error ? err.message : 'Failed to place order';
+        setError(errorMessage);
+        toast.error('Order Failed', {
+          description: errorMessage,
+        });
+        return false;
+      } finally {
+        setIsPlacingOrder(false);
+      }
+    },
+    [getAgentExchangeClient, getSymbolConverter],
+  );
+
   return {
     placeMarketOrder,
     placeLimitOrder,
     placeCloseMarketOrder,
     placeCloseLimitOrder,
     placeTpSlOrders,
+    placeOrderWithTpSl,
     cancelOrder,
     cancelOrders,
     isPlacingOrder,

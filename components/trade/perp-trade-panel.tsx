@@ -14,6 +14,14 @@ import {
   useOrder,
   useWebData2,
 } from '@/lib/hyperliquid/hooks';
+import {
+  calculateSlPercentFromPrice,
+  calculateSlPriceFromPercent,
+  calculateTpPercentFromPrice,
+  calculateTpPriceFromPercent,
+  validateSlPrice,
+  validateTpPrice,
+} from '@/lib/hyperliquid/utils/tpsl-utils';
 
 import { Checkbox } from '@tamagui/checkbox';
 import { Check } from '@tamagui/lucide-icons';
@@ -28,7 +36,7 @@ interface PerpTradePanelProps {
 
 export function PerpTradePanel({ coin }: PerpTradePanelProps) {
   const { getSymbolConverter } = useHyperliquidClient();
-  const { placeMarketOrder, placeLimitOrder, isPlacingOrder } = useOrder();
+  const { placeMarketOrder, placeLimitOrder, placeOrderWithTpSl, isPlacingOrder } = useOrder();
 
   // Subscribe to active asset data (leverage, margin mode) from WebSocket
   const { data: activeAssetData, isLoading: isLoadingAssetData } = useActiveAssetData({
@@ -83,10 +91,97 @@ export function PerpTradePanel({ coin }: PerpTradePanelProps) {
     [activeAssetData?.markPx],
   );
 
-  // TP/SL states (temporarily removed from form)
+  // TP/SL states
   const [tpSlEnabled, setTpSlEnabled] = useState(false);
   const [tpValue, setTpValue] = useState('');
+  const [tpUnit, setTpUnit] = useState<'USD' | '%'>('%');
   const [slValue, setSlValue] = useState('');
+  const [slUnit, setSlUnit] = useState<'USD' | '%'>('%');
+
+  // Get entry price for TP/SL calculations
+  const entryPriceForTpSl = useMemo(() => {
+    if (orderType === 'Market') {
+      return marketPrice;
+    } else {
+      const limit = parseFloat(limitPrice || '0');
+      return limit > 0 ? limit : marketPrice;
+    }
+  }, [orderType, marketPrice, limitPrice]);
+
+  // TP/SL handlers with bidirectional conversion
+  const handleTpValueChange = useCallback((value: string) => {
+    setTpValue(value);
+  }, []);
+
+  const handleTpUnitChange = useCallback(
+    (newUnit: 'USD' | '%') => {
+      // Convert existing value to new unit
+      if (tpValue && entryPriceForTpSl > 0) {
+        const currentValue = parseFloat(tpValue);
+        if (isFinite(currentValue)) {
+          let convertedValue: string;
+          if (newUnit === '%' && tpUnit === 'USD') {
+            // USD → %
+            convertedValue = calculateTpPercentFromPrice(
+              entryPriceForTpSl,
+              currentValue,
+              orderSide === 'Long',
+            );
+          } else if (newUnit === 'USD' && tpUnit === '%') {
+            // % → USD
+            convertedValue = calculateTpPriceFromPercent(
+              entryPriceForTpSl,
+              currentValue,
+              orderSide === 'Long',
+              szDecimals,
+            );
+          } else {
+            convertedValue = tpValue;
+          }
+          setTpValue(convertedValue);
+        }
+      }
+      setTpUnit(newUnit);
+    },
+    [tpValue, tpUnit, entryPriceForTpSl, orderSide, szDecimals],
+  );
+
+  const handleSlValueChange = useCallback((value: string) => {
+    setSlValue(value);
+  }, []);
+
+  const handleSlUnitChange = useCallback(
+    (newUnit: 'USD' | '%') => {
+      // Convert existing value to new unit
+      if (slValue && entryPriceForTpSl > 0) {
+        const currentValue = parseFloat(slValue);
+        if (isFinite(currentValue)) {
+          let convertedValue: string;
+          if (newUnit === '%' && slUnit === 'USD') {
+            // USD → %
+            convertedValue = calculateSlPercentFromPrice(
+              entryPriceForTpSl,
+              currentValue,
+              orderSide === 'Long',
+            );
+          } else if (newUnit === 'USD' && slUnit === '%') {
+            // % → USD
+            convertedValue = calculateSlPriceFromPercent(
+              entryPriceForTpSl,
+              currentValue,
+              orderSide === 'Long',
+              szDecimals,
+            );
+          } else {
+            convertedValue = slValue;
+          }
+          setSlValue(convertedValue);
+        }
+      }
+      setSlUnit(newUnit);
+    },
+    [slValue, slUnit, entryPriceForTpSl, orderSide, szDecimals],
+  );
 
   // Handler for Place Order button
   const handlePlaceOrder = useCallback(async () => {
@@ -108,23 +203,98 @@ export function PerpTradePanel({ coin }: PerpTradePanelProps) {
       return;
     }
 
-    // Place order using the appropriate method
-    if (data.orderType === 'Market') {
-      await placeMarketOrder({
+    const isLong = data.orderSide === 'Long';
+
+    // If TP/SL is enabled, use atomic order placement
+    if (tpSlEnabled && (tpValue || slValue)) {
+      // Calculate trigger prices from user input
+      let tpTriggerPrice: string | undefined;
+      let slTriggerPrice: string | undefined;
+
+      const entryPrice = entryPriceForTpSl;
+
+      // Process TP
+      if (tpValue) {
+        const tpNum = parseFloat(tpValue);
+        if (isFinite(tpNum) && tpNum > 0) {
+          // Convert to price if in percentage mode
+          if (tpUnit === '%') {
+            tpTriggerPrice = calculateTpPriceFromPercent(entryPrice, tpNum, isLong, szDecimals);
+          } else {
+            tpTriggerPrice = tpValue;
+          }
+
+          // Validate TP price
+          const tpValid = validateTpPrice(tpTriggerPrice, entryPrice, isLong);
+          if (!tpValid.valid) {
+            toast.error('Invalid TP', {
+              description: tpValid.error,
+            });
+            return;
+          }
+        }
+      }
+
+      // Process SL
+      if (slValue) {
+        const slNum = parseFloat(slValue);
+        if (isFinite(slNum) && slNum > 0) {
+          // Convert to price if in percentage mode
+          if (slUnit === '%') {
+            slTriggerPrice = calculateSlPriceFromPercent(entryPrice, slNum, isLong, szDecimals);
+          } else {
+            slTriggerPrice = slValue;
+          }
+
+          // Validate SL price
+          const slValid = validateSlPrice(slTriggerPrice, entryPrice, isLong);
+          if (!slValid.valid) {
+            toast.error('Invalid SL', {
+              description: slValid.error,
+            });
+            return;
+          }
+        }
+      }
+
+      // Place atomic order with TP/SL
+      const orderSuccess = await placeOrderWithTpSl({
         coin,
         side: data.orderSide,
         size: data.size,
+        orderType: data.orderType,
+        limitPrice: data.limitPrice || undefined,
+        marketPrice: data.orderType === 'Market' ? marketPrice : undefined,
         reduceOnly: data.reduceOnly,
-        marketPrice,
+        tpTriggerPrice,
+        slTriggerPrice,
       });
+
+      // Reset TP/SL inputs after successful placement
+      if (orderSuccess) {
+        setTpSlEnabled(false);
+        setTpValue('');
+        setSlValue('');
+      }
     } else {
-      await placeLimitOrder({
-        coin,
-        side: data.orderSide,
-        size: data.size,
-        limitPrice: data.limitPrice || '0',
-        reduceOnly: data.reduceOnly,
-      });
+      // No TP/SL - use regular order placement
+      if (data.orderType === 'Market') {
+        await placeMarketOrder({
+          coin,
+          side: data.orderSide,
+          size: data.size,
+          reduceOnly: data.reduceOnly,
+          marketPrice,
+        });
+      } else {
+        await placeLimitOrder({
+          coin,
+          side: data.orderSide,
+          size: data.size,
+          limitPrice: data.limitPrice || '0',
+          reduceOnly: data.reduceOnly,
+        });
+      }
     }
   }, [
     coin,
@@ -134,8 +304,15 @@ export function PerpTradePanel({ coin }: PerpTradePanelProps) {
     marketPrice,
     placeMarketOrder,
     placeLimitOrder,
+    placeOrderWithTpSl,
+    tpSlEnabled,
+    tpValue,
+    tpUnit,
+    slValue,
+    slUnit,
+    entryPriceForTpSl,
+    szDecimals,
   ]);
-
 
   // Get current position for this coin
   const currentPosition = useMemo(() => {
@@ -303,9 +480,13 @@ export function PerpTradePanel({ coin }: PerpTradePanelProps) {
             enabled={tpSlEnabled}
             onEnabledChange={setTpSlEnabled}
             tpValue={tpValue}
-            onTpValueChange={setTpValue}
+            onTpValueChange={handleTpValueChange}
+            tpUnit={tpUnit}
+            onTpUnitChange={handleTpUnitChange}
             slValue={slValue}
-            onSlValueChange={setSlValue}
+            onSlValueChange={handleSlValueChange}
+            slUnit={slUnit}
+            onSlUnitChange={handleSlUnitChange}
           />
 
           {/* Reduce-Only */}

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Check } from '@tamagui/lucide-icons';
 import { Checkbox } from '@tamagui/checkbox';
-import { Text, XStack, YStack } from 'tamagui';
+import { Input, Text, XStack, YStack } from 'tamagui';
 
 type UnitType = 'USD' | '%';
 
@@ -10,8 +10,12 @@ interface TpSlInputProps {
   onEnabledChange: (enabled: boolean) => void;
   tpValue: string;
   onTpValueChange: (value: string) => void;
+  tpUnit: UnitType;
+  onTpUnitChange: (unit: UnitType) => void;
   slValue: string;
   onSlValueChange: (value: string) => void;
+  slUnit: UnitType;
+  onSlUnitChange: (unit: UnitType) => void;
 }
 
 export function TpSlInput({
@@ -19,29 +23,30 @@ export function TpSlInput({
   onEnabledChange,
   tpValue,
   onTpValueChange,
+  tpUnit,
+  onTpUnitChange,
   slValue,
   onSlValueChange,
+  slUnit,
+  onSlUnitChange,
 }: TpSlInputProps) {
-  const [tpUnit, setTpUnit] = useState<UnitType>('USD');
-  const [slUnit, setSlUnit] = useState<UnitType>('USD');
-
   const handleEnabledChange = (checked: boolean) => {
     onEnabledChange(checked);
     if (!checked) {
-      // Clear values and reset units when unchecking
+      // Clear values when unchecking
       onTpValueChange('');
       onSlValueChange('');
-      setTpUnit('USD');
-      setSlUnit('USD');
     }
   };
 
   const toggleTpUnit = () => {
-    setTpUnit(prev => (prev === 'USD' ? '%' : 'USD'));
+    const newUnit: UnitType = tpUnit === 'USD' ? '%' : 'USD';
+    onTpUnitChange(newUnit);
   };
 
   const toggleSlUnit = () => {
-    setSlUnit(prev => (prev === 'USD' ? '%' : 'USD'));
+    const newUnit: UnitType = slUnit === 'USD' ? '%' : 'USD';
+    onSlUnitChange(newUnit);
   };
 
   return (
@@ -60,72 +65,98 @@ export function TpSlInput({
 
       {/* TP/SL Input Fields */}
       {enabled && (
-        <YStack gap="$2">
-          {/* TP Price */}
-          <XStack
-            backgroundColor="$gray3"
-            borderRadius="$3"
-            paddingVertical="$2"
-            paddingHorizontal="$2.5"
-            borderColor="$gray8"
-            borderWidth={1}
-            justifyContent="space-between"
-            alignItems="center"
-          >
-            <XStack gap="$2" alignItems="center" flex={1}>
-              <Text fontFamily="$interRegular" fontSize="$2" color="$gray10">
-                {tpUnit === 'USD' ? 'TP Price' : 'TP (%)'}
-              </Text>
-              <Text fontFamily="$interRegular" fontSize="$3" color="$color">
-                {tpValue}
-              </Text>
-            </XStack>
+        <YStack gap="$2.5">
+          {/* TP Input */}
+          <YStack gap="$1.5">
+            <Text fontFamily="$interRegular" fontSize="$2" color="$gray10">
+              {tpUnit === 'USD' ? 'TP Price' : 'TP (%)'}
+            </Text>
             <XStack
-              backgroundColor="$gray5"
-              borderRadius="$2"
-              paddingHorizontal="$2"
-              paddingVertical="$1"
-              onPress={toggleTpUnit}
-              pressStyle={{ opacity: 0.7 }}
+              backgroundColor="$gray3"
+              borderRadius="$3"
+              paddingVertical="$1.5"
+              paddingHorizontal="$2.5"
+              borderColor="$gray8"
+              borderWidth={1}
+              alignItems="center"
+              height="$3"
             >
-              <Text fontFamily="$interSemiBold" fontSize="$2" color="$color">
-                {tpUnit}
-              </Text>
+              <Input
+                flex={1}
+                placeholder={tpUnit === 'USD' ? '0.0' : '0'}
+                value={tpValue}
+                onChangeText={onTpValueChange}
+                keyboardType="decimal-pad"
+                returnKeyType="done"
+                fontSize="$3"
+                fontFamily="$interRegular"
+                borderWidth={0}
+                paddingHorizontal={0}
+                paddingVertical={0}
+                backgroundColor="transparent"
+              />
+              <XStack
+                backgroundColor="$gray5"
+                borderRadius="$2"
+                paddingHorizontal="$2"
+                paddingVertical="$1"
+                onPress={toggleTpUnit}
+                pressStyle={{ opacity: 0.7 }}
+                cursor="pointer"
+                marginLeft="$2"
+              >
+                <Text fontFamily="$interSemiBold" fontSize="$2" color="$color">
+                  {tpUnit}
+                </Text>
+              </XStack>
             </XStack>
-          </XStack>
+          </YStack>
 
-          {/* SL */}
-          <XStack
-            backgroundColor="$gray3"
-            borderRadius="$3"
-            paddingVertical="$2"
-            paddingHorizontal="$2.5"
-            borderColor="$gray8"
-            borderWidth={1}
-            justifyContent="space-between"
-            alignItems="center"
-          >
-            <XStack gap="$2" alignItems="center" flex={1}>
-              <Text fontFamily="$interRegular" fontSize="$2" color="$gray10">
-                {slUnit === 'USD' ? 'SL Price' : 'SL (%)'}
-              </Text>
-              <Text fontFamily="$interRegular" fontSize="$3" color="$color">
-                {slValue}
-              </Text>
-            </XStack>
+          {/* SL Input */}
+          <YStack gap="$1.5">
+            <Text fontFamily="$interRegular" fontSize="$2" color="$gray10">
+              {slUnit === 'USD' ? 'SL Price' : 'SL (%)'}
+            </Text>
             <XStack
-              backgroundColor="$gray5"
-              borderRadius="$2"
-              paddingHorizontal="$2"
-              paddingVertical="$1"
-              onPress={toggleSlUnit}
-              pressStyle={{ opacity: 0.7 }}
+              backgroundColor="$gray3"
+              borderRadius="$3"
+              paddingVertical="$1.5"
+              paddingHorizontal="$2.5"
+              borderColor="$gray8"
+              borderWidth={1}
+              alignItems="center"
+              height="$3"
             >
-              <Text fontFamily="$interSemiBold" fontSize="$2" color="$color">
-                {slUnit}
-              </Text>
+              <Input
+                flex={1}
+                placeholder={slUnit === 'USD' ? '0.0' : '0'}
+                value={slValue}
+                onChangeText={onSlValueChange}
+                keyboardType="decimal-pad"
+                returnKeyType="done"
+                fontSize="$3"
+                fontFamily="$interRegular"
+                borderWidth={0}
+                paddingHorizontal={0}
+                paddingVertical={0}
+                backgroundColor="transparent"
+              />
+              <XStack
+                backgroundColor="$gray5"
+                borderRadius="$2"
+                paddingHorizontal="$2"
+                paddingVertical="$1"
+                onPress={toggleSlUnit}
+                pressStyle={{ opacity: 0.7 }}
+                cursor="pointer"
+                marginLeft="$2"
+              >
+                <Text fontFamily="$interSemiBold" fontSize="$2" color="$color">
+                  {slUnit}
+                </Text>
+              </XStack>
             </XStack>
-          </XStack>
+          </YStack>
         </YStack>
       )}
     </YStack>
