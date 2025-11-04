@@ -5,6 +5,7 @@
 
 import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
 import { formatSize } from '@/lib/hyperliquid/format/formatSize';
+import { formatValue } from '@/lib/hyperliquid/format/formatValue';
 import { useHyperliquidClient, useOrder, useOrderUpdates } from '@/lib/hyperliquid/hooks';
 import type { Order } from '@/lib/hyperliquid/types/orders';
 import {
@@ -134,6 +135,16 @@ function OrderCard({ order, onCancel, canceling, getSymbolConverter }: OrderCard
         <Text fontSize="$2" fontFamily="$interMedium">
           {formatSize(metrics.filledSize, szDecimals, true)} /{' '}
           {formatSize(metrics.size, szDecimals, true)} {order.coin}
+        </Text>
+      </XStack>
+
+      {/* Order Value Row */}
+      <XStack justifyContent="space-between" alignItems="center">
+        <Text fontSize="$2" color="$color9">
+          Order Value
+        </Text>
+        <Text fontSize="$2" fontFamily="$interMedium">
+          {isMarket ? 'Market' : `$${formatValue(metrics.size * metrics.price, 2)}`}
         </Text>
       </XStack>
 
@@ -280,7 +291,8 @@ export function OrdersTabContent() {
     );
   }
 
-  if (sortedOrders.length === 0) {
+  // Show message when there are no orders at all (not just filtered out)
+  if (orders.length === 0) {
     return (
       <YStack flex={1} justifyContent="center" alignItems="center" padding="$4">
         <Text>No open orders</Text>
@@ -288,7 +300,7 @@ export function OrdersTabContent() {
     );
   }
 
-  // Render flat list of orders
+  // Render orders list with filters (always show filters if there are any orders)
   return (
     <YStack gap="$2" paddingBottom="$4">
       {/* Filter and Cancel All Section */}
@@ -350,15 +362,23 @@ export function OrdersTabContent() {
           </Text>
         </YStack>
       )}
-      {sortedOrders.map(order => (
-        <OrderCard
-          key={`order-${order.oid}`}
-          order={order}
-          onCancel={handleCancelOrder}
-          canceling={cancelingOrderIds[order.oid] ?? false}
-          getSymbolConverter={getSymbolConverter}
-        />
-      ))}
+
+      {/* Show filtered orders or message if filter results in no orders */}
+      {sortedOrders.length === 0 ? (
+        <YStack flex={1} justifyContent="center" alignItems="center" padding="$4">
+          <Text>No {filter === 'all' ? '' : filter} orders</Text>
+        </YStack>
+      ) : (
+        sortedOrders.map(order => (
+          <OrderCard
+            key={`order-${order.oid}`}
+            order={order}
+            onCancel={handleCancelOrder}
+            canceling={cancelingOrderIds[order.oid] ?? false}
+            getSymbolConverter={getSymbolConverter}
+          />
+        ))
+      )}
     </YStack>
   );
 }
