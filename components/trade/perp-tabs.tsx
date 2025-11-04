@@ -2,13 +2,14 @@ import OrdersTab from '@/components/trade/orders-tab';
 import PositionsTab from '@/components/trade/positions-tab';
 import { useState, useEffect } from 'react';
 import { Text, XStack, YStack } from 'tamagui';
-import { usePositionCount } from '@/lib/hyperliquid/hooks';
+import { useOrderCount, usePositionCount } from '@/lib/hyperliquid/hooks';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 export function PerpTabs() {
   const router = useRouter();
   const params = useLocalSearchParams<{ tab?: string }>();
   const [activeTab, setActiveTab] = useState<'orders' | 'positions' | 'history'>('orders');
+  const orderCount = useOrderCount();
   const positionCount = usePositionCount();
 
   // Sync activeTab with URL params
@@ -32,6 +33,7 @@ export function PerpTabs() {
           label="Orders"
           isActive={activeTab === 'orders'}
           onPress={() => handleTabChange('orders')}
+          count={orderCount}
         />
         <TabItem
           label="Positions"

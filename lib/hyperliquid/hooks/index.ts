@@ -4,6 +4,7 @@ export * from './useHyperliquidClient';
 export * from './useHyperliquidWithdraw';
 export * from './useOrder';
 export * from './useOrderBook';
+export * from './useOrderCount';
 export * from './useOrderUpdates';
 export * from './usePositionCount';
 export * from './useSpotBalance';
