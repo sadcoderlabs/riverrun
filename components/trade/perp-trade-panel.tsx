@@ -7,7 +7,13 @@ import { LimitOrderForm, MarketOrderForm, OrderTypeSelector } from '@/components
 import { OrderBook } from '@/components/trade/OrderBook';
 import { TpSlInput } from '@/components/trade/tp-sl-input';
 import { formatSize } from '@/lib/hyperliquid/format/formatSize';
-import { useActiveAssetData, useHyperliquidClient, useOrder, useWebData2 } from '@/lib/hyperliquid/hooks';
+import {
+  useActiveAssetData,
+  useHyperliquidClient,
+  useOrder,
+  useWebData2,
+} from '@/lib/hyperliquid/hooks';
+
 import { Checkbox } from '@tamagui/checkbox';
 import { Check } from '@tamagui/lucide-icons';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -141,7 +147,7 @@ export function PerpTradePanel({ coin }: PerpTradePanelProps) {
     }
 
     const position = webData.clearinghouseState.assetPositions.find(
-      asset => asset.position.coin === coin
+      asset => asset.position.coin === coin,
     );
 
     if (!position || Number(position.position.szi) === 0) {
