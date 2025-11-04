@@ -5,6 +5,7 @@ import {
   type NSigFigs,
   type PrecisionMenuItem,
 } from '@/lib/hyperliquid/orderbook-precision';
+import { formatSizeFixedDecimals } from '@/lib/hyperliquid/format/formatSizeFixedDecimals';
 import { ChevronDown } from '@tamagui/lucide-icons';
 import { useMemo, useState } from 'react';
 import { FlatList } from 'react-native';
@@ -88,10 +89,14 @@ export function OrderBook({ coin, szDecimals, markPx, onPriceClick }: OrderBookP
     const depthPercentage = maxSize > 0 ? (parseFloat(item.sz) / maxSize) * 100 : 0;
 
     // Calculate display size based on unit
-    let displaySize = item.sz;
+    let displaySize: string;
     if (sizeUnit === 'usd') {
+      // USD mode: calculate USD value
       const sizeInUsd = parseFloat(item.sz) * parseFloat(item.px);
       displaySize = sizeInUsd.toString();
+    } else {
+      // Asset mode: format with fixed decimals for alignment
+      displaySize = formatSizeFixedDecimals(item.sz, szDecimals, false);
     }
 
     return (
@@ -102,6 +107,7 @@ export function OrderBook({ coin, szDecimals, markPx, onPriceClick }: OrderBookP
         type={type}
         depthPercentage={depthPercentage}
         szDecimals={szDecimals}
+        sizeUnit={sizeUnit}
         onPress={() => onPriceClick?.(item.px)}
       />
     );

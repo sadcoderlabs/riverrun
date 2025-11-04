@@ -1,6 +1,14 @@
 import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
 import { memo } from 'react';
+import { Platform } from 'react-native';
 import { Text, XStack, YStack } from 'tamagui';
+
+// Use system monospace font for guaranteed tabular numbers
+const MONOSPACE_FONT = Platform.select({
+  ios: 'Menlo',
+  android: 'monospace',
+  default: 'monospace',
+});
 
 interface OrderBookRowProps {
   price: string;
@@ -12,6 +20,12 @@ interface OrderBookRowProps {
    * Used to determine maximum decimal places for price display
    */
   szDecimals: number;
+  /**
+   * Size unit: 'asset' or 'usd'
+   * When 'asset', size is already formatted with fixed decimals
+   * When 'usd', size needs formatting with K suffix
+   */
+  sizeUnit: 'asset' | 'usd';
   onPress?: () => void;
 }
 
@@ -29,6 +43,7 @@ export const OrderBookRow = memo(function OrderBookRow({
   type,
   depthPercentage,
   szDecimals,
+  sizeUnit,
   onPress,
 }: OrderBookRowProps) {
   const isBid = type === 'bid';
@@ -42,17 +57,23 @@ export const OrderBookRow = memo(function OrderBookRow({
   // Format size for display
   const sizeNum = parseFloat(size);
 
-  // Format size with consistent decimal places based on magnitude
+  // Format size based on unit
   let formattedSize: string;
-  if (sizeNum >= 1000) {
-    // Large numbers: show with K suffix and 2 decimals
-    formattedSize = (sizeNum / 1000).toFixed(2) + 'k';
-  } else if (sizeNum >= 1) {
-    // Medium numbers: 3 decimal places
-    formattedSize = sizeNum.toFixed(3);
+  if (sizeUnit === 'asset') {
+    // Asset mode: size is already formatted with fixed decimals from OrderBook component
+    formattedSize = size;
   } else {
-    // Small numbers: 6 decimal places
-    formattedSize = sizeNum.toFixed(6);
+    // USD mode: format with K suffix for large numbers
+    if (sizeNum >= 1000) {
+      // Large numbers: show with K suffix and 2 decimals
+      formattedSize = (sizeNum / 1000).toFixed(2) + 'k';
+    } else if (sizeNum >= 1) {
+      // Medium numbers: 3 decimal places
+      formattedSize = sizeNum.toFixed(3);
+    } else {
+      // Small numbers: 6 decimal places
+      formattedSize = sizeNum.toFixed(6);
+    }
   }
 
   return (
@@ -81,18 +102,29 @@ export const OrderBookRow = memo(function OrderBookRow({
       {/* Content */}
       <XStack flex={1} justifyContent="space-between" alignItems="center" zIndex={1}>
         {/* Price */}
-        <Text fontFamily="$skMono" fontSize="$1" color={isBid ? '$green10' : '$red10'} width={85}>
+        <Text
+          fontSize="$1"
+          color={isBid ? '$green10' : '$red10'}
+          width={85}
+          style={{
+            fontFamily: MONOSPACE_FONT,
+            fontVariant: ['tabular-nums'],
+          }}
+        >
           {formattedPrice}
         </Text>
 
         {/* Size */}
         <Text
-          fontFamily="$skMono"
           fontSize="$1"
           color="$color"
           textAlign="right"
           width={70}
           paddingRight="$1"
+          style={{
+            fontFamily: MONOSPACE_FONT,
+            fontVariant: ['tabular-nums'],
+          }}
         >
           {formattedSize}
         </Text>
