@@ -1,5 +1,5 @@
-import { useEffect, useState, useMemo } from 'react';
-import { Modal, Pressable, StyleSheet } from 'react-native';
+import { useEffect, useState, useMemo, useRef } from 'react';
+import { Modal, Pressable, StyleSheet, ScrollView } from 'react-native';
 import { Button, Slider, Text, XStack, YStack } from 'tamagui';
 import { Check } from '@tamagui/lucide-icons';
 import { Checkbox } from '@tamagui/checkbox';
@@ -25,8 +25,11 @@ interface TpSlModalProps {
 
 export default function TpSlModal({ open, onOpenChange, position }: TpSlModalProps) {
   const { getSymbolConverter } = useHyperliquidClient();
-  const { placeTpSlOrders, cancelOrder, isPlacingOrder, isCanceling } = useOrder();
+  const { placeTpSlOrders, cancelOrder, isPlacingOrder } = useOrder();
   const { orders } = useOrderUpdates();
+
+  // Refs
+  const scrollViewRef = useRef<ScrollView>(null);
 
   // Position metadata
   const [szDecimals, setSzDecimals] = useState<number | undefined>(undefined);
@@ -61,6 +64,10 @@ export default function TpSlModal({ open, onOpenChange, position }: TpSlModalPro
   const [tpPercent, setTpPercent] = useState<string>('');
   const [slPrice, setSlPrice] = useState<string>('');
   const [slPercent, setSlPercent] = useState<string>('');
+
+  // Individual loading states for TP/SL cancel buttons
+  const [isCancelingTp, setIsCancelingTp] = useState<boolean>(false);
+  const [isCancelingSl, setIsCancelingSl] = useState<boolean>(false);
 
   // Configure Amount state
   const [configureAmount, setConfigureAmount] = useState<boolean>(false);
@@ -294,30 +301,40 @@ export default function TpSlModal({ open, onOpenChange, position }: TpSlModalPro
   const handleCancelTpOrder = async () => {
     if (!existingTpSlOrders.tp) return;
 
-    const success = await cancelOrder({
-      coin: position.coin,
-      orderId: existingTpSlOrders.tp.oid,
-    });
+    setIsCancelingTp(true);
+    try {
+      const success = await cancelOrder({
+        coin: position.coin,
+        orderId: existingTpSlOrders.tp.oid,
+      });
 
-    if (success) {
-      // Clear TP input fields
-      setTpPrice('');
-      setTpPercent('');
+      if (success) {
+        // Clear TP input fields
+        setTpPrice('');
+        setTpPercent('');
+      }
+    } finally {
+      setIsCancelingTp(false);
     }
   };
 
   const handleCancelSlOrder = async () => {
     if (!existingTpSlOrders.sl) return;
 
-    const success = await cancelOrder({
-      coin: position.coin,
-      orderId: existingTpSlOrders.sl.oid,
-    });
+    setIsCancelingSl(true);
+    try {
+      const success = await cancelOrder({
+        coin: position.coin,
+        orderId: existingTpSlOrders.sl.oid,
+      });
 
-    if (success) {
-      // Clear SL input fields
-      setSlPrice('');
-      setSlPercent('');
+      if (success) {
+        // Clear SL input fields
+        setSlPrice('');
+        setSlPercent('');
+      }
+    } finally {
+      setIsCancelingSl(false);
     }
   };
 
@@ -448,7 +465,15 @@ export default function TpSlModal({ open, onOpenChange, position }: TpSlModalPro
             </XStack>
 
             {/* Scrollable Content */}
-            <YStack flex={1} paddingHorizontal="$4" gap="$3">
+            <ScrollView
+              ref={scrollViewRef}
+              style={{ flex: 1 }}
+              contentContainerStyle={{ paddingHorizontal: 16, gap: 12, paddingBottom: 120 }}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="always"
+              keyboardDismissMode="none"
+              scrollEventThrottle={16}
+            >
               {/* TP/SL Inputs */}
               <YStack gap="$3">
                 {/* Take Profit */}
@@ -462,12 +487,12 @@ export default function TpSlModal({ open, onOpenChange, position }: TpSlModalPro
                         size="$2"
                         backgroundColor="$red9"
                         onPress={handleCancelTpOrder}
-                        disabled={isCanceling}
-                        opacity={isCanceling ? 0.5 : 1}
+                        disabled={isCancelingTp}
+                        opacity={isCancelingTp ? 0.5 : 1}
                         pressStyle={{ opacity: 0.8 }}
                       >
                         <Text fontSize="$1" fontFamily="$interSemiBold" color="white">
-                          {isCanceling ? 'Canceling...' : 'Cancel TP'}
+                          {isCancelingTp ? 'Canceling...' : 'Cancel TP'}
                         </Text>
                       </Button>
                     )}
@@ -543,12 +568,12 @@ export default function TpSlModal({ open, onOpenChange, position }: TpSlModalPro
                         size="$2"
                         backgroundColor="$red9"
                         onPress={handleCancelSlOrder}
-                        disabled={isCanceling}
-                        opacity={isCanceling ? 0.5 : 1}
+                        disabled={isCancelingSl}
+                        opacity={isCancelingSl ? 0.5 : 1}
                         pressStyle={{ opacity: 0.8 }}
                       >
                         <Text fontSize="$1" fontFamily="$interSemiBold" color="white">
-                          {isCanceling ? 'Canceling...' : 'Cancel SL'}
+                          {isCancelingSl ? 'Canceling...' : 'Cancel SL'}
                         </Text>
                       </Button>
                     )}
@@ -749,7 +774,7 @@ export default function TpSlModal({ open, onOpenChange, position }: TpSlModalPro
                   {isPlacingOrder ? 'Placing Orders...' : 'Confirm'}
                 </Text>
               </Button>
-            </YStack>
+            </ScrollView>
           </YStack>
         </Pressable>
       </Pressable>
