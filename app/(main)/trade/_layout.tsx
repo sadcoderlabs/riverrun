@@ -50,13 +50,17 @@ export default function TradeLayout() {
   // Sync pathname to store (when URL changes externally, e.g., browser back/forward)
   React.useEffect(() => {
     if (isPerpTrade && assetFromUrl && assetFromUrl !== selectedCoin) {
+      console.log('[TradeLayout] Syncing URL to store:', assetFromUrl);
       setSelectedCoin(assetFromUrl);
     }
-  }, [assetFromUrl, isPerpTrade, selectedCoin, setSelectedCoin]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Note: selectedCoin is intentionally excluded to prevent circular updates
+  }, [assetFromUrl, isPerpTrade, setSelectedCoin]);
 
   // Sync store to URL (when selectedCoin changes from user interaction)
   React.useEffect(() => {
     if (isPerpTrade && selectedCoin && selectedCoin !== assetFromUrl) {
+      console.log('[TradeLayout] Syncing store to URL:', selectedCoin);
       router.setParams({ coin: selectedCoin });
     }
   }, [selectedCoin, assetFromUrl, isPerpTrade, router]);
