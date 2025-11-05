@@ -1,11 +1,10 @@
-import { ChartUI } from '@/components/trade/chart-ui';
 import { MarketSelectorModal } from '@/components/trade/market-selector-modal';
 import { useActiveAssetCtx } from '@/lib/hyperliquid/hooks';
 import { formatMarketId } from '@/lib/hyperliquid/market-utils';
 import { useMarketsStore } from '@/lib/riverrun/store/use-markets-store';
-import { CandlestickChart, ChevronUp, Menu } from '@tamagui/lucide-icons';
-import { useMemo, useState } from 'react';
-import { AnimatePresence, Text, XStack, YStack } from 'tamagui';
+import { CandlestickChart, Menu } from '@tamagui/lucide-icons';
+import { useMemo } from 'react';
+import { Text, XStack, YStack } from 'tamagui';
 
 interface CoinInfoProps {
   coin: string;
@@ -15,14 +14,11 @@ export function CoinInfo({ coin }: CoinInfoProps) {
   // Use modal state from Zustand store
   const { isMarketSelectorOpen, setMarketSelectorOpen } = useMarketsStore();
 
-  // Chart state
-  const [isChart, setIsChart] = useState(false);
-
   // Format market display (e.g., "BTC-USD")
   const marketDisplay = useMemo(() => formatMarketId(coin, 'perp'), [coin]);
 
   // Subscribe to real-time asset context data
-  const { data: assetCtx, isLoading, error } = useActiveAssetCtx({ coin });
+  const { data: assetCtx } = useActiveAssetCtx({ coin });
 
   // Calculate market data from real-time WebSocket data
   const marketData = useMemo(() => {
@@ -96,9 +92,14 @@ export function CoinInfo({ coin }: CoinInfoProps) {
 
           {/* Right side: Chart icon and Funding info stacked vertically */}
           <YStack gap="$1.5" justifyContent="space-between" alignItems="flex-end">
-            {/* Chart icon */}
-            <XStack onPress={() => setIsChart(!isChart)} pressStyle={{ opacity: 0.7 }}>
-              <CandlestickChart size="$1.5" color={isChart ? '$gray9' : '$color'} />
+            {/* Chart icon - placeholder for future functionality */}
+            <XStack
+              onPress={() => {
+                // TODO: Implement chart functionality
+              }}
+              pressStyle={{ opacity: 0.7 }}
+            >
+              <CandlestickChart size="$1.5" color="$color" />
             </XStack>
 
             {/* Funding info */}
@@ -113,42 +114,6 @@ export function CoinInfo({ coin }: CoinInfoProps) {
           </YStack>
         </XStack>
       </YStack>
-
-      {/* Collapsible Chart Section */}
-      <AnimatePresence>
-        {isChart && (
-          <YStack
-            key="chart-container"
-            animation="quick"
-            enterStyle={{
-              height: 0,
-              opacity: 0,
-            }}
-            exitStyle={{
-              height: 0,
-              opacity: 0,
-            }}
-            animateOnly={['height', 'opacity']}
-            height={400}
-            opacity={1}
-            overflow="hidden"
-          >
-            <ChartUI marketId={marketDisplay} />
-            <XStack
-              justifyContent="center"
-              alignItems="center"
-              paddingVertical="$2"
-              backgroundColor="$background"
-              borderBottomWidth={1}
-              borderBottomColor="$gray8"
-              onPress={() => setIsChart(false)}
-              pressStyle={{ opacity: 0.7 }}
-            >
-              <ChevronUp size="$1" color="$gray10" />
-            </XStack>
-          </YStack>
-        )}
-      </AnimatePresence>
 
       {/* Market Selector Modal */}
       <MarketSelectorModal open={isMarketSelectorOpen} onOpenChange={setMarketSelectorOpen} />
