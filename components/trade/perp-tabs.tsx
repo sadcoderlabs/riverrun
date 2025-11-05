@@ -1,5 +1,6 @@
 import OrdersTab from '@/components/trade/orders-tab';
 import PositionsTab from '@/components/trade/positions-tab';
+import HistoryTab from '@/components/trade/history-tab';
 import { useState, useEffect } from 'react';
 import { Text, XStack, YStack } from 'tamagui';
 import { useOrderCount, usePositionCount } from '@/lib/hyperliquid/hooks';
@@ -59,7 +60,7 @@ export function PerpTabs() {
         </YStack>
 
         <YStack display={activeTab === 'history' ? 'flex' : 'none'}>
-          <TabPlaceholder title="History" message="Your trading history will appear here" />
+          <HistoryTab />
         </YStack>
       </YStack>
     </YStack>
