@@ -284,21 +284,28 @@ export function OrderBook({ coin, szDecimals, markPx, onPriceClick }: OrderBookP
 
       <YStack flex={1}>
         {/* Asks Section (Top) - Red theme */}
-        <FlatList
-          data={asksWithCumulative}
-          renderItem={({ item }) => renderOrderBookRow(item, 'ask')}
-          keyExtractor={(item, index) => `ask-${item.px}-${index}`}
-          scrollEnabled={false}
-          inverted={false}
-        />
+        <YStack>
+          <FlatList
+            data={asksWithCumulative}
+            renderItem={({ item }) => renderOrderBookRow(item, 'ask')}
+            keyExtractor={(item, index) => `ask-${item.px}-${index}`}
+            scrollEnabled={false}
+            inverted={false}
+          />
+        </YStack>
+
+        {/* Separator Line */}
+        <YStack height={1} backgroundColor="$gray8" marginVertical="$1" />
 
         {/* Bids Section (Bottom) - Green theme */}
-        <FlatList
-          data={bidsWithCumulative}
-          renderItem={({ item }) => renderOrderBookRow(item, 'bid')}
-          keyExtractor={(item, index) => `bid-${item.px}-${index}`}
-          scrollEnabled={false}
-        />
+        <YStack>
+          <FlatList
+            data={bidsWithCumulative}
+            renderItem={({ item }) => renderOrderBookRow(item, 'bid')}
+            keyExtractor={(item, index) => `bid-${item.px}-${index}`}
+            scrollEnabled={false}
+          />
+        </YStack>
       </YStack>
     </YStack>
   );
