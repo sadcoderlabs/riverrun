@@ -1,10 +1,11 @@
 import { MarketSelectorModal } from '@/components/trade/market-selector-modal';
-import { useActiveAssetCtx } from '@/lib/hyperliquid/hooks';
+import { useActiveAssetCtx, useHyperliquidClient } from '@/lib/hyperliquid/hooks';
 import { formatMarketId } from '@/lib/hyperliquid/market-utils';
+import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
 import { useMarketsStore } from '@/lib/riverrun/store/use-markets-store';
 import { CandlestickChart, Menu } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Text, XStack, YStack } from 'tamagui';
 
 interface CoinInfoProps {
@@ -13,6 +14,7 @@ interface CoinInfoProps {
 
 export function CoinInfo({ coin }: CoinInfoProps) {
   const router = useRouter();
+  const { getSymbolConverter } = useHyperliquidClient();
 
   // Use modal state from Zustand store
   const { isMarketSelectorOpen, setMarketSelectorOpen } = useMarketsStore();
@@ -22,6 +24,20 @@ export function CoinInfo({ coin }: CoinInfoProps) {
 
   // Subscribe to real-time asset context data
   const { data: assetCtx } = useActiveAssetCtx({ coin });
+
+  // Fetch szDecimals for proper price formatting
+  const [szDecimals, setSzDecimals] = useState<number | undefined>(undefined);
+
+  useEffect(() => {
+    const fetchSzDecimals = async () => {
+      const converter = await getSymbolConverter();
+      const decimals = converter.getSzDecimals(coin);
+      if (decimals !== undefined) {
+        setSzDecimals(decimals);
+      }
+    };
+    fetchSzDecimals();
+  }, [coin, getSymbolConverter]);
 
   // Calculate market data from real-time WebSocket data
   const marketData = useMemo(() => {
@@ -33,30 +49,24 @@ export function CoinInfo({ coin }: CoinInfoProps) {
       };
     }
 
-    const markPx = parseFloat(assetCtx.ctx.markPx);
+    // Use midPx (midpoint between best bid and ask) to match OrderBook pricing
+    // Fallback to markPx if midPx is unavailable
+    const midPx = parseFloat(assetCtx.ctx.midPx || assetCtx.ctx.markPx);
     const prevDayPx = parseFloat(assetCtx.ctx.prevDayPx);
     const funding = parseFloat(assetCtx.ctx.funding);
 
     // Calculate 24h price change percentage
-    const priceChange = prevDayPx > 0 ? ((markPx - prevDayPx) / prevDayPx) * 100 : 0;
+    const priceChange = prevDayPx > 0 ? ((midPx - prevDayPx) / prevDayPx) * 100 : 0;
 
     // Convert funding to percentage (funding is already a decimal, multiply by 100)
     const fundingRate = funding * 100;
 
     return {
-      price: markPx,
+      price: midPx,
       priceChange,
       fundingRate,
     };
   }, [assetCtx]);
-
-  // Helper function to format price with commas
-  const formatPrice = (price: number) => {
-    return price.toLocaleString(undefined, {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
-  };
 
   // Determine if price change is positive or negative
   const isPriceUp = marketData.priceChange >= 0;
@@ -84,7 +94,10 @@ export function CoinInfo({ coin }: CoinInfoProps) {
             {/* Price info */}
             <XStack gap="$2" alignItems="baseline">
               <Text fontFamily="$interSemiBold" fontSize="$6" color="$color">
-                ${formatPrice(marketData.price)}
+                $
+                {szDecimals !== undefined
+                  ? formatPrice(marketData.price, szDecimals, true)
+                  : marketData.price.toFixed(2)}
               </Text>
               <Text fontFamily="$interMedium" fontSize="$4" color={isPriceUp ? '$green9' : '$red9'}>
                 {isPriceUp ? '+' : ''}
