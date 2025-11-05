@@ -1,6 +1,7 @@
 import { MarketListItem } from '@/components/trade/market-list-item';
 import { useMarketsStore } from '@/lib/riverrun/store/use-markets-store';
 import { useSelectedCoinStore } from '@/lib/riverrun/store';
+import { useAllMids } from '@/lib/hyperliquid/hooks/useAllMids';
 import { Search } from '@tamagui/lucide-icons';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FlatList, Modal, Pressable, RefreshControl, StyleSheet } from 'react-native';
@@ -18,6 +19,9 @@ export function MarketSelectorModal({ open, onOpenChange }: MarketSelectorModalP
   const { markets, favorites, isLoading, initialize, refreshMarkets, toggleFavorite } =
     useMarketsStore();
 
+  // Subscribe to real-time prices (only when modal is open)
+  const { data: allMidsData } = useAllMids({ enabled: open });
+
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | undefined>(undefined);
@@ -29,12 +33,37 @@ export function MarketSelectorModal({ open, onOpenChange }: MarketSelectorModalP
     }
   }, [open, initialize]);
 
-  // Compute sorted and filtered markets
+  // Compute sorted and filtered markets with real-time prices
   const filteredMarkets = useMemo(() => {
     if (markets.length === 0) return [];
 
+    // Merge real-time prices into markets
+    const marketsWithRealtimePrices = markets.map(market => {
+      // Extract coin symbol from market ID (e.g., "BTC-USD" -> "BTC")
+      const coinSymbol = market.id.replace('-USD', '').replace('/USDC', '').split('/')[0];
+
+      // Get real-time mid price if available
+      const realtimeMidPrice = allMidsData?.mids[coinSymbol];
+
+      // If we have real-time price, update the market data
+      if (realtimeMidPrice) {
+        const currentPrice = parseFloat(realtimeMidPrice);
+        const prevDayPrice = market.price / (1 + market.change / 100); // Calculate prev day price from stored change
+        const priceChange =
+          prevDayPrice > 0 ? ((currentPrice - prevDayPrice) / prevDayPrice) * 100 : market.change;
+
+        return {
+          ...market,
+          price: currentPrice,
+          change: priceChange,
+        };
+      }
+
+      return market;
+    });
+
     // Sort by favorites first, then volume
-    const sorted = [...markets].sort((a, b) => {
+    const sorted = [...marketsWithRealtimePrices].sort((a, b) => {
       const aIsFavorite = favorites.includes(a.id);
       const bIsFavorite = favorites.includes(b.id);
       if (aIsFavorite && !bIsFavorite) return -1;
@@ -57,7 +86,7 @@ export function MarketSelectorModal({ open, onOpenChange }: MarketSelectorModalP
     );
 
     return [...startsWithMatches, ...includesMatches];
-  }, [markets, favorites, searchQuery]);
+  }, [markets, favorites, searchQuery, allMidsData]);
 
   // Reset search when modal closes
   useEffect(() => {

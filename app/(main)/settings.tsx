@@ -1,7 +1,6 @@
 import { ListButton, ListItem } from '@/components/global/list-item';
 import { ListSection } from '@/components/global/list-section';
-import { useThemePreference } from '@/lib/riverrun/hooks';
-import { useActiveWallet } from '@/lib/riverrun/hooks';
+import { useThemePreference, useActiveWallet } from '@/lib/riverrun/hooks';
 import { clearAgentSigner } from '@/lib/hyperliquid/agent';
 import { type ThemePreference } from '@/lib/riverrun/store/theme.store';
 import { ArrowUpRight } from '@tamagui/lucide-icons';
