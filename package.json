@@ -23,6 +23,7 @@
     "@expo/react-native-action-sheet": "^4.1.1",
     "@expo/vector-icons": "15.0.2",
     "@hookform/resolvers": "5.2.2",
+    "@metamask/jazzicon": "2.0.0",
     "@nktkas/hyperliquid": "0.25.5",
     "@privy-io/expo": "0.59.8",
     "@privy-io/expo-native-extensions": "0.0.5",
