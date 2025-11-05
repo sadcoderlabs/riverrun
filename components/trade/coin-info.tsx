@@ -71,6 +71,9 @@ export function CoinInfo({ coin }: CoinInfoProps) {
   // Determine if price change is positive or negative
   const isPriceUp = marketData.priceChange >= 0;
 
+  // Determine if funding rate is positive or negative
+  const isFundingPositive = marketData.fundingRate >= 0;
+
   return (
     <>
       <YStack paddingHorizontal="$3" paddingTop="$2.5" paddingBottom="$2">
@@ -123,7 +126,12 @@ export function CoinInfo({ coin }: CoinInfoProps) {
               <Text fontFamily="$interRegular" fontSize="$2" color="$gray10">
                 Funding
               </Text>
-              <Text fontFamily="$interSemiBold" fontSize="$3" color="$color">
+              <Text
+                fontFamily="$interSemiBold"
+                fontSize="$3"
+                color={isFundingPositive ? '$green9' : '$red9'}
+              >
+                {isFundingPositive ? '+' : ''}
                 {marketData.fundingRate.toFixed(4)}%
               </Text>
             </YStack>
