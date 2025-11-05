@@ -16,4 +16,6 @@ export type Market = {
   fundingRate: number;
   /** 24-hour trading volume in USD */
   volume: number;
+  /** Size decimals for price formatting (from Hyperliquid meta) */
+  szDecimals: number;
 };

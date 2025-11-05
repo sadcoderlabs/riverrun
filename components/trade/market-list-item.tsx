@@ -1,3 +1,4 @@
+import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
 import { Star } from '@tamagui/lucide-icons';
 import { Text, XStack, YStack } from 'tamagui';
 
@@ -7,6 +8,7 @@ type Market = {
   price: number;
   change: number;
   maxLeverage: number;
+  szDecimals: number;
 };
 
 interface MarketListItemProps extends Market {
@@ -21,6 +23,7 @@ export function MarketListItem({
   price,
   change,
   maxLeverage,
+  szDecimals,
   isFavorite = false,
   onPress,
   onToggleFavorite,
@@ -32,32 +35,9 @@ export function MarketListItem({
     onToggleFavorite?.(id);
   };
 
-  // Format price with at least 5 significant digits total
-  // Rule: Show all integer digits + decimal digits to reach minimum 5 significant figures
-  // Trailing zeros in decimals can be omitted
-  //
-  // Examples:
-  // 12345 → 12345
-  // 12345.67 → 12345
-  // 1234500 → 1,234,500
-  // 312.345 → 312.35
-  // 23.45 → 23.45
-  // 0.00123 → 0.00123
-  // 0.001234567 → 0.00123
-  const formatPrice = (price: number): string => {
-    // Get the integer part to count its digits
-    const integerPart = Math.floor(Math.abs(price));
-    const integerDigits = integerPart === 0 ? 0 : integerPart.toString().length;
-
-    // Calculate how many decimal places we need to reach 5 significant figures
-    const minSignificantDigits = 5;
-    const decimalPlaces = Math.max(0, minSignificantDigits - integerDigits);
-
-    return price.toLocaleString(undefined, {
-      minimumFractionDigits: 0, // Allow trailing zeros to be omitted
-      maximumFractionDigits: decimalPlaces,
-    });
-  };
+  // Format price using Hyperliquid standard formatPrice
+  // This corrects precision from allMids (bid + ask) / 2 which may have excess decimals
+  const formattedPrice = formatPrice(price, szDecimals, true);
 
   return (
     <YStack
@@ -83,7 +63,7 @@ export function MarketListItem({
           </Text>
         </XStack>
         <Text fontFamily="$interRegular" fontSize="$4" color="$color" fontWeight="500">
-          ${formatPrice(price)}
+          ${formattedPrice}
         </Text>
       </XStack>
 

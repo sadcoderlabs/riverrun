@@ -192,10 +192,27 @@ export function formatPrice(
   // Format with target decimal places
   let formatted = priceNum.toFixed(targetDecimalPlaces);
 
-  // If we already have >= 5 sig figs, remove trailing zeros
+  // Strategy: Always work with numbers to count sig figs, then ensure string output has enough digits
+  //
+  // If input has >= 5 sig figs, try to remove trailing zeros for cleaner display
+  // But ensure the resulting NUMBER (when parsed) still has >= 5 sig figs
+  //
+  // Example 1: "40.230" -> parseFloat -> 40.23 (4 sig figs) -> keep "40.230" (to show 5 sig figs)
+  // Example 2: "40.322" -> parseFloat -> 40.322 (5 sig figs) -> use "40.322" (already 5 sig figs)
+  // Example 3: "0.203590" -> parseFloat -> 0.20359 (5 sig figs) -> use "0.20359" (already 5 sig figs)
   if (currentSigFigs >= 5) {
-    // Remove trailing zeros but keep at least minimal meaningful decimals
-    formatted = formatted.replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '');
+    // Try removing trailing zeros
+    const withoutTrailingZeros = formatted.replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '');
+
+    // Convert back to number and count sig figs of the NUMBER
+    const resultNum = parseFloat(withoutTrailingZeros);
+    const resultSigFigs = countSignificantFigures(resultNum);
+
+    // Only use the trimmed version if the NUMBER still has >= 5 sig figs
+    if (resultSigFigs >= 5) {
+      formatted = withoutTrailingZeros;
+    }
+    // Otherwise keep the trailing zeros to ensure output displays 5 sig figs
   }
 
   // Add thousand separators if requested

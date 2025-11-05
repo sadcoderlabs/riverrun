@@ -207,6 +207,7 @@ export function MarketSelectorModal({ open, onOpenChange }: MarketSelectorModalP
                     price={market.price}
                     change={market.change}
                     maxLeverage={market.maxLeverage}
+                    szDecimals={market.szDecimals}
                     isFavorite={favorites.includes(market.id)}
                     onPress={() => navigateToMarket(market.id)}
                     onToggleFavorite={handleToggleFavorite}

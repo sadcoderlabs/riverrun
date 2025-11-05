@@ -208,6 +208,7 @@ async function fetchFromAPI(silent: boolean) {
         maxLeverage: asset.maxLeverage || 1,
         fundingRate,
         volume,
+        szDecimals: asset.szDecimals || 0,
       };
     });
 
