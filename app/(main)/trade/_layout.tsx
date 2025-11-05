@@ -53,9 +53,7 @@ export default function TradeLayout() {
       console.log('[TradeLayout] Syncing URL to store:', assetFromUrl);
       setSelectedCoin(assetFromUrl);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    // Note: selectedCoin is intentionally excluded to prevent circular updates
-  }, [assetFromUrl, isPerpTrade, setSelectedCoin]);
+  }, [assetFromUrl, isPerpTrade, setSelectedCoin, selectedCoin]);
 
   // Sync store to URL (when selectedCoin changes from user interaction)
   React.useEffect(() => {
