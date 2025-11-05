@@ -160,6 +160,9 @@ importers:
       fast-text-encoding:
         specifier: 1.0.6
         version: 1.0.6
+      lightweight-charts:
+        specifier: 5.0.9
+        version: 5.0.9
       react:
         specifier: 19.1.0
         version: 19.1.0
@@ -3928,6 +3931,9 @@ packages:
   exponential-backoff@3.1.2:
     resolution: {integrity: sha512-8QxYTVXUkuy7fIIoitQkPwGonB8F3Zj8eEO8Sqg9Zv/bkI7RJAzowee4gr81Hak/dUTpA2Z7VfQgoijjPNlUZA==}
 
+  fancy-canvas@2.1.0:
+    resolution: {integrity: sha512-nifxXJ95JNLFR2NgRV4/MxVP45G9909wJTEKz5fg/TZS20JJZA6hfgRVh/bC9bwl2zBtBNcYPjiBE4njQHVBwQ==}
+
   fast-base64-decode@1.0.0:
     resolution: {integrity: sha512-qwaScUgUGBYeDNRnbc/KyllVU88Jk1pRHPStuF/lO7B0/RTRLj7U0lkdTAutlBblY08rwZDff6tNU9cjv6j//Q==}
 
@@ -4798,6 +4804,9 @@ packages:
   lightningcss@1.30.1:
     resolution: {integrity: sha512-xi6IyHML+c9+Q3W0S4fCQJOym42pyurFiJUHEcEyHS0CeKzia4yZDEsLlqOFykxOdHpNy0NmvVO31vcSqAxJCg==}
     engines: {node: '>= 12.0.0'}
+
+  lightweight-charts@5.0.9:
+    resolution: {integrity: sha512-8oQIis8jfZVfSwz8j9Z5x3O79dIRTkEYI9UY7DKtE4O3ZxlHjMK3L0+4nOVOOFq4FHI/oSIzz1RHeNImCk6/Jg==}
 
   lines-and-columns@1.2.4:
     resolution: {integrity: sha512-7ylylesZQ/PV29jhEDl3Ufjo6ZX7gCqJr5F7PKrqc93v7fzSymt1BpwEU8nAUXs8qzzvqhbjhK5QZg6Mt/HkBg==}
@@ -12184,6 +12193,8 @@ snapshots:
 
   exponential-backoff@3.1.2: {}
 
+  fancy-canvas@2.1.0: {}
+
   fast-base64-decode@1.0.0: {}
 
   fast-deep-equal@3.1.3: {}
@@ -13300,6 +13311,10 @@ snapshots:
       lightningcss-linux-x64-musl: 1.30.1
       lightningcss-win32-arm64-msvc: 1.30.1
       lightningcss-win32-x64-msvc: 1.30.1
+
+  lightweight-charts@5.0.9:
+    dependencies:
+      fancy-canvas: 2.1.0
 
   lines-and-columns@1.2.4: {}
 
