@@ -21,7 +21,12 @@ export default function ChartPage() {
   const marketDisplay = formatMarketId(params.coin, 'perp');
 
   return (
-    <YStack flex={1} backgroundColor="$background" paddingTop={insets.top}>
+    <YStack
+      flex={1}
+      backgroundColor="$background"
+      paddingTop={insets.top}
+      paddingBottom={insets.bottom}
+    >
       {/* Header */}
       <XStack
         alignItems="center"

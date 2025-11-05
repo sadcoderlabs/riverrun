@@ -1,5 +1,6 @@
 export * from './useActiveAssetCtx';
 export * from './useActiveAssetData';
+export * from './useCandleData';
 export * from './useHyperliquidClient';
 export * from './useHyperliquidWithdraw';
 export * from './useOrder';
