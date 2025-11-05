@@ -72,10 +72,12 @@ describe('formatPrice', () => {
     });
 
     it('should handle very small numbers', () => {
-      // 0.0001 has 4 sig figs → pad 1 decimal to reach 5
-      expect(formatPrice('0.0001', 0, false)).toBe('0.00010');
-      // 0.00001 has 5 sig figs → no padding
-      expect(formatPrice('0.00001', 0, false)).toBe('0.00001');
+      // 0.0001 has 1 sig fig (only the 1) → would pad to 5, but capped at maxDecimalPlaces=6
+      // Current: 4 decimals, need 4 more for 5 sig figs = 8 decimals, but max is 6
+      expect(formatPrice('0.0001', 0, false)).toBe('0.000100');
+      // 0.00001 has 1 sig fig (only the 1) → would pad to 5, but capped at maxDecimalPlaces=6
+      // Current: 5 decimals, need 4 more for 5 sig figs = 9 decimals, but max is 6
+      expect(formatPrice('0.00001', 0, false)).toBe('0.000010');
     });
 
     it('should handle very large numbers', () => {
@@ -155,13 +157,37 @@ describe('formatPrice', () => {
 
     describe('PUMP (szDecimals = 0)', () => {
       const szDecimals = 0;
-      const maxDecimals = 6;
 
       it('should format low-priced coins', () => {
-        // 0.004705 has 6 sig figs (maxed out)
+        // 0.004705 has 4 sig figs (4,7,0,5) → would pad to 5, but already at maxDecimalPlaces=6
         expect(formatPrice('0.004705', szDecimals, false)).toBe('0.004705');
-        // 0.00471 has 5 sig figs → no padding
-        expect(formatPrice('0.00471', szDecimals, false)).toBe('0.00471');
+        // 0.00471 has 3 sig figs (4,7,1) → pad to 5 (5 decimals + 1 = 6, within limit)
+        expect(formatPrice('0.00471', szDecimals, false)).toBe('0.004710');
+      });
+    });
+
+    describe('PENGU (szDecimals = 0)', () => {
+      const szDecimals = 0;
+
+      it('should format PENGU prices with trailing zeros preserved', () => {
+        // These are real prices from PENGU order book
+        // All should maintain 5 sig figs, even when ending in 0
+
+        // 0.015161 has 5 sig figs → should stay as is
+        expect(formatPrice('0.015161', szDecimals, false)).toBe('0.015161');
+
+        // 0.01516 has 4 sig figs → should pad to 5 sig figs (but this is the problem!)
+        // This should become 0.015160 to maintain 5 sig figs
+        expect(formatPrice('0.01516', szDecimals, false)).toBe('0.015160');
+
+        // 0.015159 has 5 sig figs → should stay as is
+        expect(formatPrice('0.015159', szDecimals, false)).toBe('0.015159');
+
+        // 0.01515 has 4 sig figs → should pad to 5 sig figs
+        expect(formatPrice('0.01515', szDecimals, false)).toBe('0.015150');
+
+        // 0.0151 has 3 sig figs → should pad to 5 sig figs
+        expect(formatPrice('0.0151', szDecimals, false)).toBe('0.015100');
       });
     });
   });
@@ -220,13 +246,14 @@ describe('formatPrice', () => {
     });
 
     it('should correctly count sig figs for decimals < 1', () => {
-      // 0.2 has 1 sig fig
+      // 0.2 has 1 sig fig (only the 2)
       expect(formatPrice('0.2', 0, false)).toBe('0.20000');
 
-      // 0.20359 has 5 sig figs
+      // 0.20359 has 5 sig figs (2,0,3,5,9)
       expect(formatPrice('0.20359', 0, false)).toBe('0.20359');
 
-      // 0.004705 has 6 sig figs (including leading zeros after decimal)
+      // 0.004705 has 4 sig figs (4,7,0,5 - leading zeros don't count)
+      // Would pad to 5, but already at maxDecimalPlaces=6
       expect(formatPrice('0.004705', 0, false)).toBe('0.004705');
     });
 

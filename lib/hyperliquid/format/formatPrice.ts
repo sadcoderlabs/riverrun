@@ -20,20 +20,22 @@ const MAX_DECIMALS_PERP = 6;
 /**
  * Count significant figures in a number
  *
- * Counting rule for price display context:
- * - For pure decimals (< 1): count all decimal places (including leading zeros after decimal point)
- * - For numbers >= 1: count integer digits + decimal places
- * - Trailing zeros in decimal part don't count
+ * Counting rule according to standard significant figures definition:
+ * - Leading zeros are NOT significant
+ * - All non-zero digits are significant
+ * - Zeros between non-zero digits are significant
+ * - Trailing zeros in the decimal part are NOT significant (when parsed as number)
  *
  * Examples:
  * - 4219 → 4 sig figs (4 integer digits)
- * - 4220 → 4 sig figs (4 integer digits)
+ * - 4220 → 4 sig figs (4 integer digits, trailing zero in integer is significant)
  * - 4219.5 → 5 sig figs (4 integer + 1 decimal)
- * - 4219.50 → 5 sig figs (4 integer + 1 decimal, trailing zero removed)
- * - 0.2 → 1 sig fig (1 decimal place)
- * - 0.03 → 2 sig figs (2 decimal places)
- * - 0.004705 → 6 sig figs (6 decimal places including leading zeros)
- * - 0.028542 → 6 sig figs (6 decimal places)
+ * - 4219.50 → 5 sig figs (4 integer + 1 decimal, trailing zero removed when parsed)
+ * - 0.2 → 1 sig fig (only the 2)
+ * - 0.03 → 1 sig fig (only the 3, leading zeros don't count)
+ * - 0.01516 → 4 sig figs (1,5,1,6 - leading zeros don't count)
+ * - 0.004705 → 4 sig figs (4,7,0,5 - leading zeros don't count)
+ * - 0.028542 → 5 sig figs (2,8,5,4,2 - leading zeros don't count)
  * - 114971 → 6 sig figs (6 integer digits)
  *
  * @param num - Number to count significant figures for
@@ -62,8 +64,10 @@ function countSignificantFigures(num: number): number {
 
   // Count digits
   if (num < 1) {
-    // Pure decimal: count all decimal places (including leading zeros)
-    return decimalWithoutTrailing.length;
+    // Pure decimal: remove leading zeros and count remaining digits
+    // e.g., "0.01516" -> "01516" -> remove leading zeros -> "1516" -> 4 sig figs
+    const withoutLeadingZeros = decimalWithoutTrailing.replace(/^0+/, '');
+    return withoutLeadingZeros.length;
   } else {
     // Number >= 1: count integer digits + decimal places
     const integerDigits = integerPart.length;
