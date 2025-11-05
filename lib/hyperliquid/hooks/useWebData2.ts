@@ -6,7 +6,7 @@ import { useHyperliquidClient } from './useHyperliquidClient';
 // Use the actual types from the SDK
 type WebData2Response = hl.WebData2Response;
 
-interface UseWebData2Result {
+export interface UseWebData2Result {
   data: WebData2Response | undefined;
   // Account Equity
   totalAccountValue: number | undefined;

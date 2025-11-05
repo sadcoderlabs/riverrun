@@ -2,7 +2,8 @@ import { formatPercent } from '@/lib/hyperliquid/format/formatPercent';
 import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
 import { formatSize } from '@/lib/hyperliquid/format/formatSize';
 import { formatValue } from '@/lib/hyperliquid/format/formatValue';
-import { useHyperliquidClient, useWebData2 } from '@/lib/hyperliquid/hooks';
+import { useHyperliquidClient } from '@/lib/hyperliquid/hooks';
+import { useWebData2Context } from '@/lib/hyperliquid/context/WebData2Context';
 import { useActiveWallet } from '@/lib/riverrun/hooks';
 import { useSelectedCoinStore } from '@/lib/riverrun/store';
 import * as hl from '@nktkas/hyperliquid';
@@ -23,8 +24,8 @@ export default function PositionsTab() {
   const { getInfoClient } = useHyperliquidClient();
   const { setSelectedCoin } = useSelectedCoinStore();
 
-  // Subscribe to real-time WebSocket updates
-  const { data: webData, isLoading, error: webError } = useWebData2();
+  // Get WebData2 from context (shared across all markets, no re-subscription on market switch)
+  const { data: webData, isLoading, error: webError } = useWebData2Context();
 
   const [closeModalOpen, setCloseModalOpen] = useState(false);
   const [tpSlModalOpen, setTpSlModalOpen] = useState(false);

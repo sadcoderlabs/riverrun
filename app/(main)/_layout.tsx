@@ -1,4 +1,5 @@
 import { NavBar } from '@/components/global/nav-bar';
+import { WebData2Provider } from '@/lib/hyperliquid/context/WebData2Context';
 import { Stack } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { YStack } from 'tamagui';
@@ -16,27 +17,29 @@ export default function MainLayout() {
   const insets = useSafeAreaInsets();
 
   return (
-    <YStack flex={1} backgroundColor="$gray3">
-      {/* Content from child routes (Home, Trade, Settings, etc.) */}
-      <YStack
-        flex={1}
-        paddingBottom={60 + insets.bottom} // Space for NavBar
-      >
-        <Stack
-          initialRouteName="home"
-          screenOptions={{
-            headerShown: false,
-            animation: 'none',
-          }}
+    <WebData2Provider>
+      <YStack flex={1} backgroundColor="$gray3">
+        {/* Content from child routes (Home, Trade, Settings, etc.) */}
+        <YStack
+          flex={1}
+          paddingBottom={60 + insets.bottom} // Space for NavBar
         >
-          <Stack.Screen name="home" />
-          <Stack.Screen name="settings" options={{ headerShown: true, title: 'Settings' }} />
-          <Stack.Screen name="trade" />
-        </Stack>
-      </YStack>
+          <Stack
+            initialRouteName="home"
+            screenOptions={{
+              headerShown: false,
+              animation: 'none',
+            }}
+          >
+            <Stack.Screen name="home" />
+            <Stack.Screen name="settings" options={{ headerShown: true, title: 'Settings' }} />
+            <Stack.Screen name="trade" />
+          </Stack>
+        </YStack>
 
-      {/* Bottom Navigation Bar - Always visible */}
-      <NavBar />
-    </YStack>
+        {/* Bottom Navigation Bar - Always visible */}
+        <NavBar />
+      </YStack>
+    </WebData2Provider>
   );
 }

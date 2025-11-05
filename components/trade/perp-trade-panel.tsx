@@ -10,14 +10,10 @@ import {
   type TpSlResult,
   type TpSlValidationResult,
 } from '@/components/trade/tp-sl-input';
+import { useWebData2Context } from '@/lib/hyperliquid/context/WebData2Context';
 import { formatSize } from '@/lib/hyperliquid/format/formatSize';
 import { formatValue } from '@/lib/hyperliquid/format/formatValue';
-import {
-  useActiveAssetData,
-  useHyperliquidClient,
-  useOrder,
-  useWebData2,
-} from '@/lib/hyperliquid/hooks';
+import { useActiveAssetData, useHyperliquidClient, useOrder } from '@/lib/hyperliquid/hooks';
 
 import { Checkbox } from '@tamagui/checkbox';
 import { Check } from '@tamagui/lucide-icons';
@@ -39,8 +35,8 @@ export function PerpTradePanel({ coin }: PerpTradePanelProps) {
     coin,
   });
 
-  // Subscribe to WebData2 to get position data
-  const { data: webData } = useWebData2();
+  // Get WebData2 from context (shared across all markets, no re-subscription on market switch)
+  const { data: webData } = useWebData2Context();
 
   // Get szDecimals for the asset
   const [szDecimals, setSzDecimals] = useState<number>(4); // Default to 4 decimals
