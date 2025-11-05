@@ -47,21 +47,31 @@ export default function TradeLayout() {
   // Check if current route is perp trade (for showing CoinInfo and PerpTabs)
   const isPerpTrade = tradeType === 'perp' && segments[3] !== undefined;
 
-  // Sync pathname to store (when URL changes externally, e.g., browser back/forward)
-  React.useEffect(() => {
-    if (isPerpTrade && assetFromUrl && assetFromUrl !== selectedCoin) {
-      console.log('[TradeLayout] Syncing URL to store:', assetFromUrl);
-      setSelectedCoin(assetFromUrl);
-    }
-  }, [assetFromUrl, isPerpTrade, setSelectedCoin, selectedCoin]);
+  // Track previous values to detect which source changed
+  const prevAssetFromUrlRef = React.useRef(assetFromUrl);
+  const prevSelectedCoinRef = React.useRef(selectedCoin);
 
-  // Sync store to URL (when selectedCoin changes from user interaction)
+  // Bidirectional sync between URL and store
   React.useEffect(() => {
-    if (isPerpTrade && selectedCoin && selectedCoin !== assetFromUrl) {
-      console.log('[TradeLayout] Syncing store to URL:', selectedCoin);
+    if (!isPerpTrade) return;
+
+    const urlChanged = assetFromUrl !== prevAssetFromUrlRef.current;
+    const storeChanged = selectedCoin !== prevSelectedCoinRef.current;
+
+    if (urlChanged && !storeChanged) {
+      // URL changed (browser navigation) → update store
+      console.log('[TradeLayout] URL changed, syncing to store:', assetFromUrl);
+      setSelectedCoin(assetFromUrl);
+    } else if (storeChanged && !urlChanged) {
+      // Store changed (user interaction) → update URL
+      console.log('[TradeLayout] Store changed, syncing to URL:', selectedCoin);
       router.setParams({ coin: selectedCoin });
     }
-  }, [selectedCoin, assetFromUrl, isPerpTrade, router]);
+
+    // Update refs after sync
+    prevAssetFromUrlRef.current = assetFromUrl;
+    prevSelectedCoinRef.current = selectedCoin;
+  }, [assetFromUrl, selectedCoin, isPerpTrade, setSelectedCoin, router]);
 
   // Use selectedCoin for display, fallback to assetFromUrl
   const displayCoin = selectedCoin || assetFromUrl;
