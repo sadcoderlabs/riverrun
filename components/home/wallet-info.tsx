@@ -1,9 +1,10 @@
 import { useActiveWallet } from '@/lib/riverrun/hooks';
-import { Copy, Settings, User } from '@tamagui/lucide-icons';
+import { Copy, Settings, Wallet } from '@tamagui/lucide-icons';
 import * as Clipboard from 'expo-clipboard';
 import { Link } from 'expo-router';
 import { useState } from 'react';
 import { Pressable } from 'react-native';
+import Jazzicon from 'react-native-jazzicon';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { toast } from 'sonner-native';
 import { styled, Text, useTheme, XStack, YStack } from 'tamagui';
@@ -69,7 +70,11 @@ export function WalletInfo() {
         {/* Avatar - Now Pressable */}
         <Pressable onPress={() => setIsModalOpen(true)}>
           <Avatar>
-            <User size={28} color={theme.color12} />
+            {address ? (
+              <Jazzicon size={40} address={address} />
+            ) : (
+              <Wallet size={28} color={theme.color12} />
+            )}
           </Avatar>
         </Pressable>
 

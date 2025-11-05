@@ -1,5 +1,6 @@
 import { type AvailableWallet } from '@/lib/riverrun/hooks';
 import { Check, Wallet } from '@tamagui/lucide-icons';
+import Jazzicon from 'react-native-jazzicon';
 import { styled, Text, useTheme, XStack, YStack } from 'tamagui';
 
 const StyledPressable = styled(XStack, {
@@ -38,7 +39,11 @@ export function WalletListItem({ wallet, isSelected, onPress }: WalletListItemPr
     <StyledPressable onPress={onPress} alignItems="center" gap="$3">
       {/* Wallet Icon */}
       <WalletIcon>
-        <Wallet size={24} color={theme.color12} />
+        {wallet.address ? (
+          <Jazzicon size={40} address={wallet.address} />
+        ) : (
+          <Wallet size={24} color={theme.color12} />
+        )}
       </WalletIcon>
 
       {/* Wallet Info */}
