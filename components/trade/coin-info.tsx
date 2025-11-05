@@ -3,6 +3,7 @@ import { useActiveAssetCtx } from '@/lib/hyperliquid/hooks';
 import { formatMarketId } from '@/lib/hyperliquid/market-utils';
 import { useMarketsStore } from '@/lib/riverrun/store/use-markets-store';
 import { CandlestickChart, Menu } from '@tamagui/lucide-icons';
+import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
 import { Text, XStack, YStack } from 'tamagui';
 
@@ -11,6 +12,8 @@ interface CoinInfoProps {
 }
 
 export function CoinInfo({ coin }: CoinInfoProps) {
+  const router = useRouter();
+
   // Use modal state from Zustand store
   const { isMarketSelectorOpen, setMarketSelectorOpen } = useMarketsStore();
 
@@ -92,10 +95,10 @@ export function CoinInfo({ coin }: CoinInfoProps) {
 
           {/* Right side: Chart icon and Funding info stacked vertically */}
           <YStack gap="$1.5" justifyContent="space-between" alignItems="flex-end">
-            {/* Chart icon - placeholder for future functionality */}
+            {/* Chart icon - opens full-screen chart page */}
             <XStack
               onPress={() => {
-                // TODO: Implement chart functionality
+                router.push(`/chart/perp/${coin}`);
               }}
               pressStyle={{ opacity: 0.7 }}
             >

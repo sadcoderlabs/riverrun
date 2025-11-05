@@ -28,12 +28,19 @@ export function ChartUI({ marketId }: ChartUIProps) {
           <title>TradingView Chart</title>
           <script src="https://s3.tradingview.com/tv.js"></script>
           <style>
+            body {
+              margin: 0;
+              padding: 0;
+              background-color: #000000;
+              overflow: hidden;
+            }
             #tv_chart_container {
               width: 100%;
               height: 100%;
               position: absolute;
               top: 0;
               left: 0;
+              background-color: #000000;
             }
           </style>
         </head>
@@ -59,12 +66,13 @@ export function ChartUI({ marketId }: ChartUIProps) {
       `;
 
   return (
-    <YStack flex={1} padding="$0" position="relative">
+    <YStack flex={1} padding="$0" position="relative" backgroundColor="$background">
       <WebView
         key={tradingViewSymbol}
         originWhitelist={['*']}
         source={{ html: htmlContent }}
         style={styles.container}
+        backgroundColor="#000000"
       />
     </YStack>
   );
@@ -73,5 +81,6 @@ export function ChartUI({ marketId }: ChartUIProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#000000',
   },
 });

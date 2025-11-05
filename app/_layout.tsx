@@ -43,6 +43,7 @@ function WalletInfoDisplay() {
         screenOptions={{
           freezeOnBlur: true,
           animation: 'default',
+          headerShown: false,
         }}
       >
         <Stack.Protected guard={!isAuthenticated}>
@@ -54,6 +55,14 @@ function WalletInfoDisplay() {
             name="(main)"
             options={{
               headerShown: false,
+            }}
+          />
+          {/* Chart route - full screen without bottom navigation */}
+          <Stack.Screen
+            name="chart/perp/[coin]"
+            options={{
+              headerShown: false,
+              animation: 'slide_from_right',
             }}
           />
         </Stack.Protected>
