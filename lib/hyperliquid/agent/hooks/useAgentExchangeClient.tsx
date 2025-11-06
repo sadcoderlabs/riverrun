@@ -81,59 +81,62 @@ async function validateLocalAgent(
 
 /**
  * Approve agent with confirmation dialog
+ * Shows a unified message for all agent approval scenarios
  */
 async function approveAgent(
   masterSigner: any,
   agentAddress: string,
   masterAddress: string,
-  title: string,
-  message: string,
 ): Promise<boolean> {
   return new Promise<boolean>(resolve => {
-    Alert.alert(title, message, [
-      {
-        text: 'Cancel',
-        style: 'cancel',
-        onPress: () => resolve(false),
-      },
-      {
-        text: 'Approve',
-        onPress: async () => {
-          try {
-            // Create master exchange client for approval
-            const masterExchangeClient = new hl.ExchangeClient({
-              wallet: masterSigner,
-              transport: getTransport(),
-            });
+    Alert.alert(
+      'Approve Riverrun Agent',
+      'This will approve the Riverrun Agent to place orders on your behalf.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+          onPress: () => resolve(false),
+        },
+        {
+          text: 'Approve',
+          onPress: async () => {
+            try {
+              // Create master exchange client for approval
+              const masterExchangeClient = new hl.ExchangeClient({
+                wallet: masterSigner,
+                transport: getTransport(),
+              });
 
-            // Approve the agent using service
-            await approveAgentOnChain(masterExchangeClient, agentAddress, DEFAULT_AGENT_NAME);
+              // Approve the agent using service
+              await approveAgentOnChain(masterExchangeClient, agentAddress, DEFAULT_AGENT_NAME);
 
-            // Verify approval using service
-            const infoClient = getInfoClient();
-            const isApproved = await verifyAgentApproval(infoClient, masterAddress, agentAddress);
+              // Verify approval using service
+              const infoClient = getInfoClient();
+              const isApproved = await verifyAgentApproval(infoClient, masterAddress, agentAddress);
 
-            if (!isApproved) {
+              if (!isApproved) {
+                Alert.alert(
+                  'Verification Failed',
+                  'Agent approval was not confirmed. Please try again or check Settings.',
+                );
+                resolve(false);
+                return;
+              }
+
+              resolve(true);
+            } catch (error) {
+              console.error('Failed to approve agent:', error);
               Alert.alert(
-                'Verification Failed',
-                'Agent approval was not confirmed. Please try again or check Settings.',
+                'Approval Failed',
+                error instanceof Error ? error.message : 'An error occurred',
               );
               resolve(false);
-              return;
             }
-
-            resolve(true);
-          } catch (error) {
-            console.error('Failed to approve agent:', error);
-            Alert.alert(
-              'Approval Failed',
-              error instanceof Error ? error.message : 'An error occurred',
-            );
-            resolve(false);
-          }
+          },
         },
-      },
-    ]);
+      ],
+    );
   });
 }
 
@@ -202,13 +205,7 @@ export function useAgentExchangeClient() {
         const agentSigner = await getOrCreateAgentSigner(masterAddress, ethersProvider);
         const agentAddress = await agentSigner.getAddress();
 
-        const approved = await approveAgent(
-          masterSigner,
-          agentAddress,
-          masterAddress,
-          'Approve Agent',
-          'This will approve the Riverrun Agent to place orders on your behalf.',
-        );
+        const approved = await approveAgent(masterSigner, agentAddress, masterAddress);
 
         if (!approved) {
           return undefined;
@@ -237,15 +234,7 @@ export function useAgentExchangeClient() {
       const agentSigner = await getOrCreateAgentSigner(masterAddress, ethersProvider);
       const agentAddress = await agentSigner.getAddress();
 
-      const approved = await approveAgent(
-        masterSigner,
-        agentAddress,
-        masterAddress,
-        validation.blockchainAddress ? 'Overwrite Riverrun Agent' : 'Approve Riverrun Agent',
-        validation.blockchainAddress
-          ? 'The Riverrun Agent exists with a different address. This will update it to work with this device.'
-          : 'The Riverrun Agent is not approved on the blockchain. This will approve it.',
-      );
+      const approved = await approveAgent(masterSigner, agentAddress, masterAddress);
 
       if (!approved) {
         return undefined;
