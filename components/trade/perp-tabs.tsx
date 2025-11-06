@@ -113,21 +113,3 @@ function TabItem({ label, isActive, onPress, count }: TabItemProps) {
     </XStack>
   );
 }
-
-interface TabPlaceholderProps {
-  title: string;
-  message: string;
-}
-
-function TabPlaceholder({ title, message }: TabPlaceholderProps) {
-  return (
-    <YStack flex={1} padding="$4" justifyContent="center" alignItems="center" gap="$2">
-      <Text fontFamily="$interSemiBold" fontSize="$5" color="$color">
-        {title}
-      </Text>
-      <Text color="$color" textAlign="center">
-        {message}
-      </Text>
-    </YStack>
-  );
-}

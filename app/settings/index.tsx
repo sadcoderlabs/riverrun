@@ -1,4 +1,5 @@
-import { ListButton, ListItem } from '@/components/global/list-item';
+import AdaptiveSelect from '@/components/global/adaptive-select';
+import { ListItem } from '@/components/global/list-item';
 import { ListSection } from '@/components/global/list-section';
 import { useThemePreference } from '@/lib/riverrun/hooks';
 import { type ThemePreference } from '@/lib/riverrun/store/theme.store';
@@ -6,7 +7,6 @@ import { ArrowLeft, ArrowUpRight } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 import { Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { toast } from 'sonner-native';
 import { PortalProvider, ScrollView, Text, View, XStack, YStack } from 'tamagui';
 
 export default function Index() {
@@ -14,11 +14,14 @@ export default function Index() {
   const insets = useSafeAreaInsets();
   const { preference, setPreference } = useThemePreference();
 
-  const themeOptions: { name: string; value: ThemePreference }[] = [
-    { name: 'Light', value: 'light' },
-    { name: 'Dark', value: 'dark' },
-    { name: 'System', value: 'system' },
-  ];
+  const getThemeDisplayName = (theme: ThemePreference) => {
+    const themeMap: Record<ThemePreference, string> = {
+      light: 'Light',
+      dark: 'Dark',
+      system: 'System',
+    };
+    return themeMap[theme];
+  };
 
   return (
     <PortalProvider>
@@ -48,22 +51,9 @@ export default function Index() {
         {/* Content */}
         <ScrollView contentInsetAdjustmentBehavior="automatic" backgroundColor="$gray3">
           <YStack backgroundColor="$gray3">
-            {/* Theme Section */}
+            {/* Account Status Section */}
             <YStack>
-              <ListSection label="Theme">
-                {themeOptions.map(theme => (
-                  <ListItem
-                    key={theme.value}
-                    title={theme.name}
-                    isChecked={preference === theme.value}
-                    onPress={() => setPreference(theme.value)}
-                  />
-                ))}
-              </ListSection>
-            </YStack>
-            {/* Preferences Section */}
-            <YStack>
-              <ListSection label="Preferences">
+              <ListSection label="Account Status">
                 <ListItem
                   title="Agent Status"
                   subTitle="Manage trading agents"
@@ -82,6 +72,29 @@ export default function Index() {
                   showIosChevron={true}
                   onPress={() => router.push('/settings/approval-status')}
                 />
+              </ListSection>
+            </YStack>
+            {/* Preferences Section */}
+            <YStack>
+              <ListSection label="Preferences">
+                <AdaptiveSelect
+                  value={preference ?? 'dark'}
+                  onValueChange={value => setPreference(value as ThemePreference)}
+                  title="Theme"
+                >
+                  <AdaptiveSelect.Trigger>
+                    <ListItem title="Theme" subTitle={getThemeDisplayName(preference ?? 'dark')} />
+                  </AdaptiveSelect.Trigger>
+                  <AdaptiveSelect.Item value="light" index={0}>
+                    Light
+                  </AdaptiveSelect.Item>
+                  <AdaptiveSelect.Item value="dark" index={1}>
+                    Dark
+                  </AdaptiveSelect.Item>
+                  <AdaptiveSelect.Item value="system" index={2}>
+                    System
+                  </AdaptiveSelect.Item>
+                </AdaptiveSelect>
                 <ListItem
                   title="Allow Notifications"
                   subTitle="Permission Unset"
@@ -124,25 +137,6 @@ export default function Index() {
                 />
               </ListSection>
             </YStack>
-            {/* Test Toast Section */}
-            <ListSection>
-              <ListButton
-                justifyContent="center"
-                onPress={() => {
-                  toast.success('success', {
-                    description: 'This is a test toast message',
-                  });
-                  toast.error('error', {
-                    description: 'This is a test toast message',
-                  });
-                  toast.warning('warning', {
-                    description: 'This is a test toast message',
-                  });
-                }}
-              >
-                Toast
-              </ListButton>
-            </ListSection>
           </YStack>
         </ScrollView>
       </YStack>

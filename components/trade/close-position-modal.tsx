@@ -170,7 +170,6 @@ export default function ClosePositionModal({
 
   // Calculate estimated PnL for the close
   const closeSize = parseFloat(assetSize) || 0;
-  const estimatedPnl = (markPrice - entryPrice) * closeSize * (isLong ? 1 : -1);
 
   // For limit orders, calculate PnL based on limit price
   let estimatedPnlPercentage: number | null;

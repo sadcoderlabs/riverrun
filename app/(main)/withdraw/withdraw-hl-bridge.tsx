@@ -1,5 +1,5 @@
 import { AlertTriangle, ArrowLeft, ClipboardPaste } from '@tamagui/lucide-icons';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { Alert, Pressable, ScrollView } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
@@ -8,12 +8,6 @@ import { Button, Input, Spinner, Text, XStack, YStack } from 'tamagui';
 import { toast } from 'sonner-native';
 import { useActiveWallet } from '@/lib/riverrun/hooks';
 import { useHyperliquidWithdraw } from '@/lib/hyperliquid/hooks';
-
-// Helper function to shorten address (first 5 and last 5 characters)
-function shortenAddress(address: string, chars: number = 5): string {
-  if (!address || address.length < chars * 2) return address;
-  return `${address.slice(0, chars + 2)}...${address.slice(-chars)}`;
-}
 
 // Validate Ethereum address format
 function isValidAddress(address: string): boolean {
@@ -29,7 +23,6 @@ function isValidAddress(address: string): boolean {
 export default function HyperliquidBridgeWithdrawPage() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const params = useLocalSearchParams<{ symbol: string; chain: string }>();
 
   // Wallet hooks
   const { address, isAuthenticated } = useActiveWallet();

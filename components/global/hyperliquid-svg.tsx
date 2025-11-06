@@ -1,6 +1,5 @@
 import React from 'react';
 import Svg, { ClipPath, Defs, G, Path, Rect } from 'react-native-svg';
-import { useTheme } from 'tamagui';
 
 interface HyperliquidSvgProps {
   width?: number;
@@ -13,7 +12,6 @@ interface HyperliquidSvgProps {
  * A direct conversion of the SVG file from assets/images/Powered by Hyperliquid HL800.svg
  */
 export function HyperliquidSvg({ width = 180, height = 30, darkMode }: HyperliquidSvgProps) {
-  const theme = useTheme();
   const fillColor = darkMode ? '#FFFFFF' : '#072723';
 
   // Calculate aspect ratio to maintain proportions
