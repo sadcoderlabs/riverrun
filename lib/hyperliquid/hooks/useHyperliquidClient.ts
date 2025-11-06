@@ -4,12 +4,15 @@ import { useRouter } from 'expo-router';
 import { useCallback, useMemo } from 'react';
 import { Alert } from 'react-native';
 
-import { DEFAULT_AGENT_NAME, getOrCreateAgentSigner } from '@/lib/hyperliquid/agent';
+import { DEFAULT_AGENT_NAME } from '@/lib/hyperliquid/agent/constants';
 import {
+  approveAgentOnChain,
   countNamedAgents,
+  getOrCreateAgentSigner,
   hasLocalAgent,
   validateLocalAgent,
-} from '@/lib/hyperliquid/utils/agent-validation';
+  verifyAgentApproval,
+} from '@/lib/hyperliquid/agent/service';
 import { useActiveWallet } from '@/lib/riverrun/hooks/useActiveWallet';
 
 // Singleton instances - shared across all hook usages
@@ -83,21 +86,12 @@ async function approveAgent(
               transport: getTransport(),
             });
 
-            // Approve the agent
-            await masterExchangeClient.approveAgent({
-              agentAddress,
-              agentName: DEFAULT_AGENT_NAME,
-            });
+            // Approve the agent using service
+            await approveAgentOnChain(masterExchangeClient, agentAddress, DEFAULT_AGENT_NAME);
 
-            // Wait for blockchain propagation
-            await new Promise(resolve => setTimeout(resolve, 2000));
-
-            // Verify approval
+            // Verify approval using service
             const infoClient = getInfoClient();
-            const existingAgents = await infoClient.extraAgents({ user: masterAddress });
-            const isApproved = existingAgents.some(
-              agent => agent.address.toLowerCase() === agentAddress.toLowerCase(),
-            );
+            const isApproved = await verifyAgentApproval(infoClient, masterAddress, agentAddress);
 
             if (!isApproved) {
               Alert.alert(
@@ -178,7 +172,7 @@ export function useHyperliquidClient(): UseHyperliquidClientResult {
       if (!hasLocal) {
         // No local agent - need to create and approve
         // Check if we're at the 3-agent limit
-        const namedCount = await countNamedAgents(masterAddress, getInfoClient());
+        const namedCount = await countNamedAgents(getInfoClient(), masterAddress);
 
         if (namedCount >= 3) {
           // Redirect to Settings

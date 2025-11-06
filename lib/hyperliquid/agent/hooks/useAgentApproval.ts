@@ -2,21 +2,19 @@ import { getWalletAddress } from '@nktkas/hyperliquid/signing';
 import { useCallback, useState } from 'react';
 import { Alert } from 'react-native';
 
-import {
-  clearAgentSigner,
-  DEFAULT_AGENT_NAME,
-  getOrCreateAgentSigner,
-} from '@/lib/hyperliquid/agent';
 import { useHyperliquidClient } from '@/lib/hyperliquid/hooks/useHyperliquidClient';
 import { useActiveWallet } from '@/lib/riverrun/hooks/useActiveWallet';
 
-/**
- * Agent information from Hyperliquid
- */
-export interface AgentInfo {
-  address: string;
-  name: string | undefined;
-}
+import { DEFAULT_AGENT_NAME } from '../constants';
+import {
+  approveAgentOnChain,
+  clearAgent,
+  getAgentsFromChain,
+  getOrCreateAgentSigner,
+  revokeAgentOnChain,
+  verifyAgentApproval,
+} from '../service';
+import { type AgentInfo } from '../types';
 
 /**
  * Hook for managing agent approval status
@@ -56,14 +54,10 @@ export function useAgentApproval() {
       const agentAddr = await agentSigner.getAddress();
 
       // Check if agent is approved
-      const existingAgents = await infoClient.extraAgents({ user: masterAddress });
-      const approved = existingAgents.some(
-        agent => agent.address.toLowerCase() === agentAddr.toLowerCase(),
-      );
+      const approved = await verifyAgentApproval(infoClient, masterAddress, agentAddr);
 
       console.log('checkStatus debug:', {
         localAgentAddress: agentAddr,
-        existingAgents: existingAgents.map(a => ({ address: a.address, name: a.name })),
         approved,
       });
 
@@ -95,14 +89,9 @@ export function useAgentApproval() {
       const masterAddress = await getWalletAddress(masterExchangeClient.wallet);
       const infoClient = getInfoClient();
 
-      const agents = await infoClient.extraAgents({ user: masterAddress });
-      const agentInfos = agents.map(agent => ({
-        address: agent.address,
-        name: agent.name,
-      }));
-
-      setAllAgents(agentInfos);
-      return agentInfos;
+      const agents = await getAgentsFromChain(infoClient, masterAddress);
+      setAllAgents(agents);
+      return agents;
     } catch (error) {
       console.error('Failed to get all agents:', error);
       return [];
@@ -147,22 +136,16 @@ export function useAgentApproval() {
                   const masterAddress = await getWalletAddress(masterExchangeClient.wallet);
                   const infoClient = getInfoClient();
 
-                  // Revoke using 0x0 address
-                  await masterExchangeClient.approveAgent({
-                    agentAddress: '0x0000000000000000000000000000000000000000',
-                    agentName: agentName,
-                  });
-
-                  // Wait for blockchain state to propagate
-                  await new Promise(resolve => setTimeout(resolve, 2000));
+                  // Revoke using service
+                  await revokeAgentOnChain(masterExchangeClient, agentName);
 
                   // Clear local storage for Riverrun Agent
                   if (isRiverrunAgent) {
-                    await clearAgentSigner(masterAddress);
+                    await clearAgent(masterAddress);
                   }
 
                   // Verify revoke
-                  const agents = await infoClient.extraAgents({ user: masterAddress });
+                  const agents = await getAgentsFromChain(infoClient, masterAddress);
                   const stillExists = agents.some(
                     agent => agent.name?.toLowerCase() === agentName.toLowerCase(),
                   );
@@ -235,21 +218,12 @@ export function useAgentApproval() {
       const agentSigner = await getOrCreateAgentSigner(masterAddress, ethersProvider);
       const agentAddr = await agentSigner.getAddress();
 
-      // Approve agent on blockchain
-      await masterExchangeClient.approveAgent({
-        agentAddress: agentAddr,
-        agentName: DEFAULT_AGENT_NAME,
-      });
-
-      // Wait for blockchain propagation
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Approve agent on blockchain using service
+      await approveAgentOnChain(masterExchangeClient, agentAddr, DEFAULT_AGENT_NAME);
 
       // Verify approval
       const infoClient = getInfoClient();
-      const existingAgents = await infoClient.extraAgents({ user: masterAddress });
-      const approved = existingAgents.some(
-        agent => agent.address.toLowerCase() === agentAddr.toLowerCase(),
-      );
+      const approved = await verifyAgentApproval(infoClient, masterAddress, agentAddr);
 
       if (approved) {
         setAgentAddress(agentAddr);

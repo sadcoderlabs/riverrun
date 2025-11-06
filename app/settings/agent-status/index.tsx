@@ -1,6 +1,6 @@
 import { Button } from '@/components/global/button';
-import { DEFAULT_AGENT_NAME } from '@/lib/hyperliquid/agent';
-import { useAgentApproval } from '@/lib/hyperliquid/hooks/useAgentApproval';
+import { DEFAULT_AGENT_NAME } from '@/lib/hyperliquid/agent/constants';
+import { useAgentApproval } from '@/lib/hyperliquid/agent/hooks/useAgentApproval';
 import { ArrowLeft } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
