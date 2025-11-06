@@ -135,6 +135,12 @@ export default function Index() {
             <YStack>
               <ListSection label="Preferences">
                 <ListItem
+                  title="Approval Status"
+                  subTitle="Manage approvals and referrals"
+                  showIosChevron={true}
+                  onPress={() => router.push('/settings/approval-status')}
+                />
+                <ListItem
                   title="Allow Notifications"
                   subTitle="Permission Unset"
                   showIosChevron={true}
