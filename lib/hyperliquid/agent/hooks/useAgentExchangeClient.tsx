@@ -17,13 +17,6 @@ import { hasAgentPrivateKey } from '../storage';
 import { type AgentInfo, type ValidationResult } from '../types';
 
 /**
- * Check if local agent exists in storage
- */
-async function hasLocalAgent(masterAddress: string): Promise<boolean> {
-  return await hasAgentPrivateKey(masterAddress);
-}
-
-/**
  * Count named agents on blockchain
  */
 async function countNamedAgents(infoClient: hl.InfoClient, masterAddress: string): Promise<number> {
@@ -170,7 +163,7 @@ export function useAgentExchangeClient() {
       const masterAddress = (await masterSigner.getAddress()).toLowerCase();
 
       // Check local storage first (user preference)
-      const hasLocal = await hasLocalAgent(masterAddress);
+      const hasLocal = await hasAgentPrivateKey(masterAddress);
 
       if (!hasLocal) {
         // No local agent - need to create and approve
