@@ -1,27 +1,17 @@
 import { ListButton, ListItem } from '@/components/global/list-item';
 import { ListSection } from '@/components/global/list-section';
-import { useThemePreference, useActiveWallet } from '@/lib/riverrun/hooks';
-import { clearAgentSigner } from '@/lib/hyperliquid/agent';
+import { useThemePreference } from '@/lib/riverrun/hooks';
 import { type ThemePreference } from '@/lib/riverrun/store/theme.store';
 import { ArrowLeft, ArrowUpRight } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
-import { Alert, Pressable } from 'react-native';
+import { Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { toast } from 'sonner-native';
 import { PortalProvider, ScrollView, Text, View, XStack, YStack } from 'tamagui';
 
-type RevokeStatus = {
-  type: 'success' | 'error';
-  message: string;
-};
-
 export default function Index() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { address } = useActiveWallet();
-  const [revoking, setRevoking] = useState(false);
-  const [status, setStatus] = useState<RevokeStatus | undefined>(undefined);
   const { preference, setPreference } = useThemePreference();
 
   const themeOptions: { name: string; value: ThemePreference }[] = [
@@ -29,56 +19,6 @@ export default function Index() {
     { name: 'Dark', value: 'dark' },
     { name: 'System', value: 'system' },
   ];
-
-  const displayAddress = '0x123456789';
-
-  const performRevoke = useCallback(async () => {
-    if (!address) {
-      return;
-    }
-
-    setRevoking(true);
-    setStatus(undefined);
-
-    try {
-      await clearAgentSigner(address);
-      setStatus({
-        type: 'success',
-        message: 'Agent revoked locally. You will be asked to approve again next time.',
-      });
-    } catch {
-      setStatus({
-        type: 'error',
-        message: 'Failed to revoke agent. Please try again.',
-      });
-    } finally {
-      setRevoking(false);
-    }
-  }, [address]);
-
-  const handleRevokePress = useCallback(() => {
-    if (!address) {
-      setStatus({
-        type: 'error',
-        message: 'Connect your wallet before revoking the agent.',
-      });
-      return;
-    }
-
-    Alert.alert(
-      'Revoke agent?',
-      'This removes the stored agent key on this device. You will need to approve again later.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Confirm',
-          onPress: () => {
-            void performRevoke();
-          },
-        },
-      ],
-    );
-  }, [address, performRevoke]);
 
   return (
     <PortalProvider>
@@ -108,16 +48,6 @@ export default function Index() {
         {/* Content */}
         <ScrollView contentInsetAdjustmentBehavior="automatic" backgroundColor="$gray3">
           <YStack backgroundColor="$gray3">
-            {/* Account Section */}
-            <YStack>
-              <ListSection label="Account">
-                <ListItem title={displayAddress} />
-                <ListItem
-                  title="Status"
-                  subTitle={status?.type === 'success' ? status.message : 'Unknown'}
-                />
-              </ListSection>
-            </YStack>
             {/* Theme Section */}
             <YStack>
               <ListSection label="Theme">
@@ -182,16 +112,7 @@ export default function Index() {
                 />
               </ListSection>
             </YStack>
-            {/* Revoke Agent */}
-            <ListSection>
-              <ListButton
-                justifyContent="center"
-                onPress={handleRevokePress}
-                disabled={!address || revoking}
-              >
-                {revoking ? 'Revoking...' : 'Revoke Agent'}
-              </ListButton>
-            </ListSection>
+            {/* Test Toast Section */}
             <ListSection>
               <ListButton
                 justifyContent="center"
