@@ -6,7 +6,7 @@ import { Alert } from 'react-native';
 import { getInfoClient, getTransport } from '@/lib/hyperliquid/client';
 import { useActiveWallet } from '@/lib/riverrun/hooks/useActiveWallet';
 
-import { AGENT_APPROVAL_WAIT_TIME, DEFAULT_AGENT_NAME } from '../constants';
+import { DEFAULT_AGENT_NAME } from '../constants';
 import {
   approveAgentOnChain,
   getAgentsFromChain,
@@ -14,7 +14,7 @@ import {
   verifyAgentApproval,
 } from '../service';
 import { hasAgentPrivateKey } from '../storage';
-import { type AgentInfo, type ValidationResult } from '../types';
+import { type AgentInfo } from '../types';
 
 /**
  * Count named agents on blockchain
@@ -34,42 +34,6 @@ async function countNamedAgents(infoClient: hl.InfoClient, masterAddress: string
  */
 function findAgentByName(agents: AgentInfo[], agentName: string): AgentInfo | undefined {
   return agents.find(agent => agent.name?.toLowerCase() === agentName.toLowerCase());
-}
-
-/**
- * Validate local agent against blockchain
- */
-async function validateLocalAgent(
-  masterAddress: string,
-  ethersProvider: any,
-  infoClient: hl.InfoClient,
-): Promise<ValidationResult> {
-  try {
-    // Get local agent signer to get address
-    const agentSigner = await getOrCreateAgentSigner(masterAddress, ethersProvider);
-    const localAddress = await agentSigner.getAddress();
-
-    // Get blockchain agents
-    const agents = await getAgentsFromChain(infoClient, masterAddress);
-    const riverrunAgent = findAgentByName(agents, DEFAULT_AGENT_NAME);
-
-    if (!riverrunAgent) {
-      // Riverrun Agent doesn't exist on blockchain, but we have local key
-      return { isValid: false, localAddress };
-    }
-
-    // Check if addresses match
-    const isValid = riverrunAgent.address.toLowerCase() === localAddress.toLowerCase();
-
-    return {
-      isValid,
-      localAddress,
-      blockchainAddress: riverrunAgent.address,
-    };
-  } catch (error) {
-    console.error('Failed to validate local agent:', error);
-    return { isValid: false };
-  }
 }
 
 /**
@@ -162,16 +126,22 @@ export function useAgentExchangeClient() {
       const masterSigner = await ethersProvider.getSigner();
       const masterAddress = (await masterSigner.getAddress()).toLowerCase();
 
-      // Check local storage first (user preference)
+      // Get or create agent signer (used in all paths)
+      const agentSigner = await getOrCreateAgentSigner(masterAddress, ethersProvider);
+      const agentAddress = await agentSigner.getAddress();
+
+      // Check local storage first
       const hasLocal = await hasAgentPrivateKey(masterAddress);
 
+      // Determine if we need approval
+      let needsApproval = false;
+
       if (!hasLocal) {
-        // No local agent - need to create and approve
-        // Check if we're at the 3-agent limit
+        // No local agent - check if we can approve
         const namedCount = await countNamedAgents(getInfoClient(), masterAddress);
 
         if (namedCount >= 3) {
-          // Redirect to Settings
+          // At agent limit - redirect to Settings
           return new Promise<hl.ExchangeClient | undefined>(resolve => {
             Alert.alert(
               'Agent Limit Reached',
@@ -194,45 +164,26 @@ export function useAgentExchangeClient() {
           });
         }
 
-        // Can approve - generate new agent
-        const agentSigner = await getOrCreateAgentSigner(masterAddress, ethersProvider);
-        const agentAddress = await agentSigner.getAddress();
+        needsApproval = true;
+      } else {
+        // Has local agent - validate it
+        const agents = await getAgentsFromChain(getInfoClient(), masterAddress);
+        const riverrunAgent = findAgentByName(agents, DEFAULT_AGENT_NAME);
 
+        // Need approval if agent doesn't exist on blockchain or addresses don't match
+        needsApproval =
+          !riverrunAgent || riverrunAgent.address.toLowerCase() !== agentAddress.toLowerCase();
+      }
+
+      // Request approval if needed
+      if (needsApproval) {
         const approved = await approveAgent(masterSigner, agentAddress, masterAddress);
-
         if (!approved) {
           return undefined;
         }
-
-        return new hl.ExchangeClient({
-          wallet: agentSigner,
-          transport: getTransport(),
-        });
       }
 
-      // Has local agent - validate it
-      const validation = await validateLocalAgent(masterAddress, ethersProvider, getInfoClient());
-
-      if (validation.isValid) {
-        // Valid agent - use it directly
-        const agentSigner = await getOrCreateAgentSigner(masterAddress, ethersProvider);
-        return new hl.ExchangeClient({
-          wallet: agentSigner,
-          transport: getTransport(),
-        });
-      }
-
-      // Invalid agent (mismatch or doesn't exist on blockchain)
-      // Treat as invalid and prompt approval (overwrites blockchain)
-      const agentSigner = await getOrCreateAgentSigner(masterAddress, ethersProvider);
-      const agentAddress = await agentSigner.getAddress();
-
-      const approved = await approveAgent(masterSigner, agentAddress, masterAddress);
-
-      if (!approved) {
-        return undefined;
-      }
-
+      // Return exchange client with agent signer
       return new hl.ExchangeClient({
         wallet: agentSigner,
         transport: getTransport(),
