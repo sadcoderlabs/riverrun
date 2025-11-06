@@ -11,16 +11,16 @@ import { useHyperliquidClient } from '@/lib/hyperliquid/hooks/useHyperliquidClie
  */
 export function useBuilderFeeApproval() {
   const { getMasterExchangeClient, getInfoClient } = useHyperliquidClient();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isBuilderFeeLoading, setIsBuilderFeeLoading] = useState(false);
   const [maxApprovedFee, setMaxApprovedFee] = useState<number>(0);
 
   /**
    * Check builder fee approval status
    * @returns Maximum approved builder fee in 0.1bps units
    */
-  const checkStatus = useCallback(async (): Promise<number> => {
+  const checkBuilderFeeStatus = useCallback(async (): Promise<number> => {
     try {
-      setIsLoading(true);
+      setIsBuilderFeeLoading(true);
 
       const masterExchangeClient = await getMasterExchangeClient();
       if (!masterExchangeClient) {
@@ -42,15 +42,56 @@ export function useBuilderFeeApproval() {
       setMaxApprovedFee(0);
       return 0;
     } finally {
-      setIsLoading(false);
+      setIsBuilderFeeLoading(false);
     }
   }, [getMasterExchangeClient, getInfoClient]);
+
+  /**
+   * Core approval logic - executes the approval transaction and verifies success
+   * Does not show success alert, only error alerts
+   * @returns true if approval succeeded, false otherwise
+   */
+  const executeApproval = useCallback(async (): Promise<boolean> => {
+    try {
+      setIsBuilderFeeLoading(true);
+
+      const masterExchangeClient = await getMasterExchangeClient();
+      if (!masterExchangeClient) {
+        Alert.alert('Error', 'Failed to get master wallet');
+        return false;
+      }
+
+      // Approve builder fee
+      await masterExchangeClient.approveBuilderFee({
+        maxFeeRate: BUILDER_CONFIG.maxFeeRate,
+        builder: BUILDER_CONFIG.address,
+      });
+
+      // Verify approval
+      const maxFee = await checkBuilderFeeStatus();
+      if (maxFee >= BUILDER_CONFIG.feeRate) {
+        return true;
+      } else {
+        Alert.alert('Approval Failed', 'Builder fee approval was not confirmed. Please try again.');
+        return false;
+      }
+    } catch (error) {
+      console.error('Failed to approve builder fee:', error);
+      Alert.alert(
+        'Approval Failed',
+        error instanceof Error ? error.message : 'An error occurred while approving builder fee',
+      );
+      return false;
+    } finally {
+      setIsBuilderFeeLoading(false);
+    }
+  }, [getMasterExchangeClient, checkBuilderFeeStatus]);
 
   /**
    * Approve builder fee
    * Shows confirmation dialog before approving
    */
-  const approve = useCallback(async (): Promise<boolean> => {
+  const approveBuilderFee = useCallback(async (): Promise<boolean> => {
     return new Promise<boolean>(resolve => {
       const feePercentage = (BUILDER_CONFIG.feeRate / 1000).toFixed(3);
 
@@ -66,54 +107,93 @@ export function useBuilderFeeApproval() {
           {
             text: 'Approve',
             onPress: async () => {
-              try {
-                setIsLoading(true);
-
-                const masterExchangeClient = await getMasterExchangeClient();
-                if (!masterExchangeClient) {
-                  Alert.alert('Error', 'Failed to get master wallet');
-                  resolve(false);
-                  return;
-                }
-
-                // Approve builder fee
-                await masterExchangeClient.approveBuilderFee({
-                  maxFeeRate: BUILDER_CONFIG.maxFeeRate,
-                  builder: BUILDER_CONFIG.address,
-                });
-
-                // Verify approval
-                const maxFee = await checkStatus();
-                if (maxFee >= BUILDER_CONFIG.feeRate) {
-                  Alert.alert('Success', 'Builder fee approved successfully');
-                  resolve(true);
-                } else {
-                  Alert.alert('Error', 'Builder fee approval was not confirmed');
-                  resolve(false);
-                }
-              } catch (error) {
-                console.error('Failed to approve builder fee:', error);
-                Alert.alert(
-                  'Error',
-                  error instanceof Error ? error.message : 'Failed to approve builder fee',
-                );
-                resolve(false);
-              } finally {
-                setIsLoading(false);
+              const success = await executeApproval();
+              if (success) {
+                Alert.alert('Success', 'Builder fee approved successfully');
               }
+              resolve(success);
             },
           },
         ],
       );
     });
-  }, [getMasterExchangeClient, checkStatus]);
+  }, [executeApproval]);
+
+  /**
+   * Ensure that the user has approved builder fee for the configured builder.
+   * If not approved or approval is insufficient, shows an approval dialog.
+   * This is used during trading flow to automatically prompt for approval if needed.
+   *
+   * @returns true if approved (or user approved successfully), false if user cancelled or approval failed
+   */
+  const ensureBuilderFeeApproval = useCallback(async (): Promise<boolean> => {
+    try {
+      setIsBuilderFeeLoading(true);
+
+      // Get master exchange client (required for approval)
+      const masterExchangeClient = await getMasterExchangeClient();
+      if (!masterExchangeClient) {
+        return false;
+      }
+
+      // Get user address from the master wallet
+      const userAddress = await getWalletAddress(masterExchangeClient.wallet);
+      const infoClient = getInfoClient();
+
+      // Check if builder fee is already approved with sufficient amount
+      const maxFee = await infoClient.maxBuilderFee({
+        user: userAddress,
+        builder: BUILDER_CONFIG.address,
+      });
+
+      setMaxApprovedFee(maxFee);
+
+      // If approved with sufficient fee rate, no need to request approval again
+      if (maxFee >= BUILDER_CONFIG.feeRate) {
+        return true;
+      }
+
+      // Builder fee not approved or insufficient - show confirmation dialog
+      return await new Promise<boolean>(resolve => {
+        const feePercentage = (BUILDER_CONFIG.feeRate / 1000).toFixed(3);
+
+        Alert.alert(
+          'Builder Fee Approval Required',
+          `This app collects a ${feePercentage}% builder fee on trades to support development. You will be redirected to your wallet app to approve the maximum fee. Do you want to continue?`,
+          [
+            {
+              text: 'Cancel',
+              style: 'cancel',
+              onPress: () => resolve(false),
+            },
+            {
+              text: 'Approve',
+              onPress: async () => {
+                const success = await executeApproval();
+                resolve(success);
+              },
+            },
+          ],
+        );
+      });
+    } catch (error) {
+      console.error('Failed to ensure builder fee approval:', error);
+      Alert.alert(
+        'Error',
+        error instanceof Error ? error.message : 'Failed to check builder fee approval',
+      );
+      return false;
+    } finally {
+      setIsBuilderFeeLoading(false);
+    }
+  }, [getMasterExchangeClient, getInfoClient, executeApproval]);
 
   /**
    * Revoke builder fee by setting max fee rate to 0%
    * Shows confirmation dialog before revoking
    * This is mainly for development/testing purposes
    */
-  const revoke = useCallback(async (): Promise<boolean> => {
+  const revokeBuilderFee = useCallback(async (): Promise<boolean> => {
     return new Promise<boolean>(resolve => {
       Alert.alert(
         'Revoke Builder Fee',
@@ -129,7 +209,7 @@ export function useBuilderFeeApproval() {
             style: 'destructive',
             onPress: async () => {
               try {
-                setIsLoading(true);
+                setIsBuilderFeeLoading(true);
 
                 const masterExchangeClient = await getMasterExchangeClient();
                 if (!masterExchangeClient) {
@@ -145,7 +225,7 @@ export function useBuilderFeeApproval() {
                 });
 
                 // Update state
-                const maxFee = await checkStatus();
+                const maxFee = await checkBuilderFeeStatus();
                 if (maxFee === 0) {
                   Alert.alert('Success', 'Builder fee revoked successfully');
                   resolve(true);
@@ -161,21 +241,22 @@ export function useBuilderFeeApproval() {
                 );
                 resolve(false);
               } finally {
-                setIsLoading(false);
+                setIsBuilderFeeLoading(false);
               }
             },
           },
         ],
       );
     });
-  }, [getMasterExchangeClient, checkStatus]);
+  }, [getMasterExchangeClient, checkBuilderFeeStatus]);
 
   return {
     maxApprovedFee,
-    isApproved: maxApprovedFee >= BUILDER_CONFIG.feeRate,
-    isLoading,
-    checkStatus,
-    approve,
-    revoke,
+    isBuilderFeeApproved: maxApprovedFee >= BUILDER_CONFIG.feeRate,
+    isBuilderFeeLoading,
+    checkBuilderFeeStatus,
+    approveBuilderFee,
+    ensureBuilderFeeApproval,
+    revokeBuilderFee,
   };
 }

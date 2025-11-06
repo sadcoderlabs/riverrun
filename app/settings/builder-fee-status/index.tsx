@@ -16,11 +16,11 @@ export default function BuilderFeeStatus() {
   // Builder fee approval
   const {
     maxApprovedFee,
-    isApproved: isBuilderFeeApproved,
-    isLoading: isBuilderFeeLoading,
-    checkStatus: checkBuilderFeeStatus,
-    approve: approveBuilderFee,
-    revoke: revokeBuilderFee,
+    isBuilderFeeApproved,
+    isBuilderFeeLoading,
+    checkBuilderFeeStatus,
+    approveBuilderFee,
+    revokeBuilderFee,
   } = useBuilderFeeApproval();
 
   // Loading and refresh states
