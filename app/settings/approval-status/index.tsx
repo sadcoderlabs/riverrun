@@ -1,6 +1,7 @@
 import { Button } from '@/components/global/button';
 import { ListButton, ListItem } from '@/components/global/list-item';
 import { ListSection } from '@/components/global/list-section';
+import { DEFAULT_AGENT_NAME } from '@/lib/hyperliquid/agent';
 import { BUILDER_CONFIG } from '@/lib/hyperliquid/config/builder';
 import { useAgentApproval } from '@/lib/hyperliquid/hooks/useAgentApproval';
 import { useBuilderFeeApproval } from '@/lib/hyperliquid/hooks/useBuilderFeeApproval';
@@ -35,7 +36,6 @@ export default function ApprovalStatus() {
     approve: approveAgent,
     revoke: revokeAgent,
     getAllAgents,
-    revokeNamedAgent,
   } = useAgentApproval();
 
   // Builder fee approval
@@ -102,7 +102,7 @@ export default function ApprovalStatus() {
   const handleApproveRiverrunAgent = useCallback(async () => {
     // Check if we have reached the limit of 3 non-Riverrun agents
     const nonRiverrunAgents = allAgents.filter(
-      agent => agent.name && agent.name !== 'Riverrun Agent',
+      agent => agent.name && agent.name !== DEFAULT_AGENT_NAME,
     );
 
     // If Riverrun Agent doesn't exist and we have 3 other agents
@@ -138,43 +138,17 @@ export default function ApprovalStatus() {
   }, [allAgents, isAgentApproved, approveAgent, checkAgentStatus, getAllAgents]);
 
   /**
-   * Handle Riverrun Agent revoke
+   * Handle revoke agent (Riverrun Agent or other named agents)
    */
-  const handleRevokeRiverrunAgent = useCallback(async () => {
-    Alert.alert(
-      'Revoke Riverrun Agent',
-      'This will revoke the Riverrun Agent from the blockchain and clear local storage. You will need to approve a new agent for future trading.',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Revoke',
-          style: 'destructive',
-          onPress: async () => {
-            const success = await revokeAgent();
-            if (success) {
-              await checkAgentStatus();
-              await getAllAgents();
-            }
-          },
-        },
-      ],
-    );
-  }, [revokeAgent, checkAgentStatus, getAllAgents]);
-
-  /**
-   * Handle revoke other named agent
-   */
-  const handleRevokeOtherAgent = useCallback(
+  const handleRevokeAgent = useCallback(
     async (agentName: string) => {
-      const success = await revokeNamedAgent(agentName);
+      const success = await revokeAgent(agentName);
       if (success) {
+        await checkAgentStatus();
         await getAllAgents();
       }
     },
-    [revokeNamedAgent, getAllAgents],
+    [revokeAgent, checkAgentStatus, getAllAgents],
   );
 
   /**
@@ -210,7 +184,9 @@ export default function ApprovalStatus() {
   const isLoading = isAgentLoading || isBuilderFeeLoading || isReferralLoading;
 
   // Get other named agents (exclude Riverrun Agent)
-  const otherNamedAgents = allAgents.filter(agent => agent.name && agent.name !== 'Riverrun Agent');
+  const otherNamedAgents = allAgents.filter(
+    agent => agent.name && agent.name !== DEFAULT_AGENT_NAME,
+  );
 
   return (
     <PortalProvider>
@@ -316,7 +292,7 @@ export default function ApprovalStatus() {
                       ) : (
                         <Button.Gray
                           level="sm"
-                          onPress={handleRevokeRiverrunAgent}
+                          onPress={() => handleRevokeAgent(DEFAULT_AGENT_NAME)}
                           disabled={isAgentLoading}
                           backgroundColor="$red9"
                           color="$red1"
@@ -355,7 +331,7 @@ export default function ApprovalStatus() {
                       <XStack flexShrink={0}>
                         <Button.Gray
                           level="sm"
-                          onPress={() => handleRevokeOtherAgent(agent.name || '')}
+                          onPress={() => handleRevokeAgent(agent.name || '')}
                           disabled={isAgentLoading}
                           backgroundColor="$red9"
                           color="$red1"

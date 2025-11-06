@@ -110,16 +110,20 @@ export function useAgentApproval() {
   }, [getMasterExchangeClient, getInfoClient]);
 
   /**
-   * Revoke a specific named agent from blockchain using 0x0 address
+   * Revoke a named agent from blockchain using 0x0 address
    * @param agentName - The name of the agent to revoke
    * @returns Promise that resolves to true if successful
    */
-  const revokeNamedAgent = useCallback(
+  const revoke = useCallback(
     async (agentName: string): Promise<boolean> => {
+      const isRiverrunAgent = agentName === DEFAULT_AGENT_NAME;
+
       return new Promise<boolean>(resolve => {
         Alert.alert(
-          'Revoke Agent',
-          `This will revoke "${agentName}" from the blockchain. The agent will no longer be able to trade on your behalf. Continue?`,
+          isRiverrunAgent ? 'Revoke Riverrun Agent' : 'Revoke Agent',
+          isRiverrunAgent
+            ? 'This will revoke the Riverrun Agent from the blockchain and clear local storage. You will need to approve a new agent for future trading.'
+            : `This will revoke "${agentName}" from the blockchain. The agent will no longer be able to trade on your behalf. Continue?`,
           [
             {
               text: 'Cancel',
@@ -152,6 +156,11 @@ export function useAgentApproval() {
                   // Wait for blockchain state to propagate
                   await new Promise(resolve => setTimeout(resolve, 2000));
 
+                  // Clear local storage for Riverrun Agent
+                  if (isRiverrunAgent) {
+                    await clearAgentSigner(masterAddress);
+                  }
+
                   // Verify revoke
                   const agents = await infoClient.extraAgents({ user: masterAddress });
                   const stillExists = agents.some(
@@ -162,14 +171,28 @@ export function useAgentApproval() {
                     Alert.alert('Error', 'Agent revoke was not confirmed. Please try again.');
                     resolve(false);
                   } else {
-                    Alert.alert('Success', `"${agentName}" has been revoked successfully.`);
+                    // Update state if Riverrun Agent
+                    if (isRiverrunAgent) {
+                      setAgentAddress(undefined);
+                      setIsApproved(false);
+                    }
+
+                    Alert.alert(
+                      'Success',
+                      isRiverrunAgent
+                        ? 'Riverrun Agent revoked successfully'
+                        : `"${agentName}" has been revoked successfully.`,
+                    );
+
                     // Refresh status
-                    await checkStatus();
+                    if (isRiverrunAgent) {
+                      await checkStatus();
+                    }
                     await getAllAgents();
                     resolve(true);
                   }
                 } catch (error) {
-                  console.error('Failed to revoke named agent:', error);
+                  console.error('Failed to revoke agent:', error);
                   Alert.alert(
                     'Error',
                     error instanceof Error ? error.message : 'Failed to revoke agent',
@@ -186,73 +209,6 @@ export function useAgentApproval() {
     },
     [getMasterExchangeClient, getInfoClient, checkStatus, getAllAgents],
   );
-
-  /**
-   * Revoke Riverrun Agent from blockchain and clear local storage
-   * Shows confirmation dialog before revoking
-   */
-  const revoke = useCallback(async (): Promise<boolean> => {
-    return new Promise<boolean>(resolve => {
-      Alert.alert(
-        'Revoke Riverrun Agent',
-        'This will revoke the Riverrun Agent from the blockchain and clear local storage. You will need to approve a new agent for future trading.',
-        [
-          {
-            text: 'Cancel',
-            style: 'cancel',
-            onPress: () => resolve(false),
-          },
-          {
-            text: 'Revoke',
-            style: 'destructive',
-            onPress: async () => {
-              try {
-                setIsLoading(true);
-
-                const masterExchangeClient = await getMasterExchangeClient();
-                if (!masterExchangeClient) {
-                  Alert.alert('Error', 'Failed to get master wallet');
-                  resolve(false);
-                  return;
-                }
-
-                const masterAddress = await getWalletAddress(masterExchangeClient.wallet);
-
-                // Revoke from blockchain using 0x0 address
-                await masterExchangeClient.approveAgent({
-                  agentAddress: '0x0000000000000000000000000000000000000000',
-                  agentName: DEFAULT_AGENT_NAME,
-                });
-
-                // Wait for blockchain state to propagate
-                await new Promise(resolve => setTimeout(resolve, 2000));
-
-                // Clear agent signer from local storage
-                await clearAgentSigner(masterAddress);
-
-                // Update state
-                setAgentAddress(undefined);
-                setIsApproved(false);
-
-                Alert.alert('Success', 'Riverrun Agent revoked successfully');
-                await getAllAgents();
-                resolve(true);
-              } catch (error) {
-                console.error('Failed to revoke agent:', error);
-                Alert.alert(
-                  'Error',
-                  error instanceof Error ? error.message : 'Failed to revoke agent',
-                );
-                resolve(false);
-              } finally {
-                setIsLoading(false);
-              }
-            },
-          },
-        ],
-      );
-    });
-  }, [getMasterExchangeClient, getAllAgents]);
 
   /**
    * Approve Riverrun Agent with confirmation dialog
@@ -322,6 +278,5 @@ export function useAgentApproval() {
     approve,
     revoke,
     getAllAgents,
-    revokeNamedAgent,
   };
 }
