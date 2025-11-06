@@ -254,12 +254,72 @@ export function useAgentApproval() {
     });
   }, [getMasterExchangeClient, getAllAgents]);
 
+  /**
+   * Approve Riverrun Agent with confirmation dialog
+   * Generates new agent and approves it on blockchain
+   */
+  const approve = useCallback(async (): Promise<boolean> => {
+    try {
+      setIsLoading(true);
+
+      const masterExchangeClient = await getMasterExchangeClient();
+      if (!masterExchangeClient) {
+        Alert.alert('Error', 'Failed to get master wallet');
+        return false;
+      }
+
+      const masterAddress = await getWalletAddress(masterExchangeClient.wallet);
+      const ethersProvider = await getProvider();
+      if (!ethersProvider) {
+        Alert.alert('Error', 'Failed to get wallet provider');
+        return false;
+      }
+
+      // Generate new agent
+      const agentSigner = await getOrCreateAgentSigner(masterAddress, ethersProvider);
+      const agentAddr = await agentSigner.getAddress();
+
+      // Approve agent on blockchain
+      await masterExchangeClient.approveAgent({
+        agentAddress: agentAddr,
+        agentName: DEFAULT_AGENT_NAME,
+      });
+
+      // Wait for blockchain propagation
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Verify approval
+      const infoClient = getInfoClient();
+      const existingAgents = await infoClient.extraAgents({ user: masterAddress });
+      const approved = existingAgents.some(
+        agent => agent.address.toLowerCase() === agentAddr.toLowerCase(),
+      );
+
+      if (approved) {
+        setAgentAddress(agentAddr);
+        setIsApproved(true);
+        Alert.alert('Success', 'Riverrun Agent approved successfully');
+        return true;
+      } else {
+        Alert.alert('Error', 'Agent approval was not confirmed. Please try again.');
+        return false;
+      }
+    } catch (error) {
+      console.error('Failed to approve agent:', error);
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to approve agent');
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [getMasterExchangeClient, getProvider, getInfoClient]);
+
   return {
     agentAddress,
     isApproved,
     isLoading,
     allAgents,
     checkStatus,
+    approve,
     revoke,
     getAllAgents,
     revokeNamedAgent,

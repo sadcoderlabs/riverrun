@@ -32,6 +32,7 @@ export default function ApprovalStatus() {
     isLoading: isAgentLoading,
     allAgents,
     checkStatus: checkAgentStatus,
+    approve: approveAgent,
     revoke: revokeAgent,
     getAllAgents,
     revokeNamedAgent,
@@ -94,6 +95,47 @@ export default function ApprovalStatus() {
     };
     void init();
   }, [loadAllStatuses]);
+
+  /**
+   * Handle Riverrun Agent approve
+   */
+  const handleApproveRiverrunAgent = useCallback(async () => {
+    // Check if we have reached the limit of 3 non-Riverrun agents
+    const nonRiverrunAgents = allAgents.filter(
+      agent => agent.name && agent.name !== 'Riverrun Agent',
+    );
+
+    // If Riverrun Agent doesn't exist and we have 3 other agents
+    if (!isAgentApproved && nonRiverrunAgents.length >= 3) {
+      Alert.alert(
+        'Agent Limit Reached',
+        'You have 3 other named agents. Please revoke one of them first before approving Riverrun Agent.',
+      );
+      return;
+    }
+
+    // Show confirmation dialog then approve
+    Alert.alert(
+      'Approve Riverrun Agent',
+      'This will generate a new agent wallet to place orders on your behalf. You will be redirected to your wallet app to sign the approval.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Approve',
+          onPress: async () => {
+            const success = await approveAgent();
+            if (success) {
+              await checkAgentStatus();
+              await getAllAgents();
+            }
+          },
+        },
+      ],
+    );
+  }, [allAgents, isAgentApproved, approveAgent, checkAgentStatus, getAllAgents]);
 
   /**
    * Handle Riverrun Agent revoke
@@ -262,8 +304,16 @@ export default function ApprovalStatus() {
                         {isAgentApproved ? shortenAddress(agentAddress) : 'Not Approved'}
                       </Text>
                     </YStack>
-                    {isAgentApproved && (
-                      <XStack flexShrink={0}>
+                    <XStack flexShrink={0}>
+                      {!isAgentApproved ? (
+                        <Button.Tinted
+                          level="sm"
+                          onPress={handleApproveRiverrunAgent}
+                          disabled={isAgentLoading}
+                        >
+                          Approve
+                        </Button.Tinted>
+                      ) : (
                         <Button.Gray
                           level="sm"
                           onPress={handleRevokeRiverrunAgent}
@@ -274,8 +324,8 @@ export default function ApprovalStatus() {
                         >
                           Revoke
                         </Button.Gray>
-                      </XStack>
-                    )}
+                      )}
+                    </XStack>
                   </XStack>
 
                   {/* Other Named Agents */}
