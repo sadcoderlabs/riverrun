@@ -3,6 +3,8 @@ import { SymbolConverter } from '@nktkas/hyperliquid/utils';
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner-native';
 import { roundPrice } from '@/components/trade/price-utils';
+import { getBuilderParam } from '@/lib/hyperliquid/config/builder';
+import { useBuilderFee } from './useBuilderFee';
 import { useHyperliquidClient } from './useHyperliquidClient';
 
 /**
@@ -348,6 +350,7 @@ function buildSuccessMessage(params: PlaceOrderParams): { title: string; descrip
 
 export function useOrder(): UseOrderResult {
   const { getAgentExchangeClient, getSymbolConverter } = useHyperliquidClient();
+  const { ensureBuilderFeeApproval } = useBuilderFee();
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [isCanceling, setIsCanceling] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -365,7 +368,16 @@ export function useOrder(): UseOrderResult {
       setError(null);
 
       try {
-        // 1. Get agent exchange client
+        // 1. Ensure builder fee is approved
+        const isBuilderFeeApproved = await ensureBuilderFeeApproval();
+        if (!isBuilderFeeApproved) {
+          toast.info('Cancelled', {
+            description: 'Builder fee approval was cancelled',
+          });
+          return false;
+        }
+
+        // 2. Get agent exchange client
         const exchangeClient = await getAgentExchangeClient();
         if (!exchangeClient) {
           toast.info('Cancelled', {
@@ -374,7 +386,7 @@ export function useOrder(): UseOrderResult {
           return false;
         }
 
-        // 2. Get asset metadata
+        // 3. Get asset metadata
         const converter = await getSymbolConverter();
         const assetId = converter.getAssetId(params.coin);
         const szDecimals = converter.getSzDecimals(params.coin);
@@ -387,10 +399,10 @@ export function useOrder(): UseOrderResult {
           throw new Error(`Unable to find size decimals for ${params.coin}`);
         }
 
-        // 3. Validate size decimals
+        // 4. Validate size decimals
         validateSizeDecimals(params.size, szDecimals, params.coin);
 
-        // 4. Calculate extreme price for market order
+        // 5. Calculate extreme price for market order
         const isLong = params.side === 'Long';
         const marketPriceNum = parseFloat(params.marketPrice);
         const extremePrice = isLong
@@ -398,7 +410,7 @@ export function useOrder(): UseOrderResult {
           : marketPriceNum * 0.95; // Sell: 5% below market
         const price = roundPrice(extremePrice, szDecimals, false);
 
-        // 5. Build order parameters
+        // 6. Build order parameters
         const orderParams = {
           a: assetId,
           b: isLong,
@@ -408,13 +420,14 @@ export function useOrder(): UseOrderResult {
           t: { limit: { tif: 'Ioc' as const } }, // Immediate-Or-Cancel
         };
 
-        // 6. Execute order
+        // 7. Execute order with builder fee
         const response = await exchangeClient.order({
           orders: [orderParams],
           grouping: 'na',
+          builder: getBuilderParam(),
         });
 
-        // 7. Check for errors in response
+        // 8. Check for errors in response
         if (response.response.data.statuses && response.response.data.statuses.length > 0) {
           const status = response.response.data.statuses[0];
           if ('error' in status && typeof status.error === 'string') {
@@ -426,7 +439,7 @@ export function useOrder(): UseOrderResult {
           }
         }
 
-        // 8. Success
+        // 9. Success
         toast.success('Market Close Order Placed', {
           description: `Market close for ${params.size} ${params.coin}`,
         });
@@ -444,7 +457,7 @@ export function useOrder(): UseOrderResult {
         setIsPlacingOrder(false);
       }
     },
-    [getAgentExchangeClient, getSymbolConverter],
+    [ensureBuilderFeeApproval, getAgentExchangeClient, getSymbolConverter],
   );
 
   /**
@@ -460,7 +473,16 @@ export function useOrder(): UseOrderResult {
       setError(null);
 
       try {
-        // 1. Get agent exchange client
+        // 1. Ensure builder fee is approved
+        const isBuilderFeeApproved = await ensureBuilderFeeApproval();
+        if (!isBuilderFeeApproved) {
+          toast.info('Cancelled', {
+            description: 'Builder fee approval was cancelled',
+          });
+          return false;
+        }
+
+        // 2. Get agent exchange client
         const exchangeClient = await getAgentExchangeClient();
         if (!exchangeClient) {
           toast.info('Cancelled', {
@@ -469,7 +491,7 @@ export function useOrder(): UseOrderResult {
           return false;
         }
 
-        // 2. Get asset metadata
+        // 3. Get asset metadata
         const converter = await getSymbolConverter();
         const assetId = converter.getAssetId(params.coin);
         const szDecimals = converter.getSzDecimals(params.coin);
@@ -482,13 +504,13 @@ export function useOrder(): UseOrderResult {
           throw new Error(`Unable to find size decimals for ${params.coin}`);
         }
 
-        // 3. Validate size decimals
+        // 4. Validate size decimals
         validateSizeDecimals(params.size, szDecimals, params.coin);
 
-        // 4. Use user-specified price
+        // 5. Use user-specified price
         const price = params.price;
 
-        // 5. Build order parameters
+        // 6. Build order parameters
         const isLong = params.side === 'Long';
         const orderParams = {
           a: assetId,
@@ -499,13 +521,14 @@ export function useOrder(): UseOrderResult {
           t: { limit: { tif: 'Gtc' as const } }, // Good-Till-Cancel
         };
 
-        // 6. Execute order
+        // 7. Execute order with builder fee
         const response = await exchangeClient.order({
           orders: [orderParams],
           grouping: 'na',
+          builder: getBuilderParam(),
         });
 
-        // 7. Check for errors in response
+        // 8. Check for errors in response
         if (response.response.data.statuses && response.response.data.statuses.length > 0) {
           const status = response.response.data.statuses[0];
           if ('error' in status && typeof status.error === 'string') {
@@ -517,7 +540,7 @@ export function useOrder(): UseOrderResult {
           }
         }
 
-        // 8. Success
+        // 9. Success
         toast.success('Limit Close Order Placed', {
           description: `Limit close for ${params.size} ${params.coin} @ ${price}`,
         });
@@ -535,7 +558,7 @@ export function useOrder(): UseOrderResult {
         setIsPlacingOrder(false);
       }
     },
-    [getAgentExchangeClient, getSymbolConverter],
+    [ensureBuilderFeeApproval, getAgentExchangeClient, getSymbolConverter],
   );
 
   /**
@@ -674,7 +697,16 @@ export function useOrder(): UseOrderResult {
       setError(null);
 
       try {
-        // 1. Get agent exchange client
+        // 1. Ensure builder fee is approved
+        const isBuilderFeeApproved = await ensureBuilderFeeApproval();
+        if (!isBuilderFeeApproved) {
+          toast.info('Cancelled', {
+            description: 'Builder fee approval was cancelled',
+          });
+          return false;
+        }
+
+        // 2. Get agent exchange client
         const exchangeClient = await getAgentExchangeClient();
         if (!exchangeClient) {
           toast.info('Cancelled', {
@@ -683,7 +715,7 @@ export function useOrder(): UseOrderResult {
           return false;
         }
 
-        // 2. Get asset metadata
+        // 3. Get asset metadata
         const converter = await getSymbolConverter();
         const assetId = converter.getAssetId(params.coin);
         const szDecimals = converter.getSzDecimals(params.coin);
@@ -701,10 +733,10 @@ export function useOrder(): UseOrderResult {
           throw new Error('At least one of TP or SL must be provided');
         }
 
-        // 3. Validate size decimals
+        // 4. Validate size decimals
         validateSizeDecimals(params.size, szDecimals, params.coin);
 
-        // 4. Build TP/SL orders
+        // 5. Build TP/SL orders
         const orders: any[] = [];
 
         // Take Profit order (close long = sell, close short = buy)
@@ -747,13 +779,14 @@ export function useOrder(): UseOrderResult {
           orders.push(slOrder);
         }
 
-        // 5. Execute orders with positionTpsl grouping
+        // 6. Execute orders with positionTpsl grouping and builder fee
         const response = await exchangeClient.order({
           orders,
           grouping: 'positionTpsl',
+          builder: getBuilderParam(),
         });
 
-        // 6. Check for errors in response
+        // 7. Check for errors in response
         if (response.response.data.statuses && response.response.data.statuses.length > 0) {
           const errors = response.response.data.statuses
             .filter(
@@ -774,7 +807,7 @@ export function useOrder(): UseOrderResult {
           }
         }
 
-        // 7. Success
+        // 8. Success
         const orderDescriptions = [];
         if (params.tpTriggerPrice) {
           orderDescriptions.push(
@@ -803,7 +836,7 @@ export function useOrder(): UseOrderResult {
         setIsPlacingOrder(false);
       }
     },
-    [getAgentExchangeClient, getSymbolConverter],
+    [ensureBuilderFeeApproval, getAgentExchangeClient, getSymbolConverter],
   );
 
   /**
@@ -827,7 +860,16 @@ export function useOrder(): UseOrderResult {
           throw new Error('At least one of TP or SL must be provided when tpSl is enabled');
         }
 
-        // 2. Get order context (client, asset metadata)
+        // 2. Ensure builder fee is approved
+        const isBuilderFeeApproved = await ensureBuilderFeeApproval();
+        if (!isBuilderFeeApproved) {
+          toast.info('Cancelled', {
+            description: 'Builder fee approval was cancelled',
+          });
+          return false;
+        }
+
+        // 3. Get order context (client, asset metadata)
         const context = await getOrderContext(
           params.coin,
           getAgentExchangeClient,
@@ -840,10 +882,10 @@ export function useOrder(): UseOrderResult {
           return false;
         }
 
-        // 3. Validate size decimals
+        // 4. Validate size decimals
         validateSizeDecimals(params.size, context.szDecimals, params.coin);
 
-        // 4. Build orders array
+        // 5. Build orders array
         const orders: any[] = [];
 
         // Parent order (always present)
@@ -853,16 +895,17 @@ export function useOrder(): UseOrderResult {
         const tpSlOrders = buildTpSlOrders(params, context);
         orders.push(...tpSlOrders);
 
-        // 5. Determine grouping strategy
+        // 6. Determine grouping strategy
         const grouping = getGrouping(params);
 
-        // 6. Execute order
+        // 7. Execute order with builder fee
         const response = await context.exchangeClient.order({
           orders,
           grouping,
+          builder: getBuilderParam(),
         });
 
-        // 7. Handle response errors
+        // 8. Handle response errors
         if (response.response.data.statuses && response.response.data.statuses.length > 0) {
           const errors = response.response.data.statuses
             .filter(
@@ -884,7 +927,7 @@ export function useOrder(): UseOrderResult {
           }
         }
 
-        // 8. Success
+        // 9. Success
         const successMessage = buildSuccessMessage(params);
         toast.success(successMessage.title, {
           description: successMessage.description,
@@ -902,7 +945,7 @@ export function useOrder(): UseOrderResult {
         setIsPlacingOrder(false);
       }
     },
-    [getAgentExchangeClient, getSymbolConverter],
+    [ensureBuilderFeeApproval, getAgentExchangeClient, getSymbolConverter],
   );
 
   return {
