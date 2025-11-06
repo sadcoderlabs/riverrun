@@ -1,5 +1,6 @@
-import { useEffect, useState, useCallback } from 'react';
-import { Contract, formatUnits } from 'ethers';
+import { useEmbeddedEthereumWallet } from '@privy-io/expo';
+import { Contract, formatUnits, parseUnits, JsonRpcProvider } from 'ethers';
+import { useCallback, useEffect, useState } from 'react';
 import { useActiveWallet } from './useActiveWallet';
 
 // Arbitrum USDC contract address
@@ -31,7 +32,8 @@ export interface UseArbitrumUSDCBalanceResult {
  * @returns Balance information and transfer function
  */
 export function useArbitrumUSDCBalance(): UseArbitrumUSDCBalanceResult {
-  const { address, getProvider, switchChain } = useActiveWallet();
+  const { address, getProvider, switchChain, walletType } = useActiveWallet();
+  const { wallets: embeddedWallets } = useEmbeddedEthereumWallet();
   const [balance, setBalance] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -121,12 +123,76 @@ export function useArbitrumUSDCBalance(): UseArbitrumUSDCBalanceResult {
         throw new Error('Wallet not connected');
       }
 
+      // Use Privy's official approach for embedded wallets
+      if (walletType === 'privy' && embeddedWallets && embeddedWallets.length > 0) {
+        const wallet = embeddedWallets[0];
+        const privyProvider = await wallet.getProvider();
+
+        // Request accounts from Privy
+        const accounts = (await privyProvider.request({
+          method: 'eth_requestAccounts',
+        })) as string[];
+
+        if (!accounts || accounts.length === 0) {
+          throw new Error('No accounts available');
+        }
+
+        // Create independent RPC provider for gas estimation and broadcasting
+        const independentProvider = new JsonRpcProvider('https://arb1.arbitrum.io/rpc');
+
+        // Get token info
+        const usdcContract = new Contract(ARBITRUM_USDC_ADDRESS, ERC20_ABI, independentProvider);
+        const decimals = await usdcContract.decimals();
+        const amountRaw = parseUnits(amount, decimals);
+
+        // Encode transfer function
+        const transferData = usdcContract.interface.encodeFunctionData('transfer', [to, amountRaw]);
+
+        // Use fixed gas limit for ERC20 transfer (standard is ~65000)
+        const gasLimit = 100000n;
+
+        const feeData = await independentProvider.getFeeData();
+        const nonce = await independentProvider.getTransactionCount(accounts[0], 'pending');
+
+        // Build transaction for signing
+        const txToSign = {
+          from: accounts[0],
+          to: ARBITRUM_USDC_ADDRESS,
+          value: '0x0',
+          data: transferData,
+          gasLimit: '0x' + gasLimit.toString(16),
+          maxFeePerGas: feeData.maxFeePerGas ? '0x' + feeData.maxFeePerGas.toString(16) : undefined,
+          maxPriorityFeePerGas: feeData.maxPriorityFeePerGas
+            ? '0x' + feeData.maxPriorityFeePerGas.toString(16)
+            : undefined,
+          nonce: '0x' + nonce.toString(16),
+          chainId: '0xa4b1', // Arbitrum
+        };
+
+        // Sign with Privy provider
+        const signedTx = await privyProvider.request({
+          method: 'eth_signTransaction',
+          params: [txToSign],
+        });
+
+        // Broadcast with independent provider
+        const txHash = await independentProvider.send('eth_sendRawTransaction', [
+          signedTx as string,
+        ]);
+
+        // Wait for confirmation
+        await independentProvider.waitForTransaction(txHash);
+
+        await fetchBalance();
+        return txHash;
+      }
+
+      // Fallback for external wallets
       const provider = await getProvider();
       if (!provider) {
         throw new Error('Provider not available');
       }
 
-      // Check if we're on Arbitrum
       const network = await provider.getNetwork();
       if (network.chainId !== 42161n) {
         throw new Error('Please switch to Arbitrum network');
@@ -135,24 +201,26 @@ export function useArbitrumUSDCBalance(): UseArbitrumUSDCBalanceResult {
       const signer = await provider.getSigner();
       const usdcContract = new Contract(ARBITRUM_USDC_ADDRESS, ERC20_ABI, signer);
 
-      // Get decimals and convert amount to raw units
       const decimals = await usdcContract.decimals();
-      const amountRaw = BigInt(parseFloat(amount) * 10 ** Number(decimals));
+      const amountRaw = parseUnits(amount, decimals);
 
-      // Send transaction
+      console.log('External wallet transfer:', {
+        from: address,
+        to,
+        amount,
+        amountRaw: amountRaw.toString(),
+      });
+
       const tx = await usdcContract.transfer(to, amountRaw);
-      console.log('Transfer transaction sent:', tx.hash);
+      console.log('Transaction sent:', tx.hash);
 
-      // Wait for confirmation
       await tx.wait();
-      console.log('Transfer confirmed:', tx.hash);
+      console.log('Transaction confirmed:', tx.hash);
 
-      // Refetch balance after transfer
       await fetchBalance();
-
       return tx.hash;
     },
-    [address, getProvider, fetchBalance],
+    [address, walletType, embeddedWallets, getProvider, fetchBalance],
   );
 
   // Fetch balance on mount and when address changes
