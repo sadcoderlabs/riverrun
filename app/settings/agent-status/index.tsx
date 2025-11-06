@@ -155,6 +155,7 @@ export default function AgentStatus() {
 
         {/* Content */}
         <ScrollView
+          flex={1}
           contentInsetAdjustmentBehavior="automatic"
           backgroundColor="$gray3"
           refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />}
@@ -167,7 +168,7 @@ export default function AgentStatus() {
               </Text>
             </View>
           ) : (
-            <YStack backgroundColor="$gray3">
+            <YStack backgroundColor="$gray3" minHeight="100%">
               {/* Agent Section */}
               <YStack gap="$2" mx="$4" my="$4">
                 <Text
