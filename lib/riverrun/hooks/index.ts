@@ -1,5 +1,4 @@
 export * from './useActiveWallet';
-export * from './useArbitrumUSDCBalance';
-export * from './useSendTransaction';
+export * from './useArbitrumUsdc';
 export * from './useThemePreference';
 export * from './useWalletManager';

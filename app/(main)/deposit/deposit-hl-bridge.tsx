@@ -7,12 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, Input, Spinner, Text, XStack, YStack } from 'tamagui';
 import { toast } from 'sonner-native';
 import { DEPOSIT_TOKENS, ChainName } from '@/lib/riverrun/transfer-fund/constants/deposit-tokens';
-import {
-  useActiveWallet,
-  useArbitrumUSDCBalance,
-  useSendTransaction,
-  ARBITRUM_USDC_ADDRESS,
-} from '@/lib/riverrun/hooks';
+import { useActiveWallet, useArbitrumUsdc, ARBITRUM_USDC_ADDRESS } from '@/lib/riverrun/hooks';
 
 // Hyperliquid Bridge contract address on Arbitrum
 const HYPERLIQUID_BRIDGE_ADDRESS = '0x2Df1c51E09aECF9cacB7bc98cB1742757f163dF7';
@@ -39,8 +34,7 @@ export default function HyperliquidBridgePage() {
 
   // Wallet and balance hooks
   const { address, isAuthenticated } = useActiveWallet();
-  const { balance } = useArbitrumUSDCBalance();
-  const { depositUsdc } = useSendTransaction();
+  const { balance, depositUsdc } = useArbitrumUsdc();
 
   // Find the token based on symbol from URL params
   const token = DEPOSIT_TOKENS.find(t => t.symbol === params.symbol);

@@ -1,15 +1,14 @@
-import { useEmbeddedEthereumWallet } from '@privy-io/expo';
-import { Contract, parseUnits, JsonRpcProvider } from 'ethers';
-import { useCallback, useState } from 'react';
+import { Contract, formatUnits, parseUnits, JsonRpcProvider } from 'ethers';
+import { useCallback, useEffect, useState } from 'react';
 import { useActiveWallet } from './useActiveWallet';
 
 // Arbitrum USDC contract address
-const ARBITRUM_USDC_ADDRESS = '0xaf88d065e77c8cC2239327C5EDb3A432268e5831';
+export const ARBITRUM_USDC_ADDRESS = '0xaf88d065e77c8cC2239327C5EDb3A432268e5831';
 
 // Arbitrum chain ID
 const ARBITRUM_CHAIN_ID = 42161;
 
-// Independent RPC provider URL
+// Independent RPC provider URL for Privy workaround
 const ARBITRUM_RPC_URL = 'https://arb1.arbitrum.io/rpc';
 
 // Fixed gas limit for ERC20 transfers
@@ -22,7 +21,12 @@ const ERC20_ABI = [
   'function transfer(address to, uint256 amount) returns (bool)',
 ];
 
-export interface UseSendTransactionResult {
+export interface UseArbitrumUsdcResult {
+  /**
+   * Current USDC balance as a formatted string (e.g., "10.5"), or null if not available
+   */
+  balance: string | null;
+
   /**
    * Deposit USDC to a recipient address on Arbitrum
    *
@@ -31,22 +35,22 @@ export interface UseSendTransactionResult {
    * @returns Transaction hash
    */
   depositUsdc: (to: string, amount: string) => Promise<string>;
-  isLoading: boolean;
-  error: string | null;
 }
 
 /**
- * Hook for sending transactions
+ * Hook for Arbitrum USDC operations
+ *
+ * Provides:
+ * - Automatic balance monitoring (updates every 10 seconds)
+ * - USDC transfer functionality with proper wallet handling
+ * - Automatic network switching to Arbitrum if needed
  *
  * Handles different wallet providers (Privy embedded wallet vs external wallets)
  * and abstracts away the complexity of transaction signing and broadcasting.
  *
- * Currently supports:
- * - USDC deposits on Arbitrum
- *
  * @example
  * ```tsx
- * const { depositUsdc, isLoading, error } = useSendTransaction();
+ * const { balance, depositUsdc } = useArbitrumUsdc();
  *
  * const handleDeposit = async () => {
  *   try {
@@ -56,14 +60,69 @@ export interface UseSendTransactionResult {
  *     console.error('Transaction failed:', err);
  *   }
  * };
+ *
+ * return <Text>{balance || '0.0'} USDC</Text>;
  * ```
  */
-export function useSendTransaction(): UseSendTransactionResult {
-  const { address, walletType, getProvider } = useActiveWallet();
-  const { wallets: embeddedWallets } = useEmbeddedEthereumWallet();
+export function useArbitrumUsdc(): UseArbitrumUsdcResult {
+  const { address, getProvider, switchChain, walletType } = useActiveWallet();
+  const [balance, setBalance] = useState<string | null>(null);
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const fetchBalance = useCallback(async () => {
+    if (!address) {
+      setBalance(null);
+      return;
+    }
+
+    try {
+      const provider = await getProvider();
+      if (!provider) {
+        return;
+      }
+
+      // Check if we're on Arbitrum (chainId 42161)
+      const network = await provider.getNetwork();
+
+      if (network.chainId !== 42161n) {
+        // Automatically attempt to switch to Arbitrum
+        try {
+          await switchChain(42161);
+          // Wait for the switch to complete and retry on next poll
+          return;
+        } catch (switchError) {
+          console.error('Failed to switch to Arbitrum network:', switchError);
+          return;
+        }
+      }
+
+      const usdcContract = new Contract(ARBITRUM_USDC_ADDRESS, ERC20_ABI, provider);
+      const balanceRaw = await usdcContract.balanceOf(address);
+      const decimals = await usdcContract.decimals();
+
+      // Format balance to human-readable string
+      const formattedBalance = formatUnits(balanceRaw, decimals);
+      setBalance(formattedBalance);
+    } catch (err) {
+      console.error('Failed to fetch USDC balance:', err);
+      setBalance(null);
+    }
+  }, [address, getProvider, switchChain]);
+
+  // Fetch balance on mount and when address changes
+  useEffect(() => {
+    fetchBalance();
+  }, [fetchBalance]);
+
+  // Poll balance every 10 seconds
+  useEffect(() => {
+    if (!address) return;
+
+    const interval = setInterval(() => {
+      fetchBalance();
+    }, 10000); // 10 seconds
+
+    return () => clearInterval(interval);
+  }, [address, fetchBalance]);
 
   /**
    * Deposit USDC using Privy embedded wallet
@@ -71,20 +130,14 @@ export function useSendTransaction(): UseSendTransactionResult {
    */
   const depositUsdcWithPrivy = useCallback(
     async (to: string, amount: string): Promise<string> => {
-      if (!embeddedWallets || embeddedWallets.length === 0) {
-        throw new Error('Privy wallet not available');
+      if (!address) {
+        throw new Error('Wallet address not available');
       }
 
-      const wallet = embeddedWallets[0];
-      const privyProvider = await wallet.getProvider();
-
-      // Request accounts from Privy
-      const accounts = (await privyProvider.request({
-        method: 'eth_requestAccounts',
-      })) as string[];
-
-      if (!accounts || accounts.length === 0) {
-        throw new Error('No accounts available');
+      // Get Privy provider through useActiveWallet
+      const provider = await getProvider();
+      if (!provider) {
+        throw new Error('Provider not available');
       }
 
       // Create independent RPC provider for reading blockchain state and broadcasting
@@ -96,10 +149,10 @@ export function useSendTransaction(): UseSendTransactionResult {
       const amountRaw = parseUnits(amount, decimals);
 
       // Check balance
-      const balance = await usdcContract.balanceOf(accounts[0]);
-      if (balance < amountRaw) {
+      const balanceRaw = await usdcContract.balanceOf(address);
+      if (balanceRaw < amountRaw) {
         throw new Error(
-          `Insufficient balance. You have ${balance.toString()} but need ${amountRaw.toString()}`,
+          `Insufficient balance. You have ${balanceRaw.toString()} but need ${amountRaw.toString()}`,
         );
       }
 
@@ -108,11 +161,11 @@ export function useSendTransaction(): UseSendTransactionResult {
 
       // Get fee data and nonce
       const feeData = await independentProvider.getFeeData();
-      const nonce = await independentProvider.getTransactionCount(accounts[0], 'pending');
+      const nonce = await independentProvider.getTransactionCount(address, 'pending');
 
       // Build transaction for signing
       const txToSign = {
-        from: accounts[0],
+        from: address,
         to: ARBITRUM_USDC_ADDRESS,
         value: '0x0',
         data: transferData,
@@ -125,21 +178,21 @@ export function useSendTransaction(): UseSendTransactionResult {
         chainId: '0x' + ARBITRUM_CHAIN_ID.toString(16),
       };
 
-      // Sign with Privy provider
-      const signedTx = await privyProvider.request({
-        method: 'eth_signTransaction',
-        params: [txToSign],
-      });
+      // Sign with Privy provider using BrowserProvider.send()
+      const signedTx = (await provider.send('eth_signTransaction', [txToSign])) as string;
 
       // Broadcast with independent provider
-      const txHash = await independentProvider.send('eth_sendRawTransaction', [signedTx as string]);
+      const txHash = await independentProvider.send('eth_sendRawTransaction', [signedTx]);
 
       // Wait for confirmation
       await independentProvider.waitForTransaction(txHash);
 
+      // Refresh balance after successful transfer
+      await fetchBalance();
+
       return txHash;
     },
-    [embeddedWallets],
+    [address, getProvider, fetchBalance],
   );
 
   /**
@@ -168,10 +221,10 @@ export function useSendTransaction(): UseSendTransactionResult {
       const amountRaw = parseUnits(amount, decimals);
 
       // Check balance
-      const balance = await usdcContract.balanceOf(address);
-      if (balance < amountRaw) {
+      const balanceRaw = await usdcContract.balanceOf(address);
+      if (balanceRaw < amountRaw) {
         throw new Error(
-          `Insufficient balance. You have ${balance.toString()} but need ${amountRaw.toString()}`,
+          `Insufficient balance. You have ${balanceRaw.toString()} but need ${amountRaw.toString()}`,
         );
       }
 
@@ -181,9 +234,12 @@ export function useSendTransaction(): UseSendTransactionResult {
       // Wait for confirmation
       await tx.wait();
 
+      // Refresh balance after successful transfer
+      await fetchBalance();
+
       return tx.hash;
     },
-    [address, getProvider],
+    [address, getProvider, fetchBalance],
   );
 
   /**
@@ -196,35 +252,19 @@ export function useSendTransaction(): UseSendTransactionResult {
         throw new Error('Wallet not connected');
       }
 
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        let txHash: string;
-
-        if (walletType === 'privy') {
-          txHash = await depositUsdcWithPrivy(to, amount);
-        } else if (walletType === 'external') {
-          txHash = await depositUsdcWithExternalWallet(to, amount);
-        } else {
-          throw new Error('Unknown wallet type');
-        }
-
-        return txHash;
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Transaction failed';
-        setError(errorMessage);
-        throw err;
-      } finally {
-        setIsLoading(false);
+      if (walletType === 'privy') {
+        return await depositUsdcWithPrivy(to, amount);
+      } else if (walletType === 'external') {
+        return await depositUsdcWithExternalWallet(to, amount);
+      } else {
+        throw new Error('Unknown wallet type');
       }
     },
     [address, walletType, depositUsdcWithPrivy, depositUsdcWithExternalWallet],
   );
 
   return {
+    balance,
     depositUsdc,
-    isLoading,
-    error,
   };
 }
