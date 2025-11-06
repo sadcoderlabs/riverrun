@@ -1,9 +1,9 @@
-import { getWalletAddress } from '@nktkas/hyperliquid/signing';
 import { useCallback, useState } from 'react';
 import { Alert } from 'react-native';
 
 import { BUILDER_CONFIG } from '@/lib/hyperliquid/builderFee/config';
 import { useHyperliquidClient } from '@/lib/hyperliquid/hooks/useHyperliquidClient';
+import { useActiveWallet } from '@/lib/riverrun/hooks/useActiveWallet';
 
 /**
  * Hook for managing builder fee approval status
@@ -11,6 +11,7 @@ import { useHyperliquidClient } from '@/lib/hyperliquid/hooks/useHyperliquidClie
  */
 export function useBuilderFee() {
   const { getMasterExchangeClient, getInfoClient } = useHyperliquidClient();
+  const { address } = useActiveWallet();
   const [isBuilderFeeLoading, setIsBuilderFeeLoading] = useState(false);
   const [maxApprovedFee, setMaxApprovedFee] = useState<number>(0);
 
@@ -22,16 +23,13 @@ export function useBuilderFee() {
     try {
       setIsBuilderFeeLoading(true);
 
-      const masterExchangeClient = await getMasterExchangeClient();
-      if (!masterExchangeClient) {
+      if (!address) {
         return 0;
       }
 
-      const userAddress = await getWalletAddress(masterExchangeClient.wallet);
       const infoClient = getInfoClient();
-
       const maxFee = await infoClient.maxBuilderFee({
-        user: userAddress,
+        user: address,
         builder: BUILDER_CONFIG.address,
       });
 
@@ -44,7 +42,7 @@ export function useBuilderFee() {
     } finally {
       setIsBuilderFeeLoading(false);
     }
-  }, [getMasterExchangeClient, getInfoClient]);
+  }, [address, getInfoClient]);
 
   /**
    * Core approval logic - executes the approval transaction and verifies success
@@ -130,19 +128,15 @@ export function useBuilderFee() {
     try {
       setIsBuilderFeeLoading(true);
 
-      // Get master exchange client (required for approval)
-      const masterExchangeClient = await getMasterExchangeClient();
-      if (!masterExchangeClient) {
+      if (!address) {
         return false;
       }
 
-      // Get user address from the master wallet
-      const userAddress = await getWalletAddress(masterExchangeClient.wallet);
       const infoClient = getInfoClient();
 
       // Check if builder fee is already approved with sufficient amount
       const maxFee = await infoClient.maxBuilderFee({
-        user: userAddress,
+        user: address,
         builder: BUILDER_CONFIG.address,
       });
 
@@ -186,7 +180,7 @@ export function useBuilderFee() {
     } finally {
       setIsBuilderFeeLoading(false);
     }
-  }, [getMasterExchangeClient, getInfoClient, executeApproval]);
+  }, [address, getInfoClient, executeApproval]);
 
   /**
    * Revoke builder fee by setting max fee rate to 0%
