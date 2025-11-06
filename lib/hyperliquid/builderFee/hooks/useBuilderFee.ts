@@ -18,11 +18,11 @@ export function useBuilderFee() {
   const { getMasterExchangeClient, getInfoClient } = useHyperliquidClient();
 
   /**
-   * Check if the user has approved sufficient builder fee for the configured builder
+   * Get the maximum approved builder fee rate for the user
    * @param userAddress - The user's wallet address
    * @returns The maximum approved builder fee rate in 0.1bps units (e.g., 25 = 0.025%)
    */
-  const checkBuilderFeeApproval = useCallback(
+  const getMaxApprovedBuilderFee = useCallback(
     async (userAddress: string): Promise<number> => {
       try {
         const infoClient = getInfoClient();
@@ -35,7 +35,7 @@ export function useBuilderFee() {
 
         return maxApprovedFee;
       } catch (error) {
-        console.error('Failed to check builder fee approval:', error);
+        console.error('Failed to get max approved builder fee:', error);
         return 0; // Return 0 if check fails (not approved)
       }
     },
@@ -66,7 +66,7 @@ export function useBuilderFee() {
       const userAddress = await getWalletAddress(masterExchangeClient.wallet);
 
       // Check if builder fee is already approved with sufficient amount
-      const maxApprovedFee = await checkBuilderFeeApproval(userAddress);
+      const maxApprovedFee = await getMaxApprovedBuilderFee(userAddress);
 
       // If approved with sufficient fee rate, no need to request approval again
       if (maxApprovedFee >= BUILDER_CONFIG.feeRate) {
@@ -99,7 +99,7 @@ export function useBuilderFee() {
                   });
 
                   // Verify that the approval succeeded
-                  const maxApprovedFeeAfter = await checkBuilderFeeApproval(userAddress);
+                  const maxApprovedFeeAfter = await getMaxApprovedBuilderFee(userAddress);
 
                   if (maxApprovedFeeAfter < BUILDER_CONFIG.feeRate) {
                     Alert.alert(
@@ -134,10 +134,10 @@ export function useBuilderFee() {
       );
       return false;
     }
-  }, [getMasterExchangeClient, checkBuilderFeeApproval]);
+  }, [getMasterExchangeClient, getMaxApprovedBuilderFee]);
 
   return {
-    checkBuilderFeeApproval,
+    getMaxApprovedBuilderFee,
     ensureBuilderFeeApproval,
   };
 }
