@@ -9,7 +9,7 @@ import { useHyperliquidClient } from '@/lib/hyperliquid/hooks/useHyperliquidClie
  * Hook for managing builder fee approval status
  * Provides functions to check, approve, and revoke builder fee
  */
-export function useBuilderFeeApproval() {
+export function useBuilderFee() {
   const { getMasterExchangeClient, getInfoClient } = useHyperliquidClient();
   const [isBuilderFeeLoading, setIsBuilderFeeLoading] = useState(false);
   const [maxApprovedFee, setMaxApprovedFee] = useState<number>(0);

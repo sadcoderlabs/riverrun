@@ -1,7 +1,7 @@
 import { ListButton, ListItem } from '@/components/global/list-item';
 import { ListSection } from '@/components/global/list-section';
 import { BUILDER_CONFIG } from '@/lib/hyperliquid/builderFee/config';
-import { useBuilderFeeApproval } from '@/lib/hyperliquid/builderFee/hooks/useBuilderFeeApproval';
+import { useBuilderFee } from '@/lib/hyperliquid/builderFee/hooks/useBuilderFee';
 import { ArrowLeft } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
@@ -21,7 +21,7 @@ export default function BuilderFeeStatus() {
     checkBuilderFeeStatus,
     approveBuilderFee,
     revokeBuilderFee,
-  } = useBuilderFeeApproval();
+  } = useBuilderFee();
 
   // Loading and refresh states
   const [isRefreshing, setIsRefreshing] = useState(false);

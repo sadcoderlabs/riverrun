@@ -4,7 +4,7 @@ import { useCallback, useState } from 'react';
 import { toast } from 'sonner-native';
 import { roundPrice } from '@/components/trade/price-utils';
 import { getBuilderParam } from '@/lib/hyperliquid/builderFee/config';
-import { useBuilderFeeApproval } from '@/lib/hyperliquid/builderFee/hooks/useBuilderFeeApproval';
+import { useBuilderFee } from '@/lib/hyperliquid/builderFee/hooks/useBuilderFee';
 import { useHyperliquidClient } from './useHyperliquidClient';
 
 /**
@@ -350,7 +350,7 @@ function buildSuccessMessage(params: PlaceOrderParams): { title: string; descrip
 
 export function useOrder(): UseOrderResult {
   const { getAgentExchangeClient, getSymbolConverter } = useHyperliquidClient();
-  const { ensureBuilderFeeApproval } = useBuilderFeeApproval();
+  const { ensureBuilderFeeApproval } = useBuilderFee();
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [isCanceling, setIsCanceling] = useState(false);
   const [error, setError] = useState<string | null>(null);
