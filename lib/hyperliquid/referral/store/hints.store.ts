@@ -3,10 +3,10 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
 /**
- * Store for managing approval-related hint preferences
+ * Store for managing referral hint preferences
  * Tracks whether user wants to see referral hints during trading
  */
-interface ApprovalHintsState {
+interface ReferralHintsState {
   /**
    * Whether to suppress referral hints when user doesn't have a referrer
    * If true, won't show referral setup dialog during trading
@@ -29,7 +29,7 @@ interface ApprovalHintsState {
   _setHasHydrated: (state: boolean) => void;
 }
 
-export const useApprovalHintsStore = create<ApprovalHintsState>()(
+export const useReferralHintsStore = create<ReferralHintsState>()(
   persist(
     set => ({
       dontHintReferral: false,
@@ -38,7 +38,7 @@ export const useApprovalHintsStore = create<ApprovalHintsState>()(
       _setHasHydrated: state => set({ _hasHydrated: state }),
     }),
     {
-      name: '@riverrun:approval_hints',
+      name: '@riverrun:referral_hints',
       storage: createJSONStorage(() => AsyncStorage),
       onRehydrateStorage: () => state => {
         if (state) state._setHasHydrated(true);

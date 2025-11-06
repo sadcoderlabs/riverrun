@@ -3,8 +3,8 @@ import { SymbolConverter } from '@nktkas/hyperliquid/utils';
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner-native';
 import { roundPrice } from '@/components/trade/price-utils';
-import { getBuilderParam } from '@/lib/hyperliquid/config/builder';
-import { useBuilderFee } from './useBuilderFee';
+import { getBuilderParam } from '@/lib/hyperliquid/builderFee/config';
+import { useBuilderFee } from '@/lib/hyperliquid/builderFee/hooks/useBuilderFee';
 import { useHyperliquidClient } from './useHyperliquidClient';
 
 /**

@@ -2,10 +2,8 @@ import { getWalletAddress } from '@nktkas/hyperliquid/signing';
 import { useCallback } from 'react';
 import { Alert } from 'react-native';
 
-import { BUILDER_CONFIG } from '@/lib/hyperliquid/config/builder';
+import { BUILDER_CONFIG } from '@/lib/hyperliquid/builderFee/config';
 import { useHyperliquidClient } from '@/lib/hyperliquid/hooks/useHyperliquidClient';
-import { useReferralStatus } from '@/lib/hyperliquid/hooks/useReferralStatus';
-import { useApprovalHintsStore } from '@/lib/riverrun/store/approval-hints.store';
 
 /**
  * Hook for managing builder fee approval and checking approval status.
@@ -18,38 +16,6 @@ import { useApprovalHintsStore } from '@/lib/riverrun/store/approval-hints.store
  */
 export function useBuilderFee() {
   const { getMasterExchangeClient, getInfoClient } = useHyperliquidClient();
-  const { checkStatus: checkReferralStatus, showReferralHint } = useReferralStatus();
-  const { dontHintReferral, setDontHintReferral } = useApprovalHintsStore();
-
-  /**
-   * Check if user has referrer and prompt to set one if not
-   * Only prompts if user hasn't opted out of hints
-   */
-  const checkAndPromptReferral = useCallback(async () => {
-    try {
-      // Don't prompt if user opted out
-      if (dontHintReferral) {
-        return;
-      }
-
-      // Check if user already has a referrer
-      const referralInfo = await checkReferralStatus();
-      if (referralInfo.referrer) {
-        // User already has a referrer, no need to prompt
-        return;
-      }
-
-      // Show referral hint dialog with "don't ask again" option
-      await showReferralHint(result => {
-        if (result.dontAskAgain) {
-          setDontHintReferral(true);
-        }
-      });
-    } catch (error) {
-      console.error('Failed to check and prompt referral:', error);
-      // Silently fail - don't block the main flow
-    }
-  }, [dontHintReferral, checkReferralStatus, showReferralHint, setDontHintReferral]);
 
   /**
    * Check if the user has approved sufficient builder fee for the configured builder
@@ -144,9 +110,6 @@ export function useBuilderFee() {
                     return;
                   }
 
-                  // After builder fee approval succeeds, check and prompt for referral
-                  checkAndPromptReferral();
-
                   resolve(true);
                 } catch (error) {
                   console.error('Failed to approve builder fee:', error);
@@ -171,7 +134,7 @@ export function useBuilderFee() {
       );
       return false;
     }
-  }, [getMasterExchangeClient, checkBuilderFeeApproval, checkAndPromptReferral]);
+  }, [getMasterExchangeClient, checkBuilderFeeApproval]);
 
   return {
     checkBuilderFeeApproval,

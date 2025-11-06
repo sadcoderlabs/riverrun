@@ -71,8 +71,14 @@ export default function Index() {
                   onPress={() => router.push('/settings/agent-status')}
                 />
                 <ListItem
-                  title="Approval Status"
-                  subTitle="Manage approvals and referrals"
+                  title="Builder Fee Status"
+                  subTitle="Manage builder fee approval"
+                  showIosChevron={true}
+                  onPress={() => router.push('/settings/builder-fee-status')}
+                />
+                <ListItem
+                  title="Referral Status"
+                  subTitle="Manage referral code"
                   showIosChevron={true}
                   onPress={() => router.push('/settings/approval-status')}
                 />

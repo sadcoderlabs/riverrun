@@ -1,7 +1,7 @@
 import { ListButton, ListItem } from '@/components/global/list-item';
 import { ListSection } from '@/components/global/list-section';
-import { useReferralStatus } from '@/lib/hyperliquid/referral/hooks/useReferralStatus';
-import { useReferralHintsStore } from '@/lib/hyperliquid/referral/store/hints.store';
+import { BUILDER_CONFIG } from '@/lib/hyperliquid/builderFee/config';
+import { useBuilderFeeApproval } from '@/lib/hyperliquid/builderFee/hooks/useBuilderFeeApproval';
 import { ArrowLeft } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
@@ -9,29 +9,19 @@ import { Pressable, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PortalProvider, ScrollView, Spinner, Text, View, XStack, YStack } from 'tamagui';
 
-/**
- * Helper function to shorten address for display
- */
-function shortenAddress(address: string | undefined): string {
-  if (!address) return 'N/A';
-  return `${address.slice(0, 6)}...${address.slice(-4)}`;
-}
-
-export default function ApprovalStatus() {
+export default function BuilderFeeStatus() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  // Referral status
+  // Builder fee approval
   const {
-    referralInfo,
-    hasReferrer,
-    isLoading: isReferralLoading,
-    checkStatus: checkReferralStatus,
-    setReferrer,
-  } = useReferralStatus();
-
-  // Referral hints store
-  const { dontHintReferral, setDontHintReferral } = useReferralHintsStore();
+    maxApprovedFee,
+    isApproved: isBuilderFeeApproved,
+    isLoading: isBuilderFeeLoading,
+    checkStatus: checkBuilderFeeStatus,
+    approve: approveBuilderFee,
+    revoke: revokeBuilderFee,
+  } = useBuilderFeeApproval();
 
   // Loading and refresh states
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -42,30 +32,40 @@ export default function ApprovalStatus() {
    */
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    await checkReferralStatus();
+    await checkBuilderFeeStatus();
     setIsRefreshing(false);
-  }, [checkReferralStatus]);
+  }, [checkBuilderFeeStatus]);
 
   /**
    * Initial load
    */
   useEffect(() => {
     const init = async () => {
-      await checkReferralStatus();
+      await checkBuilderFeeStatus();
       setIsInitialLoading(false);
     };
     void init();
-  }, [checkReferralStatus]);
+  }, [checkBuilderFeeStatus]);
 
   /**
-   * Handle set referrer
+   * Handle builder fee approve
    */
-  const handleSetReferrer = useCallback(async () => {
-    const success = await setReferrer();
+  const handleApproveBuilderFee = useCallback(async () => {
+    const success = await approveBuilderFee();
     if (success) {
-      await checkReferralStatus();
+      await checkBuilderFeeStatus();
     }
-  }, [setReferrer, checkReferralStatus]);
+  }, [approveBuilderFee, checkBuilderFeeStatus]);
+
+  /**
+   * Handle builder fee revoke
+   */
+  const handleRevokeBuilderFee = useCallback(async () => {
+    const success = await revokeBuilderFee();
+    if (success) {
+      await checkBuilderFeeStatus();
+    }
+  }, [revokeBuilderFee, checkBuilderFeeStatus]);
 
   return (
     <PortalProvider>
@@ -88,9 +88,9 @@ export default function ApprovalStatus() {
             <ArrowLeft size={24} color="$color" />
           </Pressable>
           <Text fontFamily="$interSemiBold" fontSize="$6">
-            Referral Status
+            Builder Fee Status
           </Text>
-          {isReferralLoading && (
+          {isBuilderFeeLoading && (
             <View marginLeft="auto">
               <Spinner size="small" />
             </View>
@@ -107,40 +107,44 @@ export default function ApprovalStatus() {
             <View flex={1} alignItems="center" justifyContent="center" paddingVertical="$10">
               <Spinner size="large" />
               <Text marginTop="$4" color="$color04">
-                Loading referral status...
+                Loading builder fee status...
               </Text>
             </View>
           ) : (
             <YStack backgroundColor="$gray3">
-              {/* Referral Section */}
-              <ListSection label="Referral">
+              {/* Builder Fee Approval Section */}
+              <ListSection label="Builder Fee Approval">
                 <ListItem
-                  title="Referred By"
-                  text={referralInfo.code || 'None'}
+                  title="Status"
+                  text={isBuilderFeeApproved ? '✓ Approved' : 'Not Approved'}
                   textAlign="right"
                 />
-                {hasReferrer && referralInfo.referrer && (
+                {maxApprovedFee > 0 && (
                   <ListItem
-                    title="Referrer Address"
-                    subTitle={shortenAddress(referralInfo.referrer)}
+                    title="Max Approved"
+                    text={`${(maxApprovedFee / 1000).toFixed(3)}%`}
+                    textAlign="right"
                   />
                 )}
-                {!hasReferrer && (
-                  <>
-                    <ListButton
-                      justifyContent="center"
-                      onPress={handleSetReferrer}
-                      disabled={isReferralLoading}
-                    >
-                      {isReferralLoading ? 'Setting...' : 'Set Referral Code'}
-                    </ListButton>
-                    <ListItem
-                      title="Don't hint me when trading"
-                      isChecked={dontHintReferral}
-                      onPress={() => setDontHintReferral(!dontHintReferral)}
-                    />
-                  </>
-                )}
+                <ListItem
+                  title="Current Fee"
+                  text={`${(BUILDER_CONFIG.feeRate / 1000).toFixed(3)}%`}
+                  textAlign="right"
+                />
+                <ListButton
+                  justifyContent="center"
+                  onPress={handleApproveBuilderFee}
+                  disabled={isBuilderFeeLoading}
+                >
+                  {isBuilderFeeLoading ? 'Approving...' : 'Approve Builder Fee'}
+                </ListButton>
+                <ListButton
+                  justifyContent="center"
+                  onPress={handleRevokeBuilderFee}
+                  disabled={isBuilderFeeLoading}
+                >
+                  {isBuilderFeeLoading ? 'Revoking...' : 'Revoke Builder Fee'}
+                </ListButton>
               </ListSection>
             </YStack>
           )}
