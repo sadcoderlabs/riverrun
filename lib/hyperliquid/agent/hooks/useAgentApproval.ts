@@ -8,12 +8,12 @@ import { useActiveWallet } from '@/lib/riverrun/hooks/useActiveWallet';
 import { DEFAULT_AGENT_NAME } from '../constants';
 import {
   approveAgentOnChain,
-  clearAgent,
   getAgentsFromChain,
   getOrCreateAgentSigner,
   revokeAgentOnChain,
   verifyAgentApproval,
 } from '../service';
+import { clearAgentPrivateKey } from '../storage';
 import { type AgentInfo } from '../types';
 
 /**
@@ -141,7 +141,7 @@ export function useAgentApproval() {
 
                   // Clear local storage for Riverrun Agent
                   if (isRiverrunAgent) {
-                    await clearAgent(masterAddress);
+                    await clearAgentPrivateKey(masterAddress);
                   }
 
                   // Verify revoke

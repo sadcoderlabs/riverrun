@@ -22,7 +22,7 @@ interface UseHyperliquidClientResult {
 
 export function useHyperliquidClient(): UseHyperliquidClientResult {
   const { getProvider, address: walletAddress } = useActiveWallet();
-  const { getAgentExchangeClient: getAgentClient } = useAgentExchangeClient();
+  const { getAgentExchangeClient } = useAgentExchangeClient();
 
   // Get master exchange client
   const getMasterExchangeClient = useCallback(async (): Promise<hl.ExchangeClient | undefined> => {
@@ -50,9 +50,6 @@ export function useHyperliquidClient(): UseHyperliquidClientResult {
       return undefined;
     }
   }, [walletAddress, getProvider]);
-
-  // Get agent exchange client - delegated to useAgentExchangeClient hook
-  const getAgentExchangeClient = getAgentClient;
 
   return useMemo(
     () => ({

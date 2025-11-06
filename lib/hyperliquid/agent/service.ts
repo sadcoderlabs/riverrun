@@ -6,7 +6,7 @@
 import * as hl from '@nktkas/hyperliquid';
 import { BaseWallet, BrowserProvider, Wallet } from 'ethers';
 import { AGENT_APPROVAL_WAIT_TIME } from './constants';
-import { clearAgentPrivateKey, getAgentPrivateKey, setAgentPrivateKey } from './storage';
+import { getAgentPrivateKey, setAgentPrivateKey } from './storage';
 import { type AgentInfo } from './types';
 
 // ============================================================================
@@ -95,14 +95,6 @@ export async function getAgentAddress(
     console.error('Failed to get agent address:', error);
     return undefined;
   }
-}
-
-/**
- * Clear agent completely (remove from storage)
- * @param masterAddress - Master wallet address
- */
-export async function clearAgent(masterAddress: string): Promise<void> {
-  await clearAgentPrivateKey(masterAddress);
 }
 
 // ============================================================================
