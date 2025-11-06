@@ -1,6 +1,6 @@
 import { usePrivy, useEmbeddedEthereumWallet } from '@privy-io/expo';
 import { useAccount, useWalletInfo, useProvider } from '@reown/appkit-react-native';
-import { BrowserProvider, Signer } from 'ethers';
+import { BrowserProvider } from 'ethers';
 import { useMemo, useCallback, useRef, useEffect } from 'react';
 import { useWalletStore, type WalletSource } from '@/lib/riverrun/store/wallet.store';
 
@@ -18,7 +18,6 @@ export interface UseActiveWalletResult {
 
   // Signing operations
   getProvider: () => Promise<BrowserProvider | undefined>;
-  getSigner: () => Promise<Signer | undefined>;
   switchChain: (chainId: number) => Promise<void>;
 }
 
@@ -35,7 +34,6 @@ export interface UseActiveWalletResult {
  *   address,
  *   walletName,
  *   getProvider,
- *   getSigner,
  * } = useActiveWallet();
  *
  * if (!isAuthenticated) {
@@ -107,7 +105,7 @@ export function useActiveWallet(): UseActiveWalletResult {
   const isReady = privyReady;
 
   // Store latest wallet state in refs to allow stable function references
-  // This ensures getProvider/getSigner/switchChain don't change on every render
+  // This ensures getProvider/switchChain don't change on every render
   const activeSourceRef = useRef(activeSource);
   const embeddedWalletRef = useRef(embeddedWallet);
   const reownProviderRef = useRef(reownProvider);
@@ -139,24 +137,6 @@ export function useActiveWallet(): UseActiveWalletResult {
       return undefined;
     }
   }, []); // Empty deps - stable reference, always reads latest state from refs
-
-  /**
-   * Get the ethers.js Signer for the current wallet.
-   *
-   * @returns Signer instance or undefined if no wallet is connected
-   */
-  const getSigner = useCallback(async (): Promise<Signer | undefined> => {
-    try {
-      const provider = await getProvider();
-      if (!provider) return undefined;
-
-      const signer = await provider.getSigner();
-      return signer;
-    } catch (error) {
-      console.error('Failed to get signer:', error);
-      return undefined;
-    }
-  }, [getProvider]); // getProvider is now stable, so this is also stable
 
   /**
    * Switch to a different blockchain network
@@ -205,7 +185,6 @@ export function useActiveWallet(): UseActiveWalletResult {
       walletName,
       walletType,
       getProvider, // Stable reference (empty deps)
-      getSigner, // Stable reference (depends only on stable getProvider)
       switchChain, // Stable reference (empty deps)
     }),
     [
@@ -215,7 +194,6 @@ export function useActiveWallet(): UseActiveWalletResult {
       walletName,
       walletType,
       getProvider, // Stable, won't trigger re-memoization
-      getSigner, // Stable, won't trigger re-memoization
       switchChain, // Stable, won't trigger re-memoization
     ],
   );
