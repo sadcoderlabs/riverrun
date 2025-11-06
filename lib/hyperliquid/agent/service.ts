@@ -5,14 +5,9 @@
 
 import * as hl from '@nktkas/hyperliquid';
 import { BaseWallet, BrowserProvider, Wallet } from 'ethers';
-import { AGENT_APPROVAL_WAIT_TIME, DEFAULT_AGENT_NAME } from './constants';
-import {
-  clearAgentPrivateKey,
-  getAgentPrivateKey,
-  hasAgentPrivateKey,
-  setAgentPrivateKey,
-} from './storage';
-import { type AgentInfo, type ValidationResult } from './types';
+import { AGENT_APPROVAL_WAIT_TIME } from './constants';
+import { clearAgentPrivateKey, getAgentPrivateKey, setAgentPrivateKey } from './storage';
+import { type AgentInfo } from './types';
 
 // ============================================================================
 // Core Agent Operations
@@ -193,122 +188,4 @@ export async function verifyAgentApproval(
     console.error('Failed to verify agent approval:', error);
     return false;
   }
-}
-
-/**
- * Find agent by name from agents array
- * @param agents - Array of agents
- * @param agentName - Name to search for
- * @returns Agent info or undefined if not found
- */
-export function findAgentByName(agents: AgentInfo[], agentName: string): AgentInfo | undefined {
-  return agents.find(agent => agent.name?.toLowerCase() === agentName.toLowerCase());
-}
-
-// ============================================================================
-// Validation Operations
-// ============================================================================
-
-/**
- * Validate local agent against blockchain
- * @param masterAddress - Master wallet address
- * @param provider - Browser provider
- * @param infoClient - Info client for querying blockchain
- * @returns Validation result with status and addresses
- */
-export async function validateLocalAgent(
-  masterAddress: string,
-  provider: BrowserProvider,
-  infoClient: hl.InfoClient,
-): Promise<ValidationResult> {
-  try {
-    // Get local agent address
-    const localAddress = await getAgentAddress(masterAddress, provider);
-    if (!localAddress) {
-      return { isValid: false };
-    }
-
-    // Get blockchain agents
-    const agents = await getAgentsFromChain(infoClient, masterAddress);
-    const riverrunAgent = findAgentByName(agents, DEFAULT_AGENT_NAME);
-
-    if (!riverrunAgent) {
-      // Riverrun Agent doesn't exist on blockchain, but we have local key
-      return { isValid: false, localAddress };
-    }
-
-    // Check if addresses match
-    const isValid = riverrunAgent.address.toLowerCase() === localAddress.toLowerCase();
-
-    return {
-      isValid,
-      localAddress,
-      blockchainAddress: riverrunAgent.address,
-    };
-  } catch (error) {
-    console.error('Failed to validate local agent:', error);
-    return { isValid: false };
-  }
-}
-
-/**
- * Count named agents on blockchain
- * @param infoClient - Info client for querying blockchain
- * @param masterAddress - Master wallet address
- * @returns Number of named agents
- */
-export async function countNamedAgents(
-  infoClient: hl.InfoClient,
-  masterAddress: string,
-): Promise<number> {
-  try {
-    const agents = await getAgentsFromChain(infoClient, masterAddress);
-    return agents.filter(agent => agent.name).length;
-  } catch (error) {
-    console.error('Failed to count named agents:', error);
-    return 0;
-  }
-}
-
-/**
- * Check if user is at the maximum agent limit
- * @param infoClient - Info client for querying blockchain
- * @param masterAddress - Master wallet address
- * @returns True if at limit (3 named agents)
- */
-export async function isAtAgentLimit(
-  infoClient: hl.InfoClient,
-  masterAddress: string,
-): Promise<boolean> {
-  const count = await countNamedAgents(infoClient, masterAddress);
-  return count >= 3;
-}
-
-/**
- * Get Riverrun Agent from blockchain
- * @param infoClient - Info client for querying blockchain
- * @param masterAddress - Master wallet address
- * @returns Riverrun Agent info or null if not found
- */
-export async function getRiverrunAgent(
-  infoClient: hl.InfoClient,
-  masterAddress: string,
-): Promise<AgentInfo | null> {
-  try {
-    const agents = await getAgentsFromChain(infoClient, masterAddress);
-    const riverrunAgent = findAgentByName(agents, DEFAULT_AGENT_NAME);
-    return riverrunAgent || null;
-  } catch (error) {
-    console.error('Failed to get Riverrun Agent:', error);
-    return null;
-  }
-}
-
-/**
- * Check if local agent exists in storage
- * @param masterAddress - Master wallet address
- * @returns True if local agent exists
- */
-export async function hasLocalAgent(masterAddress: string): Promise<boolean> {
-  return await hasAgentPrivateKey(masterAddress);
 }

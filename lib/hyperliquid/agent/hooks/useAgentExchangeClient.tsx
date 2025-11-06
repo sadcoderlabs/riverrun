@@ -6,15 +6,78 @@ import { Alert } from 'react-native';
 import { getInfoClient, getTransport } from '@/lib/hyperliquid/client';
 import { useActiveWallet } from '@/lib/riverrun/hooks/useActiveWallet';
 
-import { DEFAULT_AGENT_NAME } from '../constants';
+import { AGENT_APPROVAL_WAIT_TIME, DEFAULT_AGENT_NAME } from '../constants';
 import {
   approveAgentOnChain,
-  countNamedAgents,
+  getAgentsFromChain,
   getOrCreateAgentSigner,
-  hasLocalAgent,
-  validateLocalAgent,
   verifyAgentApproval,
 } from '../service';
+import { hasAgentPrivateKey } from '../storage';
+import { type AgentInfo, type ValidationResult } from '../types';
+
+/**
+ * Check if local agent exists in storage
+ */
+async function hasLocalAgent(masterAddress: string): Promise<boolean> {
+  return await hasAgentPrivateKey(masterAddress);
+}
+
+/**
+ * Count named agents on blockchain
+ */
+async function countNamedAgents(infoClient: hl.InfoClient, masterAddress: string): Promise<number> {
+  try {
+    const agents = await getAgentsFromChain(infoClient, masterAddress);
+    return agents.filter(agent => agent.name).length;
+  } catch (error) {
+    console.error('Failed to count named agents:', error);
+    return 0;
+  }
+}
+
+/**
+ * Find agent by name from agents array
+ */
+function findAgentByName(agents: AgentInfo[], agentName: string): AgentInfo | undefined {
+  return agents.find(agent => agent.name?.toLowerCase() === agentName.toLowerCase());
+}
+
+/**
+ * Validate local agent against blockchain
+ */
+async function validateLocalAgent(
+  masterAddress: string,
+  ethersProvider: any,
+  infoClient: hl.InfoClient,
+): Promise<ValidationResult> {
+  try {
+    // Get local agent signer to get address
+    const agentSigner = await getOrCreateAgentSigner(masterAddress, ethersProvider);
+    const localAddress = await agentSigner.getAddress();
+
+    // Get blockchain agents
+    const agents = await getAgentsFromChain(infoClient, masterAddress);
+    const riverrunAgent = findAgentByName(agents, DEFAULT_AGENT_NAME);
+
+    if (!riverrunAgent) {
+      // Riverrun Agent doesn't exist on blockchain, but we have local key
+      return { isValid: false, localAddress };
+    }
+
+    // Check if addresses match
+    const isValid = riverrunAgent.address.toLowerCase() === localAddress.toLowerCase();
+
+    return {
+      isValid,
+      localAddress,
+      blockchainAddress: riverrunAgent.address,
+    };
+  } catch (error) {
+    console.error('Failed to validate local agent:', error);
+    return { isValid: false };
+  }
+}
 
 /**
  * Approve agent with confirmation dialog
