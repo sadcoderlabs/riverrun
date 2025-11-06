@@ -65,6 +65,12 @@ export default function Index() {
             <YStack>
               <ListSection label="Preferences">
                 <ListItem
+                  title="Agent Status"
+                  subTitle="Manage trading agents"
+                  showIosChevron={true}
+                  onPress={() => router.push('/settings/agent-status')}
+                />
+                <ListItem
                   title="Approval Status"
                   subTitle="Manage approvals and referrals"
                   showIosChevron={true}

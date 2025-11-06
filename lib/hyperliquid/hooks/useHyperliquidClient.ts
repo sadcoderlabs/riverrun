@@ -195,7 +195,7 @@ export function useHyperliquidClient(): UseHyperliquidClientResult {
                 {
                   text: 'Go to Settings',
                   onPress: () => {
-                    router.push('/settings/approval-status');
+                    router.push('/settings/agent-status');
                     resolve(undefined);
                   },
                 },
