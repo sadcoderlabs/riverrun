@@ -10,7 +10,7 @@ import {
   useFonts,
 } from '@expo-google-fonts/inter';
 
-import { useThemePreference, useActiveWallet } from '@/lib/riverrun/hooks';
+import { useActiveWallet, useThemePreference } from '@/lib/riverrun/hooks';
 import { ActionSheetProvider } from '@expo/react-native-action-sheet';
 import { PrivyProvider } from '@privy-io/expo';
 import { PrivyElements } from '@privy-io/expo/ui';
@@ -21,6 +21,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Toaster } from 'sonner-native';
 import { TamaguiProvider, View } from 'tamagui';
+import { arbitrum } from 'viem/chains';
 
 // Suppress known WalletConnect warnings during session restoration
 LogBox.ignoreLogs(['emitting session_request', 'without any listeners']);
@@ -109,6 +110,7 @@ export default function RootLayout() {
           <PrivyProvider
             appId="cmhaalv5t00jmjt0dyv6yby9h"
             clientId="client-WY6SSrDi1gWJqto3F2v88JkVeyd9aJJpCUweNA1dhFF92"
+            supportedChains={[arbitrum]}
             config={{
               embedded: {
                 ethereum: {

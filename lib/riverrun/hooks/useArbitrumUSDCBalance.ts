@@ -53,21 +53,24 @@ export function useArbitrumUSDCBalance(): UseArbitrumUSDCBalanceResult {
 
       // Check if we're on Arbitrum (chainId 42161)
       const network = await provider.getNetwork();
+
       if (network.chainId !== 42161n) {
         setIsWrongNetwork(true);
-        setError('Switching to Arbitrum network...');
+        setError(`Please switch to Arbitrum network. Current network: ${network.chainId}`);
 
-        // Automatically try to switch to Arbitrum using unified API
+        // Since Privy is now configured with Arbitrum as default, this shouldn't happen
+        // But if it does, we'll attempt to switch
         try {
-          await switchChain(42161); // Arbitrum chainId
-          console.log('Successfully switched to Arbitrum');
-          // Don't continue fetching balance - wait for next poll
+          await switchChain(42161);
+          // Wait for the switch to complete and retry on next poll
           return;
         } catch (switchError) {
           console.error('Failed to switch network:', switchError);
-          throw new Error('Please switch to Arbitrum network manually');
+          setError('Please manually switch to Arbitrum network in your wallet');
+          return;
         }
       }
+
       setIsWrongNetwork(false);
 
       const usdcContract = new Contract(ARBITRUM_USDC_ADDRESS, ERC20_ABI, provider);
