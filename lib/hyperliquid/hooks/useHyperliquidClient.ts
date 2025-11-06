@@ -1,5 +1,6 @@
 import * as hl from '@nktkas/hyperliquid';
 import { SymbolConverter } from '@nktkas/hyperliquid/utils';
+import { useRouter } from 'expo-router';
 import { useCallback, useMemo } from 'react';
 import { Alert } from 'react-native';
 
@@ -52,6 +53,7 @@ interface UseHyperliquidClientResult {
 
 export function useHyperliquidClient(): UseHyperliquidClientResult {
   const { getProvider, address: walletAddress } = useActiveWallet();
+  const router = useRouter();
 
   // Helper function to check if agent is approved
   const checkAgentApproval = useCallback(
@@ -92,7 +94,7 @@ export function useHyperliquidClient(): UseHyperliquidClientResult {
     }
   }, [walletAddress, getProvider]);
 
-  // Get agent exchange client with approval flow
+  // Get agent exchange client with simplified approval flow
   const getAgentExchangeClient = useCallback(async (): Promise<hl.ExchangeClient | undefined> => {
     if (!walletAddress) {
       Alert.alert('Wallet Not Connected', 'Please connect your wallet to continue.');
@@ -112,7 +114,7 @@ export function useHyperliquidClient(): UseHyperliquidClientResult {
 
       // Setup agent wallet
       const agentSigner = await getOrCreateAgentSigner(masterAddress, ethersProvider);
-      const agentAddress = await agentSigner.getAddress();
+      const localAgentAddress = await agentSigner.getAddress();
 
       // Create agent exchange client
       const agentExchangeClient = new hl.ExchangeClient({
@@ -120,70 +122,134 @@ export function useHyperliquidClient(): UseHyperliquidClientResult {
         transport: getTransport(),
       });
 
-      // Check if agent is already approved
-      const isApproved = await checkAgentApproval(masterAddress, agentAddress);
+      // Get all current agents
+      const infoClient = getInfoClient();
+      const allAgents = await infoClient.extraAgents({ user: masterAddress });
+      const riverrunAgent = allAgents.find(agent => agent.name === DEFAULT_AGENT_NAME);
+      const namedAgentsCount = allAgents.filter(agent => agent.name).length;
 
-      if (isApproved) {
-        return agentExchangeClient;
+      // Check if Riverrun Agent exists and matches local address
+      if (riverrunAgent) {
+        if (riverrunAgent.address.toLowerCase() === localAgentAddress.toLowerCase()) {
+          // Agent is approved and matches - can use directly
+          return agentExchangeClient;
+        } else {
+          // Riverrun Agent exists but with different address - need to overwrite
+          // This is a simple case - one transaction to overwrite
+          return await quickApproveAgent(
+            masterSigner,
+            localAgentAddress,
+            agentExchangeClient,
+            masterAddress,
+            'Overwrite Riverrun Agent',
+            'The Riverrun Agent exists with a different address. This will update it to work with this device.',
+          );
+        }
       }
 
-      // Agent not approved - show confirmation dialog
-
-      return await new Promise<hl.ExchangeClient | undefined>(resolve => {
-        Alert.alert(
-          'Agent Approval Required',
-          'This action requires agent approval. You will be redirected to your wallet app to approve the agent. Do you want to continue?',
-          [
-            {
-              text: 'Cancel',
-              style: 'cancel',
-              onPress: () => resolve(undefined),
-            },
-            {
-              text: 'Confirm',
-              onPress: async () => {
-                try {
-                  // Create master exchange client for approval
-                  const masterExchangeClient = new hl.ExchangeClient({
-                    wallet: masterSigner,
-                    transport: getTransport(),
-                  });
-
-                  // Approve the agent
-                  await masterExchangeClient.approveAgent({
-                    agentAddress,
-                    agentName: DEFAULT_AGENT_NAME,
-                  });
-
-                  // Verify approval
-                  const isNowApproved = await checkAgentApproval(masterAddress, agentAddress);
-
-                  if (!isNowApproved) {
-                    Alert.alert('Approval Failed', 'Agent approval was not confirmed.');
-                    resolve(undefined);
-                    return;
-                  }
-
-                  resolve(agentExchangeClient);
-                } catch (error) {
-                  console.error('Failed to approve agent:', error);
-                  Alert.alert(
-                    'Approval Failed',
-                    error instanceof Error ? error.message : 'An error occurred',
-                  );
-                  resolve(undefined);
-                }
+      // Riverrun Agent doesn't exist - check if we have space
+      if (namedAgentsCount >= 3) {
+        // Complex case - need to revoke an agent first
+        // Guide user to settings page
+        return await new Promise<hl.ExchangeClient | undefined>(resolve => {
+          Alert.alert(
+            'Agent Limit Reached',
+            'You have reached the limit of 3 named agents. Please manage your agents in Settings first.',
+            [
+              {
+                text: 'Cancel',
+                style: 'cancel',
+                onPress: () => resolve(undefined),
               },
-            },
-          ],
-        );
-      });
+              {
+                text: 'Go to Settings',
+                onPress: () => {
+                  router.push('/settings/approval-status');
+                  resolve(undefined);
+                },
+              },
+            ],
+          );
+        });
+      }
+
+      // Simple case - can approve directly (< 3 agents)
+      return await quickApproveAgent(
+        masterSigner,
+        localAgentAddress,
+        agentExchangeClient,
+        masterAddress,
+        'Approve Agent',
+        'This will approve the Riverrun Agent to place orders on your behalf.',
+      );
     } catch (error) {
       console.error('Failed to get agent exchange client:', error);
       Alert.alert('Error', error instanceof Error ? error.message : 'Failed to initialize agent');
       return undefined;
     }
-  }, [walletAddress, getProvider, checkAgentApproval]);
+
+    /**
+     * Quick approve agent - handles simple approval flow (one transaction)
+     */
+    async function quickApproveAgent(
+      masterSigner: any,
+      agentAddress: string,
+      agentExchangeClient: hl.ExchangeClient,
+      masterAddress: string,
+      title: string,
+      message: string,
+    ): Promise<hl.ExchangeClient | undefined> {
+      return await new Promise<hl.ExchangeClient | undefined>(resolve => {
+        Alert.alert(title, message, [
+          {
+            text: 'Cancel',
+            style: 'cancel',
+            onPress: () => resolve(undefined),
+          },
+          {
+            text: 'Approve',
+            onPress: async () => {
+              try {
+                // Create master exchange client for approval
+                const masterExchangeClient = new hl.ExchangeClient({
+                  wallet: masterSigner,
+                  transport: getTransport(),
+                });
+
+                // Approve the agent
+                await masterExchangeClient.approveAgent({
+                  agentAddress,
+                  agentName: DEFAULT_AGENT_NAME,
+                });
+
+                // Simple verification (wait 2 seconds then check once)
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                const isNowApproved = await checkAgentApproval(masterAddress, agentAddress);
+
+                if (!isNowApproved) {
+                  Alert.alert(
+                    'Verification Failed',
+                    'Agent approval was not confirmed. Please try again or check Settings.',
+                  );
+                  resolve(undefined);
+                  return;
+                }
+
+                resolve(agentExchangeClient);
+              } catch (error) {
+                console.error('Failed to approve agent:', error);
+                Alert.alert(
+                  'Approval Failed',
+                  error instanceof Error ? error.message : 'An error occurred',
+                );
+                resolve(undefined);
+              }
+            },
+          },
+        ]);
+      });
+    }
+  }, [walletAddress, getProvider, checkAgentApproval, router]);
 
   return useMemo(
     () => ({

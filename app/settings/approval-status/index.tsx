@@ -1,3 +1,4 @@
+import { Button } from '@/components/global/button';
 import { ListButton, ListItem } from '@/components/global/list-item';
 import { ListSection } from '@/components/global/list-section';
 import { BUILDER_CONFIG } from '@/lib/hyperliquid/config/builder';
@@ -8,7 +9,7 @@ import { useApprovalHintsStore } from '@/lib/riverrun/store/approval-hints.store
 import { ArrowLeft } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, RefreshControl } from 'react-native';
+import { Alert, Pressable, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PortalProvider, ScrollView, Spinner, Text, View, XStack, YStack } from 'tamagui';
 
@@ -29,9 +30,13 @@ export default function ApprovalStatus() {
     agentAddress,
     isApproved: isAgentApproved,
     isLoading: isAgentLoading,
+    allAgents,
     checkStatus: checkAgentStatus,
-    approve: approveAgent,
     revoke: revokeAgent,
+    getAllAgents,
+    revokeNamedAgent,
+    ensureRiverrunAgent,
+    renewRiverrunAgent,
   } = useAgentApproval();
 
   // Builder fee approval
@@ -64,8 +69,13 @@ export default function ApprovalStatus() {
    * Load all approval statuses
    */
   const loadAllStatuses = useCallback(async () => {
-    await Promise.all([checkAgentStatus(), checkBuilderFeeStatus(), checkReferralStatus()]);
-  }, [checkAgentStatus, checkBuilderFeeStatus, checkReferralStatus]);
+    await Promise.all([
+      checkAgentStatus(),
+      getAllAgents(),
+      checkBuilderFeeStatus(),
+      checkReferralStatus(),
+    ]);
+  }, [checkAgentStatus, getAllAgents, checkBuilderFeeStatus, checkReferralStatus]);
 
   /**
    * Handle refresh
@@ -88,24 +98,87 @@ export default function ApprovalStatus() {
   }, [loadAllStatuses]);
 
   /**
-   * Handle agent approve
+   * Handle Riverrun Agent approve
+   * Always generates a new agent (clears old one if exists)
    */
-  const handleApproveAgent = useCallback(async () => {
-    const success = await approveAgent();
-    if (success) {
-      await checkAgentStatus();
+  const handleApproveRiverrunAgent = useCallback(async () => {
+    // Check if we have reached the limit of 3 non-Riverrun agents
+    const nonRiverrunAgents = allAgents.filter(
+      agent => agent.name && agent.name !== 'Riverrun Agent',
+    );
+
+    // If Riverrun Agent doesn't exist and we have 3 other agents
+    if (!isAgentApproved && nonRiverrunAgents.length >= 3) {
+      Alert.alert(
+        'Agent Limit Reached',
+        'You have 3 other named agents. Please revoke one of them first before approving Riverrun Agent.',
+      );
+      return;
     }
-  }, [approveAgent, checkAgentStatus]);
+
+    // Show confirmation dialog
+    Alert.alert(
+      'Approve Riverrun Agent',
+      'This will generate a new agent wallet to place orders on your behalf. You will be redirected to your wallet app to sign the approval.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Approve',
+          onPress: async () => {
+            // Use renewRiverrunAgent which handles: clear old -> generate new -> approve
+            const success = await renewRiverrunAgent();
+            if (success) {
+              await checkAgentStatus();
+              await getAllAgents();
+            }
+          },
+        },
+      ],
+    );
+  }, [allAgents, isAgentApproved, renewRiverrunAgent, checkAgentStatus, getAllAgents]);
 
   /**
-   * Handle agent revoke
+   * Handle Riverrun Agent revoke
    */
-  const handleRevokeAgent = useCallback(async () => {
-    const success = await revokeAgent();
-    if (success) {
-      await checkAgentStatus();
-    }
-  }, [revokeAgent, checkAgentStatus]);
+  const handleRevokeRiverrunAgent = useCallback(async () => {
+    Alert.alert(
+      'Revoke Riverrun Agent',
+      'This will revoke the Riverrun Agent from the blockchain and clear local storage. You will need to approve a new agent for future trading.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Revoke',
+          style: 'destructive',
+          onPress: async () => {
+            const success = await revokeAgent();
+            if (success) {
+              await checkAgentStatus();
+              await getAllAgents();
+            }
+          },
+        },
+      ],
+    );
+  }, [revokeAgent, checkAgentStatus, getAllAgents]);
+
+  /**
+   * Handle revoke other named agent
+   */
+  const handleRevokeOtherAgent = useCallback(
+    async (agentName: string) => {
+      const success = await revokeNamedAgent(agentName);
+      if (success) {
+        await getAllAgents();
+      }
+    },
+    [revokeNamedAgent, getAllAgents],
+  );
 
   /**
    * Handle builder fee approve
@@ -138,6 +211,9 @@ export default function ApprovalStatus() {
   }, [setReferrer, checkReferralStatus]);
 
   const isLoading = isAgentLoading || isBuilderFeeLoading || isReferralLoading;
+
+  // Get other named agents (exclude Riverrun Agent)
+  const otherNamedAgents = allAgents.filter(agent => agent.name && agent.name !== 'Riverrun Agent');
 
   return (
     <PortalProvider>
@@ -185,32 +261,116 @@ export default function ApprovalStatus() {
           ) : (
             <YStack backgroundColor="$gray3">
               {/* Agent Approval Section */}
-              <ListSection label="Agent Approval">
-                <ListItem
-                  title="Status"
-                  text={isAgentApproved ? '✓ Approved' : 'Not Approved'}
-                  textAlign="right"
-                />
-                {agentAddress && (
-                  <ListItem title="Agent Address" subTitle={shortenAddress(agentAddress)} />
-                )}
-                <ListButton
-                  justifyContent="center"
-                  onPress={handleApproveAgent}
-                  disabled={isAgentLoading}
+              <YStack gap="$2" mx="$4" my="$4">
+                <Text
+                  fontWeight="500"
+                  color="$color06"
+                  ml="$4"
+                  fontSize="$3"
+                  textTransform="uppercase"
                 >
-                  {isAgentLoading ? 'Approving...' : 'Approve Agent'}
-                </ListButton>
-                {isAgentApproved && (
-                  <ListButton
-                    justifyContent="center"
-                    onPress={handleRevokeAgent}
-                    disabled={isAgentLoading}
+                  Named Agents ({allAgents.filter(a => a.name).length}/3)
+                </Text>
+                <View overflow="hidden" borderRadius="$9" backgroundColor="$background">
+                  {/* Riverrun Agent - always shown */}
+                  <XStack
+                    paddingHorizontal="$4"
+                    paddingVertical="$3"
+                    alignItems="center"
+                    justifyContent="space-between"
+                    borderBottomWidth={otherNamedAgents.length > 0 ? 1 : 0}
+                    borderBottomColor="$color10"
+                    backgroundColor="$accent2"
                   >
-                    {isAgentLoading ? 'Revoking...' : 'Revoke Agent'}
-                  </ListButton>
-                )}
-              </ListSection>
+                    <YStack flex={1}>
+                      <XStack alignItems="center" gap="$2">
+                        <Text fontFamily="$interMedium" fontSize="$4" color="$accent11">
+                          Riverrun Agent
+                        </Text>
+                        <View
+                          backgroundColor="$accent9"
+                          paddingHorizontal="$2"
+                          paddingVertical="$0.5"
+                          borderRadius="$2"
+                        >
+                          <Text fontSize="$1" fontFamily="$interMedium" color="$accent1">
+                            PRIMARY
+                          </Text>
+                        </View>
+                      </XStack>
+                      <Text
+                        fontFamily="$interRegular"
+                        fontSize="$3"
+                        color="$color04"
+                        marginTop="$1"
+                      >
+                        {isAgentApproved ? shortenAddress(agentAddress) : 'Not Approved'}
+                      </Text>
+                    </YStack>
+                    <XStack flexShrink={0}>
+                      {!isAgentApproved ? (
+                        <Button.Tinted
+                          level="sm"
+                          onPress={handleApproveRiverrunAgent}
+                          disabled={isAgentLoading}
+                        >
+                          Approve
+                        </Button.Tinted>
+                      ) : (
+                        <Button.Gray
+                          level="sm"
+                          onPress={handleRevokeRiverrunAgent}
+                          disabled={isAgentLoading}
+                          backgroundColor="$red9"
+                          color="$red1"
+                          pressStyle={{ backgroundColor: '$red10' }}
+                        >
+                          Revoke
+                        </Button.Gray>
+                      )}
+                    </XStack>
+                  </XStack>
+
+                  {/* Other Named Agents */}
+                  {otherNamedAgents.map((agent, index) => (
+                    <XStack
+                      key={agent.address}
+                      paddingHorizontal="$4"
+                      paddingVertical="$3"
+                      alignItems="center"
+                      justifyContent="space-between"
+                      borderBottomWidth={index < otherNamedAgents.length - 1 ? 1 : 0}
+                      borderBottomColor="$color10"
+                    >
+                      <YStack flex={1}>
+                        <Text fontFamily="$interMedium" fontSize="$4" color="$color">
+                          {agent.name || 'Unknown'}
+                        </Text>
+                        <Text
+                          fontFamily="$interRegular"
+                          fontSize="$3"
+                          color="$color04"
+                          marginTop="$1"
+                        >
+                          {shortenAddress(agent.address)}
+                        </Text>
+                      </YStack>
+                      <XStack flexShrink={0}>
+                        <Button.Gray
+                          level="sm"
+                          onPress={() => handleRevokeOtherAgent(agent.name || '')}
+                          disabled={isAgentLoading}
+                          backgroundColor="$red9"
+                          color="$red1"
+                          pressStyle={{ backgroundColor: '$red10' }}
+                        >
+                          Revoke
+                        </Button.Gray>
+                      </XStack>
+                    </XStack>
+                  ))}
+                </View>
+              </YStack>
 
               {/* Builder Fee Approval Section */}
               <ListSection label="Builder Fee Approval">
