@@ -10,6 +10,7 @@ import { DEPOSIT_TOKENS, ChainName } from '@/lib/riverrun/transfer-fund/constant
 import {
   useActiveWallet,
   useArbitrumUSDCBalance,
+  useSendTransaction,
   ARBITRUM_USDC_ADDRESS,
 } from '@/lib/riverrun/hooks';
 
@@ -38,7 +39,8 @@ export default function HyperliquidBridgePage() {
 
   // Wallet and balance hooks
   const { address, isAuthenticated } = useActiveWallet();
-  const { balance, transfer } = useArbitrumUSDCBalance();
+  const { balance } = useArbitrumUSDCBalance();
+  const { depositUsdc } = useSendTransaction();
 
   // Find the token based on symbol from URL params
   const token = DEPOSIT_TOKENS.find(t => t.symbol === params.symbol);
@@ -100,8 +102,8 @@ export default function HyperliquidBridgePage() {
     try {
       setIsDepositing(true);
 
-      // Transfer USDC to Hyperliquid Bridge
-      const txHash = await transfer(HYPERLIQUID_BRIDGE_ADDRESS, amount);
+      // Deposit USDC to Hyperliquid Bridge
+      const txHash = await depositUsdc(HYPERLIQUID_BRIDGE_ADDRESS, amount);
 
       toast.success('Deposit Successful!', {
         description: `Transaction: ${shortenAddress(txHash)}`,
