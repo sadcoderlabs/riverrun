@@ -59,7 +59,7 @@ function WalletInfoDisplay() {
           />
           {/* Chart route - full screen without bottom navigation */}
           <Stack.Screen
-            name="chart/perp/[coin]"
+            name="chart/perp/[coin]/index"
             options={{
               headerShown: false,
               animation: 'slide_from_right',
@@ -67,7 +67,7 @@ function WalletInfoDisplay() {
           />
           {/* Settings route - full screen without bottom navigation */}
           <Stack.Screen
-            name="settings"
+            name="settings/index"
             options={{
               headerShown: false,
               animation: 'slide_from_right',
