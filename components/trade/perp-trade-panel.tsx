@@ -97,6 +97,29 @@ export function PerpTradePanel({ coin }: PerpTradePanelProps) {
     }
   }, [orderType, marketPrice, limitPrice]);
 
+  // Calculate execution price for order value calculation
+  const executionPrice = useMemo(() => {
+    if (orderType === 'Market') {
+      return marketPrice;
+    } else {
+      const limit = parseFloat(limitPrice || '0');
+      return limit > 0 ? limit : marketPrice;
+    }
+  }, [orderType, marketPrice, limitPrice]);
+
+  // Calculate order value (size * execution price)
+  const orderValue = useMemo(() => {
+    const sizeNum = parseFloat(size || '0');
+    if (sizeNum <= 0 || executionPrice <= 0) return 0;
+    return sizeNum * executionPrice;
+  }, [size, executionPrice]);
+
+  // Calculate margin required (order value / leverage)
+  const marginRequired = useMemo(() => {
+    if (leverage <= 0) return 0;
+    return orderValue / leverage;
+  }, [orderValue, leverage]);
+
   // Handler for TP/SL changes
   const handleTpSlChange = useCallback(
     (result: TpSlResult | undefined, validation: TpSlValidationResult) => {
@@ -338,6 +361,26 @@ export function PerpTradePanel({ coin }: PerpTradePanelProps) {
                 <Check />
               </Checkbox.Indicator>
             </Checkbox>
+          </XStack>
+
+          {/* Order Value */}
+          <XStack justifyContent="space-between" alignItems="center">
+            <Text fontFamily="$interRegular" fontSize="$2" color="$gray10">
+              Order Value
+            </Text>
+            <Text fontFamily="$interSemiBold" fontSize="$3" color="$color">
+              ${formatValue(orderValue, 2)}
+            </Text>
+          </XStack>
+
+          {/* Margin Required */}
+          <XStack justifyContent="space-between" alignItems="center">
+            <Text fontFamily="$interRegular" fontSize="$2" color="$gray10">
+              Margin Required
+            </Text>
+            <Text fontFamily="$interSemiBold" fontSize="$3" color="$color">
+              ${formatValue(marginRequired, 2)}
+            </Text>
           </XStack>
 
           {/* Place Order Button */}
