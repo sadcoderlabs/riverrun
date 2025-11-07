@@ -1,8 +1,8 @@
 import { MarketSelectorModal } from '@/components/trade/MarketSelectorModal';
 import { useActiveAssetCtx, useHyperliquidClient } from '@/lib/hyperliquid/hooks';
-import { formatMarketId } from '@/lib/hyperliquid/market-utils';
+import { formatMarketId } from '@/lib/hyperliquid/marketUtils';
 import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
-import { useMarketsStore } from '@/lib/riverrun/store/use-markets-store';
+import { useMarketsStore } from '@/lib/riverrun/store/useMarketsStore';
 import { CandlestickChart, Menu } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';

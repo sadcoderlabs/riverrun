@@ -5,7 +5,7 @@
 
 import type { Order, OrderMetrics, OrderType } from '../types/orders';
 import type { PlaceOrderParams } from '../hooks/useOrder';
-import { calculatePriceFromPercent, validatePrice } from './tpsl-utils';
+import { calculatePriceFromPercent, validatePrice } from './tpslUtils';
 
 // ============================================================================
 // Type Checking

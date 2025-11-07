@@ -1,1 +1,1 @@
-export * from './deposit-tokens';
+export * from './depositTokens';

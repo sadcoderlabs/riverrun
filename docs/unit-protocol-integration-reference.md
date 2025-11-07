@@ -941,7 +941,7 @@ function isValidAddress(address: string, network: string): boolean {
 **Deposit Token Configuration:**
 
 ```typescript
-// lib/riverrun/transfer-fund/constants/deposit-tokens.ts
+// lib/riverrun/transfer-fund/constants/depositTokens.ts
 export const DEPOSIT_TOKENS = [
   {
     symbol: 'BTC',
@@ -1164,7 +1164,7 @@ await spotSend(address, tokenIdentifier, amount);
 
 #### Phase 3: Configure Token System
 
-6. **Update `deposit-tokens.ts`:**
+6. **Update `depositTokens.ts`:**
 
    ```typescript
    - Add BTC, ETH, SOL to DEPOSIT_TOKENS
@@ -1398,7 +1398,7 @@ app/(main)/withdraw/
 └── withdraw-tokens.tsx                 # Token selection (routes to withdrawal page)
 
 lib/riverrun/transfer-fund/
-├── constants/deposit-tokens.ts         # Token configuration
+├── constants/depositTokens.ts         # Token configuration
 └── hooks/useDepositTokens.ts           # Deposit tokens with ETAs
 ```
 

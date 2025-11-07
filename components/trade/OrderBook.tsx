@@ -4,7 +4,7 @@ import {
   buildPrecisionMenu,
   type NSigFigs,
   type PrecisionMenuItem,
-} from '@/lib/hyperliquid/orderbook-precision';
+} from '@/lib/hyperliquid/orderbookPrecision';
 import { formatSizeFixedDecimals } from '@/lib/hyperliquid/format/formatSizeFixedDecimals';
 import { ChevronDown } from '@tamagui/lucide-icons';
 import { useMemo, useState } from 'react';

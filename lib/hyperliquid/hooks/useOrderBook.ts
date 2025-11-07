@@ -1,5 +1,5 @@
 import * as hl from '@nktkas/hyperliquid';
-import { type NSigFigs } from '@/lib/hyperliquid/orderbook-precision';
+import { type NSigFigs } from '@/lib/hyperliquid/orderbookPrecision';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAppStateSubscriptionManager } from './useAppStateSubscriptionManager';
 import { useHyperliquidClient } from './useHyperliquidClient';

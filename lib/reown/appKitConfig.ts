@@ -3,7 +3,7 @@ import '@walletconnect/react-native-compat';
 import { EthersAdapter } from '@reown/appkit-ethers-react-native';
 import { createAppKit } from '@reown/appkit-react-native';
 import { arbitrum, mainnet } from 'viem/chains';
-import { storage } from './StorageUtil';
+import { storage } from './storageUtil';
 
 /**
  * AppKit Configuration

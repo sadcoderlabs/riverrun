@@ -1,5 +1,5 @@
 import { MarketListItem } from '@/components/trade/MarketListItem';
-import { useMarketsStore } from '@/lib/riverrun/store/use-markets-store';
+import { useMarketsStore } from '@/lib/riverrun/store/useMarketsStore';
 import { useSelectedCoinStore } from '@/lib/riverrun/store';
 import { useAllMids } from '@/lib/hyperliquid/hooks/useAllMids';
 import { Search } from '@tamagui/lucide-icons';

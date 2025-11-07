@@ -4,7 +4,7 @@ import { Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, XStack, YStack } from 'tamagui';
 import { ChartUI } from '@/components/trade/ChartUi';
-import { formatMarketId } from '@/lib/hyperliquid/market-utils';
+import { formatMarketId } from '@/lib/hyperliquid/marketUtils';
 
 /**
  * Full-Screen Chart Page
