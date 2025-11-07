@@ -1,18 +1,22 @@
 import AdaptiveSelect from '@/components/global/adaptive-select';
 import { ListItem } from '@/components/global/list-item';
 import { ListSection } from '@/components/global/list-section';
-import { useThemePreference } from '@/lib/riverrun/hooks';
+import { useThemePreference, useActiveWallet } from '@/lib/riverrun/hooks';
 import { type ThemePreference } from '@/lib/riverrun/store/theme.store';
 import { ArrowLeft, ArrowUpRight } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 import { Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PortalProvider, ScrollView, Text, View, XStack, YStack } from 'tamagui';
+import { useState } from 'react';
+import ExportWalletModal from '@/components/settings/export-wallet-modal';
 
 export default function Index() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { preference, setPreference } = useThemePreference();
+  const { walletType } = useActiveWallet();
+  const [showExportModal, setShowExportModal] = useState(false);
 
   const getThemeDisplayName = (theme: ThemePreference) => {
     const themeMap: Record<ThemePreference, string> = {
@@ -51,9 +55,17 @@ export default function Index() {
         {/* Content */}
         <ScrollView contentInsetAdjustmentBehavior="automatic" backgroundColor="$gray3">
           <YStack backgroundColor="$gray3">
-            {/* Account Status Section */}
+            {/* Account Settings Section */}
             <YStack>
-              <ListSection label="Account Status">
+              <ListSection label="Account Settings">
+                {walletType === 'privy' && (
+                  <ListItem
+                    title="Export Wallet"
+                    subTitle="Export your wallet private key securely"
+                    showIosChevron={true}
+                    onPress={() => setShowExportModal(true)}
+                  />
+                )}
                 <ListItem
                   title="Agent Status"
                   subTitle="Manage trading agents"
@@ -139,6 +151,9 @@ export default function Index() {
             </YStack>
           </YStack>
         </ScrollView>
+
+        {/* Export Wallet Modal */}
+        <ExportWalletModal open={showExportModal} onOpenChange={setShowExportModal} />
       </YStack>
     </PortalProvider>
   );
