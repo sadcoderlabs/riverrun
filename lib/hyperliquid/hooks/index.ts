@@ -10,7 +10,5 @@ export * from './useOrderBook';
 export * from './useOrderCount';
 export * from './useOrderUpdates';
 export * from './usePositionCount';
-export * from './useSpotBalance';
-export * from './useSpotSend';
 export * from './useUserFills';
 export * from './useWebData2';
