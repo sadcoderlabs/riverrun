@@ -14,7 +14,7 @@ import {
   getOrderDirection,
   isMarketOrder,
 } from '@/lib/hyperliquid/utils';
-import { useActiveWallet } from '@/lib/riverrun/hooks';
+import { useActiveWallet } from '@/lib/riverrun/wallet';
 import { useSelectedCoinStore } from '@/lib/riverrun/store';
 import type { SymbolConverter } from '@nktkas/hyperliquid/utils';
 import { useEffect, useMemo, useState } from 'react';

@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useWebData2 } from './useWebData2';
-import { useActiveWallet } from '@/lib/riverrun/hooks';
+import { useActiveWallet } from '@/lib/riverrun/wallet';
 
 /**
  * Hook to get real-time position count from WebSocket data

@@ -4,7 +4,7 @@ import { formatSize } from '@/lib/hyperliquid/format/formatSize';
 import { formatValue } from '@/lib/hyperliquid/format/formatValue';
 import { useHyperliquidClient } from '@/lib/hyperliquid/hooks';
 import { useWebData2Context } from '@/lib/hyperliquid/context/WebData2Context';
-import { useActiveWallet } from '@/lib/riverrun/hooks';
+import { useActiveWallet } from '@/lib/riverrun/wallet';
 import { useSelectedCoinStore } from '@/lib/riverrun/store';
 import * as hl from '@nktkas/hyperliquid';
 import { useEffect, useMemo, useState } from 'react';

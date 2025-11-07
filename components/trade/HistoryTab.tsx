@@ -9,7 +9,7 @@ import { formatValue } from '@/lib/hyperliquid/format/formatValue';
 import { useHyperliquidClient, useUserFills } from '@/lib/hyperliquid/hooks';
 import type { Fill } from '@/lib/hyperliquid/types/fills';
 import { formatTimestamp } from '@/lib/hyperliquid/utils';
-import { useActiveWallet } from '@/lib/riverrun/hooks';
+import { useActiveWallet } from '@/lib/riverrun/wallet';
 import { useSelectedCoinStore } from '@/lib/riverrun/store';
 import type { SymbolConverter } from '@nktkas/hyperliquid/utils';
 import { useEffect, useMemo, useState } from 'react';

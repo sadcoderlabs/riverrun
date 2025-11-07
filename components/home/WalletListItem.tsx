@@ -1,4 +1,4 @@
-import { type AvailableWallet } from '@/lib/riverrun/hooks';
+import { type AvailableWallet } from '@/lib/riverrun/wallet';
 import { Check, Wallet } from '@tamagui/lucide-icons';
 import Jazzicon from 'react-native-jazzicon';
 import { styled, Text, useTheme, XStack, YStack } from 'tamagui';

@@ -7,7 +7,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, Input, Spinner, Text, XStack, YStack } from 'tamagui';
 import { toast } from 'sonner-native';
 import { DEPOSIT_TOKENS, ChainName } from '@/lib/riverrun/transfer-fund/constants/depositTokens';
-import { useActiveWallet, useArbitrumUsdc, ARBITRUM_USDC_ADDRESS } from '@/lib/riverrun/hooks';
+import { useArbitrumUsdc, ARBITRUM_USDC_ADDRESS } from '@/lib/riverrun/hooks';
+import { useActiveWallet } from '@/lib/riverrun/wallet';
 
 // Hyperliquid Bridge contract address on Arbitrum
 const HYPERLIQUID_BRIDGE_ADDRESS = '0x2Df1c51E09aECF9cacB7bc98cB1742757f163dF7';

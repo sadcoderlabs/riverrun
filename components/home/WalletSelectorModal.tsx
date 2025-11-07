@@ -1,4 +1,4 @@
-import { useWalletManager } from '@/lib/riverrun/hooks';
+import { useWalletManager } from '@/lib/riverrun/wallet';
 import { LogOut } from '@tamagui/lucide-icons';
 import { Modal, Pressable, StyleSheet, ScrollView } from 'react-native';
 import { toast } from 'sonner-native';
