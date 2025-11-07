@@ -6,7 +6,7 @@
  * Returns orders in a tree structure preserving parent-child relationships
  */
 
-import { useActiveWallet } from '@/lib/riverrun/hooks/useActiveWallet';
+import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
 import * as hl from '@nktkas/hyperliquid';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ApiOrderResponse, Order, OrderStatus, OrderType } from '../types/orders';

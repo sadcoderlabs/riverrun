@@ -3,7 +3,7 @@ import { Alert } from 'react-native';
 
 import { BUILDER_CONFIG } from '@/lib/hyperliquid/builderFee/config';
 import { useHyperliquidClient } from '@/lib/hyperliquid/hooks/useHyperliquidClient';
-import { useActiveWallet } from '@/lib/riverrun/hooks/useActiveWallet';
+import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
 
 /**
  * Hook for managing builder fee approval status

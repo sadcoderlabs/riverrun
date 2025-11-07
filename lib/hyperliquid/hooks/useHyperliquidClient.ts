@@ -10,7 +10,7 @@ import {
   getSymbolConverter,
   getMasterExchangeClient,
 } from '@/lib/hyperliquid/client';
-import { useActiveWallet } from '@/lib/riverrun/hooks/useActiveWallet';
+import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
 
 interface UseHyperliquidClientResult {
   getAgentExchangeClient: () => Promise<hl.ExchangeClient | undefined>;

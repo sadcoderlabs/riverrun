@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react';
 import { Alert } from 'react-native';
 
 import { useHyperliquidClient } from '@/lib/hyperliquid/hooks/useHyperliquidClient';
-import { useActiveWallet } from '@/lib/riverrun/hooks/useActiveWallet';
+import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
 
 import { DEFAULT_AGENT_NAME } from '../constants';
 import {

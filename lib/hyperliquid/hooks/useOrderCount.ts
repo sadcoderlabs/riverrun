@@ -3,7 +3,7 @@
  * Returns real-time count from useOrderUpdates
  */
 
-import { useActiveWallet } from '@/lib/riverrun/hooks/useActiveWallet';
+import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
 import { useMemo } from 'react';
 import { useOrderUpdates } from './useOrderUpdates';
 

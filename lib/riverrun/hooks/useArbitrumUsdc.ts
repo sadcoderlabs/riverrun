@@ -1,6 +1,6 @@
 import { Contract, formatUnits, parseUnits, JsonRpcProvider } from 'ethers';
 import { useCallback, useEffect, useState } from 'react';
-import { useActiveWallet } from './useActiveWallet';
+import { useActiveWallet } from '../wallet/useActiveWallet';
 
 // Arbitrum USDC contract address
 export const ARBITRUM_USDC_ADDRESS = '0xaf88d065e77c8cC2239327C5EDb3A432268e5831';

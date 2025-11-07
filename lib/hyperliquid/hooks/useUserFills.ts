@@ -6,7 +6,7 @@
  * Returns fills in chronological order (most recent first)
  */
 
-import { useActiveWallet } from '@/lib/riverrun/hooks/useActiveWallet';
+import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
 import * as hl from '@nktkas/hyperliquid';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Fill } from '../types/fills';
