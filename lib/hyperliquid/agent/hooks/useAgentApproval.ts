@@ -22,7 +22,7 @@ import { type AgentInfo } from '../types';
  */
 export function useAgentApproval() {
   const { getMasterExchangeClient, getInfoClient } = useHyperliquidClient();
-  const { getProvider } = useActiveWallet();
+  const { wallet } = useActiveWallet();
   const [isLoading, setIsLoading] = useState(false);
   const [agentAddress, setAgentAddress] = useState<string | undefined>(undefined);
   const [isApproved, setIsApproved] = useState(false);
@@ -45,7 +45,11 @@ export function useAgentApproval() {
       const infoClient = getInfoClient();
 
       // Get provider from useActiveWallet
-      const ethersProvider = await getProvider();
+      if (!wallet) {
+        return { agentAddress: undefined, isApproved: false };
+      }
+
+      const ethersProvider = await wallet.getProvider();
       if (!ethersProvider) {
         return { agentAddress: undefined, isApproved: false };
       }
@@ -73,7 +77,7 @@ export function useAgentApproval() {
     } finally {
       setIsLoading(false);
     }
-  }, [getMasterExchangeClient, getInfoClient, getProvider]);
+  }, [getMasterExchangeClient, getInfoClient, wallet]);
 
   /**
    * Get all agents for the current user
@@ -208,7 +212,12 @@ export function useAgentApproval() {
       }
 
       const masterAddress = await getWalletAddress(masterExchangeClient.wallet);
-      const ethersProvider = await getProvider();
+      if (!wallet) {
+        Alert.alert('Error', 'Failed to get wallet provider');
+        return false;
+      }
+
+      const ethersProvider = await wallet.getProvider();
       if (!ethersProvider) {
         Alert.alert('Error', 'Failed to get wallet provider');
         return false;
@@ -241,7 +250,7 @@ export function useAgentApproval() {
     } finally {
       setIsLoading(false);
     }
-  }, [getMasterExchangeClient, getProvider, getInfoClient]);
+  }, [getMasterExchangeClient, wallet, getInfoClient]);
 
   return {
     agentAddress,

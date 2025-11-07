@@ -36,7 +36,7 @@ interface UseActiveAssetDataResult {
  * - Automatic cleanup and resubscription
  */
 export function useActiveAssetData({ coin }: UseActiveAssetDataParams): UseActiveAssetDataResult {
-  const { address, isAuthenticated } = useActiveWallet();
+  const { wallet } = useActiveWallet();
   const { getSubscriptionClient } = useHyperliquidClient();
   const subscriptionState = useAppStateSubscriptionManager();
   const [data, setData] = useState<ActiveAssetData | undefined>(undefined);
@@ -59,10 +59,7 @@ export function useActiveAssetData({ coin }: UseActiveAssetDataParams): UseActiv
 
   useEffect(() => {
     // Don't subscribe if conditions aren't met
-    if (!isAuthenticated || !address || !coin) {
-      if (!address && isAuthenticated) {
-        console.warn('[useActiveAssetData] Wallet authenticated but address not available');
-      }
+    if (!wallet || !coin) {
       setIsLoading(false);
       setData(undefined);
       return;
@@ -95,7 +92,7 @@ export function useActiveAssetData({ coin }: UseActiveAssetDataParams): UseActiv
         const subscription = await subscriptionClient.activeAssetData(
           {
             coin: coin.toUpperCase(),
-            user: address,
+            user: wallet.address,
           },
           assetData => {
             if (isMounted) {
@@ -122,7 +119,7 @@ export function useActiveAssetData({ coin }: UseActiveAssetDataParams): UseActiv
       isMounted = false;
       void cleanup();
     };
-  }, [address, coin, isAuthenticated, subscriptionState, cleanup, getSubscriptionClient]);
+  }, [wallet, coin, subscriptionState, cleanup, getSubscriptionClient]);
 
   return {
     data,

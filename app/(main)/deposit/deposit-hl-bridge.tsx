@@ -33,7 +33,7 @@ export default function HyperliquidBridgePage() {
   const params = useLocalSearchParams<{ symbol: string; chain: string }>();
 
   // Wallet and balance hooks
-  const { address, isAuthenticated } = useActiveWallet();
+  const { wallet } = useActiveWallet();
   const { balance, depositUsdc } = useArbitrumUsdc();
 
   // Find the token based on symbol from URL params
@@ -54,7 +54,7 @@ export default function HyperliquidBridgePage() {
     );
   }
 
-  if (!isAuthenticated || !address) {
+  if (!wallet) {
     return (
       <YStack flex={1} backgroundColor="$background" paddingTop={insets.top}>
         <Text>Please connect your wallet</Text>
@@ -166,9 +166,9 @@ export default function HyperliquidBridgePage() {
               justifyContent="center"
             >
               <Text fontSize="$5" fontFamily="$skMono" color="white" fontWeight="600">
-                {shortenAddress(address, 4)}
+                {shortenAddress(wallet.address, 4)}
               </Text>
-              <Pressable onPress={() => handleCopyAddress(address, 'Wallet address')}>
+              <Pressable onPress={() => handleCopyAddress(wallet.address, 'Wallet address')}>
                 <Copy size={20} color="white" />
               </Pressable>
             </XStack>

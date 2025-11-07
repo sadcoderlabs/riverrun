@@ -65,17 +65,17 @@ export interface UseArbitrumUsdcResult {
  * ```
  */
 export function useArbitrumUsdc(): UseArbitrumUsdcResult {
-  const { address, getProvider, switchChain, walletType } = useActiveWallet();
+  const { wallet } = useActiveWallet();
   const [balance, setBalance] = useState<string | null>(null);
 
   const fetchBalance = useCallback(async () => {
-    if (!address) {
+    if (!wallet) {
       setBalance(null);
       return;
     }
 
     try {
-      const provider = await getProvider();
+      const provider = await wallet.getProvider();
       if (!provider) {
         return;
       }
@@ -86,7 +86,7 @@ export function useArbitrumUsdc(): UseArbitrumUsdcResult {
       if (network.chainId !== 42161n) {
         // Automatically attempt to switch to Arbitrum
         try {
-          await switchChain(42161);
+          await wallet.switchChain(42161);
           // Wait for the switch to complete and retry on next poll
           return;
         } catch (switchError) {
@@ -96,7 +96,7 @@ export function useArbitrumUsdc(): UseArbitrumUsdcResult {
       }
 
       const usdcContract = new Contract(ARBITRUM_USDC_ADDRESS, ERC20_ABI, provider);
-      const balanceRaw = await usdcContract.balanceOf(address);
+      const balanceRaw = await usdcContract.balanceOf(wallet.address);
       const decimals = await usdcContract.decimals();
 
       // Format balance to human-readable string
@@ -106,7 +106,7 @@ export function useArbitrumUsdc(): UseArbitrumUsdcResult {
       console.error('Failed to fetch USDC balance:', err);
       setBalance(null);
     }
-  }, [address, getProvider, switchChain]);
+  }, [wallet]);
 
   // Fetch balance on mount and when address changes
   useEffect(() => {
@@ -115,14 +115,14 @@ export function useArbitrumUsdc(): UseArbitrumUsdcResult {
 
   // Poll balance every 10 seconds
   useEffect(() => {
-    if (!address) return;
+    if (!wallet) return;
 
     const interval = setInterval(() => {
       fetchBalance();
     }, 10000); // 10 seconds
 
     return () => clearInterval(interval);
-  }, [address, fetchBalance]);
+  }, [wallet, fetchBalance]);
 
   /**
    * Deposit USDC using Privy embedded wallet
@@ -130,12 +130,12 @@ export function useArbitrumUsdc(): UseArbitrumUsdcResult {
    */
   const depositUsdcWithPrivy = useCallback(
     async (to: string, amount: string): Promise<string> => {
-      if (!address) {
+      if (!wallet) {
         throw new Error('Wallet address not available');
       }
 
       // Get Privy provider through useActiveWallet
-      const provider = await getProvider();
+      const provider = await wallet.getProvider();
       if (!provider) {
         throw new Error('Provider not available');
       }
@@ -149,7 +149,7 @@ export function useArbitrumUsdc(): UseArbitrumUsdcResult {
       const amountRaw = parseUnits(amount, decimals);
 
       // Check balance
-      const balanceRaw = await usdcContract.balanceOf(address);
+      const balanceRaw = await usdcContract.balanceOf(wallet.address);
       if (balanceRaw < amountRaw) {
         throw new Error(
           `Insufficient balance. You have ${balanceRaw.toString()} but need ${amountRaw.toString()}`,
@@ -161,11 +161,11 @@ export function useArbitrumUsdc(): UseArbitrumUsdcResult {
 
       // Get fee data and nonce
       const feeData = await independentProvider.getFeeData();
-      const nonce = await independentProvider.getTransactionCount(address, 'pending');
+      const nonce = await independentProvider.getTransactionCount(wallet.address, 'pending');
 
       // Build transaction for signing
       const txToSign = {
-        from: address,
+        from: wallet.address,
         to: ARBITRUM_USDC_ADDRESS,
         value: '0x0',
         data: transferData,
@@ -192,7 +192,7 @@ export function useArbitrumUsdc(): UseArbitrumUsdcResult {
 
       return txHash;
     },
-    [address, getProvider, fetchBalance],
+    [wallet, fetchBalance],
   );
 
   /**
@@ -201,7 +201,11 @@ export function useArbitrumUsdc(): UseArbitrumUsdcResult {
    */
   const depositUsdcWithExternalWallet = useCallback(
     async (to: string, amount: string): Promise<string> => {
-      const provider = await getProvider();
+      if (!wallet) {
+        throw new Error('Wallet not available');
+      }
+
+      const provider = await wallet.getProvider();
       if (!provider) {
         throw new Error('Provider not available');
       }
@@ -221,7 +225,7 @@ export function useArbitrumUsdc(): UseArbitrumUsdcResult {
       const amountRaw = parseUnits(amount, decimals);
 
       // Check balance
-      const balanceRaw = await usdcContract.balanceOf(address);
+      const balanceRaw = await usdcContract.balanceOf(wallet.address);
       if (balanceRaw < amountRaw) {
         throw new Error(
           `Insufficient balance. You have ${balanceRaw.toString()} but need ${amountRaw.toString()}`,
@@ -239,7 +243,7 @@ export function useArbitrumUsdc(): UseArbitrumUsdcResult {
 
       return tx.hash;
     },
-    [address, getProvider, fetchBalance],
+    [wallet, fetchBalance],
   );
 
   /**
@@ -248,19 +252,19 @@ export function useArbitrumUsdc(): UseArbitrumUsdcResult {
    */
   const depositUsdc = useCallback(
     async (to: string, amount: string): Promise<string> => {
-      if (!address) {
+      if (!wallet) {
         throw new Error('Wallet not connected');
       }
 
-      if (walletType === 'privy') {
+      if (wallet.type === 'privy') {
         return await depositUsdcWithPrivy(to, amount);
-      } else if (walletType === 'external') {
+      } else if (wallet.type === 'external') {
         return await depositUsdcWithExternalWallet(to, amount);
       } else {
         throw new Error('Unknown wallet type');
       }
     },
-    [address, walletType, depositUsdcWithPrivy, depositUsdcWithExternalWallet],
+    [wallet, depositUsdcWithPrivy, depositUsdcWithExternalWallet],
   );
 
   return {

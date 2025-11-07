@@ -38,7 +38,7 @@ export interface UseWebData2Result {
  * In such cases, the spot account value will be 0, and calculations will still work correctly.
  */
 export function useWebData2(): UseWebData2Result {
-  const { address, isAuthenticated } = useActiveWallet();
+  const { wallet } = useActiveWallet();
   const { getSubscriptionClient, getInfoClient } = useHyperliquidClient();
   const [data, setData] = useState<WebData2Response | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
@@ -93,7 +93,7 @@ export function useWebData2(): UseWebData2Result {
 
   useEffect(() => {
     // Don't subscribe if conditions aren't met
-    if (!isAuthenticated || !address) {
+    if (!wallet) {
       setIsLoading(false);
       setData(undefined);
       return;
@@ -110,7 +110,7 @@ export function useWebData2(): UseWebData2Result {
 
         // Step 1: Fetch initial data using InfoClient
         const infoClient = getInfoClient();
-        const initialData = await infoClient.webData2({ user: address });
+        const initialData = await infoClient.webData2({ user: wallet.address });
 
         if (isMounted) {
           setData(initialData);
@@ -121,7 +121,7 @@ export function useWebData2(): UseWebData2Result {
 
         const subscription = await subscriptionClient.webData2(
           {
-            user: address,
+            user: wallet.address,
           },
           (event: hl.WsWebData2Event) => {
             if (isMounted) {
@@ -151,7 +151,7 @@ export function useWebData2(): UseWebData2Result {
       isMounted = false;
       void cleanup();
     };
-  }, [address, isAuthenticated, cleanup, getSubscriptionClient, getInfoClient]);
+  }, [wallet, cleanup, getSubscriptionClient, getInfoClient]);
 
   // Calculate account values
   const perpAccountValue = data?.clearinghouseState?.marginSummary?.accountValue

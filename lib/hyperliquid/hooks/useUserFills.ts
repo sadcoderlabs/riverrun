@@ -58,7 +58,7 @@ function mergeFills(existingFills: Fill[], newFills: Fill[]): Fill[] {
 // ============================================================================
 
 export function useUserFills(): UseUserFillsResult {
-  const { address, isAuthenticated } = useActiveWallet();
+  const { wallet } = useActiveWallet();
   const { getSubscriptionClient, getInfoClient } = useHyperliquidClient();
   const [fills, setFills] = useState<Fill[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -80,7 +80,7 @@ export function useUserFills(): UseUserFillsResult {
 
   // Fetch fills function
   const fetchFills = useCallback(async (): Promise<Fill[]> => {
-    if (!address) {
+    if (!wallet) {
       return [];
     }
 
@@ -88,12 +88,12 @@ export function useUserFills(): UseUserFillsResult {
 
     // Fetch user fills (max 2000 most recent fills)
     const response = (await infoClient.userFills({
-      user: address,
+      user: wallet.address,
     })) as Fill[];
 
     // Sort by time (most recent first)
     return response.sort((a, b) => b.time - a.time);
-  }, [address, getInfoClient]);
+  }, [wallet, getInfoClient]);
 
   // Refetch function
   const refetch = useCallback(async () => {
@@ -112,7 +112,7 @@ export function useUserFills(): UseUserFillsResult {
 
   useEffect(() => {
     // Don't subscribe if conditions aren't met
-    if (!isAuthenticated || !address) {
+    if (!wallet) {
       setIsLoading(false);
       setFills([]);
       return;
@@ -139,7 +139,7 @@ export function useUserFills(): UseUserFillsResult {
 
         const subscription = await subscriptionClient.userFills(
           {
-            user: address,
+            user: wallet.address,
           },
           (data: any) => {
             if (isMounted && data.fills && data.fills.length > 0) {
@@ -173,7 +173,7 @@ export function useUserFills(): UseUserFillsResult {
       isMounted = false;
       void cleanup();
     };
-  }, [address, isAuthenticated, cleanup, fetchFills, getSubscriptionClient]);
+  }, [wallet, cleanup, fetchFills, getSubscriptionClient]);
 
   return {
     fills,

@@ -103,7 +103,7 @@ async function approveAgent(
  * Handles agent creation, approval, and validation
  */
 export function useAgentExchangeClient() {
-  const { getProvider, address: walletAddress } = useActiveWallet();
+  const { wallet } = useActiveWallet();
   const router = useRouter();
 
   /**
@@ -111,14 +111,14 @@ export function useAgentExchangeClient() {
    * @returns Promise resolving to ExchangeClient or undefined
    */
   const getAgentExchangeClient = useCallback(async (): Promise<hl.ExchangeClient | undefined> => {
-    if (!walletAddress) {
+    if (!wallet) {
       Alert.alert('Wallet Not Connected', 'Please connect your wallet to continue.');
       return undefined;
     }
 
     try {
       // Setup master wallet
-      const ethersProvider = await getProvider();
+      const ethersProvider = await wallet.getProvider();
       if (!ethersProvider) {
         Alert.alert('Wallet Not Connected', 'Please connect your wallet to continue.');
         return undefined;
@@ -191,7 +191,7 @@ export function useAgentExchangeClient() {
       Alert.alert('Error', error instanceof Error ? error.message : 'Failed to initialize agent');
       return undefined;
     }
-  }, [walletAddress, getProvider, router]);
+  }, [wallet, router]);
 
   return { getAgentExchangeClient };
 }

@@ -241,7 +241,7 @@ function hasImmediatelyCanceledOrders(
 // ============================================================================
 
 export function useOrderUpdates(): UseOrderUpdatesResult {
-  const { address, isAuthenticated } = useActiveWallet();
+  const { wallet } = useActiveWallet();
   const { getSubscriptionClient, getInfoClient } = useHyperliquidClient();
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -263,7 +263,7 @@ export function useOrderUpdates(): UseOrderUpdatesResult {
 
   useEffect(() => {
     // Don't subscribe if conditions aren't met
-    if (!isAuthenticated || !address) {
+    if (!wallet) {
       setIsLoading(false);
       setOrders([]);
       return;
@@ -283,7 +283,7 @@ export function useOrderUpdates(): UseOrderUpdatesResult {
 
         // Use frontendOpenOrders to get full order data including orderType, triggerCondition, etc.
         const openOrdersResponse = (await infoClient.frontendOpenOrders({
-          user: address,
+          user: wallet.address,
         })) as ApiOrderResponse[];
 
         // Transform to Order array (flat structure)
@@ -300,7 +300,7 @@ export function useOrderUpdates(): UseOrderUpdatesResult {
 
         const subscription = await subscriptionClient.orderUpdates(
           {
-            user: address,
+            user: wallet.address,
           },
           (orderUpdates: any[]) => {
             if (isMounted) {
@@ -377,7 +377,7 @@ export function useOrderUpdates(): UseOrderUpdatesResult {
                   void (async () => {
                     try {
                       const openOrdersResponse = (await infoClient.frontendOpenOrders({
-                        user: address,
+                        user: wallet.address,
                       })) as ApiOrderResponse[];
 
                       const refreshedOrders: Order[] = openOrdersResponse.map(apiOrder =>
@@ -420,7 +420,7 @@ export function useOrderUpdates(): UseOrderUpdatesResult {
       isMounted = false;
       void cleanup();
     };
-  }, [address, isAuthenticated, cleanup, getSubscriptionClient, getInfoClient]);
+  }, [wallet, cleanup, getSubscriptionClient, getInfoClient]);
 
   return {
     orders,

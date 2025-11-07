@@ -23,7 +23,7 @@ interface UseHyperliquidWithdrawResult {
  * - Execute USDC withdrawal to Arbitrum network
  */
 export function useHyperliquidWithdraw(): UseHyperliquidWithdrawResult {
-  const { address } = useActiveWallet();
+  const { wallet } = useActiveWallet();
   const { getMasterExchangeClient, getInfoClient } = useHyperliquidClient();
 
   const [withdrawableBalance, setWithdrawableBalance] = useState<string | null>(null);
@@ -35,7 +35,7 @@ export function useHyperliquidWithdraw(): UseHyperliquidWithdrawResult {
    * Uses clearinghouseState API to get the withdrawable amount
    */
   const refreshBalance = useCallback(async () => {
-    if (!address) {
+    if (!wallet) {
       setWithdrawableBalance(null);
       return;
     }
@@ -43,7 +43,7 @@ export function useHyperliquidWithdraw(): UseHyperliquidWithdrawResult {
     try {
       setIsLoadingBalance(true);
       const infoClient = getInfoClient();
-      const state = await infoClient.clearinghouseState({ user: address });
+      const state = await infoClient.clearinghouseState({ user: wallet.address });
       setWithdrawableBalance(state.withdrawable);
     } catch (error) {
       console.error('Failed to fetch withdrawable balance:', error);
@@ -55,7 +55,7 @@ export function useHyperliquidWithdraw(): UseHyperliquidWithdrawResult {
     } finally {
       setIsLoadingBalance(false);
     }
-  }, [address, getInfoClient]);
+  }, [wallet, getInfoClient]);
 
   /**
    * Execute USDC withdrawal to Arbitrum
@@ -66,7 +66,7 @@ export function useHyperliquidWithdraw(): UseHyperliquidWithdrawResult {
    */
   const withdraw = useCallback(
     async (destinationAddress: string, amount: string): Promise<boolean> => {
-      if (!address) {
+      if (!wallet) {
         Alert.alert('Wallet Not Connected', 'Please connect your wallet to continue.');
         return false;
       }
@@ -119,7 +119,7 @@ export function useHyperliquidWithdraw(): UseHyperliquidWithdrawResult {
         setIsWithdrawing(false);
       }
     },
-    [address, getMasterExchangeClient, refreshBalance],
+    [wallet, getMasterExchangeClient, refreshBalance],
   );
 
   return {

@@ -200,7 +200,7 @@ function OrderCard({ order, onCancel, onPress, canceling, getSymbolConverter }: 
 type OrderFilter = 'all' | 'long' | 'short';
 
 export function OrdersTabContent() {
-  const { address, isAuthenticated } = useActiveWallet();
+  const { wallet } = useActiveWallet();
   const { getSymbolConverter } = useHyperliquidClient();
   const { setSelectedCoin } = useSelectedCoinStore();
 
@@ -285,7 +285,7 @@ export function OrdersTabContent() {
   };
 
   // Render states
-  if (!isAuthenticated || !address) {
+  if (!wallet) {
     return (
       <YStack flex={1} justifyContent="center" alignItems="center" padding="$4">
         <Text>Please connect your wallet to view orders</Text>

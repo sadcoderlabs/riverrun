@@ -15,7 +15,7 @@ export default function Index() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { preference, setPreference } = useThemePreference();
-  const { walletType } = useActiveWallet();
+  const { wallet } = useActiveWallet();
   const [showExportModal, setShowExportModal] = useState(false);
 
   const getThemeDisplayName = (theme: ThemePreference) => {
@@ -58,7 +58,7 @@ export default function Index() {
             {/* Account Settings Section */}
             <YStack>
               <ListSection label="Account Settings">
-                {walletType === 'privy' && (
+                {wallet?.type === 'privy' && (
                   <ListItem
                     title="Export Wallet"
                     subTitle="Export your wallet private key securely"

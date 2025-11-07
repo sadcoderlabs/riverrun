@@ -30,7 +30,7 @@ interface UseSpotBalanceResult {
  * @returns Balance, token info, loading state, and refresh function
  */
 export function useSpotBalance(tokenSymbol: string): UseSpotBalanceResult {
-  const { address } = useActiveWallet();
+  const { wallet } = useActiveWallet();
   const { getInfoClient } = useHyperliquidClient();
 
   const [balance, setBalance] = useState<string | null>(null);
@@ -39,7 +39,7 @@ export function useSpotBalance(tokenSymbol: string): UseSpotBalanceResult {
   const [error, setError] = useState<string | null>(null);
 
   const refreshBalance = useCallback(async () => {
-    if (!address) {
+    if (!wallet) {
       setBalance(null);
       setTokenInfo(null);
       return;
@@ -72,7 +72,7 @@ export function useSpotBalance(tokenSymbol: string): UseSpotBalanceResult {
       });
 
       // Step 2: Get user's spot balances
-      const spotState = await infoClient.spotClearinghouseState({ user: address });
+      const spotState = await infoClient.spotClearinghouseState({ user: wallet.address });
 
       // Find balance for this token by index
       const tokenBalance = spotState.balances.find(
@@ -94,7 +94,7 @@ export function useSpotBalance(tokenSymbol: string): UseSpotBalanceResult {
     } finally {
       setIsLoading(false);
     }
-  }, [address, tokenSymbol, getInfoClient]);
+  }, [wallet, tokenSymbol, getInfoClient]);
 
   // Auto-fetch on mount and when dependencies change
   useEffect(() => {

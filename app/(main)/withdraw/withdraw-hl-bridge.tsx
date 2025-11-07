@@ -25,7 +25,7 @@ export default function HyperliquidBridgeWithdrawPage() {
   const insets = useSafeAreaInsets();
 
   // Wallet hooks
-  const { address, isAuthenticated } = useActiveWallet();
+  const { wallet } = useActiveWallet();
 
   // Hyperliquid withdraw hook
   const {
@@ -43,12 +43,12 @@ export default function HyperliquidBridgeWithdrawPage() {
 
   // Load withdrawable balance on mount
   useEffect(() => {
-    if (isAuthenticated && address) {
+    if (wallet) {
       refreshBalance();
     }
-  }, [isAuthenticated, address, refreshBalance]);
+  }, [wallet, refreshBalance]);
 
-  if (!isAuthenticated || !address) {
+  if (!wallet) {
     return (
       <YStack flex={1} backgroundColor="$background" paddingTop={insets.top}>
         <Text>Please connect your wallet</Text>

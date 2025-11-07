@@ -4,43 +4,44 @@ import { BrowserProvider } from 'ethers';
 import { useMemo, useCallback, useRef, useEffect } from 'react';
 import { useWalletStore, type WalletSource } from '@/lib/riverrun/store/wallet.store';
 
-export type WalletType = 'privy' | 'external' | undefined;
+export type WalletType = 'privy' | 'external';
+
+export interface ActiveWallet {
+  address: string;
+  name: string;
+  type: WalletType;
+  getProvider: () => Promise<BrowserProvider>;
+  switchChain: (chainId: number) => Promise<void>;
+}
 
 export interface UseActiveWalletResult {
-  // Authentication state
-  isAuthenticated: boolean;
   isReady: boolean;
-
-  // Wallet information
-  address: string | undefined;
-  walletName: string;
-  walletType: WalletType;
-
-  // Signing operations
-  getProvider: () => Promise<BrowserProvider | undefined>;
-  switchChain: (chainId: number) => Promise<void>;
+  wallet: ActiveWallet | undefined;
 }
 
 /**
  * Active Wallet Hook
  *
- * Provides the state and operations for the currently selected wallet.
- * Automatically reads the user's wallet selection from the wallet store.
+ * Provides unified access to the currently active wallet, abstracting away
+ * the differences between Privy embedded wallet and Reown external wallet.
+ *
+ * @returns {UseActiveWalletResult}
+ * - `isReady`: Whether the wallet system is ready (required for Privy)
+ * - `wallet`: Active wallet information and operations, or undefined if not connected
  *
  * @example
  * ```tsx
- * const {
- *   isAuthenticated,
- *   address,
- *   walletName,
- *   getProvider,
- * } = useActiveWallet();
+ * const { isReady, wallet } = useActiveWallet();
  *
- * if (!isAuthenticated) {
+ * if (!isReady) {
+ *   return <Text>Loading...</Text>;
+ * }
+ *
+ * if (!wallet) {
  *   return <Text>Not connected</Text>;
  * }
  *
- * return <Text>Connected: {address}</Text>;
+ * return <Text>Connected: {wallet.address}</Text>;
  * ```
  */
 export function useActiveWallet(): UseActiveWalletResult {
@@ -82,26 +83,7 @@ export function useActiveWallet(): UseActiveWalletResult {
     activeSource = embeddedAddress ? 'privy' : undefined;
   }
 
-  // Get active wallet information
-  const address =
-    activeSource === 'privy'
-      ? embeddedAddress
-      : activeSource === 'reown'
-        ? reownAddress
-        : undefined;
-
-  const walletType: WalletType =
-    activeSource === 'privy' ? 'privy' : activeSource === 'reown' ? 'external' : undefined;
-
-  const walletName =
-    activeSource === 'privy'
-      ? 'Privy Wallet'
-      : activeSource === 'reown'
-        ? walletInfo?.name || 'External Wallet'
-        : 'Unknown Wallet';
-
-  // Authentication state
-  const isAuthenticated = !!activeSource && !!address;
+  // Wallet ready state
   const isReady = privyReady;
 
   // Store latest wallet state in refs to allow stable function references
@@ -119,9 +101,10 @@ export function useActiveWallet(): UseActiveWalletResult {
   /**
    * Get the ethers.js BrowserProvider for the currently selected wallet.
    *
-   * @returns BrowserProvider instance or undefined if no wallet is connected
+   * @returns BrowserProvider instance
+   * @throws Error if no wallet is connected or provider cannot be obtained
    */
-  const getProvider = useCallback(async (): Promise<BrowserProvider | undefined> => {
+  const getProvider = useCallback(async (): Promise<BrowserProvider> => {
     try {
       if (activeSourceRef.current === 'privy' && embeddedWalletRef.current) {
         // Privy embedded wallet - use getProvider() for React Native
@@ -131,10 +114,10 @@ export function useActiveWallet(): UseActiveWalletResult {
         // Reown external wallet
         return new BrowserProvider(reownProviderRef.current as any);
       }
-      return undefined;
+      throw new Error('No active wallet connected');
     } catch (error) {
       console.error('Failed to get provider:', error);
-      return undefined;
+      throw error;
     }
   }, []); // Empty deps - stable reference, always reads latest state from refs
 
@@ -177,24 +160,42 @@ export function useActiveWallet(): UseActiveWalletResult {
     }
   }, []); // Empty deps - stable reference, always reads latest state from refs
 
+  // Build wallet object if connected
+  const wallet: ActiveWallet | undefined = useMemo(() => {
+    if (!activeSource) return undefined;
+
+    const address =
+      activeSource === 'privy'
+        ? embeddedAddress
+        : activeSource === 'reown'
+          ? reownAddress
+          : undefined;
+
+    if (!address) return undefined;
+
+    const type: WalletType = activeSource === 'privy' ? 'privy' : 'external';
+
+    const name =
+      activeSource === 'privy'
+        ? 'Privy Wallet'
+        : activeSource === 'reown'
+          ? walletInfo?.name || 'External Wallet'
+          : 'Unknown Wallet';
+
+    return {
+      address,
+      name,
+      type,
+      getProvider,
+      switchChain,
+    };
+  }, [activeSource, embeddedAddress, reownAddress, walletInfo?.name, getProvider, switchChain]);
+
   return useMemo(
     () => ({
-      isAuthenticated,
       isReady,
-      address,
-      walletName,
-      walletType,
-      getProvider, // Stable reference (empty deps)
-      switchChain, // Stable reference (empty deps)
+      wallet,
     }),
-    [
-      isAuthenticated,
-      isReady,
-      address,
-      walletName,
-      walletType,
-      getProvider, // Stable, won't trigger re-memoization
-      switchChain, // Stable, won't trigger re-memoization
-    ],
+    [isReady, wallet],
   );
 }

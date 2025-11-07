@@ -30,7 +30,7 @@ LogBox.ignoreLogs(['emitting session_request', 'without any listeners']);
 SplashScreen.preventAutoHideAsync();
 
 function WalletInfoDisplay() {
-  const { isReady, isAuthenticated } = useActiveWallet();
+  const { isReady, wallet } = useActiveWallet();
 
   // Wait for wallet providers to be ready before showing content
   if (!isReady) {
@@ -46,10 +46,10 @@ function WalletInfoDisplay() {
           headerShown: false,
         }}
       >
-        <Stack.Protected guard={!isAuthenticated}>
+        <Stack.Protected guard={!wallet}>
           <Stack.Screen name="login" options={{ headerShown: false }} />
         </Stack.Protected>
-        <Stack.Protected guard={isAuthenticated}>
+        <Stack.Protected guard={!!wallet}>
           {/* Main group - includes bottom navigation layout */}
           <Stack.Screen
             name="(main)"

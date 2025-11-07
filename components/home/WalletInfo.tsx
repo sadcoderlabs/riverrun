@@ -34,15 +34,15 @@ function shortenAddress(address: string): string {
 export function WalletInfo() {
   const insets = useSafeAreaInsets();
   const theme = useTheme();
-  const { address, walletName } = useActiveWallet();
+  const { wallet } = useActiveWallet();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Use the unified wallet address and name from useWallet
-  const walletAddress = address || '0xunknown_wallet';
+  const walletAddress = wallet?.address || '0xunknown_wallet';
 
   const handleCopyAddress = async () => {
-    if (address) {
-      await Clipboard.setStringAsync(address);
+    if (wallet?.address) {
+      await Clipboard.setStringAsync(wallet.address);
       toast.success('Address Copied', {
         description: 'Wallet address copied to clipboard',
       });
@@ -70,8 +70,8 @@ export function WalletInfo() {
         {/* Avatar - Now Pressable */}
         <Pressable onPress={() => setIsModalOpen(true)}>
           <Avatar>
-            {address ? (
-              <Jazzicon size={40} address={address} />
+            {wallet?.address ? (
+              <Jazzicon size={40} address={wallet.address} />
             ) : (
               <Wallet size={28} color={theme.color12} />
             )}
@@ -89,7 +89,7 @@ export function WalletInfo() {
             </IconButton>
           </XStack>
           <Text fontSize={14} color="$color9">
-            {walletName}
+            {wallet?.name || 'Unknown Wallet'}
           </Text>
         </YStack>
 

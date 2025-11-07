@@ -21,20 +21,20 @@ interface UseHyperliquidClientResult {
 }
 
 export function useHyperliquidClient(): UseHyperliquidClientResult {
-  const { getProvider, address: walletAddress } = useActiveWallet();
+  const { wallet } = useActiveWallet();
   const { getAgentExchangeClient } = useAgentExchangeClient();
 
   // Get master exchange client (cached by wallet address)
   const getMasterExchangeClientWrapper = useCallback(async (): Promise<
     hl.ExchangeClient | undefined
   > => {
-    if (!walletAddress) {
+    if (!wallet) {
       Alert.alert('Wallet Not Connected', 'Please connect your wallet to continue.');
       return undefined;
     }
 
     try {
-      const ethersProvider = await getProvider();
+      const ethersProvider = await wallet.getProvider();
       if (!ethersProvider) {
         Alert.alert('Wallet Not Connected', 'Please connect your wallet to continue.');
         return undefined;
@@ -43,13 +43,13 @@ export function useHyperliquidClient(): UseHyperliquidClientResult {
       const masterSigner = await ethersProvider.getSigner();
 
       // Use cached ExchangeClient - only creates new instance if wallet changed
-      return getMasterExchangeClient(walletAddress, masterSigner);
+      return getMasterExchangeClient(wallet.address, masterSigner);
     } catch (error) {
       console.error('Failed to get master exchange client:', error);
       Alert.alert('Error', error instanceof Error ? error.message : 'Failed to initialize wallet');
       return undefined;
     }
-  }, [walletAddress, getProvider]);
+  }, [wallet]);
 
   return useMemo(
     () => ({

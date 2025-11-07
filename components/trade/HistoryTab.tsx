@@ -155,7 +155,7 @@ function FillCard({ fill, onPress, getSymbolConverter }: FillCardProps) {
 type FillFilter = 'all' | 'long' | 'short';
 
 export function HistoryTabContent() {
-  const { address, isAuthenticated } = useActiveWallet();
+  const { wallet } = useActiveWallet();
   const { getSymbolConverter } = useHyperliquidClient();
   const { setSelectedCoin } = useSelectedCoinStore();
 
@@ -194,7 +194,7 @@ export function HistoryTabContent() {
   };
 
   // Render states
-  if (!isAuthenticated || !address) {
+  if (!wallet) {
     return (
       <YStack flex={1} justifyContent="center" alignItems="center" padding="$4">
         <Text>Please connect your wallet to view history</Text>

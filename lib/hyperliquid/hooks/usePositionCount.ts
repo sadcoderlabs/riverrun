@@ -8,11 +8,11 @@ import { useActiveWallet } from '@/lib/riverrun/hooks';
  * to show position count badges in navigation tabs
  */
 export function usePositionCount(): number {
-  const { isAuthenticated } = useActiveWallet();
+  const { wallet } = useActiveWallet();
   const { data: webData } = useWebData2();
 
   const count = useMemo(() => {
-    if (!isAuthenticated || !webData?.clearinghouseState?.assetPositions) {
+    if (!wallet || !webData?.clearinghouseState?.assetPositions) {
       return 0;
     }
 
@@ -20,7 +20,7 @@ export function usePositionCount(): number {
     return webData.clearinghouseState.assetPositions.filter(
       asset => asset.position && Number(asset.position.szi) !== 0,
     ).length;
-  }, [isAuthenticated, webData]);
+  }, [wallet, webData]);
 
   return count;
 }

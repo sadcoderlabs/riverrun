@@ -19,7 +19,7 @@ interface UseSpotSendResult {
  * @returns send function, sending state, and error
  */
 export function useSpotSend(): UseSpotSendResult {
-  const { address } = useActiveWallet();
+  const { wallet } = useActiveWallet();
   const { getMasterExchangeClient } = useHyperliquidClient();
 
   const [isSending, setIsSending] = useState(false);
@@ -35,7 +35,7 @@ export function useSpotSend(): UseSpotSendResult {
    */
   const send = useCallback(
     async (destination: string, token: string, amount: string): Promise<boolean> => {
-      if (!address) {
+      if (!wallet) {
         Alert.alert('Wallet Not Connected', 'Please connect your wallet to continue.');
         return false;
       }
@@ -75,7 +75,7 @@ export function useSpotSend(): UseSpotSendResult {
         setIsSending(false);
       }
     },
-    [address, getMasterExchangeClient],
+    [wallet, getMasterExchangeClient],
   );
 
   return {

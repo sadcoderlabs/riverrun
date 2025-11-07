@@ -20,7 +20,7 @@ interface PositionWithMarkPrice extends Position {
 }
 
 export default function PositionsTab() {
-  const { address, isAuthenticated } = useActiveWallet();
+  const { wallet } = useActiveWallet();
   const { getInfoClient } = useHyperliquidClient();
   const { setSelectedCoin } = useSelectedCoinStore();
 
@@ -65,13 +65,13 @@ export default function PositionsTab() {
       }
     };
 
-    if (isAuthenticated) {
+    if (wallet) {
       fetchMarketData();
       // Refresh mark prices every 5 seconds
       const interval = setInterval(fetchMarketData, 5000);
       return () => clearInterval(interval);
     }
-  }, [isAuthenticated, getInfoClient]);
+  }, [wallet, getInfoClient]);
 
   // Extract and enrich positions from WebSocket data
   const positions = useMemo<PositionWithMarkPrice[]>(() => {
@@ -91,7 +91,7 @@ export default function PositionsTab() {
       });
   }, [webData, marketDataMap]);
 
-  if (!isAuthenticated || !address) {
+  if (!wallet) {
     return (
       <View flex={1} justifyContent="center" alignItems="center" padding="$4">
         <Text>Please connect your wallet to view positions</Text>

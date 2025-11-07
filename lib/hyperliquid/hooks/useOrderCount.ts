@@ -12,17 +12,17 @@ import { useOrderUpdates } from './useOrderUpdates';
  * @returns number of open orders
  */
 export function useOrderCount(): number {
-  const { isAuthenticated } = useActiveWallet();
+  const { wallet } = useActiveWallet();
   const { orders } = useOrderUpdates();
 
   const count = useMemo(() => {
-    if (!isAuthenticated) {
+    if (!wallet) {
       return 0;
     }
 
     // Return the count of orders
     return orders.length;
-  }, [isAuthenticated, orders]);
+  }, [wallet, orders]);
 
   return count;
 }

@@ -11,7 +11,7 @@ import { useActiveWallet } from '@/lib/riverrun/hooks/useActiveWallet';
  */
 export function useBuilderFee() {
   const { getMasterExchangeClient, getInfoClient } = useHyperliquidClient();
-  const { address } = useActiveWallet();
+  const { wallet } = useActiveWallet();
   const [isBuilderFeeLoading, setIsBuilderFeeLoading] = useState(false);
   const [maxApprovedFee, setMaxApprovedFee] = useState<number>(0);
 
@@ -23,13 +23,13 @@ export function useBuilderFee() {
     try {
       setIsBuilderFeeLoading(true);
 
-      if (!address) {
+      if (!wallet) {
         return 0;
       }
 
       const infoClient = getInfoClient();
       const maxFee = await infoClient.maxBuilderFee({
-        user: address,
+        user: wallet.address,
         builder: BUILDER_CONFIG.address,
       });
 
@@ -42,7 +42,7 @@ export function useBuilderFee() {
     } finally {
       setIsBuilderFeeLoading(false);
     }
-  }, [address, getInfoClient]);
+  }, [wallet, getInfoClient]);
 
   /**
    * Core approval logic - executes the approval transaction and verifies success
@@ -128,7 +128,7 @@ export function useBuilderFee() {
     try {
       setIsBuilderFeeLoading(true);
 
-      if (!address) {
+      if (!wallet) {
         return false;
       }
 
@@ -136,7 +136,7 @@ export function useBuilderFee() {
 
       // Check if builder fee is already approved with sufficient amount
       const maxFee = await infoClient.maxBuilderFee({
-        user: address,
+        user: wallet.address,
         builder: BUILDER_CONFIG.address,
       });
 
@@ -180,7 +180,7 @@ export function useBuilderFee() {
     } finally {
       setIsBuilderFeeLoading(false);
     }
-  }, [address, getInfoClient, executeApproval]);
+  }, [wallet, getInfoClient, executeApproval]);
 
   /**
    * Revoke builder fee by setting max fee rate to 0%
