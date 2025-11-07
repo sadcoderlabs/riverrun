@@ -2,7 +2,10 @@ import { usePrivy, useEmbeddedEthereumWallet } from '@privy-io/expo';
 import { useAccount, useWalletInfo, useProvider } from '@reown/appkit-react-native';
 import { BrowserProvider } from 'ethers';
 import { useMemo } from 'react';
-import { useWalletStore, type WalletSource } from '@/lib/riverrun/store/wallet.store';
+import {
+  useWalletSourceStore,
+  type WalletSource,
+} from '@/lib/riverrun/wallet/useWalletSourceStore';
 
 export type WalletType = 'privy' | 'external';
 
@@ -46,7 +49,7 @@ export interface UseActiveWalletResult {
  */
 export function useActiveWallet(): UseActiveWalletResult {
   // Wallet store
-  const { selectedWalletSource } = useWalletStore();
+  const { selectedWalletSource } = useWalletSourceStore();
 
   // Privy hooks
   const { isReady: privyReady } = usePrivy();

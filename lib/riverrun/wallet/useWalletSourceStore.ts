@@ -4,7 +4,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 
 export type WalletSource = 'privy' | 'reown';
 
-interface WalletState {
+interface WalletSourceState {
   /**
    * The wallet source that the user has selected to use.
    * undefined means no explicit selection (will use default priority: Privy > Reown)
@@ -25,7 +25,7 @@ interface WalletState {
   _setHasHydrated: (state: boolean) => void;
 }
 
-export const useWalletStore = create<WalletState>()(
+export const useWalletSourceStore = create<WalletSourceState>()(
   persist(
     set => ({
       selectedWalletSource: undefined,
