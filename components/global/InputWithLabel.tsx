@@ -1,8 +1,8 @@
 import React, { forwardRef, ForwardedRef } from 'react';
 import { InputProps, YStack } from 'tamagui';
-import { Input } from './input';
-import { Label } from './label';
-import { Text } from './text';
+import { Input } from './Input';
+import { Label } from './Label';
+import { Text } from './Text';
 import { TextInput } from 'react-native';
 export default forwardRef(function InputWithLabel(
   {

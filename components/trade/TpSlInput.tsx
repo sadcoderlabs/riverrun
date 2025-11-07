@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Check } from '@tamagui/lucide-icons';
 import { Checkbox } from '@tamagui/checkbox';
 import { Text, XStack, YStack } from 'tamagui';
-import { PricePercentInput } from './price-percent-input';
+import { PricePercentInput } from './PricePercentInput';
 import {
   calculatePercentFromPrice,
   calculatePriceFromPercent,

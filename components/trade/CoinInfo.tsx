@@ -1,4 +1,4 @@
-import { MarketSelectorModal } from '@/components/trade/market-selector-modal';
+import { MarketSelectorModal } from '@/components/trade/MarketSelectorModal';
 import { useActiveAssetCtx, useHyperliquidClient } from '@/lib/hyperliquid/hooks';
 import { formatMarketId } from '@/lib/hyperliquid/market-utils';
 import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';

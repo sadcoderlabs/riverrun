@@ -1,6 +1,6 @@
 import React from 'react';
 import { useColorScheme } from 'react-native';
-import { HyperliquidSvg } from './hyperliquid-svg';
+import { HyperliquidSvg } from './HyperliquidSvg';
 
 interface PoweredByLogoProps {
   width?: number;

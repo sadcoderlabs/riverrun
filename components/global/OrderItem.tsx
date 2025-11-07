@@ -2,9 +2,9 @@ import * as hl from '@nktkas/hyperliquid';
 import React, { useMemo } from 'react';
 import type { GetThemeValueForKey } from 'tamagui';
 import { Text, XStack, YStack } from 'tamagui';
-import { Button } from './button';
+import { Button } from './Button';
 
-import { CardContainer, CardContainerProps } from './card-container';
+import { CardContainer, CardContainerProps } from './CardContainer';
 
 type ColorToken = GetThemeValueForKey<'color'>;
 

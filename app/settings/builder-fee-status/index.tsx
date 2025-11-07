@@ -1,5 +1,5 @@
-import { ListButton, ListItem } from '@/components/global/list-item';
-import { ListSection } from '@/components/global/list-section';
+import { ListButton, ListItem } from '@/components/global/ListItem';
+import { ListSection } from '@/components/global/ListSection';
 import { BUILDER_CONFIG } from '@/lib/hyperliquid/builderFee/config';
 import { useBuilderFee } from '@/lib/hyperliquid/builderFee/hooks/useBuilderFee';
 import { ArrowLeft } from '@tamagui/lucide-icons';

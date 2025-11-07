@@ -1,4 +1,4 @@
-import { LeverageAdjustmentModal } from '@/components/trade/leverage-adjustment-modal';
+import { LeverageAdjustmentModal } from '@/components/trade/LeverageAdjustmentModal';
 import { ChevronDown } from '@tamagui/lucide-icons';
 import { useState } from 'react';
 import { Text, XStack } from 'tamagui';

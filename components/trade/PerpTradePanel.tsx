@@ -1,15 +1,15 @@
 import 'event-target-polyfill'; // polyfill for hyperliquid sdk
 import 'fast-text-encoding'; // polyfill for hyperliquid sdk
 
-import { useOrderForm } from '@/components/trade/hooks/use-order-form';
-import { LeverageSelector } from '@/components/trade/leverage-selector';
+import { useOrderForm } from '@/components/trade/hooks/useOrderForm';
+import { LeverageSelector } from '@/components/trade/LeverageSelector';
 import { LimitOrderForm, MarketOrderForm, OrderTypeSelector } from '@/components/trade/order-forms';
 import { OrderBook } from '@/components/trade/OrderBook';
 import {
   TpSlInput,
   type TpSlResult,
   type TpSlValidationResult,
-} from '@/components/trade/tp-sl-input';
+} from '@/components/trade/TpSlInput';
 import { useWebData2Context } from '@/lib/hyperliquid/context/WebData2Context';
 import { formatSize } from '@/lib/hyperliquid/format/formatSize';
 import { formatValue } from '@/lib/hyperliquid/format/formatValue';

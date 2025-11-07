@@ -12,9 +12,8 @@
 
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { View, XStack } from 'tamagui';
-import { CloseButton } from './close-button';
-import { Text } from './text';
+import { Text, View, XStack } from 'tamagui';
+import { CloseButton } from './CloseButton';
 
 export interface ModalHeaderGrabberProps {
   /**
@@ -54,18 +53,20 @@ export function ModalHeaderGrabber({
   return (
     <XStack
       alignItems="center"
-      height={'100%'}
+      height={64}
       justifyContent="center"
       alignContent="center"
       px="$5"
       py="$2"
       style={style}
     >
-      <XStack position="absolute" left={0} right={0} top={-5} justifyContent="center">
-        <View rounded={'$11'} bottom={0} bg="$grayA8" width={40} height="$0.5" />
+      <XStack position="absolute" left={0} right={0} top={6} justifyContent="center">
+        <View rounded={'$11'} bottom={0} bg="$grayA8" width={60} height="$0.5" />
       </XStack>
 
-      <Text fontWeight={'600'}>{title}</Text>
+      <Text fontSize={18} fontWeight={'700'}>
+        {title}
+      </Text>
       {showBackButton && (
         <View position="absolute" right={12} top={12}>
           <CloseButton onPress={handleClosePress} />

@@ -1,7 +1,7 @@
 import { Eye, EyeOff, Info } from '@tamagui/lucide-icons';
 import React, { useState } from 'react';
 import { Button, Popover, Spinner, Text, XStack, YStack, useTheme } from 'tamagui';
-import { CardContainer } from '../global/card-container';
+import { CardContainer } from '../global/CardContainer';
 import { useWebData2Context } from '@/lib/hyperliquid/context/WebData2Context';
 
 export function AccountEquity() {

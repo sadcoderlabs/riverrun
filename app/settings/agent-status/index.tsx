@@ -1,4 +1,4 @@
-import { Button } from '@/components/global/button';
+import { Button } from '@/components/global/Button';
 import { DEFAULT_AGENT_NAME } from '@/lib/hyperliquid/agent/constants';
 import { useAgentApproval } from '@/lib/hyperliquid/agent/hooks/useAgentApproval';
 import { ArrowLeft } from '@tamagui/lucide-icons';

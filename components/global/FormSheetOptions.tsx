@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { Platform } from 'react-native';
-import { CloseButton } from './close-button';
-import { ModalHeaderGrabber } from './modal-header-grabber';
+import { CloseButton } from './CloseButton';
+import { ModalHeaderGrabber } from './ModalHeaderGrabber';
 
 export const formSheetOptions = (title: string) => ({
   presentation: 'formSheet' as const,

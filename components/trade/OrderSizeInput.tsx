@@ -1,4 +1,4 @@
-import { Input } from '@/components/global/input';
+import { Input } from '@/components/global/Input';
 import { useCallback, useEffect, useState } from 'react';
 import { Button, Slider, Text, XStack, YStack } from 'tamagui';
 

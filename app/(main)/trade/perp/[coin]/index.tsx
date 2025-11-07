@@ -1,4 +1,4 @@
-import { PerpTradePanel } from '@/components/trade/perp-trade-panel';
+import { PerpTradePanel } from '@/components/trade/PerpTradePanel';
 import { useLocalSearchParams } from 'expo-router';
 import { YStack } from 'tamagui';
 import { useSelectedCoinStore } from '@/lib/riverrun/store';

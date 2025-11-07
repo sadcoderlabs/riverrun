@@ -4,7 +4,7 @@ import { Button, Slider, Text, XStack, YStack } from 'tamagui';
 import { Check } from '@tamagui/lucide-icons';
 import { Checkbox } from '@tamagui/checkbox';
 import * as hl from '@nktkas/hyperliquid';
-import { Input } from '@/components/global/input';
+import { Input } from '@/components/global/Input';
 import { useHyperliquidClient, useOrder } from '@/lib/hyperliquid/hooks';
 import { useOrderUpdates } from '@/lib/hyperliquid/hooks/useOrderUpdates';
 import { formatSize } from '@/lib/hyperliquid/format/formatSize';

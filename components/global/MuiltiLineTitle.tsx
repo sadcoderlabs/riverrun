@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 import { Text as TamaguiText, YStack } from 'tamagui';
-import { Text } from './text';
+import { Text } from './Text';
 
 export default function MultiLineTitle({ title, subtitle }: { title?: string; subtitle?: string }) {
   return (

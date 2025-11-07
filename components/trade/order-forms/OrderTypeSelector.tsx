@@ -1,4 +1,4 @@
-import AdaptiveSelect from '@/components/global/adaptive-select';
+import AdaptiveSelect from '@/components/global/AdaptiveSelect';
 import { ChevronDown } from '@tamagui/lucide-icons';
 import { Text, XStack } from 'tamagui';
 

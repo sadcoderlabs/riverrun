@@ -28,8 +28,8 @@ import { Check, ChevronRight } from '@tamagui/lucide-icons';
 import { ReactNode, forwardRef } from 'react';
 import { Platform, View as ReactNativeView } from 'react-native';
 import { ListItemFrame, View, XStack, YStack } from 'tamagui';
-import { Button, ButtonProps } from './button';
-import { Text } from './text';
+import { Button, ButtonProps } from './Button';
+import { Text } from './Text';
 
 /**
  * Props for the ListItem component.
@@ -61,7 +61,7 @@ export interface ListItemProps {
 }
 
 // Export ListSection from its own file
-export { ListSection, ListSectionProps } from './list-section';
+export { ListSection, ListSectionProps } from './ListSection';
 
 /**
  * A list item component with configurable content and styling.

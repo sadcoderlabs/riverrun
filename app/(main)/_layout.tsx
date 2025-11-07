@@ -1,4 +1,4 @@
-import { NavBar } from '@/components/global/nav-bar';
+import { NavBar } from '@/components/global/NavBar';
 import { WebData2Provider } from '@/lib/hyperliquid/context/WebData2Context';
 import { Stack } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

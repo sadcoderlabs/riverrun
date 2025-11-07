@@ -1,6 +1,6 @@
-import OrdersTab from '@/components/trade/orders-tab';
-import PositionsTab from '@/components/trade/positions-tab';
-import HistoryTab from '@/components/trade/history-tab';
+import OrdersTab from '@/components/trade/OrdersTab';
+import PositionsTab from '@/components/trade/PositionsTab';
+import HistoryTab from '@/components/trade/HistoryTab';
 import { useState, useEffect } from 'react';
 import { Text, XStack, YStack } from 'tamagui';
 import { useOrderCount, usePositionCount } from '@/lib/hyperliquid/hooks';

@@ -1,6 +1,6 @@
-import AdaptiveSelect from '@/components/global/adaptive-select';
-import { ListItem } from '@/components/global/list-item';
-import { ListSection } from '@/components/global/list-section';
+import AdaptiveSelect from '@/components/global/AdaptiveSelect';
+import { ListItem } from '@/components/global/ListItem';
+import { ListSection } from '@/components/global/ListSection';
 import { useThemePreference, useActiveWallet } from '@/lib/riverrun/hooks';
 import { type ThemePreference } from '@/lib/riverrun/store/theme.store';
 import { ArrowLeft, ArrowUpRight } from '@tamagui/lucide-icons';
@@ -9,7 +9,7 @@ import { Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PortalProvider, ScrollView, Text, View, XStack, YStack } from 'tamagui';
 import { useState } from 'react';
-import ExportWalletModal from '@/components/settings/export-wallet-modal';
+import ExportWalletModal from '@/components/settings/ExportWalletModal';
 
 export default function Index() {
   const router = useRouter();

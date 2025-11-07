@@ -1,4 +1,4 @@
-import AdaptiveSelect from '@/components/global/adaptive-select';
+import AdaptiveSelect from '@/components/global/AdaptiveSelect';
 import { useOrderBook, type OrderBookLevel } from '@/lib/hyperliquid/hooks';
 import {
   buildPrecisionMenu,

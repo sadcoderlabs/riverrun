@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Spinner, Text, XStack, YStack, Popover, Button } from 'tamagui';
 import { Info } from '@tamagui/lucide-icons';
-import { CardContainer } from '../global/card-container';
+import { CardContainer } from '../global/CardContainer';
 import { useWebData2Context } from '@/lib/hyperliquid/context/WebData2Context';
 
 interface MetricRowProps {

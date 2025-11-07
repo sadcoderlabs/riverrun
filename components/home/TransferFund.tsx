@@ -2,7 +2,7 @@ import { ArrowDown, ArrowUp } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { Text, XStack, YStack } from 'tamagui';
-import { CardContainer } from '../global/card-container';
+import { CardContainer } from '../global/CardContainer';
 
 /**
  * Transfer Fund Component

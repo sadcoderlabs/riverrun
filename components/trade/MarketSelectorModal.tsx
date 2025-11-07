@@ -1,4 +1,4 @@
-import { MarketListItem } from '@/components/trade/market-list-item';
+import { MarketListItem } from '@/components/trade/MarketListItem';
 import { useMarketsStore } from '@/lib/riverrun/store/use-markets-store';
 import { useSelectedCoinStore } from '@/lib/riverrun/store';
 import { useAllMids } from '@/lib/hyperliquid/hooks/useAllMids';

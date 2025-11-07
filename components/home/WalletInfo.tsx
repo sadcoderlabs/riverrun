@@ -8,7 +8,7 @@ import Jazzicon from 'react-native-jazzicon';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { toast } from 'sonner-native';
 import { styled, Text, useTheme, XStack, YStack } from 'tamagui';
-import { WalletSelectorModal } from './wallet-selector-modal';
+import { WalletSelectorModal } from './WalletSelectorModal';
 
 const Avatar = styled(XStack, {
   width: 48,

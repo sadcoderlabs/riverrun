@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Modal, Pressable, StyleSheet } from 'react-native';
 import { Button, Slider, Text, XStack, YStack } from 'tamagui';
 import * as hl from '@nktkas/hyperliquid';
-import { Input } from '@/components/global/input';
+import { Input } from '@/components/global/Input';
 import { useHyperliquidClient, useOrder } from '@/lib/hyperliquid/hooks';
 import { formatSize } from '@/lib/hyperliquid/format/formatSize';
 import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';

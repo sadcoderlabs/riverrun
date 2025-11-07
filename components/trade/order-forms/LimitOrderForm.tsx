@@ -1,5 +1,5 @@
-import { Input } from '@/components/global/input';
-import { OrderSizeInput } from '@/components/trade/order-size-input';
+import { Input } from '@/components/global/Input';
+import { OrderSizeInput } from '@/components/trade/OrderSizeInput';
 import { Text, XStack, YStack } from 'tamagui';
 
 /**

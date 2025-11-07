@@ -1,5 +1,5 @@
-import { ListButton, ListItem } from '@/components/global/list-item';
-import { ListSection } from '@/components/global/list-section';
+import { ListButton, ListItem } from '@/components/global/ListItem';
+import { ListSection } from '@/components/global/ListSection';
 import { useReferralStatus } from '@/lib/hyperliquid/referral/hooks/useReferralStatus';
 import { useReferralHintsStore } from '@/lib/hyperliquid/referral/store/hints.store';
 import { ArrowLeft } from '@tamagui/lucide-icons';

@@ -25,7 +25,7 @@
 import { ReactNode } from 'react';
 import { Platform } from 'react-native';
 import { Separator, View, YGroup, YStack, YStackProps } from 'tamagui';
-import { Text } from './text';
+import { Text } from './Text';
 
 /**
  * Props for the ListSection component

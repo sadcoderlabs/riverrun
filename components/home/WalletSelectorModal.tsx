@@ -3,7 +3,7 @@ import { LogOut } from '@tamagui/lucide-icons';
 import { Modal, Pressable, StyleSheet, ScrollView } from 'react-native';
 import { toast } from 'sonner-native';
 import { Button, Text, YStack } from 'tamagui';
-import { WalletListItem } from './wallet-list-item';
+import { WalletListItem } from './WalletListItem';
 
 interface WalletSelectorModalProps {
   visible: boolean;

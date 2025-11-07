@@ -9,8 +9,8 @@ import { useSelectedCoinStore } from '@/lib/riverrun/store';
 import * as hl from '@nktkas/hyperliquid';
 import { useEffect, useMemo, useState } from 'react';
 import { Button, Spinner, Text, View, XStack, YStack } from 'tamagui';
-import ClosePositionModal from './close-position-modal';
-import TpSlModal from './tp-sl-modal';
+import ClosePositionModal from './ClosePositionModal';
+import TpSlModal from './TpSlModal';
 
 type Position = hl.ClearinghouseStateResponse['assetPositions'][number]['position'];
 

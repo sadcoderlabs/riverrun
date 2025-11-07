@@ -1,4 +1,4 @@
-import { OrderSizeInput } from '@/components/trade/order-size-input';
+import { OrderSizeInput } from '@/components/trade/OrderSizeInput';
 
 interface MarketOrderFormProps {
   size: string;
