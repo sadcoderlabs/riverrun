@@ -1,5 +1,6 @@
 import * as hl from '@nktkas/hyperliquid';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useAppStateSubscriptionManager } from './useAppStateSubscriptionManager';
 import { useHyperliquidClient } from './useHyperliquidClient';
 import { useActiveWallet } from '@/lib/riverrun/hooks/useActiveWallet';
 
@@ -29,10 +30,15 @@ interface UseActiveAssetDataResult {
 /**
  * Hook to subscribe to Hyperliquid's activeAssetData WebSocket feed
  * for real-time leverage and margin mode updates.
+ *
+ * Features:
+ * - AppState lifecycle management (pauses in background)
+ * - Automatic cleanup and resubscription
  */
 export function useActiveAssetData({ coin }: UseActiveAssetDataParams): UseActiveAssetDataResult {
   const { address, isAuthenticated } = useActiveWallet();
   const { getSubscriptionClient } = useHyperliquidClient();
+  const subscriptionState = useAppStateSubscriptionManager();
   const [data, setData] = useState<ActiveAssetData | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | undefined>(undefined);
@@ -62,11 +68,22 @@ export function useActiveAssetData({ coin }: UseActiveAssetDataParams): UseActiv
       return;
     }
 
+    // Don't subscribe if app is suspended
+    if (subscriptionState === 'suspended') {
+      void cleanup();
+      return;
+    }
+
     let isMounted = true;
     setIsLoading(true);
     setError(undefined);
 
     const setupSubscription = async () => {
+      // Only subscribe when app is active
+      if (subscriptionState !== 'active') {
+        return;
+      }
+
       try {
         // Cleanup any existing subscription
         await cleanup();
@@ -105,7 +122,7 @@ export function useActiveAssetData({ coin }: UseActiveAssetDataParams): UseActiv
       isMounted = false;
       void cleanup();
     };
-  }, [address, coin, isAuthenticated, cleanup, getSubscriptionClient]);
+  }, [address, coin, isAuthenticated, subscriptionState, cleanup, getSubscriptionClient]);
 
   return {
     data,

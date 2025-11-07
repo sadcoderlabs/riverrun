@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as hl from '@nktkas/hyperliquid';
 import { create } from 'zustand';
+import { getInfoClient } from '@/lib/hyperliquid/client';
 import { Market } from '@/lib/riverrun/types/market';
 
 // AsyncStorage keys
@@ -8,17 +8,6 @@ const MARKETS_CACHE_KEY = '@riverrun:markets_cache';
 const CACHE_EXPIRY_KEY = '@riverrun:markets_cache_expiry';
 const FAVORITES_KEY = '@riverrun:favorite_markets';
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-
-// Hyperliquid API client (singleton)
-let infoClient: hl.InfoClient | null = null;
-
-function getInfoClient(): hl.InfoClient {
-  if (!infoClient) {
-    const transport = new hl.HttpTransport();
-    infoClient = new hl.InfoClient({ transport });
-  }
-  return infoClient;
-}
 
 interface MarketsState {
   // State

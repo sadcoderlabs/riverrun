@@ -1,6 +1,7 @@
 export * from './useActiveAssetCtx';
 export * from './useActiveAssetData';
 export * from './useAllMids';
+export * from './useAppStateSubscriptionManager';
 export * from './useCandleData';
 export * from './useHyperliquidClient';
 export * from './useHyperliquidWithdraw';

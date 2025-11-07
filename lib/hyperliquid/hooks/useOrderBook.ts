@@ -1,6 +1,7 @@
 import * as hl from '@nktkas/hyperliquid';
 import { type NSigFigs } from '@/lib/hyperliquid/orderbook-precision';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useAppStateSubscriptionManager } from './useAppStateSubscriptionManager';
 import { useHyperliquidClient } from './useHyperliquidClient';
 
 export interface OrderBookLevel {
@@ -42,9 +43,14 @@ interface UseOrderBookResult {
  * The precision can be dynamically changed by updating the nSigFigs parameter.
  * The hook will automatically unsubscribe from the old precision and subscribe
  * to the new one.
+ *
+ * Features:
+ * - AppState lifecycle management (pauses in background)
+ * - Automatic cleanup and resubscription
  */
 export function useOrderBook({ coin, nSigFigs }: UseOrderBookParams): UseOrderBookResult {
   const { getSubscriptionClient } = useHyperliquidClient();
+  const subscriptionState = useAppStateSubscriptionManager();
   const [data, setData] = useState<OrderBookData | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | undefined>(undefined);
@@ -71,11 +77,22 @@ export function useOrderBook({ coin, nSigFigs }: UseOrderBookParams): UseOrderBo
       return;
     }
 
+    // Don't subscribe if app is suspended
+    if (subscriptionState === 'suspended') {
+      void cleanup();
+      return;
+    }
+
     let isMounted = true;
     setIsLoading(true);
     setError(undefined);
 
     const setupSubscription = async () => {
+      // Only subscribe when app is active
+      if (subscriptionState !== 'active') {
+        return;
+      }
+
       try {
         // Cleanup any existing subscription
         await cleanup();
@@ -126,7 +143,7 @@ export function useOrderBook({ coin, nSigFigs }: UseOrderBookParams): UseOrderBo
       isMounted = false;
       void cleanup();
     };
-  }, [coin, nSigFigs, cleanup, getSubscriptionClient]);
+  }, [coin, nSigFigs, subscriptionState, cleanup, getSubscriptionClient]);
 
   return {
     data,

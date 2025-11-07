@@ -3,7 +3,11 @@ import { useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import { Alert } from 'react-native';
 
-import { getInfoClient, getTransport } from '@/lib/hyperliquid/client';
+import {
+  getInfoClient,
+  getMasterExchangeClient,
+  getAgentExchangeClient as getCachedAgentExchangeClient,
+} from '@/lib/hyperliquid/client';
 import { useActiveWallet } from '@/lib/riverrun/hooks/useActiveWallet';
 
 import { DEFAULT_AGENT_NAME } from '../constants';
@@ -59,11 +63,8 @@ async function approveAgent(
           text: 'Approve',
           onPress: async () => {
             try {
-              // Create master exchange client for approval
-              const masterExchangeClient = new hl.ExchangeClient({
-                wallet: masterSigner,
-                transport: getTransport(),
-              });
+              // Get cached master exchange client for approval
+              const masterExchangeClient = getMasterExchangeClient(masterAddress, masterSigner);
 
               // Approve the agent using service
               await approveAgentOnChain(masterExchangeClient, agentAddress, DEFAULT_AGENT_NAME);
@@ -183,11 +184,8 @@ export function useAgentExchangeClient() {
         }
       }
 
-      // Return exchange client with agent signer
-      return new hl.ExchangeClient({
-        wallet: agentSigner,
-        transport: getTransport(),
-      });
+      // Return cached exchange client with agent signer
+      return getCachedAgentExchangeClient(agentAddress, agentSigner);
     } catch (error) {
       console.error('Failed to get agent exchange client:', error);
       Alert.alert('Error', error instanceof Error ? error.message : 'Failed to initialize agent');

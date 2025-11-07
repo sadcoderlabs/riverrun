@@ -8,7 +8,7 @@ import {
   getInfoClient,
   getSubscriptionClient,
   getSymbolConverter,
-  getTransport,
+  getMasterExchangeClient,
 } from '@/lib/hyperliquid/client';
 import { useActiveWallet } from '@/lib/riverrun/hooks/useActiveWallet';
 
@@ -24,8 +24,10 @@ export function useHyperliquidClient(): UseHyperliquidClientResult {
   const { getProvider, address: walletAddress } = useActiveWallet();
   const { getAgentExchangeClient } = useAgentExchangeClient();
 
-  // Get master exchange client
-  const getMasterExchangeClient = useCallback(async (): Promise<hl.ExchangeClient | undefined> => {
+  // Get master exchange client (cached by wallet address)
+  const getMasterExchangeClientWrapper = useCallback(async (): Promise<
+    hl.ExchangeClient | undefined
+  > => {
     if (!walletAddress) {
       Alert.alert('Wallet Not Connected', 'Please connect your wallet to continue.');
       return undefined;
@@ -40,10 +42,8 @@ export function useHyperliquidClient(): UseHyperliquidClientResult {
 
       const masterSigner = await ethersProvider.getSigner();
 
-      return new hl.ExchangeClient({
-        wallet: masterSigner,
-        transport: getTransport(),
-      });
+      // Use cached ExchangeClient - only creates new instance if wallet changed
+      return getMasterExchangeClient(walletAddress, masterSigner);
     } catch (error) {
       console.error('Failed to get master exchange client:', error);
       Alert.alert('Error', error instanceof Error ? error.message : 'Failed to initialize wallet');
@@ -54,11 +54,11 @@ export function useHyperliquidClient(): UseHyperliquidClientResult {
   return useMemo(
     () => ({
       getAgentExchangeClient,
-      getMasterExchangeClient,
+      getMasterExchangeClient: getMasterExchangeClientWrapper,
       getInfoClient,
       getSubscriptionClient,
       getSymbolConverter,
     }),
-    [getAgentExchangeClient, getMasterExchangeClient],
+    [getAgentExchangeClient, getMasterExchangeClientWrapper],
   );
 }
