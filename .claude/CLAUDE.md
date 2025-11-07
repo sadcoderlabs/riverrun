@@ -6,6 +6,6 @@ Development standards and guidelines for this project.
 
 See @naming-conventions.md for the file naming strategy used in this project.
 
-## Other Development Standards
+## Coding Style
 
-(To be added)
+See @coding-style.md for TypeScript and coding style conventions used in this project.
