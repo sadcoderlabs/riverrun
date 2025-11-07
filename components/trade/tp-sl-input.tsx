@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Check } from '@tamagui/lucide-icons';
 import { Checkbox } from '@tamagui/checkbox';
 import { Text, XStack, YStack } from 'tamagui';
@@ -47,20 +47,16 @@ export function TpSlInput({ entryPrice, isLong, szDecimals, onChange }: TpSlInpu
   const [slValue, setSlValue] = useState('');
   const [slUnit, setSlUnit] = useState<UnitType>('%');
 
-  // Calculate result and validate whenever inputs change
-  useEffect(() => {
-    if (!onChange) return;
-
+  // Memoize calculation result to avoid recalculating on every render
+  const calculationResult = useMemo(() => {
     // If not enabled, return undefined (no TP/SL)
     if (!enabled) {
-      onChange(undefined, { isValid: true });
-      return;
+      return { result: undefined, validation: { isValid: true } };
     }
 
     // If enabled but no values provided, return undefined with validation success
     if (!tpValue && !slValue) {
-      onChange(undefined, { isValid: true });
-      return;
+      return { result: undefined, validation: { isValid: true } };
     }
 
     // Calculate TP/SL prices
@@ -78,15 +74,25 @@ export function TpSlInput({ entryPrice, isLong, szDecimals, onChange }: TpSlInpu
     const validation = validateTpSl(result, entryPrice, isLong);
 
     if (validation.valid) {
-      onChange(result, { isValid: true });
+      return { result, validation: { isValid: true } };
     } else {
-      onChange(undefined, {
-        isValid: false,
-        errorTitle: validation.error?.title,
-        errorDescription: validation.error?.description,
-      });
+      return {
+        result: undefined,
+        validation: {
+          isValid: false,
+          errorTitle: validation.error?.title,
+          errorDescription: validation.error?.description,
+        },
+      };
     }
-  }, [enabled, tpValue, tpUnit, slValue, slUnit, entryPrice, isLong, szDecimals, onChange]);
+  }, [enabled, tpValue, tpUnit, slValue, slUnit, entryPrice, isLong, szDecimals]);
+
+  // Notify parent of changes - separated from calculation to avoid circular dependencies
+  useEffect(() => {
+    if (onChange) {
+      onChange(calculationResult.result, calculationResult.validation);
+    }
+  }, [calculationResult, onChange]);
 
   const handleEnabledChange = useCallback((checked: boolean) => {
     setEnabled(checked);
