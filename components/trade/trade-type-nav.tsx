@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { XStack, Text } from 'tamagui';
 
-type TradeType = 'perp' | 'spot' | 'equities' | 'swap';
+type TradeType = 'perp' | 'spot' | 'equities';
 
 interface TradeTypeNavProps {
   currentType: TradeType;
@@ -12,10 +12,9 @@ export function TradeTypeNav({ currentType, asset = 'BTC' }: TradeTypeNavProps) 
   const router = useRouter();
 
   const tabs: { key: TradeType; label: string; enabled: boolean }[] = [
-    { key: 'perp', label: 'Perps', enabled: true },
+    { key: 'perp', label: 'Perp', enabled: true },
     { key: 'spot', label: 'Spot', enabled: true },
     { key: 'equities', label: 'Equities', enabled: false },
-    { key: 'swap', label: 'Swap', enabled: false },
   ];
 
   const handleTabPress = (type: TradeType) => {
@@ -32,7 +31,7 @@ export function TradeTypeNav({ currentType, asset = 'BTC' }: TradeTypeNavProps) 
   };
 
   return (
-    <XStack gap="$5" paddingHorizontal="$4" paddingVertical="$3">
+    <XStack gap="$4" paddingHorizontal="$4" paddingVertical="$2">
       {tabs.map(tab => {
         const isActive = tab.key === currentType;
         const isDisabled = !tab.enabled;
@@ -41,7 +40,7 @@ export function TradeTypeNav({ currentType, asset = 'BTC' }: TradeTypeNavProps) 
           <Text
             key={tab.key}
             fontFamily={isActive ? '$interSemiBold' : '$interRegular'}
-            fontSize="$5"
+            fontSize="$4"
             color={isDisabled ? '$gray8' : isActive ? '$accent10' : '$gray10'}
             onPress={() => handleTabPress(tab.key)}
             pressStyle={isDisabled ? {} : { opacity: 0.7 }}
