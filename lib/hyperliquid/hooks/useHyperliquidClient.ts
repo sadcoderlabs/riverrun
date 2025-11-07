@@ -1,16 +1,14 @@
 import * as hl from '@nktkas/hyperliquid';
 import { SymbolConverter } from '@nktkas/hyperliquid/utils';
-import { useCallback, useMemo } from 'react';
-import { Alert } from 'react-native';
+import { useMemo } from 'react';
 
 import { useAgentExchangeClient } from '@/lib/hyperliquid/agent/hooks/useAgentExchangeClient';
 import {
   getInfoClient,
   getSubscriptionClient,
   getSymbolConverter,
-  getMasterExchangeClient,
-} from '@/lib/hyperliquid/client';
-import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
+} from '@/lib/hyperliquid/client/getter';
+import { useMasterExchangeClient } from '@/lib/hyperliquid/client/useMasterExchangeClient';
 
 interface UseHyperliquidClientResult {
   getAgentExchangeClient: () => Promise<hl.ExchangeClient | undefined>;
@@ -21,44 +19,17 @@ interface UseHyperliquidClientResult {
 }
 
 export function useHyperliquidClient(): UseHyperliquidClientResult {
-  const { wallet } = useActiveWallet();
   const { getAgentExchangeClient } = useAgentExchangeClient();
-
-  // Get master exchange client (cached by wallet address)
-  const getMasterExchangeClientWrapper = useCallback(async (): Promise<
-    hl.ExchangeClient | undefined
-  > => {
-    if (!wallet) {
-      Alert.alert('Wallet Not Connected', 'Please connect your wallet to continue.');
-      return undefined;
-    }
-
-    try {
-      const ethersProvider = await wallet.getProvider();
-      if (!ethersProvider) {
-        Alert.alert('Wallet Not Connected', 'Please connect your wallet to continue.');
-        return undefined;
-      }
-
-      const masterSigner = await ethersProvider.getSigner();
-
-      // Use cached ExchangeClient - only creates new instance if wallet changed
-      return getMasterExchangeClient(wallet.address, masterSigner);
-    } catch (error) {
-      console.error('Failed to get master exchange client:', error);
-      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to initialize wallet');
-      return undefined;
-    }
-  }, [wallet]);
+  const { getMasterExchangeClient } = useMasterExchangeClient();
 
   return useMemo(
     () => ({
       getAgentExchangeClient,
-      getMasterExchangeClient: getMasterExchangeClientWrapper,
+      getMasterExchangeClient,
       getInfoClient,
       getSubscriptionClient,
       getSymbolConverter,
     }),
-    [getAgentExchangeClient, getMasterExchangeClientWrapper],
+    [getAgentExchangeClient, getMasterExchangeClient],
   );
 }

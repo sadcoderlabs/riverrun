@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
-import { getInfoClient } from '@/lib/hyperliquid/client';
+import { getInfoClient } from '@/lib/hyperliquid/client/getter';
 import { Market } from '@/lib/riverrun/types/market';
 
 // AsyncStorage keys

@@ -7,7 +7,7 @@ import {
   getInfoClient,
   getMasterExchangeClient,
   getAgentExchangeClient as getCachedAgentExchangeClient,
-} from '@/lib/hyperliquid/client';
+} from '@/lib/hyperliquid/client/getter';
 import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
 
 import { DEFAULT_AGENT_NAME } from '../constants';
