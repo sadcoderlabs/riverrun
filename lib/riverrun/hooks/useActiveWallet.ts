@@ -1,7 +1,7 @@
 import { usePrivy, useEmbeddedEthereumWallet } from '@privy-io/expo';
 import { useAccount, useWalletInfo, useProvider } from '@reown/appkit-react-native';
 import { BrowserProvider } from 'ethers';
-import { useMemo, useCallback, useRef, useEffect } from 'react';
+import { useMemo } from 'react';
 import { useWalletStore, type WalletSource } from '@/lib/riverrun/store/wallet.store';
 
 export type WalletType = 'privy' | 'external';
@@ -86,81 +86,8 @@ export function useActiveWallet(): UseActiveWalletResult {
   // Wallet ready state
   const isReady = privyReady;
 
-  // Store latest wallet state in refs to allow stable function references
-  // This ensures getProvider/switchChain don't change on every render
-  const activeSourceRef = useRef(activeSource);
-  const embeddedWalletRef = useRef(embeddedWallet);
-  const reownProviderRef = useRef(reownProvider);
-
-  useEffect(() => {
-    activeSourceRef.current = activeSource;
-    embeddedWalletRef.current = embeddedWallet;
-    reownProviderRef.current = reownProvider;
-  }, [activeSource, embeddedWallet, reownProvider]);
-
-  /**
-   * Get the ethers.js BrowserProvider for the currently selected wallet.
-   *
-   * @returns BrowserProvider instance
-   * @throws Error if no wallet is connected or provider cannot be obtained
-   */
-  const getProvider = useCallback(async (): Promise<BrowserProvider> => {
-    try {
-      if (activeSourceRef.current === 'privy' && embeddedWalletRef.current) {
-        // Privy embedded wallet - use getProvider() for React Native
-        const eip1193Provider = await embeddedWalletRef.current.getProvider();
-        return new BrowserProvider(eip1193Provider);
-      } else if (activeSourceRef.current === 'reown' && reownProviderRef.current) {
-        // Reown external wallet
-        return new BrowserProvider(reownProviderRef.current as any);
-      }
-      throw new Error('No active wallet connected');
-    } catch (error) {
-      console.error('Failed to get provider:', error);
-      throw error;
-    }
-  }, []); // Empty deps - stable reference, always reads latest state from refs
-
-  /**
-   * Switch to a different blockchain network
-   *
-   * @param chainId - The chain ID to switch to (e.g., 42161 for Arbitrum)
-   * @throws Error if switching fails or wallet doesn't support it
-   */
-  const switchChain = useCallback(async (chainId: number): Promise<void> => {
-    try {
-      const chainIdHex = `0x${chainId.toString(16)}`; // Convert to hex
-
-      if (activeSourceRef.current === 'privy' && embeddedWalletRef.current) {
-        // Privy: Use provider.request with wallet_switchEthereumChain
-        const provider = await embeddedWalletRef.current.getProvider();
-        await provider.request({
-          method: 'wallet_switchEthereumChain',
-          params: [{ chainId: chainIdHex }],
-        });
-        console.log(`Switched to chain ${chainId} (${chainIdHex}) via Privy`);
-      } else if (activeSourceRef.current === 'reown' && reownProviderRef.current) {
-        // Reown: Use provider.request with wallet_switchEthereumChain
-        // The provider should support EIP-1193 standard methods
-        if (!(reownProviderRef.current as any).request) {
-          throw new Error('Provider does not support network switching');
-        }
-
-        await (reownProviderRef.current as any).request({
-          method: 'wallet_switchEthereumChain',
-          params: [{ chainId: chainIdHex }],
-        });
-        console.log(`Switched to chain ${chainId} (${chainIdHex}) via Reown`);
-      } else {
-        throw new Error('No active wallet to switch chain');
-      }
-    } catch (error) {
-      console.error('Failed to switch chain:', error);
-      throw error;
-    }
-  }, []); // Empty deps - stable reference, always reads latest state from refs
-
   // Build wallet object if connected
+  // Functions are created inside useMemo to avoid needing refs
   const wallet: ActiveWallet | undefined = useMemo(() => {
     if (!activeSource) return undefined;
 
@@ -182,6 +109,68 @@ export function useActiveWallet(): UseActiveWalletResult {
           ? walletInfo?.name || 'External Wallet'
           : 'Unknown Wallet';
 
+    /**
+     * Get the ethers.js BrowserProvider for the currently selected wallet.
+     *
+     * @returns BrowserProvider instance
+     * @throws Error if no wallet is connected or provider cannot be obtained
+     */
+    const getProvider = async (): Promise<BrowserProvider> => {
+      try {
+        if (activeSource === 'privy' && embeddedWallet) {
+          // Privy embedded wallet - use getProvider() for React Native
+          const eip1193Provider = await embeddedWallet.getProvider();
+          return new BrowserProvider(eip1193Provider);
+        } else if (activeSource === 'reown' && reownProvider) {
+          // Reown external wallet
+          return new BrowserProvider(reownProvider as any);
+        }
+        throw new Error('No active wallet connected');
+      } catch (error) {
+        console.error('Failed to get provider:', error);
+        throw error;
+      }
+    };
+
+    /**
+     * Switch to a different blockchain network
+     *
+     * @param chainId - The chain ID to switch to (e.g., 42161 for Arbitrum)
+     * @throws Error if switching fails or wallet doesn't support it
+     */
+    const switchChain = async (chainId: number): Promise<void> => {
+      try {
+        const chainIdHex = `0x${chainId.toString(16)}`; // Convert to hex
+
+        if (activeSource === 'privy' && embeddedWallet) {
+          // Privy: Use provider.request with wallet_switchEthereumChain
+          const provider = await embeddedWallet.getProvider();
+          await provider.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: chainIdHex }],
+          });
+          console.log(`Switched to chain ${chainId} (${chainIdHex}) via Privy`);
+        } else if (activeSource === 'reown' && reownProvider) {
+          // Reown: Use provider.request with wallet_switchEthereumChain
+          // The provider should support EIP-1193 standard methods
+          if (!(reownProvider as any).request) {
+            throw new Error('Provider does not support network switching');
+          }
+
+          await (reownProvider as any).request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: chainIdHex }],
+          });
+          console.log(`Switched to chain ${chainId} (${chainIdHex}) via Reown`);
+        } else {
+          throw new Error('No active wallet to switch chain');
+        }
+      } catch (error) {
+        console.error('Failed to switch chain:', error);
+        throw error;
+      }
+    };
+
     return {
       address,
       name,
@@ -189,7 +178,14 @@ export function useActiveWallet(): UseActiveWalletResult {
       getProvider,
       switchChain,
     };
-  }, [activeSource, embeddedAddress, reownAddress, walletInfo?.name, getProvider, switchChain]);
+  }, [
+    activeSource,
+    embeddedAddress,
+    reownAddress,
+    embeddedWallet,
+    reownProvider,
+    walletInfo?.name,
+  ]);
 
   return useMemo(
     () => ({
