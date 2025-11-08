@@ -127,14 +127,6 @@ function WalletInfoDisplay() {
               animation: 'slide_from_right',
             }}
           />
-          {/* Developer tools (temporary for Phase 1 validation) */}
-          <Stack.Screen
-            name="test-subscription"
-            options={{
-              headerShown: false,
-              animation: 'slide_from_right',
-            }}
-          />
         </Stack.Protected>
       </Stack>
     </>
