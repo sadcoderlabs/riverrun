@@ -15,6 +15,7 @@ import { useWebData2Context } from '@/lib/hyperliquid/context/WebData2Context';
 import { formatSize } from '@/lib/hyperliquid/format/formatSize';
 import { formatValue } from '@/lib/hyperliquid/format/formatValue';
 import { useActiveAssetData, useHyperliquidClient, useOrder } from '@/lib/hyperliquid/hooks';
+import { useMarketsStore } from '@/lib/hyperliquid/market';
 
 import { Checkbox } from '@tamagui/checkbox';
 import { Check } from '@tamagui/lucide-icons';
@@ -23,13 +24,13 @@ import { useWatch } from 'react-hook-form';
 import { toast } from 'sonner-native';
 import { Button, Text, XStack, YStack } from 'tamagui';
 
-interface PerpTradePanelProps {
-  coin: string; // Asset symbol like 'BTC', 'ETH', 'SOL'
-}
-
-export function PerpTradePanel({ coin }: PerpTradePanelProps) {
+export function PerpTradePanel() {
   const { getSymbolConverter } = useHyperliquidClient();
   const { placeOrder, isPlacingOrder } = useOrder();
+
+  // Get selected market from store (single source of truth)
+  const { selectedMarket } = useMarketsStore();
+  const coin = selectedMarket?.coin || 'BTC'; // Fallback to BTC if no market selected
 
   // Subscribe to active asset data (leverage, margin mode) from WebSocket
   const { data: activeAssetData, isLoading: isLoadingAssetData } = useActiveAssetData({

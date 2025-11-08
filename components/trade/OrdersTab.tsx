@@ -237,7 +237,7 @@ export function OrdersTabContent() {
   // Switch market when order card is clicked (without full page reload)
   const handleOrderClick = (coin: string) => {
     setSelectedMarketByCoin(coin);
-    // Note: URL will be synced by TradeLayout's useEffect
+    // Note: URL will be automatically synced via bidirectional binding in route component
   };
 
   // Handle order cancellation

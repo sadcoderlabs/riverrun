@@ -190,7 +190,7 @@ export function HistoryTabContent() {
   // Switch market when fill card is clicked
   const handleFillClick = (coin: string) => {
     setSelectedMarketByCoin(coin);
-    // Note: URL will be synced by TradeLayout's useEffect
+    // Note: URL will be automatically synced via bidirectional binding in route component
   };
 
   // Render states

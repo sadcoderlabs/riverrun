@@ -34,7 +34,7 @@ export default function PositionsTab() {
   // Switch market when position card is clicked (without full page reload)
   const handlePositionClick = (coin: string) => {
     setSelectedMarketByCoin(coin);
-    // Note: URL will be synced by TradeLayout's useEffect
+    // Note: URL will be automatically synced via bidirectional binding in route component
   };
 
   // Fetch market data (mark prices and szDecimals) separately
