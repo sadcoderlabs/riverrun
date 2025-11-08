@@ -47,7 +47,9 @@ export function FundingRate() {
       const minutes = Math.floor(diff / 60000);
       const seconds = Math.floor((diff % 60000) / 1000);
 
-      setTimeUntilNextFunding(`${minutes}:${seconds.toString().padStart(2, '0')}`);
+      setTimeUntilNextFunding(
+        `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`,
+      );
     };
 
     // Update immediately
@@ -64,6 +66,7 @@ export function FundingRate() {
       paddingHorizontal="$1.5"
       paddingTop="$0"
       paddingBottom="$1.5"
+      paddingLeft="$3.5"
       justifyContent="center"
       alignItems="flex-start"
       backgroundColor="$background"

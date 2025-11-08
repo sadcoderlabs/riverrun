@@ -220,7 +220,7 @@ export function OrderBook({ onPriceClick }: OrderBookProps) {
               height={24}
               borderRadius="$2"
               borderWidth={1}
-              borderColor="$gray8"
+              borderColor="$gray6"
             >
               <Text fontFamily="$interMedium" fontSize="$2" color="$color">
                 {precisionMenuItems.find(item => item.nSigFigs === effectiveNSigFigs)?.label || '?'}
@@ -256,7 +256,7 @@ export function OrderBook({ onPriceClick }: OrderBookProps) {
               height={24}
               borderRadius="$2"
               borderWidth={1}
-              borderColor="$gray8"
+              borderColor="$gray6"
             >
               <Text fontFamily="$interMedium" fontSize="$2" color="$color">
                 {sizeUnit === 'usd' ? 'USD' : coin}
