@@ -1,5 +1,5 @@
 /**
- * Hook to manage user's order updates using a hybrid approach:
+ * Hook to manage user's open orders using a hybrid approach:
  * 1. Fetches initial open orders using frontendOpenOrders
  * 2. Subscribes to orderUpdates WebSocket for real-time updates
  * 3. Fetches complete order data using orderStatus when updates arrive
@@ -22,7 +22,7 @@ import { getSubscriptionClient } from '../client/getter';
 // Hook Interface
 // ============================================================================
 
-export interface UseOrderUpdatesResult {
+export interface UseOpenOrdersResult {
   /** All open orders in flat array */
   orders: Order[];
   /** Loading state */
@@ -94,7 +94,7 @@ const FAILED_ORDER_STATUSES = new Set([
 // Main Hook
 // ============================================================================
 
-export function useOrderUpdates(): UseOrderUpdatesResult {
+export function useOpenOrders(): UseOpenOrdersResult {
   const { wallet } = useActiveWallet();
   const [mergedOrders, setMergedOrders] = useState<Order[]>([]);
   const subscriptionRef = useRef<hl.Subscription | null>(null);
@@ -184,7 +184,7 @@ export function useOrderUpdates(): UseOrderUpdatesResult {
                   updatedOrdersMap.set(oid, null);
                 }
               } catch (error) {
-                console.error(`[useOrderUpdates] Failed to fetch order ${oid}:`, error);
+                console.error(`[useOpenOrders] Failed to fetch order ${oid}:`, error);
                 // Keep existing order data if fetch fails
               }
             }
@@ -212,7 +212,7 @@ export function useOrderUpdates(): UseOrderUpdatesResult {
 
         subscriptionRef.current = subscription;
       } catch (error) {
-        console.error('[useOrderUpdates] Error setting up subscription:', error);
+        console.error('[useOpenOrders] Error setting up subscription:', error);
       }
     };
 

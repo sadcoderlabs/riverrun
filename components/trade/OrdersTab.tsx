@@ -6,7 +6,7 @@
 import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
 import { formatSize } from '@/lib/hyperliquid/format/formatSize';
 import { formatValue } from '@/lib/hyperliquid/format/formatValue';
-import { useOrder, useOrderUpdates } from '@/lib/hyperliquid/hooks';
+import { useOrder, useOpenOrders } from '@/lib/hyperliquid/hooks';
 import type { Order } from '@/lib/hyperliquid/types/orders';
 import {
   calculateOrderMetrics,
@@ -197,8 +197,8 @@ export function OrdersTabContent() {
   const { wallet } = useActiveWallet();
   const { setSelectedMarketByCoin } = useMarketsStore();
 
-  // Get orders from useOrderUpdates (simplified flat structure)
-  const { orders, isLoading, error } = useOrderUpdates();
+  // Get orders from useOpenOrders (simplified flat structure)
+  const { orders, isLoading, error } = useOpenOrders();
 
   // Get order operations from useOrder hook
   const { cancelOrder, cancelOrders, isCanceling, error: cancelError } = useOrder();

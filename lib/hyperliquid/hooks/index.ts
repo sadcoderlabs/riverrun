@@ -8,7 +8,7 @@ export * from './useHyperliquidWithdraw';
 export * from './useMarginLeverage';
 export * from './useOrder';
 export * from './useOrderCount';
-export * from './useOrderUpdates';
+export * from './useOpenOrders';
 export * from './usePositionCount';
 export * from './useUserFills';
 export * from './useWebData2';

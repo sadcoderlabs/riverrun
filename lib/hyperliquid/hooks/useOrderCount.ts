@@ -1,11 +1,11 @@
 /**
  * Hook to get the count of open orders
- * Returns real-time count from useOrderUpdates
+ * Returns real-time count from useOpenOrders
  */
 
 import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
 import { useMemo } from 'react';
-import { useOrderUpdates } from './useOrderUpdates';
+import { useOpenOrders } from './useOpenOrders';
 
 /**
  * Get the count of open orders
@@ -13,7 +13,7 @@ import { useOrderUpdates } from './useOrderUpdates';
  */
 export function useOrderCount(): number {
   const { wallet } = useActiveWallet();
-  const { orders } = useOrderUpdates();
+  const { orders } = useOpenOrders();
 
   const count = useMemo(() => {
     if (!wallet) {

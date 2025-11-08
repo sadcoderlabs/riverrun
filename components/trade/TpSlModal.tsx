@@ -6,7 +6,7 @@ import { Checkbox } from '@tamagui/checkbox';
 import * as hl from '@nktkas/hyperliquid';
 import { Input } from '@/components/global/Input';
 import { useHyperliquidClient, useOrder } from '@/lib/hyperliquid/hooks';
-import { useOrderUpdates } from '@/lib/hyperliquid/hooks/useOrderUpdates';
+import { useOpenOrders } from '@/lib/hyperliquid/hooks/useOpenOrders';
 import { formatSize } from '@/lib/hyperliquid/format/formatSize';
 import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
 import { formatValue } from '@/lib/hyperliquid/format/formatValue';
@@ -25,7 +25,7 @@ interface TpSlModalProps {
 
 export default function TpSlModal({ open, onOpenChange, position }: TpSlModalProps) {
   const { placeTpSlOrders, cancelOrder, isPlacingOrder } = useOrder();
-  const { orders } = useOrderUpdates();
+  const { orders } = useOpenOrders();
 
   // Refs
   const scrollViewRef = useRef<ScrollView>(null);
