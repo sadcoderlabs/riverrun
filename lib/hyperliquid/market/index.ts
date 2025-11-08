@@ -11,7 +11,6 @@ export * from './useMarketData';
 export * from './useMarketSelector';
 
 // Utilities
-export * from './marketUtils';
 export * from './orderbookPrecision';
 
 // Types

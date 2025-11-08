@@ -4,7 +4,7 @@ import { Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, XStack, YStack } from 'tamagui';
 import { ChartUI } from '@/components/trade/ChartUi';
-import { formatMarketId } from '@/lib/hyperliquid/market';
+import { useMarketsStore } from '@/lib/hyperliquid/market';
 
 /**
  * Full-Screen Chart Page
@@ -16,9 +16,10 @@ export default function ChartPage() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ coin: string }>();
+  const { selectedMarket } = useMarketsStore();
 
-  // Format market display (e.g., "BTC-USD")
-  const marketDisplay = formatMarketId(params.coin, 'perp');
+  // Use marketPair from selected market (e.g., "BTC-USD")
+  const marketDisplay = selectedMarket?.marketPair || `${params.coin}-USD`;
 
   return (
     <YStack
