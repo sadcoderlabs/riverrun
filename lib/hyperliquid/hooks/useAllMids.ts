@@ -26,7 +26,7 @@ interface UseAllMidsResult {
  * @param enabled - Whether to subscribe to the feed (default: true)
  */
 export function useAllMids({ enabled = true }: UseAllMidsParams = {}): UseAllMidsResult {
-  const { getSubscriptionClient } = useHyperliquidClient();
+  const { subscriptionClient } = useHyperliquidClient();
   const [data, setData] = useState<AllMidsData | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | undefined>(undefined);
@@ -63,7 +63,7 @@ export function useAllMids({ enabled = true }: UseAllMidsParams = {}): UseAllMid
         await cleanup();
 
         // Get subscription client
-        const subscriptionClient = getSubscriptionClient();
+        
 
         // Subscribe to allMids
         const subscription = await subscriptionClient.allMids({}, midsData => {
@@ -90,7 +90,7 @@ export function useAllMids({ enabled = true }: UseAllMidsParams = {}): UseAllMid
       isMounted = false;
       void cleanup();
     };
-  }, [enabled, cleanup, getSubscriptionClient]);
+  }, [enabled, cleanup, subscriptionClient]);
 
   return {
     data,

@@ -24,7 +24,7 @@ interface UseHyperliquidWithdrawResult {
  */
 export function useHyperliquidWithdraw(): UseHyperliquidWithdrawResult {
   const { wallet } = useActiveWallet();
-  const { getMasterExchangeClient, getInfoClient } = useHyperliquidClient();
+  const { getMasterExchangeClient, infoClient } = useHyperliquidClient();
 
   const [withdrawableBalance, setWithdrawableBalance] = useState<string | null>(null);
   const [isLoadingBalance, setIsLoadingBalance] = useState(false);
@@ -42,7 +42,7 @@ export function useHyperliquidWithdraw(): UseHyperliquidWithdrawResult {
 
     try {
       setIsLoadingBalance(true);
-      const infoClient = getInfoClient();
+      
       const state = await infoClient.clearinghouseState({ user: wallet.address });
       setWithdrawableBalance(state.withdrawable);
     } catch (error) {
@@ -55,7 +55,7 @@ export function useHyperliquidWithdraw(): UseHyperliquidWithdrawResult {
     } finally {
       setIsLoadingBalance(false);
     }
-  }, [wallet, getInfoClient]);
+  }, [wallet, infoClient]);
 
   /**
    * Execute USDC withdrawal to Arbitrum

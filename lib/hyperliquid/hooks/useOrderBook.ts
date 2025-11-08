@@ -49,7 +49,7 @@ interface UseOrderBookResult {
  * - Automatic cleanup and resubscription
  */
 export function useOrderBook({ coin, nSigFigs }: UseOrderBookParams): UseOrderBookResult {
-  const { getSubscriptionClient } = useHyperliquidClient();
+  const { subscriptionClient } = useHyperliquidClient();
   const subscriptionState = useAppStateSubscriptionManager();
   const [data, setData] = useState<OrderBookData | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
@@ -98,7 +98,7 @@ export function useOrderBook({ coin, nSigFigs }: UseOrderBookParams): UseOrderBo
         await cleanup();
 
         // Get subscription client
-        const subscriptionClient = getSubscriptionClient();
+        
 
         // Subscribe to l2Book with precision parameter
         // nSigFigs controls price aggregation level:
@@ -143,7 +143,7 @@ export function useOrderBook({ coin, nSigFigs }: UseOrderBookParams): UseOrderBo
       isMounted = false;
       void cleanup();
     };
-  }, [coin, nSigFigs, subscriptionState, cleanup, getSubscriptionClient]);
+  }, [coin, nSigFigs, subscriptionState, cleanup, subscriptionClient]);
 
   return {
     data,

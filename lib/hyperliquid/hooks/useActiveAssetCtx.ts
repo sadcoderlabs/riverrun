@@ -33,7 +33,7 @@ interface UseActiveAssetCtxResult {
  * for real-time market data including price, funding rate, and volume.
  */
 export function useActiveAssetCtx({ coin }: UseActiveAssetCtxParams): UseActiveAssetCtxResult {
-  const { getSubscriptionClient } = useHyperliquidClient();
+  const { subscriptionClient } = useHyperliquidClient();
   const [data, setData] = useState<ActiveAssetCtx | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | undefined>(undefined);
@@ -70,7 +70,7 @@ export function useActiveAssetCtx({ coin }: UseActiveAssetCtxParams): UseActiveA
         await cleanup();
 
         // Get subscription client
-        const subscriptionClient = getSubscriptionClient();
+        
 
         // Subscribe to activeAssetCtx
         const subscription = await subscriptionClient.activeAssetCtx(
@@ -102,7 +102,7 @@ export function useActiveAssetCtx({ coin }: UseActiveAssetCtxParams): UseActiveA
       isMounted = false;
       void cleanup();
     };
-  }, [coin, cleanup, getSubscriptionClient]);
+  }, [coin, cleanup, subscriptionClient]);
 
   return {
     data,

@@ -22,7 +22,7 @@ export interface ReferralInfo {
  * Provides functions to check and set referrer
  */
 export function useReferralStatus() {
-  const { getMasterExchangeClient, getInfoClient } = useHyperliquidClient();
+  const { getMasterExchangeClient, infoClient } = useHyperliquidClient();
   const [isLoading, setIsLoading] = useState(false);
   const [referralInfo, setReferralInfo] = useState<ReferralInfo>({
     referrer: undefined,
@@ -44,7 +44,7 @@ export function useReferralStatus() {
       }
 
       const userAddress = await getWalletAddress(masterExchangeClient.wallet);
-      const infoClient = getInfoClient();
+      
 
       // Query referral info
       const referral = await infoClient.referral({ user: userAddress });
@@ -65,7 +65,7 @@ export function useReferralStatus() {
     } finally {
       setIsLoading(false);
     }
-  }, [getMasterExchangeClient, getInfoClient]);
+  }, [getMasterExchangeClient, infoClient]);
 
   /**
    * Set referrer code for the user

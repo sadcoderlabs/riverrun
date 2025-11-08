@@ -103,7 +103,7 @@ export function useCandleData({
   endTime,
   refreshInterval,
 }: UseCandleDataOptions): UseCandleDataResult {
-  const { getInfoClient } = useHyperliquidClient();
+  const { infoClient } = useHyperliquidClient();
   const [data, setData] = useState<FormattedCandleData[]>([]);
   const [rawData, setRawData] = useState<CandleData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -131,12 +131,12 @@ export function useCandleData({
       setLoading(true);
       setError(null);
 
-      const client = getInfoClient();
+      
 
       // Default to 24 hours ago if startTime not provided
       const defaultStartTime = startTime || Date.now() - 24 * 60 * 60 * 1000;
 
-      const candles = await client.candleSnapshot({
+      const candles = await infoClient.candleSnapshot({
         coin,
         interval,
         startTime: defaultStartTime,
@@ -151,7 +151,7 @@ export function useCandleData({
     } finally {
       setLoading(false);
     }
-  }, [coin, interval, startTime, endTime, getInfoClient, formatCandleData]);
+  }, [coin, interval, startTime, endTime, infoClient, formatCandleData]);
 
   // Initial fetch
   useEffect(() => {

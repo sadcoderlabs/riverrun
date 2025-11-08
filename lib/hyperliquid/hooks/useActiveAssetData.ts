@@ -37,7 +37,7 @@ interface UseActiveAssetDataResult {
  */
 export function useActiveAssetData({ coin }: UseActiveAssetDataParams): UseActiveAssetDataResult {
   const { wallet } = useActiveWallet();
-  const { getSubscriptionClient } = useHyperliquidClient();
+  const { subscriptionClient } = useHyperliquidClient();
   const subscriptionState = useAppStateSubscriptionManager();
   const [data, setData] = useState<ActiveAssetData | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
@@ -86,7 +86,7 @@ export function useActiveAssetData({ coin }: UseActiveAssetDataParams): UseActiv
         await cleanup();
 
         // Get subscription client
-        const subscriptionClient = getSubscriptionClient();
+        
 
         // Subscribe to activeAssetData
         const subscription = await subscriptionClient.activeAssetData(
@@ -119,7 +119,7 @@ export function useActiveAssetData({ coin }: UseActiveAssetDataParams): UseActiv
       isMounted = false;
       void cleanup();
     };
-  }, [wallet, coin, subscriptionState, cleanup, getSubscriptionClient]);
+  }, [wallet, coin, subscriptionState, cleanup, subscriptionClient]);
 
   return {
     data,

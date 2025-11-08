@@ -242,7 +242,7 @@ function hasImmediatelyCanceledOrders(
 
 export function useOrderUpdates(): UseOrderUpdatesResult {
   const { wallet } = useActiveWallet();
-  const { getSubscriptionClient, getInfoClient } = useHyperliquidClient();
+  const { subscriptionClient, infoClient } = useHyperliquidClient();
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | undefined>(undefined);
@@ -279,7 +279,7 @@ export function useOrderUpdates(): UseOrderUpdatesResult {
         await cleanup();
 
         // Step 1: Fetch initial open orders using InfoClient
-        const infoClient = getInfoClient();
+        
 
         // Use frontendOpenOrders to get full order data including orderType, triggerCondition, etc.
         const openOrdersResponse = (await infoClient.frontendOpenOrders({
@@ -296,7 +296,7 @@ export function useOrderUpdates(): UseOrderUpdatesResult {
         }
 
         // Step 2: Subscribe to orderUpdates WebSocket for incremental updates
-        const subscriptionClient = getSubscriptionClient();
+        
 
         const subscription = await subscriptionClient.orderUpdates(
           {
@@ -420,7 +420,7 @@ export function useOrderUpdates(): UseOrderUpdatesResult {
       isMounted = false;
       void cleanup();
     };
-  }, [wallet, cleanup, getSubscriptionClient, getInfoClient]);
+  }, [wallet, cleanup, subscriptionClient, infoClient]);
 
   return {
     orders,

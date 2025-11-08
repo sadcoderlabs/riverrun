@@ -28,7 +28,7 @@ export default function ClosePositionModal({
   onOpenChange,
   position,
 }: ClosePositionModalProps) {
-  const { getSymbolConverter, getInfoClient } = useHyperliquidClient();
+  const { getSymbolConverter, infoClient } = useHyperliquidClient();
   const { placeCloseMarketOrder, placeCloseLimitOrder, isPlacingOrder } = useOrder();
   const [orderType, setOrderType] = useState<OrderType>('market');
   const [sizeUnit, setSizeUnit] = useState<SizeUnit>('asset');
@@ -155,7 +155,7 @@ export default function ClosePositionModal({
   const handleMidPrice = async () => {
     try {
       // Get mid price from allMids API
-      const infoClient = getInfoClient();
+      
       const allMids = await infoClient.allMids();
       const midPrice = allMids[position.coin];
 

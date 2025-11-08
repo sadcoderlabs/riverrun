@@ -21,7 +21,7 @@ import { clearAgentPrivateKey } from '../agentPkStore';
  * Provides functions to check, approve, and revoke agent
  */
 export function useAgentApproval() {
-  const { getMasterExchangeClient, getInfoClient } = useHyperliquidClient();
+  const { getMasterExchangeClient, infoClient } = useHyperliquidClient();
   const { wallet } = useActiveWallet();
   const [isLoading, setIsLoading] = useState(false);
   const [agentAddress, setAgentAddress] = useState<string | undefined>(undefined);
@@ -42,7 +42,7 @@ export function useAgentApproval() {
       }
 
       const masterAddress = await getWalletAddress(masterExchangeClient.wallet);
-      const infoClient = getInfoClient();
+      
 
       // Get provider from useActiveWallet
       if (!wallet) {
@@ -77,7 +77,7 @@ export function useAgentApproval() {
     } finally {
       setIsLoading(false);
     }
-  }, [getMasterExchangeClient, getInfoClient, wallet]);
+  }, [getMasterExchangeClient, infoClient, wallet]);
 
   /**
    * Get all agents for the current user
@@ -91,7 +91,7 @@ export function useAgentApproval() {
       }
 
       const masterAddress = await getWalletAddress(masterExchangeClient.wallet);
-      const infoClient = getInfoClient();
+      
 
       const agents = await getAgentsFromChain(infoClient, masterAddress);
       setAllAgents(agents);
@@ -100,7 +100,7 @@ export function useAgentApproval() {
       console.error('Failed to get all agents:', error);
       return [];
     }
-  }, [getMasterExchangeClient, getInfoClient]);
+  }, [getMasterExchangeClient, infoClient]);
 
   /**
    * Revoke a named agent from blockchain using 0x0 address
@@ -138,7 +138,7 @@ export function useAgentApproval() {
                   }
 
                   const masterAddress = await getWalletAddress(masterExchangeClient.wallet);
-                  const infoClient = getInfoClient();
+                  
 
                   // Revoke using service
                   await revokeAgentOnChain(masterExchangeClient, agentName);
@@ -194,7 +194,7 @@ export function useAgentApproval() {
         );
       });
     },
-    [getMasterExchangeClient, getInfoClient, checkStatus, getAllAgents],
+    [getMasterExchangeClient, infoClient, checkStatus, getAllAgents],
   );
 
   /**
@@ -231,7 +231,7 @@ export function useAgentApproval() {
       await approveAgentOnChain(masterExchangeClient, agentAddr, DEFAULT_AGENT_NAME);
 
       // Verify approval
-      const infoClient = getInfoClient();
+      
       const approved = await verifyAgentApproval(infoClient, masterAddress, agentAddr);
 
       if (approved) {
@@ -250,7 +250,7 @@ export function useAgentApproval() {
     } finally {
       setIsLoading(false);
     }
-  }, [getMasterExchangeClient, wallet, getInfoClient]);
+  }, [getMasterExchangeClient, wallet, infoClient]);
 
   return {
     agentAddress,

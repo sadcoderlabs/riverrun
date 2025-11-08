@@ -59,7 +59,7 @@ function mergeFills(existingFills: Fill[], newFills: Fill[]): Fill[] {
 
 export function useUserFills(): UseUserFillsResult {
   const { wallet } = useActiveWallet();
-  const { getSubscriptionClient, getInfoClient } = useHyperliquidClient();
+  const { subscriptionClient, infoClient } = useHyperliquidClient();
   const [fills, setFills] = useState<Fill[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | undefined>(undefined);
@@ -84,7 +84,7 @@ export function useUserFills(): UseUserFillsResult {
       return [];
     }
 
-    const infoClient = getInfoClient();
+    
 
     // Fetch user fills (max 2000 most recent fills)
     const response = (await infoClient.userFills({
@@ -93,7 +93,7 @@ export function useUserFills(): UseUserFillsResult {
 
     // Sort by time (most recent first)
     return response.sort((a, b) => b.time - a.time);
-  }, [wallet, getInfoClient]);
+  }, [wallet, infoClient]);
 
   // Refetch function
   const refetch = useCallback(async () => {
@@ -135,7 +135,7 @@ export function useUserFills(): UseUserFillsResult {
         }
 
         // Step 2: Subscribe to userFills WebSocket for real-time updates
-        const subscriptionClient = getSubscriptionClient();
+        
 
         const subscription = await subscriptionClient.userFills(
           {
@@ -173,7 +173,7 @@ export function useUserFills(): UseUserFillsResult {
       isMounted = false;
       void cleanup();
     };
-  }, [wallet, cleanup, fetchFills, getSubscriptionClient]);
+  }, [wallet, cleanup, fetchFills, subscriptionClient]);
 
   return {
     fills,

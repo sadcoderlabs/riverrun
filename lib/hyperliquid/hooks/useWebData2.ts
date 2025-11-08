@@ -39,7 +39,7 @@ export interface UseWebData2Result {
  */
 export function useWebData2(): UseWebData2Result {
   const { wallet } = useActiveWallet();
-  const { getSubscriptionClient, getInfoClient } = useHyperliquidClient();
+  const { subscriptionClient, infoClient } = useHyperliquidClient();
   const [data, setData] = useState<WebData2Response | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | undefined>(undefined);
@@ -109,7 +109,7 @@ export function useWebData2(): UseWebData2Result {
         await cleanup();
 
         // Step 1: Fetch initial data using InfoClient
-        const infoClient = getInfoClient();
+        
         const initialData = await infoClient.webData2({ user: wallet.address });
 
         if (isMounted) {
@@ -117,7 +117,7 @@ export function useWebData2(): UseWebData2Result {
         }
 
         // Step 2: Subscribe to webData2 WebSocket for real-time updates
-        const subscriptionClient = getSubscriptionClient();
+        
 
         const subscription = await subscriptionClient.webData2(
           {
@@ -151,7 +151,7 @@ export function useWebData2(): UseWebData2Result {
       isMounted = false;
       void cleanup();
     };
-  }, [wallet, cleanup, getSubscriptionClient, getInfoClient]);
+  }, [wallet, cleanup, subscriptionClient, infoClient]);
 
   // Calculate account values
   const perpAccountValue = data?.clearinghouseState?.marginSummary?.accountValue

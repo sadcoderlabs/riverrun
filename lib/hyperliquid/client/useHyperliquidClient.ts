@@ -13,8 +13,8 @@ import { useMasterExchangeClient } from '@/lib/hyperliquid/client/useMasterExcha
 interface UseHyperliquidClientResult {
   getAgentExchangeClient: () => Promise<hl.ExchangeClient | undefined>;
   getMasterExchangeClient: () => Promise<hl.ExchangeClient | undefined>;
-  getInfoClient: () => hl.InfoClient;
-  getSubscriptionClient: () => hl.SubscriptionClient;
+  infoClient: hl.InfoClient;
+  subscriptionClient: hl.SubscriptionClient;
   getSymbolConverter: () => Promise<SymbolConverter>;
 }
 
@@ -22,14 +22,18 @@ export function useHyperliquidClient(): UseHyperliquidClientResult {
   const { getAgentExchangeClient } = useAgentExchangeClient();
   const { getMasterExchangeClient } = useMasterExchangeClient();
 
+  // Get singleton instances directly
+  const infoClient = useMemo(() => getInfoClient(), []);
+  const subscriptionClient = useMemo(() => getSubscriptionClient(), []);
+
   return useMemo(
     () => ({
       getAgentExchangeClient,
       getMasterExchangeClient,
-      getInfoClient,
-      getSubscriptionClient,
+      infoClient,
+      subscriptionClient,
       getSymbolConverter,
     }),
-    [getAgentExchangeClient, getMasterExchangeClient],
+    [getAgentExchangeClient, getMasterExchangeClient, infoClient, subscriptionClient],
   );
 }

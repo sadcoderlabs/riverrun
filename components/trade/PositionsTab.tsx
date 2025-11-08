@@ -21,7 +21,7 @@ interface PositionWithMarkPrice extends Position {
 
 export default function PositionsTab() {
   const { wallet } = useActiveWallet();
-  const { getInfoClient } = useHyperliquidClient();
+  const { infoClient } = useHyperliquidClient();
   const { setSelectedCoin } = useSelectedCoinStore();
 
   // Get WebData2 from context (shared across all markets, no re-subscription on market switch)
@@ -45,7 +45,7 @@ export default function PositionsTab() {
   useEffect(() => {
     const fetchMarketData = async () => {
       try {
-        const metaAndAssetCtxs = await getInfoClient().metaAndAssetCtxs();
+        const metaAndAssetCtxs = await infoClient.metaAndAssetCtxs();
 
         // Create a map of coin -> {markPx, szDecimals} for quick lookup
         const dataMap = new Map<string, { markPx: string; szDecimals: number }>();
@@ -71,7 +71,7 @@ export default function PositionsTab() {
       const interval = setInterval(fetchMarketData, 5000);
       return () => clearInterval(interval);
     }
-  }, [wallet, getInfoClient]);
+  }, [wallet, infoClient]);
 
   // Extract and enrich positions from WebSocket data
   const positions = useMemo<PositionWithMarkPrice[]>(() => {
