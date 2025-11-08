@@ -51,8 +51,8 @@ async function approveAgent(
 ): Promise<boolean> {
   return new Promise<boolean>(resolve => {
     Alert.alert(
-      'Approve Riverrun Agent',
-      'This will approve the Riverrun Agent to place orders on your behalf.',
+      `Approve ${DEFAULT_AGENT_NAME}`,
+      `This will approve the ${DEFAULT_AGENT_NAME} to place orders on your behalf.`,
       [
         {
           text: 'Cancel',

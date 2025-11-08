@@ -76,14 +76,14 @@ export default function AgentStatus() {
     if (!isAgentApproved && nonRiverrunAgents.length >= 3) {
       Alert.alert(
         'Agent Limit Reached',
-        'You have 3 other named agents. Please revoke one of them first before approving Riverrun Agent.',
+        `You have 3 other named agents. Please revoke one of them first before approving ${DEFAULT_AGENT_NAME}.`,
       );
       return;
     }
 
     // Show confirmation dialog then approve
     Alert.alert(
-      'Approve Riverrun Agent',
+      `Approve ${DEFAULT_AGENT_NAME}`,
       'This will generate a new agent wallet to place orders on your behalf. You will be redirected to your wallet app to sign the approval.',
       [
         {
@@ -194,7 +194,7 @@ export default function AgentStatus() {
                     <YStack flex={1}>
                       <XStack alignItems="center" gap="$2">
                         <Text fontFamily="$interMedium" fontSize="$4" color="$accent11">
-                          Riverrun Agent
+                          {DEFAULT_AGENT_NAME}
                         </Text>
                         <View
                           backgroundColor="$accent9"

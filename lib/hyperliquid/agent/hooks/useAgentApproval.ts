@@ -113,9 +113,9 @@ export function useAgentApproval() {
 
       return new Promise<boolean>(resolve => {
         Alert.alert(
-          isRiverrunAgent ? 'Revoke Riverrun Agent' : 'Revoke Agent',
+          isRiverrunAgent ? `Revoke ${DEFAULT_AGENT_NAME}` : 'Revoke Agent',
           isRiverrunAgent
-            ? 'This will revoke the Riverrun Agent from the blockchain and clear local storage. You will need to approve a new agent for future trading.'
+            ? `This will revoke the ${DEFAULT_AGENT_NAME} from the blockchain and clear local storage. You will need to approve a new agent for future trading.`
             : `This will revoke "${agentName}" from the blockchain. The agent will no longer be able to trade on your behalf. Continue?`,
           [
             {
@@ -167,7 +167,7 @@ export function useAgentApproval() {
                     Alert.alert(
                       'Success',
                       isRiverrunAgent
-                        ? 'Riverrun Agent revoked successfully'
+                        ? `${DEFAULT_AGENT_NAME} revoked successfully`
                         : `"${agentName}" has been revoked successfully.`,
                     );
 
@@ -237,7 +237,7 @@ export function useAgentApproval() {
       if (approved) {
         setAgentAddress(agentAddr);
         setIsApproved(true);
-        Alert.alert('Success', 'Riverrun Agent approved successfully');
+        Alert.alert('Success', `${DEFAULT_AGENT_NAME} approved successfully`);
         return true;
       } else {
         Alert.alert('Error', 'Agent approval was not confirmed. Please try again.');
