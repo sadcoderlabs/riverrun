@@ -5,6 +5,7 @@ export * from './useCandleData';
 export * from '../client/useHyperliquidClient';
 export * from './useCurrentPosition';
 export * from './useHyperliquidWithdraw';
+export * from './useMarginLeverage';
 export * from './useOrder';
 export * from './useOrderCount';
 export * from './useOrderUpdates';

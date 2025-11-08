@@ -11,12 +11,14 @@ import {
   type TpSlResult,
   type TpSlValidationResult,
 } from '@/components/trade/TpSlInput';
+import { formatMarginMode } from '@/lib/hyperliquid/format/formatMarginMode';
 import { formatSize } from '@/lib/hyperliquid/format/formatSize';
 import { formatValue } from '@/lib/hyperliquid/format/formatValue';
 import {
   useActiveAssetData,
   useAvailableToTrade,
   useCurrentPosition,
+  useMarginLeverage,
   useOrder,
 } from '@/lib/hyperliquid/hooks';
 import { useMarketsStore } from '@/lib/hyperliquid/market';
@@ -36,10 +38,15 @@ export function PerpTradePanel() {
   const coin = selectedMarket?.coin || 'BTC'; // Fallback to BTC if no market selected
   const szDecimals = selectedMarket?.szDecimals || 4; // Fallback to 4 decimals
 
-  // Subscribe to active asset data (leverage, margin mode) from WebSocket
+  // Subscribe to active asset data (for market price)
   const { data: activeAssetData, isLoading: isLoadingAssetData } = useActiveAssetData({
     coin,
   });
+
+  // Subscribe to real-time margin and leverage data
+  const { marginLeverage } = useMarginLeverage({ coin });
+  const leverage = marginLeverage.leverage;
+  const marginMode = formatMarginMode(marginLeverage.marginMode);
 
   // Subscribe to real-time available margin data
   const { longAvailableToTrade, shortAvailableToTrade } = useAvailableToTrade({ coin });
@@ -61,10 +68,6 @@ export function PerpTradePanel() {
 
   // Get available margin based on order side
   const availableToTrade = orderSide === 'Long' ? longAvailableToTrade : shortAvailableToTrade;
-
-  // Get leverage and margin mode directly from activeAssetData
-  const leverage = activeAssetData?.leverage?.value ?? 5;
-  const marginMode = activeAssetData?.leverage?.type === 'cross' ? 'Cross' : 'Isolated';
 
   // Memoize marketPrice to prevent unnecessary re-renders when markPx updates
   // This stabilizes the price used for size calculations
