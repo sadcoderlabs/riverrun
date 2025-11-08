@@ -1,11 +1,11 @@
 import 'event-target-polyfill'; // polyfill for hyperliquid sdk
 import 'fast-text-encoding'; // polyfill for hyperliquid sdk
 
+import { FundingRate } from '@/components/trade/FundingRate';
 import { useOrderForm } from '@/components/trade/hooks/useOrderForm';
 import { LeverageSelector } from '@/components/trade/LeverageSelector';
 import { LimitOrderForm, MarketOrderForm, OrderTypeSelector } from '@/components/trade/order-forms';
 import { OrderBook } from '@/components/trade/OrderBook';
-import { FundingRate } from '@/components/trade/FundingRate';
 import {
   TpSlInput,
   type TpSlResult,
@@ -14,7 +14,7 @@ import {
 import { useWebData2Context } from '@/lib/hyperliquid/context/WebData2Context';
 import { formatSize } from '@/lib/hyperliquid/format/formatSize';
 import { formatValue } from '@/lib/hyperliquid/format/formatValue';
-import { useActiveAssetData, useOrder } from '@/lib/hyperliquid/hooks';
+import { useActiveAssetData, useAvailableToTrade, useOrder } from '@/lib/hyperliquid/hooks';
 import { useMarketsStore } from '@/lib/hyperliquid/market';
 
 import { Checkbox } from '@tamagui/checkbox';
@@ -37,6 +37,9 @@ export function PerpTradePanel() {
     coin,
   });
 
+  // Subscribe to real-time available margin data
+  const { longAvailableToTrade, shortAvailableToTrade } = useAvailableToTrade({ coin });
+
   // Get WebData2 from context (shared across all markets, no re-subscription on market switch)
   const { data: webData } = useWebData2Context();
 
@@ -52,13 +55,8 @@ export function PerpTradePanel() {
   const limitPrice = useWatch({ control, name: 'limitPrice' }) || '';
   const reduceOnly = useWatch({ control, name: 'reduceOnly' });
 
-  // Calculate available to trade based on order side
-  // availableToTrade[0] = long (buy) available margin
-  // availableToTrade[1] = short (sell) available margin
-  const availableToTrade =
-    orderSide === 'Long'
-      ? parseFloat(activeAssetData?.availableToTrade[0] || '0')
-      : parseFloat(activeAssetData?.availableToTrade[1] || '0');
+  // Get available margin based on order side
+  const availableToTrade = orderSide === 'Long' ? longAvailableToTrade : shortAvailableToTrade;
 
   // Get leverage and margin mode directly from activeAssetData
   const leverage = activeAssetData?.leverage?.value ?? 5;

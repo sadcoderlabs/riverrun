@@ -1,5 +1,6 @@
 export * from './useActiveAssetData';
 export * from './useAppStateSubscriptionManager';
+export * from './useAvailableToTrade';
 export * from './useCandleData';
 export * from '../client/useHyperliquidClient';
 export * from './useHyperliquidWithdraw';

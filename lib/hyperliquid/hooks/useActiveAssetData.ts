@@ -1,8 +1,8 @@
+import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
 import * as hl from '@nktkas/hyperliquid';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useAppStateSubscriptionManager } from './useAppStateSubscriptionManager';
 import { useSubscriptionClient } from '../client/useSubscriptionClient';
-import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
+import { useAppStateSubscriptionManager } from './useAppStateSubscriptionManager';
 
 export interface ActiveAssetData {
   user: string;
@@ -84,9 +84,6 @@ export function useActiveAssetData({ coin }: UseActiveAssetDataParams): UseActiv
       try {
         // Cleanup any existing subscription
         await cleanup();
-
-        // Get subscription client
-        
 
         // Subscribe to activeAssetData
         const subscription = await subscriptionClient.activeAssetData(
