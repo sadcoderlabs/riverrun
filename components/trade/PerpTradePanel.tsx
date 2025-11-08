@@ -14,23 +14,23 @@ import {
 import { useWebData2Context } from '@/lib/hyperliquid/context/WebData2Context';
 import { formatSize } from '@/lib/hyperliquid/format/formatSize';
 import { formatValue } from '@/lib/hyperliquid/format/formatValue';
-import { useActiveAssetData, useHyperliquidClient, useOrder } from '@/lib/hyperliquid/hooks';
+import { useActiveAssetData, useOrder } from '@/lib/hyperliquid/hooks';
 import { useMarketsStore } from '@/lib/hyperliquid/market';
 
 import { Checkbox } from '@tamagui/checkbox';
 import { Check } from '@tamagui/lucide-icons';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useWatch } from 'react-hook-form';
 import { toast } from 'sonner-native';
 import { Button, Text, XStack, YStack } from 'tamagui';
 
 export function PerpTradePanel() {
-  const { getSymbolConverter } = useHyperliquidClient();
   const { placeOrder, isPlacingOrder } = useOrder();
 
   // Get selected market from store (single source of truth)
   const { selectedMarket } = useMarketsStore();
   const coin = selectedMarket?.coin || 'BTC'; // Fallback to BTC if no market selected
+  const szDecimals = selectedMarket?.szDecimals || 4; // Fallback to 4 decimals
 
   // Subscribe to active asset data (leverage, margin mode) from WebSocket
   const { data: activeAssetData, isLoading: isLoadingAssetData } = useActiveAssetData({
@@ -39,20 +39,6 @@ export function PerpTradePanel() {
 
   // Get WebData2 from context (shared across all markets, no re-subscription on market switch)
   const { data: webData } = useWebData2Context();
-
-  // Get szDecimals for the asset
-  const [szDecimals, setSzDecimals] = useState<number>(4); // Default to 4 decimals
-
-  useEffect(() => {
-    const fetchSzDecimals = async () => {
-      const converter = await getSymbolConverter();
-      const decimals = converter.getSzDecimals(coin);
-      if (decimals !== undefined) {
-        setSzDecimals(decimals);
-      }
-    };
-    fetchSzDecimals();
-  }, [coin, getSymbolConverter]);
 
   // Initialize React Hook Form (only manages order-specific fields)
   const { form, validation } = useOrderForm({});
