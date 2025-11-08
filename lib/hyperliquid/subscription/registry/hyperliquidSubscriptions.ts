@@ -10,11 +10,14 @@ import { subscriptionRegistry } from '../core/SubscriptionRegistry';
 import type { OrderBookData } from '../../orderbook/useOrderBook';
 import type { AllMidsData } from '../../market/useAllMids';
 import type { NSigFigs } from '../../orderbook/orderbookPrecision';
+import type { Fill } from '../../types/fills';
+import type * as hl from '@nktkas/hyperliquid';
 
 // ============================================================================
 // Type Definitions
 // ============================================================================
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface AllMidsParams {
   // No params needed for allMids
 }
@@ -22,6 +25,40 @@ interface AllMidsParams {
 interface OrderBookParams {
   coin: string;
   nSigFigs?: NSigFigs;
+}
+
+interface UserFillsParams {
+  user: string;
+}
+
+interface UserFillsData {
+  fills: Fill[];
+}
+
+interface WebData2Params {
+  user: string;
+}
+
+// Use the SDK's WebData2Response type directly
+type WebData2Data = hl.WebData2Response;
+
+interface ActiveAssetDataParams {
+  user: string;
+  coin: string;
+}
+
+// ActiveAssetData interface (from existing hook)
+interface ActiveAssetData {
+  user: string;
+  coin: string;
+  leverage: {
+    type: 'isolated' | 'cross';
+    value: number;
+    rawUsd?: string;
+  };
+  maxTradeSzs: [string, string];
+  availableToTrade: [string, string];
+  markPx: string;
 }
 
 // ============================================================================
@@ -84,13 +121,110 @@ subscriptionRegistry.register<OrderBookParams, OrderBookData>('orderBook', {
 });
 
 // ============================================================================
-// Future configurations (Phase 2)
+// Configuration 3: userFills
+// ============================================================================
+
+subscriptionRegistry.register<UserFillsParams, UserFillsData>('userFills', {
+  // Key by user address
+  getKey: params => params.user,
+
+  // HTTP fetch for initial fills (max 2000 most recent)
+  httpFetch: async params => {
+    const infoClient = getInfoClient();
+    const fills = (await infoClient.userFills({
+      user: params.user,
+    })) as Fill[];
+
+    // Sort by time (most recent first)
+    return {
+      fills: fills.sort((a, b) => b.time - a.time),
+    };
+  },
+
+  // WebSocket subscription for real-time updates
+  subscribe: async (params, callback) => {
+    const subscriptionClient = getSubscriptionClient();
+    return await subscriptionClient.userFills(
+      {
+        user: params.user,
+      },
+      (data: any) => {
+        // WebSocket sends { fills: Fill[], isSnapshot: boolean }
+        // For real-time updates (isSnapshot: false), we need to merge with existing
+        // For now, just pass through - merging will be handled in the hook
+        if (data.fills && data.fills.length > 0 && !data.isSnapshot) {
+          callback({ fills: data.fills as Fill[] });
+        }
+      },
+    );
+  },
+});
+
+// ============================================================================
+// Configuration 4: webData2
+// ============================================================================
+
+subscriptionRegistry.register<WebData2Params, WebData2Data>('webData2', {
+  // Key by user address
+  getKey: params => params.user,
+
+  // HTTP fetch for initial data
+  httpFetch: async params => {
+    const infoClient = getInfoClient();
+    return await infoClient.webData2({ user: params.user });
+  },
+
+  // WebSocket subscription for real-time updates
+  subscribe: async (params, callback) => {
+    const subscriptionClient = getSubscriptionClient();
+    return await subscriptionClient.webData2(
+      {
+        user: params.user,
+      },
+      (event: hl.WsWebData2Event) => {
+        callback(event);
+      },
+    );
+  },
+});
+
+// ============================================================================
+// Configuration 5: activeAssetData
+// ============================================================================
+
+subscriptionRegistry.register<ActiveAssetDataParams, ActiveAssetData>('activeAssetData', {
+  // Key by user and coin
+  getKey: params => `${params.user}-${params.coin}`,
+
+  // HTTP fetch for initial data
+  httpFetch: async params => {
+    const infoClient = getInfoClient();
+    return await infoClient.activeAssetData({
+      coin: params.coin.toUpperCase(),
+      user: params.user,
+    });
+  },
+
+  // WebSocket subscription for real-time updates
+  subscribe: async (params, callback) => {
+    const subscriptionClient = getSubscriptionClient();
+    return await subscriptionClient.activeAssetData(
+      {
+        coin: params.coin.toUpperCase(),
+        user: params.user,
+      },
+      (assetData: ActiveAssetData) => {
+        callback(assetData);
+      },
+    );
+  },
+});
+
+// ============================================================================
+// Future configurations (Phase 2 - remaining)
 // ============================================================================
 
 // TODO: Add these in Phase 2 migration:
-// - activeAssetData
-// - webData2
-// - userFills
 // - orderUpdates
 // - trades
 // - activeAssetCtx

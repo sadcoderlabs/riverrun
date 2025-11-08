@@ -12,6 +12,9 @@
  */
 
 import { useSubscription } from '@/lib/hyperliquid/subscription';
+import { useUserFills } from '@/lib/hyperliquid/hooks/useUserFills.v2';
+import { useWebData2 } from '@/lib/hyperliquid/hooks/useWebData2.v2';
+import { useActiveAssetData } from '@/lib/hyperliquid/hooks/useActiveAssetData.v2';
 import { ArrowLeft } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 import { Pressable } from 'react-native';
@@ -87,6 +90,88 @@ function OrderBookTest() {
   );
 }
 
+// Test Component 4: UserFills subscription (NEW - Phase 2)
+function UserFillsTest() {
+  const { fills, isLoading, error } = useUserFills();
+
+  return (
+    <View padding="$3" backgroundColor="$background02" borderRadius="$3" borderWidth={1} borderColor="$green9">
+      <Text fontFamily="$interSemiBold" fontSize="$4" marginBottom="$2" color="$green9">
+        UserFills Test (NEW - Phase 2)
+      </Text>
+      {isLoading && <Text color="$color9">Loading...</Text>}
+      {error && <Text color="$red10">Error: {error.message}</Text>}
+      {fills && (
+        <YStack gap="$1">
+          <Text fontSize="$2">Total fills: {fills.length}</Text>
+          {fills.length > 0 && (
+            <>
+              <Text fontSize="$2">Latest fill: {fills[0].coin}</Text>
+              <Text fontSize="$2">Side: {fills[0].side}</Text>
+              <Text fontSize="$2">Size: {fills[0].sz}</Text>
+              <Text fontSize="$2" color="$color9">
+                (Uses unified subscription system)
+              </Text>
+            </>
+          )}
+          {fills.length === 0 && <Text fontSize="$2" color="$color9">No fills yet</Text>}
+        </YStack>
+      )}
+    </View>
+  );
+}
+
+// Test Component 5: WebData2 subscription (NEW - Phase 2)
+function WebData2Test() {
+  const { totalAccountValue, perpAccountValue, spotAccountValue, isLoading, error } = useWebData2();
+
+  return (
+    <View padding="$3" backgroundColor="$background02" borderRadius="$3" borderWidth={1} borderColor="$green9">
+      <Text fontFamily="$interSemiBold" fontSize="$4" marginBottom="$2" color="$green9">
+        WebData2 Test (NEW - Phase 2)
+      </Text>
+      {isLoading && <Text color="$color9">Loading...</Text>}
+      {error && <Text color="$red10">Error: {error.message}</Text>}
+      {totalAccountValue !== undefined && (
+        <YStack gap="$1">
+          <Text fontSize="$2">Total Account: ${totalAccountValue.toFixed(2)}</Text>
+          <Text fontSize="$2">Perp Account: ${perpAccountValue?.toFixed(2)}</Text>
+          <Text fontSize="$2">Spot Account: ${spotAccountValue?.toFixed(2)}</Text>
+          <Text fontSize="$2" color="$color9">
+            (Uses unified subscription system + data calculations)
+          </Text>
+        </YStack>
+      )}
+    </View>
+  );
+}
+
+// Test Component 6: ActiveAssetData subscription (NEW - Phase 2)
+function ActiveAssetDataTest() {
+  const { data, isLoading, error } = useActiveAssetData({ coin: 'ETH' });
+
+  return (
+    <View padding="$3" backgroundColor="$background02" borderRadius="$3" borderWidth={1} borderColor="$green9">
+      <Text fontFamily="$interSemiBold" fontSize="$4" marginBottom="$2" color="$green9">
+        ActiveAssetData Test (NEW - Phase 2)
+      </Text>
+      {isLoading && <Text color="$color9">Loading...</Text>}
+      {error && <Text color="$red10">Error: {error.message}</Text>}
+      {data && (
+        <YStack gap="$1">
+          <Text fontSize="$2">Coin: {data.coin}</Text>
+          <Text fontSize="$2">Leverage: {data.leverage.value}x ({data.leverage.type})</Text>
+          <Text fontSize="$2">Mark Price: ${data.markPx}</Text>
+          <Text fontSize="$2">Available: {data.availableToTrade[0]}</Text>
+          <Text fontSize="$2" color="$color9">
+            (Replaces old store - 85% less code!)
+          </Text>
+        </YStack>
+      )}
+    </View>
+  );
+}
+
 export default function TestSubscriptionPage() {
   const router = useRouter();
 
@@ -129,6 +214,9 @@ export default function TestSubscriptionPage() {
           <AllMidsTest1 />
           <AllMidsTest2 />
           <OrderBookTest />
+          <UserFillsTest />
+          <WebData2Test />
+          <ActiveAssetDataTest />
 
           {/* Expected Console Output */}
           <View padding="$3" backgroundColor="$gray3" borderRadius="$3">

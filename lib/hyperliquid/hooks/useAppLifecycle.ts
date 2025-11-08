@@ -53,6 +53,7 @@ export function useAppLifecycle(config: AppLifecycleConfig = {}): AppLifecycleSt
   const [appState, setAppState] = useState<AppLifecycleState>('active');
   const suspendTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const previousAppStateRef = useRef<AppStateStatus>(AppState.currentState);
+  const resumeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
@@ -60,7 +61,14 @@ export function useAppLifecycle(config: AppLifecycleConfig = {}): AppLifecycleSt
 
       // App going to background
       if (previousState === 'active' && nextAppState.match(/inactive|background/)) {
-        // Immediately pause
+        // Cancel any pending resume (important for iOS Face ID lock screen flicker)
+        // iOS often sends: inactive → active (Face ID) → inactive → background
+        if (resumeDebounceRef.current) {
+          clearTimeout(resumeDebounceRef.current);
+          resumeDebounceRef.current = null;
+        }
+
+        // Immediately pause (no debounce - we want to save battery ASAP)
         setAppState('paused');
 
         // Schedule suspension after delay
@@ -77,10 +85,20 @@ export function useAppLifecycle(config: AppLifecycleConfig = {}): AppLifecycleSt
           suspendTimeoutRef.current = null;
         }
 
-        // Resume if auto-resume is enabled
-        if (autoResume) {
-          setAppState('active');
+        // Debounce resume to avoid iOS Face ID lock screen flicker
+        // iOS sends: inactive → active (brief Face ID unlock) → inactive → background
+        // We only resume if app stays active for 200ms
+        if (resumeDebounceRef.current) {
+          clearTimeout(resumeDebounceRef.current);
         }
+
+        resumeDebounceRef.current = setTimeout(() => {
+          // Resume if auto-resume is enabled
+          if (autoResume) {
+            setAppState('active');
+          }
+          resumeDebounceRef.current = null;
+        }, 200); // 200ms debounce - fast enough for users, slow enough to filter Face ID flicker
       }
 
       previousAppStateRef.current = nextAppState;
@@ -93,6 +111,9 @@ export function useAppLifecycle(config: AppLifecycleConfig = {}): AppLifecycleSt
     return () => {
       if (suspendTimeoutRef.current) {
         clearTimeout(suspendTimeoutRef.current);
+      }
+      if (resumeDebounceRef.current) {
+        clearTimeout(resumeDebounceRef.current);
       }
       subscription.remove();
     };

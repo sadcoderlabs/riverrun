@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useAppLifecycle } from '../../hooks/useAppLifecycle';
 import { subscriptionManager } from '../core/SubscriptionManager';
 import type { SubscriptionState } from '../core/types';
 
@@ -10,7 +9,7 @@ import type { SubscriptionState } from '../core/types';
  *
  * Features:
  * - Automatic subscription management (subscribe on mount, unsubscribe on unmount)
- * - App Lifecycle integration (only subscribes when app is active)
+ * - App Lifecycle integration (managed globally in _layout via pauseAll/resumeAll)
  * - Shared subscriptions (multiple components using same params share one WebSocket)
  * - Type-safe params and data
  *
@@ -36,23 +35,15 @@ import type { SubscriptionState } from '../core/types';
  * });
  * ```
  */
-export function useSubscription<TData = any>(
-  type: string,
-  params?: any,
-): SubscriptionState<TData> {
+export function useSubscription<TData = any>(type: string, params?: any): SubscriptionState<TData> {
   const [data, setData] = useState<TData | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | undefined>(undefined);
 
-  const appState = useAppLifecycle();
+  // Serialize params for stable comparison in useEffect
+  const serializedParams = useMemo(() => JSON.stringify(params), [params]);
 
   useEffect(() => {
-    // Only subscribe when app is active (not paused/suspended)
-    // This ensures we completely stop data fetching when app is in background
-    if (appState !== 'active') {
-      return;
-    }
-
     let handle: { type: string; key: string } | null = null;
 
     // Setup subscription
@@ -78,7 +69,8 @@ export function useSubscription<TData = any>(
         void subscriptionManager.unsubscribe(handle);
       }
     };
-  }, [type, JSON.stringify(params), appState]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [type, serializedParams]);
 
   return useMemo(
     () => ({
