@@ -1,9 +1,9 @@
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner-native';
-import { useActiveAssetData } from './useActiveAssetData';
 import { useHyperliquidClient } from '../client/useHyperliquidClient';
-import { useWebData2 } from './useWebData2';
 import { useMarketsStore } from '../market';
+import { useActiveAssetData } from './useActiveAssetData';
+import { useWebData2 } from './useWebData2';
 
 interface UseMarginLeverageParams {
   coin: string;
@@ -154,9 +154,8 @@ export function useMarginLeverage({ coin }: UseMarginLeverageParams): UseMarginL
         });
 
         // WebSocket will automatically update activeAssetData with new values
-        const displayMode = marginMode === 'cross' ? 'Cross' : 'Isolated';
         toast.success('Margin and Leverage Updated', {
-          description: `Successfully set to ${newLeverage}x ${displayMode} for ${coin}`,
+          description: `Successfully set to ${newLeverage}x ${marginMode} for ${coin}`,
         });
       } catch (error) {
         console.error('[useMarginLeverage] Failed to update margin/leverage:', error);
