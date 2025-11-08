@@ -1,17 +1,18 @@
 import AdaptiveSelect from '@/components/global/AdaptiveSelect';
-import { useOrderBook, type OrderBookLevel } from '@/lib/hyperliquid/hooks';
+import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
+import { formatSizeFixedDecimals } from '@/lib/hyperliquid/format/formatSizeFixedDecimals';
+import { useOrderBook, useRecentTrades, type OrderBookLevel } from '@/lib/hyperliquid/hooks';
 import {
   buildPrecisionMenu,
+  useActiveAssetCtx,
+  useMarketsStore,
   type NSigFigs,
   type PrecisionMenuItem,
-  useMarketsStore,
-  useActiveAssetCtx,
 } from '@/lib/hyperliquid/market';
-import { formatSizeFixedDecimals } from '@/lib/hyperliquid/format/formatSizeFixedDecimals';
-import { ChevronDown } from '@tamagui/lucide-icons';
+import { ArrowDownRight, ArrowUpRight, ChevronDown, Info } from '@tamagui/lucide-icons';
 import { useMemo, useState } from 'react';
 import { FlatList } from 'react-native';
-import { Text, XStack, YStack } from 'tamagui';
+import { Button, Popover, Text, XStack, YStack } from 'tamagui';
 import { OrderBookRow } from './OrderBookRow';
 
 interface OrderBookProps {
@@ -35,6 +36,8 @@ export function OrderBook({ onPriceClick }: OrderBookProps) {
   const [sizeUnit, setSizeUnit] = useState<SizeUnit>('usd');
   // Selected precision: null for full, or the nSigFigs value
   const [selectedPrecision, setSelectedPrecision] = useState<NSigFigs | undefined>(undefined);
+  // Mark price popover state
+  const [markPricePopoverOpen, setMarkPricePopoverOpen] = useState(false);
 
   // Get selected market from store
   const { selectedMarket } = useMarketsStore();
@@ -44,6 +47,9 @@ export function OrderBook({ onPriceClick }: OrderBookProps) {
   // Subscribe to real-time asset context data for markPx
   const { data: assetCtx } = useActiveAssetCtx({ coin });
   const markPx = assetCtx?.ctx.markPx || '0';
+
+  // Subscribe to recent trades for last trade price
+  const { lastTrade } = useRecentTrades({ coin });
 
   // Calculate precision menu items based on current mark price
   // This menu dynamically adjusts based on the price level of the asset
@@ -295,8 +301,158 @@ export function OrderBook({ onPriceClick }: OrderBookProps) {
           />
         </YStack>
 
-        {/* Separator Line */}
-        <YStack height={1} backgroundColor="$gray8" marginVertical="$1" />
+        {/* Last Trade Price Display */}
+        <YStack
+          paddingVertical="$2"
+          paddingHorizontal="$1.5"
+          backgroundColor="$background"
+          gap="$1"
+        >
+          {lastTrade ? (
+            <>
+              {/* Last trade price - colored by trade direction */}
+              <XStack justifyContent="center" alignItems="center" gap="$1.5">
+                <Text
+                  fontFamily="$interSemiBold"
+                  fontSize="$5"
+                  color={lastTrade.side === 'B' ? '$green10' : '$red10'}
+                >
+                  {formatPrice(lastTrade.px, szDecimals, true)}
+                </Text>
+                {lastTrade.side === 'B' ? (
+                  <ArrowUpRight size={14} color="$green10" />
+                ) : (
+                  <ArrowDownRight size={14} color="$red10" />
+                )}
+              </XStack>
+
+              {/* Mark price (smaller, centered, with info icon) */}
+              <XStack justifyContent="center" alignItems="center" gap="$1">
+                <Text fontFamily="$interRegular" fontSize="$2" color="$gray10">
+                  {formatPrice(markPx, szDecimals, true)}
+                </Text>
+                <Popover
+                  size="$3"
+                  allowFlip
+                  placement="bottom"
+                  open={markPricePopoverOpen}
+                  onOpenChange={setMarkPricePopoverOpen}
+                >
+                  <Popover.Trigger asChild>
+                    <Button
+                      size="$1"
+                      chromeless
+                      circular
+                      padding="$0.5"
+                      onPress={() => setMarkPricePopoverOpen(!markPricePopoverOpen)}
+                      pressStyle={{ opacity: 0.7 }}
+                    >
+                      <Info size={12} color="$gray10" />
+                    </Button>
+                  </Popover.Trigger>
+
+                  <Popover.Content
+                    borderWidth={1}
+                    borderColor="$borderColor"
+                    backgroundColor="$background"
+                    enterStyle={{ x: -10, opacity: 0 }}
+                    exitStyle={{ x: -10, opacity: 0 }}
+                    elevate
+                    animation={[
+                      'quick',
+                      {
+                        opacity: {
+                          overshootClamping: true,
+                        },
+                      },
+                    ]}
+                  >
+                    <Popover.Arrow
+                      borderWidth={1}
+                      borderColor="$borderColor"
+                      backgroundColor="$background"
+                    />
+                    <YStack padding="$2" gap="$1" maxWidth={200}>
+                      <Text fontSize="$3" fontFamily="$interSemiBold" color="$color">
+                        Mark Price
+                      </Text>
+                      <Text fontSize="$2" lineHeight="$2" color="$gray11">
+                        Used for margining, computing unrealized PNL, liquidations, and triggering
+                        TP/SL orders
+                      </Text>
+                    </YStack>
+                  </Popover.Content>
+                </Popover>
+              </XStack>
+            </>
+          ) : (
+            // Fallback to mark price if no trades yet
+            <>
+              <XStack justifyContent="center">
+                <Text fontFamily="$interSemiBold" fontSize="$5" color="$gray10">
+                  {formatPrice(markPx, szDecimals, true)}
+                </Text>
+              </XStack>
+              <XStack justifyContent="center" alignItems="center" gap="$1">
+                <Text fontFamily="$interRegular" fontSize="$2" color="$gray10">
+                  Mark Price
+                </Text>
+                <Popover
+                  size="$5"
+                  allowFlip
+                  placement="right"
+                  open={markPricePopoverOpen}
+                  onOpenChange={setMarkPricePopoverOpen}
+                >
+                  <Popover.Trigger asChild>
+                    <Button
+                      size="$1"
+                      chromeless
+                      circular
+                      padding="$0.5"
+                      onPress={() => setMarkPricePopoverOpen(!markPricePopoverOpen)}
+                      pressStyle={{ opacity: 0.7 }}
+                    >
+                      <Info size={12} color="$gray10" />
+                    </Button>
+                  </Popover.Trigger>
+
+                  <Popover.Content
+                    borderWidth={1}
+                    borderColor="$borderColor"
+                    backgroundColor="$background"
+                    enterStyle={{ x: -10, opacity: 0 }}
+                    exitStyle={{ x: -10, opacity: 0 }}
+                    elevate
+                    animation={[
+                      'quick',
+                      {
+                        opacity: {
+                          overshootClamping: true,
+                        },
+                      },
+                    ]}
+                  >
+                    <Popover.Arrow
+                      borderWidth={1}
+                      borderColor="$borderColor"
+                      backgroundColor="$background"
+                    />
+                    <YStack padding="$2" gap="$1" maxWidth={200}>
+                      <Text fontSize="$3" fontFamily="$interSemiBold" color="$color">
+                        Mark Price
+                      </Text>
+                      <Text fontSize="$2" lineHeight="$2" color="$gray11">
+                        Used for margining, computing unrealized PNL, liquidations, and triggering
+                        TP/SL orders
+                      </Text>
+                    </YStack>
+                  </Popover.Content>
+                </Popover>
+              </XStack>
+            </>
+          )}
+        </YStack>
 
         {/* Bids Section (Bottom) - Green theme */}
         <YStack>

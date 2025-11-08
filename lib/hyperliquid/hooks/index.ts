@@ -8,6 +8,7 @@ export * from './useOrderBook';
 export * from './useOrderCount';
 export * from './useOrderUpdates';
 export * from './usePositionCount';
+export * from './useRecentTrades';
 export * from './useUserFills';
 export * from './useWebData2';
 
