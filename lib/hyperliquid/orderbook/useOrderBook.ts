@@ -1,7 +1,7 @@
 import * as hl from '@nktkas/hyperliquid';
-import { type NSigFigs } from '@/lib/hyperliquid/market';
+import { type NSigFigs } from './orderbookPrecision';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useAppStateSubscriptionManager } from './useAppStateSubscriptionManager';
+import { useAppStateSubscriptionManager } from '../hooks/useAppStateSubscriptionManager';
 import { useSubscriptionClient } from '../client/useSubscriptionClient';
 
 export interface OrderBookLevel {

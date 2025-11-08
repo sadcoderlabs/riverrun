@@ -9,8 +9,5 @@ export * from './useActiveAssetCtx';
 export * from './useMarketsStore';
 export * from './useMarketSelector';
 
-// Utilities
-export * from './orderbookPrecision';
-
 // Types
 export * from './types';

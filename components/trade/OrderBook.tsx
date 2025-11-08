@@ -1,14 +1,15 @@
 import AdaptiveSelect from '@/components/global/AdaptiveSelect';
 import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
 import { formatSizeFixedDecimals } from '@/lib/hyperliquid/format/formatSizeFixedDecimals';
-import { useOrderBook, useRecentTrades, type OrderBookLevel } from '@/lib/hyperliquid/hooks';
+import { useRecentTrades } from '@/lib/hyperliquid/hooks';
+import { useActiveAssetCtx, useMarketsStore } from '@/lib/hyperliquid/market';
 import {
   buildPrecisionMenu,
-  useActiveAssetCtx,
-  useMarketsStore,
   type NSigFigs,
+  type OrderBookLevel,
   type PrecisionMenuItem,
-} from '@/lib/hyperliquid/market';
+  useOrderBook,
+} from '@/lib/hyperliquid/orderbook';
 import { ArrowDownRight, ArrowUpRight, ChevronDown, Info } from '@tamagui/lucide-icons';
 import { useMemo, useState } from 'react';
 import { FlatList } from 'react-native';
