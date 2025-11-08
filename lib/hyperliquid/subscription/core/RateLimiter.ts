@@ -72,13 +72,10 @@ export class HyperliquidRateLimiter {
    * When rate limit is exceeded, it automatically waits until capacity is available.
    *
    * @param request - Function that performs the HTTP request
-   * @param endpoint - Endpoint name (used to determine weight)
+   * @param weight - Request weight (see REQUEST_WEIGHTS for reference values)
    * @returns Promise that resolves with the request result
    */
-  async execute<T>(request: () => Promise<T>, endpoint: EndpointName | string): Promise<T> {
-    // Get weight for this endpoint
-    const weight = REQUEST_WEIGHTS[endpoint as EndpointName] ?? REQUEST_WEIGHTS.default;
-
+  async execute<T>(request: () => Promise<T>, weight: number): Promise<T> {
     // Wait until we have capacity, then execute
     // rate-limiter-flexible automatically handles waiting when limit is exceeded
     await this.rateLimiter.consume('hyperliquid', weight);
