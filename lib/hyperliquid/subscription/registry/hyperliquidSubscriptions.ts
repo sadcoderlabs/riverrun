@@ -7,14 +7,13 @@
 
 import { getInfoClient, getSubscriptionClient } from '../../client/getter';
 import { subscriptionRegistry } from '../core/SubscriptionRegistry';
-import type { OrderBookData } from '../../orderbook/useOrderBook';
-import type { AllMidsData } from '../../market/useAllMids';
 import type { NSigFigs } from '../../orderbook/orderbookPrecision';
 import type { Fill } from '../../types/fills';
 import type * as hl from '@nktkas/hyperliquid';
+import type { AllMidsData, OrderBookData, UserFillsData, ActiveAssetData } from '../types';
 
 // ============================================================================
-// Type Definitions
+// Subscription Parameter Types
 // ============================================================================
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
@@ -31,10 +30,6 @@ interface UserFillsParams {
   user: string;
 }
 
-interface UserFillsData {
-  fills: Fill[];
-}
-
 interface WebData2Params {
   user: string;
 }
@@ -45,20 +40,6 @@ type WebData2Data = hl.WebData2Response;
 interface ActiveAssetDataParams {
   user: string;
   coin: string;
-}
-
-// ActiveAssetData interface (from existing hook)
-interface ActiveAssetData {
-  user: string;
-  coin: string;
-  leverage: {
-    type: 'isolated' | 'cross';
-    value: number;
-    rawUsd?: string;
-  };
-  maxTradeSzs: [string, string];
-  availableToTrade: [string, string];
-  markPx: string;
 }
 
 // ============================================================================

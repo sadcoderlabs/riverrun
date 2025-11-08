@@ -7,9 +7,9 @@ import {
   type NSigFigs,
   type OrderBookLevel,
   type PrecisionMenuItem,
-  useOrderBook,
   useRecentTrades,
 } from '@/lib/hyperliquid/orderbook';
+import { useSubscription, type OrderBookData } from '@/lib/hyperliquid/subscription';
 import { ArrowDownRight, ArrowUpRight, ChevronDown, Info } from '@tamagui/lucide-icons';
 import { useMemo, useState } from 'react';
 import { FlatList } from 'react-native';
@@ -71,7 +71,11 @@ export function OrderBook({ onPriceClick }: OrderBookProps) {
   // Default to first menu item (finest precision) if not selected
   const effectiveNSigFigs = selectedPrecision ?? precisionMenuItems[0]?.nSigFigs;
 
-  const { data, isLoading, error } = useOrderBook({ coin, nSigFigs: effectiveNSigFigs });
+  // Subscribe to order book using unified subscription system
+  const { data, isLoading, error } = useSubscription<OrderBookData>('orderBook', {
+    coin,
+    nSigFigs: effectiveNSigFigs,
+  });
 
   // Prepare asks data (reversed for top-down display, limited to 10)
   const reversedAsks = useMemo(() => {

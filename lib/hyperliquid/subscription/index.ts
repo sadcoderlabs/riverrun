@@ -31,6 +31,14 @@ import './registry/hyperliquidSubscriptions';
 // Export core types
 export type { SubscriptionConfig, SubscriptionState, SubscriptionHandle } from './core/types';
 
+// Export data types
+export type {
+  AllMidsData,
+  OrderBookData,
+  UserFillsData,
+  ActiveAssetData,
+} from './types';
+
 // Export registry (for adding custom subscriptions)
 export { subscriptionRegistry } from './core/SubscriptionRegistry';
 

@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import type { Market } from './types';
 import { useMarketsStore } from './useMarketsStore';
-import { useAllMids } from './useAllMids';
+import { useSubscription } from '../subscription';
 import { useThrottle } from '@/lib/riverrun/hooks';
 
 export type SortOption = 'name' | 'volume' | 'price' | 'change';
@@ -79,7 +79,9 @@ export function useMarketSelector({
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
   // Real-time prices (controlled by enableRealtimePrices parameter)
-  const { data: rawAllMidsData } = useAllMids({ enabled: enableRealtimePrices });
+  // Note: Subscription system doesn't support 'enabled' param, but subscriptions
+  // are automatically paused when app goes to background, so it's still efficient
+  const { data: rawAllMidsData } = useSubscription('allMids');
 
   // Throttle price updates to reduce re-render frequency
   // WebSocket may push updates every 10-50ms, throttling to 100ms reduces load

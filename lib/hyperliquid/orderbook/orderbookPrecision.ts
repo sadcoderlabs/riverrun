@@ -18,6 +18,15 @@
 export type NSigFigs = 2 | 3 | 4 | 5 | null;
 
 /**
+ * Order book price level
+ */
+export interface OrderBookLevel {
+  px: string; // Price
+  sz: string; // Size
+  n: number; // Number of orders
+}
+
+/**
  * Menu item representing a precision level
  */
 export interface PrecisionMenuItem {
