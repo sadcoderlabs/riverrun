@@ -1,13 +1,19 @@
 import { CoinInfo } from '@/components/trade/CoinInfo';
 import { PerpTabs } from '@/components/trade/PerpTabs';
 import { useMarketsStore } from '@/lib/hyperliquid/market';
-import { Slot, usePathname, useRouter, useSegments } from 'expo-router';
+import { Slot, usePathname, useSegments } from 'expo-router';
 import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 /**
  * Trade Layout with Fixed Header
+ *
+ * Architecture:
+ * - Store (useMarketsStore) is the single source of truth
+ * - Supports deep links: reads URL query params (?coin=BTC) once to initialize store
+ * - After initialization, URL is not synced (one-way only)
+ * - Market changes update store only, no URL updates
  *
  * Features:
  * - CoinInfo fixed at the top
@@ -18,49 +24,30 @@ export default function TradeLayout() {
   const insets = useSafeAreaInsets();
   const segments = useSegments();
   const pathname = usePathname();
-  const router = useRouter();
 
   // Zustand store
-  const { selectedMarket, setSelectedMarketByCoin, markets } = useMarketsStore();
-
-  // Extract asset from pathname
-  // pathname format: /trade/perp/BTC or /(main)/trade/perp/BTC
-  const pathSegments = pathname.split('/').filter(Boolean);
-  const assetFromPath = pathSegments[pathSegments.length - 1];
-  const assetFromUrl = (assetFromPath || 'BTC').toUpperCase();
+  const { selectedMarket, setSelectedMarketByCoin } = useMarketsStore();
 
   // Check if current route is perp trade (for showing CoinInfo and PerpTabs)
-  const isPerpTrade = segments[2] === 'perp' && segments[3] !== undefined;
+  const isPerpTrade = segments[2] === 'perp';
 
-  // Track previous values to detect which source changed
-  const prevAssetFromUrlRef = React.useRef(assetFromUrl);
-  const prevSelectedCoinRef = React.useRef(selectedMarket?.coin);
-
-  // Bidirectional sync between URL and store
+  // Deep link support: read URL query params once to initialize store
+  // Example: /trade/perp?coin=BTC
   React.useEffect(() => {
     if (!isPerpTrade) return;
 
-    const selectedCoin = selectedMarket?.coin;
-    const urlChanged = assetFromUrl !== prevAssetFromUrlRef.current;
-    const storeChanged = selectedCoin !== prevSelectedCoinRef.current;
+    // Extract query params from pathname
+    const [, queryString] = pathname.split('?');
+    if (!queryString) return;
 
-    if (urlChanged && !storeChanged) {
-      // URL changed (browser navigation) → update store with complete market info
-      console.log('[TradeLayout] URL changed, syncing to store:', assetFromUrl);
-      setSelectedMarketByCoin(assetFromUrl);
-    } else if (storeChanged && !urlChanged) {
-      // Store changed (user interaction) → update URL
-      console.log('[TradeLayout] Store changed, syncing to URL:', selectedCoin);
-      router.setParams({ coin: selectedCoin });
+    const params = new URLSearchParams(queryString);
+    const coinFromUrl = params.get('coin');
+
+    // Only update store if URL has a coin param and it differs from current selection
+    if (coinFromUrl && coinFromUrl !== selectedMarket?.coin) {
+      setSelectedMarketByCoin(coinFromUrl.toUpperCase());
     }
-
-    // Update refs after sync
-    prevAssetFromUrlRef.current = assetFromUrl;
-    prevSelectedCoinRef.current = selectedCoin;
-  }, [assetFromUrl, isPerpTrade, setSelectedMarketByCoin, router, selectedMarket?.coin]);
-
-  // Use selectedCoin for display, fallback to assetFromUrl
-  const displayCoin = selectedMarket?.coin || assetFromUrl;
+  }, [pathname, isPerpTrade, setSelectedMarketByCoin, selectedMarket?.coin]);
 
   return (
     <View style={styles.container}>
