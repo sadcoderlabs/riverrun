@@ -70,7 +70,7 @@ export default function TradeLayout() {
       {/* Fixed CoinInfo Header */}
       {isPerpTrade && (
         <View style={styles.fixedHeader}>
-          <CoinInfo coin={displayCoin} />
+          <CoinInfo />
         </View>
       )}
 

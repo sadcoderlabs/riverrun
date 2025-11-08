@@ -1,43 +1,23 @@
 import { MarketSelectorModal } from '@/components/trade/MarketSelectorModal';
-import { useHyperliquidClient } from '@/lib/hyperliquid/hooks';
-import { useActiveAssetCtx, useMarketsStore } from '@/lib/hyperliquid/market';
+import { useActiveAssetCtx, useMarketsStore, type SelectedMarket } from '@/lib/hyperliquid/market';
 import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
 import { CandlestickChart, Menu } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Text, XStack, YStack } from 'tamagui';
 
-interface CoinInfoProps {
-  coin: string;
-}
-
-export function CoinInfo({ coin }: CoinInfoProps) {
+/**
+ * Internal component that renders coin info with guaranteed selectedMarket
+ */
+function CoinInfoContent({ selectedMarket }: { selectedMarket: SelectedMarket }) {
   const router = useRouter();
-  const { getSymbolConverter } = useHyperliquidClient();
-  const { selectedMarket } = useMarketsStore();
-
-  // Local modal state
   const [isMarketSelectorOpen, setMarketSelectorOpen] = useState(false);
 
-  // Use marketPair from selected market (e.g., "BTC-USD")
-  const marketDisplay = selectedMarket?.marketPair || `${coin}-USD`;
+  // Extract market data (no fallback needed - selectedMarket is guaranteed to exist)
+  const { coin, marketPair, szDecimals } = selectedMarket;
 
   // Subscribe to real-time asset context data
   const { data: assetCtx } = useActiveAssetCtx({ coin });
-
-  // Fetch szDecimals for proper price formatting
-  const [szDecimals, setSzDecimals] = useState<number | undefined>(undefined);
-
-  useEffect(() => {
-    const fetchSzDecimals = async () => {
-      const converter = await getSymbolConverter();
-      const decimals = converter.getSzDecimals(coin);
-      if (decimals !== undefined) {
-        setSzDecimals(decimals);
-      }
-    };
-    fetchSzDecimals();
-  }, [coin, getSymbolConverter]);
 
   // Calculate market data from real-time WebSocket data
   const marketData = useMemo(() => {
@@ -90,17 +70,14 @@ export function CoinInfo({ coin }: CoinInfoProps) {
             >
               <Menu size="$1.5" color="$color" />
               <Text fontFamily="$interSemiBold" fontSize="$4" color="$color">
-                {marketDisplay}
+                {marketPair}
               </Text>
             </XStack>
 
             {/* Price info */}
             <XStack gap="$2" alignItems="baseline">
               <Text fontFamily="$interSemiBold" fontSize="$6" color="$color">
-                $
-                {szDecimals !== undefined
-                  ? formatPrice(marketData.price, szDecimals, true)
-                  : marketData.price.toFixed(2)}
+                ${formatPrice(marketData.price, szDecimals, true)}
               </Text>
               <Text fontFamily="$interMedium" fontSize="$4" color={isPriceUp ? '$green9' : '$red9'}>
                 {isPriceUp ? '+' : ''}
@@ -143,4 +120,19 @@ export function CoinInfo({ coin }: CoinInfoProps) {
       <MarketSelectorModal open={isMarketSelectorOpen} onOpenChange={setMarketSelectorOpen} />
     </>
   );
+}
+
+/**
+ * Wrapper component that handles selectedMarket availability
+ * Prevents rendering CoinInfoContent in invalid state
+ */
+export function CoinInfo() {
+  const { selectedMarket } = useMarketsStore();
+
+  // Don't render if no market is selected
+  if (!selectedMarket) {
+    return null;
+  }
+
+  return <CoinInfoContent selectedMarket={selectedMarket} />;
 }
