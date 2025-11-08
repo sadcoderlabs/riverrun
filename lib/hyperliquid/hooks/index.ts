@@ -3,6 +3,7 @@ export * from './useAppStateSubscriptionManager';
 export * from './useAvailableToTrade';
 export * from './useCandleData';
 export * from '../client/useHyperliquidClient';
+export * from './useCurrentPosition';
 export * from './useHyperliquidWithdraw';
 export * from './useOrder';
 export * from './useOrderCount';

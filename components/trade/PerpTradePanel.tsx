@@ -11,10 +11,14 @@ import {
   type TpSlResult,
   type TpSlValidationResult,
 } from '@/components/trade/TpSlInput';
-import { useWebData2Context } from '@/lib/hyperliquid/context/WebData2Context';
 import { formatSize } from '@/lib/hyperliquid/format/formatSize';
 import { formatValue } from '@/lib/hyperliquid/format/formatValue';
-import { useActiveAssetData, useAvailableToTrade, useOrder } from '@/lib/hyperliquid/hooks';
+import {
+  useActiveAssetData,
+  useAvailableToTrade,
+  useCurrentPosition,
+  useOrder,
+} from '@/lib/hyperliquid/hooks';
 import { useMarketsStore } from '@/lib/hyperliquid/market';
 
 import { Checkbox } from '@tamagui/checkbox';
@@ -40,8 +44,8 @@ export function PerpTradePanel() {
   // Subscribe to real-time available margin data
   const { longAvailableToTrade, shortAvailableToTrade } = useAvailableToTrade({ coin });
 
-  // Get WebData2 from context (shared across all markets, no re-subscription on market switch)
-  const { data: webData } = useWebData2Context();
+  // Get current position for this coin
+  const { position: currentPosition, size: positionSize } = useCurrentPosition({ coin });
 
   // Initialize React Hook Form (only manages order-specific fields)
   const { form, validation } = useOrderForm({});
@@ -164,23 +168,6 @@ export function PerpTradePanel() {
     tpSlValidation,
   ]);
 
-  // Get current position for this coin
-  const currentPosition = useMemo(() => {
-    if (!webData?.clearinghouseState?.assetPositions) {
-      return null;
-    }
-
-    const position = webData.clearinghouseState.assetPositions.find(
-      asset => asset.position.coin === coin,
-    );
-
-    if (!position || Number(position.position.szi) === 0) {
-      return null;
-    }
-
-    return position.position;
-  }, [webData, coin]);
-
   // Handle order book price click - update limit price when in Limit order mode
   const handleOrderBookPriceClick = useCallback(
     (price: string) => {
@@ -229,16 +216,10 @@ export function PerpTradePanel() {
             <Text
               fontFamily="$interSemiBold"
               fontSize="$3"
-              color={
-                currentPosition
-                  ? Number(currentPosition.szi) > 0
-                    ? '$green10'
-                    : '$red10'
-                  : '$color'
-              }
+              color={currentPosition ? (positionSize > 0 ? '$green10' : '$red10') : '$color'}
             >
               {currentPosition
-                ? `${formatSize(Math.abs(Number(currentPosition.szi)), szDecimals, false)} ${coin}`
+                ? `${formatSize(Math.abs(positionSize), szDecimals, false)} ${coin}`
                 : `0 ${coin}`}
             </Text>
           </XStack>
