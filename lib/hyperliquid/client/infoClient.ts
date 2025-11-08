@@ -184,6 +184,48 @@ export async function userFills(
   );
 }
 
+/**
+ * Get frontend open orders for a user
+ *
+ * Weight: 20
+ *
+ * @example
+ * ```typescript
+ * const orders = await frontendOpenOrders({ user: '0x...' });
+ * console.log('Open orders:', orders);
+ * ```
+ */
+export async function frontendOpenOrders(
+  params: Parameters<hl.InfoClient['frontendOpenOrders']>[0],
+): Promise<hl.FrontendOpenOrdersResponse> {
+  const infoClient = getInfoClient();
+  return await hyperliquidRateLimiter.execute(
+    () => infoClient.frontendOpenOrders(params),
+    REQUEST_WEIGHTS.frontendOpenOrders,
+  );
+}
+
+/**
+ * Get order status by order ID
+ *
+ * Weight: 2
+ *
+ * @example
+ * ```typescript
+ * const status = await orderStatus({ user: '0x...', oid: 123456 });
+ * console.log('Order status:', status);
+ * ```
+ */
+export async function orderStatus(
+  params: Parameters<hl.InfoClient['orderStatus']>[0],
+): Promise<hl.OrderStatusResponse> {
+  const infoClient = getInfoClient();
+  return await hyperliquidRateLimiter.execute(
+    () => infoClient.orderStatus(params),
+    REQUEST_WEIGHTS.orderStatus,
+  );
+}
+
 // ============================================================================
 // Referral & Builder Fee
 // ============================================================================

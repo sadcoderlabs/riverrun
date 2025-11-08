@@ -8,7 +8,6 @@
  * Reference: https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/rate-limits-and-user-limits.md
  */
 
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore - Using direct import to avoid dynamic imports in React Native
 import RateLimiterMemory from 'rate-limiter-flexible/lib/RateLimiterMemory.js';
 
