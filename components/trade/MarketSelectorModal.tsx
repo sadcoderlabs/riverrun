@@ -2,6 +2,7 @@ import { MarketListItem } from '@/components/trade/MarketListItem';
 import { useMarketsStore } from '@/lib/riverrun/store/useMarketsStore';
 import { useSelectedCoinStore } from '@/lib/riverrun/store';
 import { useAllMids } from '@/lib/hyperliquid/hooks/useAllMids';
+import { useHyperliquidClient } from '@/lib/hyperliquid/client/useHyperliquidClient';
 import { Search } from '@tamagui/lucide-icons';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FlatList, Modal, Pressable, RefreshControl, StyleSheet } from 'react-native';
@@ -14,6 +15,7 @@ interface MarketSelectorModalProps {
 
 export function MarketSelectorModal({ open, onOpenChange }: MarketSelectorModalProps) {
   const { setSelectedCoin } = useSelectedCoinStore();
+  const { infoClient } = useHyperliquidClient();
 
   // Get state and actions from store
   const { markets, favorites, isLoading, initialize, refreshMarkets, toggleFavorite } =
@@ -29,9 +31,9 @@ export function MarketSelectorModal({ open, onOpenChange }: MarketSelectorModalP
   // Initialize markets data when modal opens
   useEffect(() => {
     if (open) {
-      initialize();
+      initialize(infoClient);
     }
-  }, [open, initialize]);
+  }, [open, initialize, infoClient]);
 
   // Compute sorted and filtered markets with real-time prices
   const filteredMarkets = useMemo(() => {
@@ -118,14 +120,14 @@ export function MarketSelectorModal({ open, onOpenChange }: MarketSelectorModalP
     setRefreshing(true);
     setError(undefined);
     try {
-      await refreshMarkets();
+      await refreshMarkets(infoClient);
     } catch (err) {
       console.error('Error refreshing markets:', err);
       setError('Failed to refresh markets');
     } finally {
       setRefreshing(false);
     }
-  }, [refreshMarkets]);
+  }, [refreshMarkets, infoClient]);
 
   // Show loading state only if we don't have markets yet
   const showLoading = isLoading && markets.length === 0;

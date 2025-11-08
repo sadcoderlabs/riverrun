@@ -4,11 +4,11 @@ import { useCallback } from 'react';
 import { Alert } from 'react-native';
 
 import {
-  getInfoClient,
   getMasterExchangeClient,
   getAgentExchangeClient as getCachedAgentExchangeClient,
 } from '@/lib/hyperliquid/client/getter';
 import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
+import { useHyperliquidClient } from '@/lib/hyperliquid/client/useHyperliquidClient';
 
 import { DEFAULT_AGENT_NAME } from '../constants';
 import { getOrCreateAgentSigner } from '../getOrCreateAgentSigner';
@@ -45,6 +45,7 @@ function findAgentByName(agents: AgentInfo[], agentName: string): AgentInfo | un
  * Shows a unified message for all agent approval scenarios
  */
 async function approveAgent(
+  infoClient: hl.InfoClient,
   masterSigner: any,
   agentAddress: string,
   masterAddress: string,
@@ -70,7 +71,6 @@ async function approveAgent(
               await approveAgentOnChain(masterExchangeClient, agentAddress, DEFAULT_AGENT_NAME);
 
               // Verify approval using service
-              const infoClient = getInfoClient();
               const isApproved = await verifyAgentApproval(infoClient, masterAddress, agentAddress);
 
               if (!isApproved) {
@@ -105,6 +105,7 @@ async function approveAgent(
 export function useAgentExchangeClient() {
   const { wallet } = useActiveWallet();
   const router = useRouter();
+  const { infoClient } = useHyperliquidClient();
 
   /**
    * Get agent exchange client with simplified approval flow
@@ -139,7 +140,7 @@ export function useAgentExchangeClient() {
 
       if (!hasLocal) {
         // No local agent - check if we can approve
-        const namedCount = await countNamedAgents(getInfoClient(), masterAddress);
+        const namedCount = await countNamedAgents(infoClient, masterAddress);
 
         if (namedCount >= 3) {
           // At agent limit - redirect to Settings
@@ -168,7 +169,7 @@ export function useAgentExchangeClient() {
         needsApproval = true;
       } else {
         // Has local agent - validate it
-        const agents = await getAgentsFromChain(getInfoClient(), masterAddress);
+        const agents = await getAgentsFromChain(infoClient, masterAddress);
         const riverrunAgent = findAgentByName(agents, DEFAULT_AGENT_NAME);
 
         // Need approval if agent doesn't exist on blockchain or addresses don't match
@@ -178,7 +179,7 @@ export function useAgentExchangeClient() {
 
       // Request approval if needed
       if (needsApproval) {
-        const approved = await approveAgent(masterSigner, agentAddress, masterAddress);
+        const approved = await approveAgent(infoClient, masterSigner, agentAddress, masterAddress);
         if (!approved) {
           return undefined;
         }
@@ -191,7 +192,7 @@ export function useAgentExchangeClient() {
       Alert.alert('Error', error instanceof Error ? error.message : 'Failed to initialize agent');
       return undefined;
     }
-  }, [wallet, router]);
+  }, [wallet, router, infoClient]);
 
   return { getAgentExchangeClient };
 }

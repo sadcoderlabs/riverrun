@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
-import { getInfoClient } from '@/lib/hyperliquid/client/getter';
+import type * as hl from '@nktkas/hyperliquid';
 import { Market } from '@/lib/riverrun/types/market';
 
 // AsyncStorage keys
@@ -18,8 +18,8 @@ interface MarketsState {
   isMarketSelectorOpen: boolean;
 
   // Actions
-  initialize: () => Promise<void>;
-  refreshMarkets: () => Promise<void>;
+  initialize: (infoClient: hl.InfoClient) => Promise<void>;
+  refreshMarkets: (infoClient: hl.InfoClient) => Promise<void>;
   toggleFavorite: (marketId: string) => Promise<void>;
   setMarketSelectorOpen: (open: boolean) => void;
   clear: () => void;
@@ -41,7 +41,7 @@ export const useMarketsStore = create<MarketsState>((set, get) => ({
    *
    * This should be called once when the trade page mounts
    */
-  initialize: async () => {
+  initialize: async (infoClient: hl.InfoClient) => {
     const { isInitialized } = get();
 
     // If already initialized (data in memory), skip
@@ -82,7 +82,7 @@ export const useMarketsStore = create<MarketsState>((set, get) => ({
         });
 
         // Fetch fresh data silently in background
-        fetchFromAPI(true);
+        fetchFromAPI(infoClient, true);
       } else {
         // No cache - show loading and fetch from API
         set({
@@ -90,7 +90,7 @@ export const useMarketsStore = create<MarketsState>((set, get) => ({
           isLoading: true,
         });
 
-        await fetchFromAPI(false);
+        await fetchFromAPI(infoClient, false);
       }
     } catch (error) {
       console.error('Error initializing markets store:', error);
@@ -102,8 +102,8 @@ export const useMarketsStore = create<MarketsState>((set, get) => ({
    * Refresh markets from API
    * Used for pull-to-refresh
    */
-  refreshMarkets: async () => {
-    await fetchFromAPI(false);
+  refreshMarkets: async (infoClient: hl.InfoClient) => {
+    await fetchFromAPI(infoClient, false);
   },
 
   /**
@@ -162,9 +162,10 @@ export const useMarketsStore = create<MarketsState>((set, get) => ({
 
 /**
  * Internal helper: Fetch markets from Hyperliquid API and cache them
+ * @param infoClient - InfoClient instance to use for API calls
  * @param silent - If true, don't show loading state (for background refresh)
  */
-async function fetchFromAPI(silent: boolean) {
+async function fetchFromAPI(infoClient: hl.InfoClient, silent: boolean) {
   const setState = useMarketsStore.setState;
 
   try {
@@ -173,8 +174,7 @@ async function fetchFromAPI(silent: boolean) {
     }
 
     // Fetch from Hyperliquid API
-    const client = getInfoClient();
-    const [meta, assetCtxs] = await client.metaAndAssetCtxs();
+    const [meta, assetCtxs] = await infoClient.metaAndAssetCtxs();
 
     // Map to Market type
     const markets: Market[] = meta.universe.map((asset: any, index: number) => {
