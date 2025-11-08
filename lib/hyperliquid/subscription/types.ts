@@ -6,6 +6,8 @@
 
 import type { OrderBookLevel } from '../orderbook/orderbookPrecision';
 import type { Fill } from '../types/fills';
+import type { Order } from '../types/orders';
+import type * as hl from '@nktkas/hyperliquid';
 
 /**
  * AllMids subscription data
@@ -49,4 +51,26 @@ export interface ActiveAssetData {
   maxTradeSzs: [string, string];
   availableToTrade: [string, string];
   markPx: string;
+}
+
+/**
+ * WebData2 subscription data
+ * Contains comprehensive account data including positions, margin, and spot balances
+ */
+export type WebData2Data = hl.WebData2Response;
+
+/**
+ * OrderUpdates subscription data
+ * Contains user's open orders
+ */
+export interface OrderUpdatesData {
+  orders: Order[];
+}
+
+/**
+ * MetaAndAssetCtxs subscription data
+ * Contains metadata and asset contexts for all markets
+ */
+export interface MetaAndAssetCtxsData {
+  metaAndAssetCtxs: hl.MetaAndAssetCtxsResponse;
 }

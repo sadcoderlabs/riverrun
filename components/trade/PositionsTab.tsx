@@ -2,12 +2,12 @@ import { formatPercent } from '@/lib/hyperliquid/format/formatPercent';
 import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
 import { formatSize } from '@/lib/hyperliquid/format/formatSize';
 import { formatValue } from '@/lib/hyperliquid/format/formatValue';
-import { useInfoClient } from '@/lib/hyperliquid/client/useInfoClient';
 import { useWebData2Context } from '@/lib/hyperliquid/context/WebData2Context';
 import { useActiveWallet } from '@/lib/riverrun/wallet';
 import { useMarketsStore } from '@/lib/hyperliquid/market';
+import { useSubscription, type MetaAndAssetCtxsData } from '@/lib/hyperliquid/subscription';
 import * as hl from '@nktkas/hyperliquid';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Button, Spinner, Text, View, XStack, YStack } from 'tamagui';
 import ClosePositionModal from './ClosePositionModal';
 import TpSlModal from './TpSlModal';
@@ -21,11 +21,13 @@ interface PositionWithMarkPrice extends Position {
 
 export default function PositionsTab() {
   const { wallet } = useActiveWallet();
-  const infoClient = useInfoClient();
   const { setSelectedMarketByCoin } = useMarketsStore();
 
   // Get WebData2 from context (shared across all markets, no re-subscription on market switch)
   const { data: webData, isLoading, error: webError } = useWebData2Context();
+
+  // Subscribe to market data using unified subscription system
+  const { data: marketData } = useSubscription<MetaAndAssetCtxsData>('metaAndAssetCtxs');
 
   const [closeModalOpen, setCloseModalOpen] = useState(false);
   const [tpSlModalOpen, setTpSlModalOpen] = useState(false);
@@ -34,44 +36,29 @@ export default function PositionsTab() {
   // Switch market when position card is clicked (without full page reload)
   const handlePositionClick = (coin: string) => {
     setSelectedMarketByCoin(coin);
-    // Note: URL will be automatically synced via bidirectional binding in route component
   };
 
-  // Fetch market data (mark prices and szDecimals) separately
-  const [marketDataMap, setMarketDataMap] = useState<
-    Map<string, { markPx: string; szDecimals: number }>
-  >(new Map());
-
-  useEffect(() => {
-    const fetchMarketData = async () => {
-      try {
-        const metaAndAssetCtxs = await infoClient.metaAndAssetCtxs();
-
-        // Create a map of coin -> {markPx, szDecimals} for quick lookup
-        const dataMap = new Map<string, { markPx: string; szDecimals: number }>();
-        metaAndAssetCtxs[0].universe.forEach((asset, index) => {
-          const assetCtx = metaAndAssetCtxs[1][index];
-          if (assetCtx) {
-            dataMap.set(asset.name, {
-              markPx: assetCtx.markPx,
-              szDecimals: asset.szDecimals,
-            });
-          }
-        });
-
-        setMarketDataMap(dataMap);
-      } catch (err) {
-        console.error('Error fetching market data:', err);
-      }
-    };
-
-    if (wallet) {
-      fetchMarketData();
-      // Refresh mark prices every 5 seconds
-      const interval = setInterval(fetchMarketData, 5000);
-      return () => clearInterval(interval);
+  // Create market data map from subscription
+  const marketDataMap = useMemo(() => {
+    if (!marketData?.metaAndAssetCtxs) {
+      return new Map<string, { markPx: string; szDecimals: number }>();
     }
-  }, [wallet, infoClient]);
+
+    const [meta, assetCtxs] = marketData.metaAndAssetCtxs;
+    const dataMap = new Map<string, { markPx: string; szDecimals: number }>();
+
+    meta.universe.forEach((asset, index) => {
+      const assetCtx = assetCtxs[index];
+      if (assetCtx) {
+        dataMap.set(asset.name, {
+          markPx: assetCtx.markPx,
+          szDecimals: asset.szDecimals,
+        });
+      }
+    });
+
+    return dataMap;
+  }, [marketData]);
 
   // Extract and enrich positions from WebSocket data
   const positions = useMemo<PositionWithMarkPrice[]>(() => {

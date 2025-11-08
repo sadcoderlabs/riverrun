@@ -37,6 +37,9 @@ export type {
   OrderBookData,
   UserFillsData,
   ActiveAssetData,
+  WebData2Data,
+  OrderUpdatesData,
+  MetaAndAssetCtxsData,
 } from './types';
 
 // Export registry (for adding custom subscriptions)

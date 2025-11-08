@@ -11,6 +11,7 @@ import type { NSigFigs } from '../../orderbook/orderbookPrecision';
 import type { Fill } from '../../types/fills';
 import type * as hl from '@nktkas/hyperliquid';
 import type { AllMidsData, OrderBookData, UserFillsData, ActiveAssetData } from '../types';
+import type { Order, ApiOrderResponse } from '../../types/orders';
 
 // ============================================================================
 // Subscription Parameter Types
@@ -202,10 +203,202 @@ subscriptionRegistry.register<ActiveAssetDataParams, ActiveAssetData>('activeAss
 });
 
 // ============================================================================
+// Configuration 6: orderUpdates
+// ============================================================================
+
+interface OrderUpdatesParams {
+  user: string;
+}
+
+interface OrderUpdatesData {
+  orders: Order[];
+}
+
+// Helper function to transform API order to typed Order
+function transformApiOrder(apiOrder: ApiOrderResponse): Order {
+  const isTrigger =
+    apiOrder.isTrigger === true ||
+    (apiOrder.triggerPx && apiOrder.triggerPx !== '0.0' && apiOrder.triggerPx !== '0');
+
+  // Infer order type
+  let orderType = apiOrder.orderType;
+  if (!orderType) {
+    if (isTrigger) {
+      orderType =
+        apiOrder.limitPx === '0' || apiOrder.limitPx === '0.0' ? 'Stop Market' : 'Stop Limit';
+    } else if (apiOrder.tif === 'FrontendMarket' || apiOrder.tif === 'LiquidationMarket') {
+      orderType = 'Market';
+    } else {
+      orderType = 'Limit';
+    }
+  }
+
+  if (isTrigger) {
+    return {
+      coin: apiOrder.coin,
+      side: apiOrder.side,
+      limitPx: apiOrder.limitPx,
+      sz: apiOrder.sz,
+      oid: apiOrder.oid,
+      timestamp: apiOrder.timestamp,
+      origSz: apiOrder.origSz,
+      cloid: apiOrder.cloid ?? undefined,
+      reduceOnly: apiOrder.reduceOnly ?? false,
+      orderType: orderType as any,
+      tif: apiOrder.tif ?? null,
+      isTrigger: true,
+      triggerPx: apiOrder.triggerPx || '0.0',
+      triggerCondition: apiOrder.triggerCondition || 'N/A',
+    };
+  } else {
+    return {
+      coin: apiOrder.coin,
+      side: apiOrder.side,
+      limitPx: apiOrder.limitPx,
+      sz: apiOrder.sz,
+      oid: apiOrder.oid,
+      timestamp: apiOrder.timestamp,
+      origSz: apiOrder.origSz,
+      cloid: apiOrder.cloid ?? undefined,
+      reduceOnly: apiOrder.reduceOnly ?? false,
+      orderType: orderType as any,
+      tif: apiOrder.tif ?? null,
+      triggerPx: apiOrder.triggerPx,
+      triggerCondition: apiOrder.triggerCondition,
+    };
+  }
+}
+
+subscriptionRegistry.register<OrderUpdatesParams, OrderUpdatesData>('orderUpdates', {
+  // Key by user address
+  getKey: params => params.user,
+
+  // HTTP fetch for initial open orders
+  httpFetch: async params => {
+    const infoClient = getInfoClient();
+    const openOrdersResponse = (await infoClient.frontendOpenOrders({
+      user: params.user,
+    })) as ApiOrderResponse[];
+
+    const orders: Order[] = openOrdersResponse.map(apiOrder => transformApiOrder(apiOrder));
+    return { orders };
+  },
+
+  // WebSocket subscription for incremental updates
+  // Uses a full refresh strategy: fetch all open orders on each update
+  // This is necessary because WebSocket orderUpdates provides incomplete data
+  subscribe: async (params, callback) => {
+    const subscriptionClient = getSubscriptionClient();
+    const infoClient = getInfoClient();
+
+    // Track last HTTP fetch time to implement rate limiting
+    let lastFetchTime = 0;
+    const MIN_FETCH_INTERVAL = 1000; // 1 second minimum between HTTP refreshes
+    let pendingRefresh = false;
+
+    const refreshOrders = async () => {
+      if (pendingRefresh) {
+        return; // Already have a pending refresh
+      }
+
+      const now = Date.now();
+      const timeSinceLastFetch = now - lastFetchTime;
+
+      if (timeSinceLastFetch < MIN_FETCH_INTERVAL) {
+        // Schedule a delayed refresh
+        if (!pendingRefresh) {
+          pendingRefresh = true;
+          const delay = MIN_FETCH_INTERVAL - timeSinceLastFetch;
+          setTimeout(() => {
+            pendingRefresh = false;
+            void refreshOrders();
+          }, delay);
+        }
+        return;
+      }
+
+      // Refresh all open orders
+      try {
+        lastFetchTime = now;
+
+        const openOrdersResponse = (await infoClient.frontendOpenOrders({
+          user: params.user,
+        })) as ApiOrderResponse[];
+
+        const orders: Order[] = openOrdersResponse.map(apiOrder => transformApiOrder(apiOrder));
+        callback({ orders });
+      } catch (err) {
+        console.error('[orderUpdates] Error refreshing orders:', err);
+      }
+    };
+
+    const subscription = await subscriptionClient.orderUpdates(
+      {
+        user: params.user,
+      },
+      async (orderUpdates: any[]) => {
+        // Check if there are any meaningful updates (new orders or status changes)
+        const hasNewOrders = orderUpdates.some(
+          update =>
+            update.status === 'open' || update.status === 'filled' || update.status === 'canceled',
+        );
+
+        if (hasNewOrders) {
+          await refreshOrders();
+        }
+      },
+    );
+
+    // Immediately fetch initial orders after WebSocket connection is established
+    // This ensures we have data even if HTTP fetch was skipped due to rate limiting
+    void refreshOrders();
+
+    return subscription;
+  },
+});
+
+// ============================================================================
+// Configuration 7: metaAndAssetCtxs (for all asset contexts including markPx)
+// ============================================================================
+
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+interface MetaAndAssetCtxsParams {
+  // No params needed
+}
+
+interface MetaAndAssetCtxsData {
+  metaAndAssetCtxs: hl.MetaAndAssetCtxsResponse;
+}
+
+subscriptionRegistry.register<MetaAndAssetCtxsParams, MetaAndAssetCtxsData>('metaAndAssetCtxs', {
+  // Global key since this fetches all assets
+  getKey: () => 'global',
+
+  // HTTP fetch for initial data
+  httpFetch: async () => {
+    const infoClient = getInfoClient();
+    const metaAndAssetCtxs = await infoClient.metaAndAssetCtxs();
+    return { metaAndAssetCtxs };
+  },
+
+  // No WebSocket subscription for this endpoint - HTTP only
+  // Data will be refreshed via HTTP fetch when needed
+  subscribe: async (_params, _callback) => {
+    // Return a dummy subscription that does nothing
+    // This endpoint is HTTP-only, data comes from httpFetch
+    const dummySignal = new AbortController();
+    return {
+      unsubscribe: async () => {
+        dummySignal.abort();
+      },
+      resubscribeSignal: dummySignal.signal,
+    };
+  },
+});
+
+// ============================================================================
 // Future configurations (Phase 2 - remaining)
 // ============================================================================
 
 // TODO: Add these in Phase 2 migration:
-// - orderUpdates
 // - trades
-// - activeAssetCtx

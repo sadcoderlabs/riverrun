@@ -1,7 +1,7 @@
 import * as hl from '@nktkas/hyperliquid';
 import { create } from 'zustand';
 import { getInfoClient, getSubscriptionClient } from '../client/getter';
-import { type ActiveAssetData } from './useActiveAssetData';
+import { type ActiveAssetData } from '../subscription';
 
 /**
  * Subscription state for a single coin + user combination

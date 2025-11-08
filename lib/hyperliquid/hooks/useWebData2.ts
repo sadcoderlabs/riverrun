@@ -1,13 +1,9 @@
-import * as hl from '@nktkas/hyperliquid';
-import { useCallback, useEffect, useRef, useState } from 'react';
 import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
-import { useHyperliquidClient } from '../client/useHyperliquidClient';
-
-// Use the actual types from the SDK
-type WebData2Response = hl.WebData2Response;
+import { useSubscription, type WebData2Data } from '../subscription';
+import { useCallback, useMemo } from 'react';
 
 export interface UseWebData2Result {
-  data: WebData2Response | undefined;
+  data: WebData2Data | undefined;
   // Account Equity
   totalAccountValue: number | undefined;
   perpAccountValue: number | undefined;
@@ -26,9 +22,10 @@ export interface UseWebData2Result {
  * Hook to subscribe to Hyperliquid's webData2 WebSocket feed
  * for comprehensive real-time account data including both perpetual and spot trading.
  *
- * This hook uses a hybrid approach:
- * 1. Fetches initial data using InfoClient on mount
- * 2. Subscribes to webData2 WebSocket for real-time updates
+ * This hook uses the unified subscription system which provides:
+ * - Reference counting: multiple components share one subscription
+ * - Global rate limiting: prevents 429 errors
+ * - Hybrid approach: fast HTTP fetch + WebSocket updates
  *
  * The totalAccountValue is calculated as:
  * perpAccountValue + spotAccountValue
@@ -39,12 +36,12 @@ export interface UseWebData2Result {
  */
 export function useWebData2(): UseWebData2Result {
   const { wallet } = useActiveWallet();
-  const { subscriptionClient, infoClient } = useHyperliquidClient();
-  const [data, setData] = useState<WebData2Response | undefined>(undefined);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | undefined>(undefined);
 
-  const subscriptionRef = useRef<hl.Subscription | null>(null);
+  // Subscribe using unified subscription system
+  const { data, isLoading, error } = useSubscription<WebData2Data>(
+    'webData2',
+    wallet ? { user: wallet.address } : undefined,
+  );
 
   /**
    * Helper function to calculate spot account value from balances.
@@ -56,15 +53,13 @@ export function useWebData2(): UseWebData2Result {
    * @param balances - Optional array of spot balances from webData2 response
    * @returns Total spot account value in USD
    */
-  const calculateSpotValue = useCallback((balances?: WebData2Response['spotState']['balances']) => {
+  const calculateSpotValue = useCallback((balances?: WebData2Data['spotState']['balances']) => {
     // Return 0 for empty accounts (no spot positions)
     if (!balances || balances.length === 0) {
       return 0;
     }
 
     // Sum up all spot balances
-    // For simplicity, we use the total balance value
-    // You may want to multiply by current prices for accurate USD value
     return balances.reduce((sum, balance) => {
       const total = parseFloat(balance.total);
       const entryNtl = parseFloat(balance.entryNtl);
@@ -79,86 +74,12 @@ export function useWebData2(): UseWebData2Result {
     }, 0);
   }, []);
 
-  // Cleanup function
-  const cleanup = useCallback(async () => {
-    if (subscriptionRef.current) {
-      try {
-        await subscriptionRef.current.unsubscribe();
-      } catch (err) {
-        console.error('[useWebData2] Error unsubscribing:', err);
-      }
-      subscriptionRef.current = null;
-    }
-  }, []);
-
-  useEffect(() => {
-    // Don't subscribe if conditions aren't met
-    if (!wallet) {
-      setIsLoading(false);
-      setData(undefined);
-      return;
-    }
-
-    let isMounted = true;
-    setIsLoading(true);
-    setError(undefined);
-
-    const setupSubscription = async () => {
-      try {
-        // Cleanup any existing subscription
-        await cleanup();
-
-        // Step 1: Fetch initial data using InfoClient
-
-        const initialData = await infoClient.webData2({ user: wallet.address });
-
-        if (isMounted) {
-          setData(initialData);
-        }
-
-        // Step 2: Subscribe to webData2 WebSocket for real-time updates
-
-        const subscription = await subscriptionClient.webData2(
-          {
-            user: wallet.address,
-          },
-          (event: hl.WsWebData2Event) => {
-            if (isMounted) {
-              setData(event);
-              setIsLoading(false);
-            }
-          },
-        );
-
-        subscriptionRef.current = subscription;
-
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      } catch (err) {
-        if (isMounted) {
-          setError(err instanceof Error ? err : new Error('Failed to subscribe'));
-          setIsLoading(false);
-        }
-      }
-    };
-
-    void setupSubscription();
-
-    // Cleanup on unmount or when dependencies change
-    return () => {
-      isMounted = false;
-      void cleanup();
-    };
-  }, [wallet, cleanup, subscriptionClient, infoClient]);
-
   // Calculate account values
   const perpAccountValue = data?.clearinghouseState?.marginSummary?.accountValue
     ? parseFloat(data.clearinghouseState.marginSummary.accountValue)
     : undefined;
 
   // Calculate spot account value using optional chaining to handle accounts with no spot positions
-  // When spotState is missing or balances is undefined, calculateSpotValue returns 0
   const spotAccountValue = data ? calculateSpotValue(data.spotState?.balances) : undefined;
 
   const totalAccountValue =
@@ -173,8 +94,7 @@ export function useWebData2(): UseWebData2Result {
       }, 0)
     : undefined;
 
-  // Balance = Total Net transfers + Total realized Pnl + Total net funding fee
-  // This is perpAccountValue - unrealizedPnl (because perpAccountValue includes unrealized PnL)
+  // Balance = perpAccountValue - unrealizedPnl
   const perpBalance =
     perpAccountValue !== undefined && unrealizedPnl !== undefined
       ? perpAccountValue - unrealizedPnl
@@ -195,17 +115,32 @@ export function useWebData2(): UseWebData2Result {
       ? Math.abs(parseFloat(data.clearinghouseState.marginSummary.totalNtlPos)) / perpAccountValue
       : undefined;
 
-  return {
-    data,
-    totalAccountValue,
-    perpAccountValue,
-    spotAccountValue,
-    perpBalance,
-    unrealizedPnl,
-    crossMarginRatio,
-    maintenanceMargin,
-    crossAccountLeverage,
-    isLoading,
-    error,
-  };
+  return useMemo(
+    () => ({
+      data,
+      totalAccountValue,
+      perpAccountValue,
+      spotAccountValue,
+      perpBalance,
+      unrealizedPnl,
+      crossMarginRatio,
+      maintenanceMargin,
+      crossAccountLeverage,
+      isLoading,
+      error,
+    }),
+    [
+      data,
+      totalAccountValue,
+      perpAccountValue,
+      spotAccountValue,
+      perpBalance,
+      unrealizedPnl,
+      crossMarginRatio,
+      maintenanceMargin,
+      crossAccountLeverage,
+      isLoading,
+      error,
+    ],
+  );
 }
