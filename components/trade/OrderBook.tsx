@@ -4,6 +4,8 @@ import {
   buildPrecisionMenu,
   type NSigFigs,
   type PrecisionMenuItem,
+  useMarketsStore,
+  useActiveAssetCtx,
 } from '@/lib/hyperliquid/market';
 import { formatSizeFixedDecimals } from '@/lib/hyperliquid/format/formatSizeFixedDecimals';
 import { ChevronDown } from '@tamagui/lucide-icons';
@@ -13,17 +15,6 @@ import { Text, XStack, YStack } from 'tamagui';
 import { OrderBookRow } from './OrderBookRow';
 
 interface OrderBookProps {
-  coin: string;
-  /**
-   * Size decimals for the asset (from Hyperliquid meta)
-   * Used to calculate valid precision levels
-   */
-  szDecimals: number;
-  /**
-   * Mark price for the asset (from activeAssetData)
-   * Used as representative price for precision calculation
-   */
-  markPx: string;
   onPriceClick?: (price: string) => void;
 }
 
@@ -36,13 +27,23 @@ type SizeUnit = 'usd' | 'asset';
  * - Dynamic precision menu based on current price and asset decimals
  * - Automatic resubscription when precision changes
  * - Size display in USD or asset units
+ * - Derives all market data from selectedMarket in useMarketsStore
  *
  * Layout: Asks (top, reversed) -> Bids (bottom)
  */
-export function OrderBook({ coin, szDecimals, markPx, onPriceClick }: OrderBookProps) {
+export function OrderBook({ onPriceClick }: OrderBookProps) {
   const [sizeUnit, setSizeUnit] = useState<SizeUnit>('usd');
   // Selected precision: null for full, or the nSigFigs value
   const [selectedPrecision, setSelectedPrecision] = useState<NSigFigs | undefined>(undefined);
+
+  // Get selected market from store
+  const { selectedMarket } = useMarketsStore();
+  const coin = selectedMarket?.coin || 'BTC';
+  const szDecimals = selectedMarket?.szDecimals || 2;
+
+  // Subscribe to real-time asset context data for markPx
+  const { data: assetCtx } = useActiveAssetCtx({ coin });
+  const markPx = assetCtx?.ctx.markPx || '0';
 
   // Calculate precision menu items based on current mark price
   // This menu dynamically adjusts based on the price level of the asset
