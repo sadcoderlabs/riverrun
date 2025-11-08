@@ -38,26 +38,26 @@ export function MarketSelectorModal({ open, onOpenChange }: MarketSelectorModalP
   const [refreshing, setRefreshing] = useState(false);
 
   const navigateToMarket = useCallback(
-    (marketId: string) => {
+    (marketPair: string) => {
       // Close modal first
       onOpenChange(false);
 
       // Find the market to get coin name
-      const market = markets.find(m => m.id === marketId);
+      const market = markets.find(m => m.marketPair === marketPair);
       if (!market) {
-        console.error('Market not found:', marketId);
+        console.error('Market not found:', marketPair);
         return;
       }
 
       // Update selected market using convenience method
-      setSelectedMarketByCoin(market.name);
+      setSelectedMarketByCoin(market.coin);
     },
     [markets, setSelectedMarketByCoin, onOpenChange],
   );
 
   const handleToggleFavorite = useCallback(
-    (marketId: string) => {
-      toggleFavorite(marketId);
+    (marketPair: string) => {
+      toggleFavorite(marketPair);
     },
     [toggleFavorite],
   );
@@ -250,18 +250,18 @@ export function MarketSelectorModal({ open, onOpenChange }: MarketSelectorModalP
             ) : (
               <FlatList
                 data={filteredMarkets}
-                keyExtractor={item => item.id}
+                keyExtractor={item => item.marketPair}
                 renderItem={({ item: market }) => (
                   <MarketListItem
-                    id={market.id}
-                    name={market.name}
+                    marketPair={market.marketPair}
+                    coin={market.coin}
                     price={market.price}
                     change={market.change}
                     maxLeverage={market.maxLeverage}
                     volume={market.volume}
                     szDecimals={market.szDecimals}
-                    isFavorite={favorites.includes(market.id)}
-                    onPress={() => navigateToMarket(market.id)}
+                    isFavorite={favorites.includes(market.marketPair)}
+                    onPress={() => navigateToMarket(market.marketPair)}
                     onToggleFavorite={handleToggleFavorite}
                   />
                 )}

@@ -2,10 +2,10 @@
  * Market data type used throughout the application
  */
 export type Market = {
-  /** Market identifier (e.g., "BTC-USD" for perpetuals) */
-  id: string;
-  /** Display name (same as id for now) */
-  name: string;
+  /** Market trading pair (e.g., "BTC-USD" for perpetuals) */
+  marketPair: string;
+  /** Coin symbol (e.g., "BTC", "ETH") */
+  coin: string;
   /** Current market price */
   price: number;
   /** 24-hour price change percentage */

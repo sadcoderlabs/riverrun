@@ -4,8 +4,8 @@ import { memo } from 'react';
 import { Text, XStack, YStack } from 'tamagui';
 
 type Market = {
-  id: string;
-  name: string;
+  marketPair: string;
+  coin: string;
   price: number;
   change: number;
   maxLeverage: number;
@@ -24,8 +24,8 @@ interface MarketListItemProps extends Market {
  * Uses React.memo to prevent re-renders when props haven't changed
  */
 const MarketListItemComponent = ({
-  id,
-  name,
+  marketPair,
+  coin,
   price,
   change,
   maxLeverage,
@@ -39,7 +39,7 @@ const MarketListItemComponent = ({
 
   const handleStarPress = (e: any) => {
     e.stopPropagation();
-    onToggleFavorite?.(id);
+    onToggleFavorite?.(marketPair);
   };
 
   // Format price using Hyperliquid standard formatPrice
@@ -79,7 +79,7 @@ const MarketListItemComponent = ({
           {/* Market Name + Leverage Badge */}
           <XStack alignItems="center" gap="$2">
             <Text fontFamily="$interSemiBold" fontSize="$3" color="$color">
-              {name}
+              {coin}
             </Text>
             <XStack
               backgroundColor="rgba(255, 100, 50, 0.15)"
@@ -137,8 +137,8 @@ const MarketListItemComponent = ({
  * This is critical for performance with real-time price updates
  */
 function arePropsEqual(prev: MarketListItemProps, next: MarketListItemProps): boolean {
-  // Always re-render if ID changed (shouldn't happen, but safety check)
-  if (prev.id !== next.id) return false;
+  // Always re-render if marketPair changed (shouldn't happen, but safety check)
+  if (prev.marketPair !== next.marketPair) return false;
 
   // Re-render if price changed (most common case with real-time updates)
   if (prev.price !== next.price) return false;
@@ -153,7 +153,7 @@ function arePropsEqual(prev: MarketListItemProps, next: MarketListItemProps): bo
   if (prev.volume !== next.volume) return false;
 
   // Static data - should never change, but check for safety
-  if (prev.name !== next.name) return false;
+  if (prev.coin !== next.coin) return false;
   if (prev.maxLeverage !== next.maxLeverage) return false;
   if (prev.szDecimals !== next.szDecimals) return false;
 

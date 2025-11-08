@@ -12,8 +12,8 @@ const FAVORITES_KEY = '@riverrun:favorite_markets';
 export interface SelectedMarket {
   /** Market coin symbol (e.g., "BTC", "ETH") */
   coin: string;
-  /** Full market ID (e.g., "BTC-USD", "ETH-USD") */
-  marketId: string;
+  /** Full market trading pair (e.g., "BTC-USD", "ETH-USD") */
+  marketPair: string;
   /** Size decimals for price formatting */
   szDecimals: number;
   /** Maximum leverage available for this market */
@@ -93,13 +93,13 @@ export const useMarketsStore = create<MarketsState>((set, get) => ({
    */
   setSelectedMarketByCoin: (coin: string) => {
     const { markets } = get();
-    const market = markets.find(m => m.name === coin.toUpperCase());
+    const market = markets.find(m => m.coin === coin.toUpperCase());
 
     if (market) {
       set({
         selectedMarket: {
-          coin: market.name,
-          marketId: market.id,
+          coin: market.coin,
+          marketPair: market.marketPair,
           szDecimals: market.szDecimals,
           maxLeverage: market.maxLeverage,
         },

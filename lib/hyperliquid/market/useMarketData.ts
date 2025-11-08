@@ -57,11 +57,11 @@ export function useMarketData(): UseMarketDataResult {
             prevDayPrice > 0 ? ((currentPrice - prevDayPrice) / prevDayPrice) * 100 : 0;
           const fundingRate = parseFloat(ctx.funding) * 100;
           const volume = parseFloat(ctx.dayNtlVlm || '0');
-          const marketId = `${assetName}-USD`;
+          const marketPair = `${assetName}-USD`;
 
           return {
-            id: marketId,
-            name: marketId,
+            marketPair,
+            coin: assetName,
             price: currentPrice,
             change: priceChange,
             maxLeverage: asset.maxLeverage || 1,

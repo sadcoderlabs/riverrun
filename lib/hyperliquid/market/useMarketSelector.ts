@@ -111,11 +111,8 @@ export function useMarketSelector({
     // Merge real-time prices into markets if enabled
     const marketsWithRealtimePrices = enableRealtimePrices
       ? markets.map(market => {
-          // Extract coin symbol from market ID (e.g., "BTC-USD" -> "BTC")
-          const coinSymbol = market.id.replace('-USD', '').replace('/USDC', '').split('/')[0];
-
-          // Get real-time mid price if available
-          const realtimeMidPriceStr = allMidsData?.mids[coinSymbol];
+          // Get real-time mid price if available using coin symbol
+          const realtimeMidPriceStr = allMidsData?.mids[market.coin];
 
           // If no real-time price available, return original market object
           if (!realtimeMidPriceStr) return market;
@@ -148,8 +145,8 @@ export function useMarketSelector({
     // Sort markets based on user selection
     const sorted = [...marketsWithRealtimePrices].sort((a, b) => {
       // Always prioritize favorites first
-      const aIsFavorite = favorites.includes(a.id);
-      const bIsFavorite = favorites.includes(b.id);
+      const aIsFavorite = favorites.includes(a.marketPair);
+      const bIsFavorite = favorites.includes(b.marketPair);
       if (aIsFavorite && !bIsFavorite) return -1;
       if (!aIsFavorite && bIsFavorite) return 1;
 
@@ -157,7 +154,7 @@ export function useMarketSelector({
       let comparison = 0;
       switch (sortBy) {
         case 'name':
-          comparison = a.name.localeCompare(b.name);
+          comparison = a.coin.localeCompare(b.coin);
           break;
         case 'volume':
           comparison = a.volume - b.volume;
@@ -181,13 +178,13 @@ export function useMarketSelector({
 
     // Separate exact matches (starts with) from partial matches (includes)
     const startsWithMatches = sorted.filter(
-      m => m.id.toLowerCase().startsWith(query) || m.name.toLowerCase().startsWith(query),
+      m => m.marketPair.toLowerCase().startsWith(query) || m.coin.toLowerCase().startsWith(query),
     );
     const includesMatches = sorted.filter(
       m =>
-        !m.id.toLowerCase().startsWith(query) &&
-        !m.name.toLowerCase().startsWith(query) &&
-        (m.id.toLowerCase().includes(query) || m.name.toLowerCase().includes(query)),
+        !m.marketPair.toLowerCase().startsWith(query) &&
+        !m.coin.toLowerCase().startsWith(query) &&
+        (m.marketPair.toLowerCase().includes(query) || m.coin.toLowerCase().includes(query)),
     );
 
     return [...startsWithMatches, ...includesMatches];
