@@ -4,7 +4,7 @@ import { Alert } from 'react-native';
 import { BUILDER_CONFIG } from '@/lib/hyperliquid/builderFee/config';
 import { useHyperliquidClient } from '@/lib/hyperliquid/client/useHyperliquidClient';
 import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
-import { hyperliquidRateLimiter, RequestPriority } from '@/lib/hyperliquid/subscription';
+import { hyperliquidRateLimiter } from '@/lib/hyperliquid/subscription';
 
 /**
  * Hook for managing builder fee approval status
@@ -35,7 +35,6 @@ export function useBuilderFee() {
             builder: BUILDER_CONFIG.address,
           }),
         'maxBuilderFee',
-        RequestPriority.HIGH,
       );
 
       setMaxApprovedFee(maxFee);
@@ -145,7 +144,6 @@ export function useBuilderFee() {
             builder: BUILDER_CONFIG.address,
           }),
         'maxBuilderFee',
-        RequestPriority.HIGH,
       );
 
       setMaxApprovedFee(maxFee);

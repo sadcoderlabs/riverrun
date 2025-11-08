@@ -5,10 +5,7 @@
  * while using TanStack Query for caching and deduplication.
  */
 
-import {
-  hyperliquidRateLimiter,
-  RequestPriority,
-} from '../hyperliquid/subscription/core/RateLimiter';
+import { hyperliquidRateLimiter } from '../hyperliquid/subscription/core/RateLimiter';
 
 /**
  * Wraps a query function with rate limiting
@@ -25,15 +22,13 @@ import {
  *
  * @param requestName - Name for rate limiter tracking (e.g., 'userFills')
  * @param fetcher - Async function that fetches data
- * @param priority - Request priority (defaults to CRITICAL for queries)
  * @returns Rate-limited query function compatible with TanStack Query
  */
 export function createRateLimitedQuery<T>(
   requestName: string,
   fetcher: () => Promise<T>,
-  priority: RequestPriority = RequestPriority.CRITICAL,
 ): () => Promise<T> {
-  return () => hyperliquidRateLimiter.execute(fetcher, requestName, priority);
+  return () => hyperliquidRateLimiter.execute(fetcher, requestName);
 }
 
 /**

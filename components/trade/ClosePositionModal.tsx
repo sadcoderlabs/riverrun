@@ -7,7 +7,7 @@ import { useHyperliquidClient, useOrder } from '@/lib/hyperliquid/hooks';
 import { formatSize } from '@/lib/hyperliquid/format/formatSize';
 import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
 import { formatValue } from '@/lib/hyperliquid/format/formatValue';
-import { hyperliquidRateLimiter, RequestPriority } from '@/lib/hyperliquid/subscription';
+import { hyperliquidRateLimiter } from '@/lib/hyperliquid/subscription';
 
 type Position = hl.ClearinghouseStateResponse['assetPositions'][number]['position'];
 
@@ -149,11 +149,7 @@ export default function ClosePositionModal({
   const handleMidPrice = async () => {
     try {
       // Get mid price from allMids API using rate limiter
-      const allMids = await hyperliquidRateLimiter.execute(
-        () => infoClient.allMids(),
-        'allMids',
-        RequestPriority.HIGH, // User-initiated action
-      );
+      const allMids = await hyperliquidRateLimiter.execute(() => infoClient.allMids(), 'allMids');
       const midPrice = allMids[position.coin];
 
       if (midPrice) {

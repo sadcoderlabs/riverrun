@@ -32,8 +32,7 @@ import './registry/hyperliquidSubscriptions';
 // Export core types
 export type { SubscriptionConfig, SubscriptionState, SubscriptionHandle } from './core/types';
 
-// Export rate limiter types and priority enum
-export { RequestPriority } from './core/RateLimiter';
+// Export rate limiter
 export { hyperliquidRateLimiter } from './core/RateLimiter';
 
 // Export data types

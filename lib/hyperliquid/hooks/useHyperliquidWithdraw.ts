@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { Alert } from 'react-native';
 import { useHyperliquidClient } from '../client/useHyperliquidClient';
 import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
-import { hyperliquidRateLimiter, RequestPriority } from '../subscription';
+import { hyperliquidRateLimiter } from '../subscription';
 
 // Minimum withdrawal amount in USDC
 export const MIN_WITHDRAW_AMOUNT = 2;
@@ -47,7 +47,6 @@ export function useHyperliquidWithdraw(): UseHyperliquidWithdrawResult {
       const state = await hyperliquidRateLimiter.execute(
         () => infoClient.clearinghouseState({ user: wallet.address }),
         'clearinghouseState',
-        RequestPriority.HIGH,
       );
       setWithdrawableBalance(state.withdrawable);
     } catch (error) {

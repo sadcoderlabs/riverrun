@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { Market } from './types';
 import { getInfoClient } from '../client/getter';
-import { hyperliquidRateLimiter, RequestPriority } from '../subscription';
+import { hyperliquidRateLimiter } from '../subscription';
 
 /**
  * Selected market information
@@ -104,11 +104,10 @@ export const useMarketsStore = create<MarketsState>()(
         // Get infoClient internally
         const infoClient = getInfoClient();
 
-        // Use rate limiter with NORMAL priority for refresh
+        // Use rate limiter for refresh
         const [meta, assetCtxs] = await hyperliquidRateLimiter.execute(
           () => infoClient.metaAndAssetCtxs(),
           'metaAndAssetCtxs',
-          RequestPriority.NORMAL,
         );
 
         const markets: Market[] = meta.universe.map((asset: any, index: number) => {

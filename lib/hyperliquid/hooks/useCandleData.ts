@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useInfoClient } from '../client/useInfoClient';
-import { hyperliquidRateLimiter, RequestPriority } from '../subscription';
+import { hyperliquidRateLimiter } from '../subscription';
 
 /**
  * Candle interval type
@@ -144,7 +144,6 @@ export function useCandleData({
             endTime,
           }),
         'candleSnapshot',
-        RequestPriority.NORMAL,
       );
 
       setRawData(candles);

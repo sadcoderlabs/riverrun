@@ -4,7 +4,7 @@
  */
 
 import * as hl from '@nktkas/hyperliquid';
-import { hyperliquidRateLimiter, RequestPriority } from '../subscription';
+import { hyperliquidRateLimiter } from '../subscription';
 
 /**
  * Agent information from Hyperliquid blockchain
@@ -66,7 +66,6 @@ export async function getAgentsFromChain(
     const agents = await hyperliquidRateLimiter.execute(
       () => infoClient.extraAgents({ user: masterAddress }),
       'extraAgents',
-      RequestPriority.NORMAL,
     );
     return agents.map(agent => ({
       address: agent.address,

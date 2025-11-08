@@ -50,29 +50,10 @@ export const REQUEST_WEIGHTS = {
 export type EndpointName = keyof typeof REQUEST_WEIGHTS;
 
 // ============================================================================
-// Priority Levels
-// ============================================================================
-
-export enum RequestPriority {
-  // Critical: Initial HTTP fetch for subscriptions - must execute
-  CRITICAL = 100,
-
-  // High: User-initiated actions (orders, cancels)
-  HIGH = 50,
-
-  // Normal: Regular data fetches
-  NORMAL = 10,
-
-  // Low: Background refreshes from WebSocket callbacks
-  LOW = 1,
-}
-
-// ============================================================================
 // Request Queue Item
 // ============================================================================
 
 interface QueuedRequest<T> {
-  priority: RequestPriority;
   weight: number;
   execute: () => Promise<T>;
   resolve: (value: T) => void;
@@ -108,14 +89,9 @@ export class HyperliquidRateLimiter {
    *
    * @param request - Function that performs the HTTP request
    * @param endpoint - Endpoint name (used to determine weight)
-   * @param priority - Request priority (CRITICAL, HIGH, NORMAL, LOW)
    * @returns Promise that resolves with the request result
    */
-  async execute<T>(
-    request: () => Promise<T>,
-    endpoint: EndpointName | string,
-    priority: RequestPriority = RequestPriority.NORMAL,
-  ): Promise<T> {
+  async execute<T>(request: () => Promise<T>, endpoint: EndpointName | string): Promise<T> {
     // Get weight for this endpoint
     const weight = REQUEST_WEIGHTS[endpoint as EndpointName] ?? REQUEST_WEIGHTS.default;
 
@@ -126,20 +102,19 @@ export class HyperliquidRateLimiter {
     try {
       await this.rateLimiter.consume('hyperliquid', weight);
       console.log(
-        `[RateLimiter] ✅ Executing ${endpoint} (weight: ${weight}, priority: ${priority}, total: ${this.getCurrentWindowUsage()}/1200)`,
+        `[RateLimiter] ✅ Executing ${endpoint} (weight: ${weight}, total: ${this.getCurrentWindowUsage()}/1200)`,
       );
       return await request();
     } catch (rateLimiterRes: any) {
       // Rate limit exceeded - queue the request
       const msBeforeNext = rateLimiterRes?.msBeforeNext || 1000;
       console.log(
-        `[RateLimiter] ⏳ Queued ${endpoint} (weight: ${weight}, wait: ~${msBeforeNext}ms, priority: ${priority}, total: ${this.getCurrentWindowUsage()}/1200)`,
+        `[RateLimiter] ⏳ Queued ${endpoint} (weight: ${weight}, wait: ~${msBeforeNext}ms, total: ${this.getCurrentWindowUsage()}/1200)`,
       );
 
       // Add to queue and wait
       return new Promise<T>((resolve, reject) => {
         this.queue.push({
-          priority,
           weight,
           execute: request,
           resolve,
@@ -148,13 +123,8 @@ export class HyperliquidRateLimiter {
           endpoint,
         });
 
-        // Sort queue by priority (highest first), then by timestamp (oldest first)
-        this.queue.sort((a, b) => {
-          if (a.priority !== b.priority) {
-            return b.priority - a.priority;
-          }
-          return a.timestamp - b.timestamp;
-        });
+        // Sort queue by timestamp (FIFO - oldest first)
+        this.queue.sort((a, b) => a.timestamp - b.timestamp);
 
         // Start processing queue
         void this.processQueue();
@@ -173,7 +143,7 @@ export class HyperliquidRateLimiter {
     this.processing = true;
 
     while (this.queue.length > 0) {
-      const item = this.queue[0]; // Peek at highest priority item
+      const item = this.queue[0]; // Peek at first queued item (FIFO)
 
       try {
         // Try to consume points
@@ -184,7 +154,7 @@ export class HyperliquidRateLimiter {
 
         const waitTime = Date.now() - item.timestamp;
         console.log(
-          `[RateLimiter] ⚡ Executing queued ${item.endpoint} (weight: ${item.weight}, waited: ${waitTime}ms, priority: ${item.priority})`,
+          `[RateLimiter] ⚡ Executing queued ${item.endpoint} (weight: ${item.weight}, waited: ${waitTime}ms)`,
         );
 
         try {
