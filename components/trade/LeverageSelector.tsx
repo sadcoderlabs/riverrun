@@ -1,16 +1,18 @@
 import { LeverageAdjustmentModal } from '@/components/trade/LeverageAdjustmentModal';
+import { useMarginLeverage } from '@/lib/hyperliquid/hooks';
 import { ChevronDown } from '@tamagui/lucide-icons';
 import { useState } from 'react';
 import { Text, XStack } from 'tamagui';
 
 interface LeverageSelectorProps {
-  leverage: number;
-  marginMode: string;
   coin: string;
 }
 
-export function LeverageSelector({ leverage, marginMode, coin }: LeverageSelectorProps) {
+export function LeverageSelector({ coin }: LeverageSelectorProps) {
   const [leverageModalOpen, setLeverageModalOpen] = useState(false);
+
+  // Get real-time margin and leverage data
+  const { marginLeverage } = useMarginLeverage({ coin });
 
   return (
     <>
@@ -28,7 +30,7 @@ export function LeverageSelector({ leverage, marginMode, coin }: LeverageSelecto
         pressStyle={{ opacity: 0.7 }}
       >
         <Text color="$color" fontSize="$2" fontFamily="$interRegular">
-          {leverage}x {marginMode.toUpperCase()}
+          {marginLeverage.leverage}x {marginLeverage.marginMode.toUpperCase()}
         </Text>
         <ChevronDown size="$0.75" color="$color" />
       </XStack>
@@ -37,8 +39,6 @@ export function LeverageSelector({ leverage, marginMode, coin }: LeverageSelecto
       <LeverageAdjustmentModal
         open={leverageModalOpen}
         onOpenChange={setLeverageModalOpen}
-        leverage={leverage}
-        marginMode={marginMode}
         coin={coin}
       />
     </>

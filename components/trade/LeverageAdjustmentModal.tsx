@@ -1,7 +1,6 @@
-import { useHyperliquidClient } from '@/lib/hyperliquid/hooks';
+import { useMarginLeverage } from '@/lib/hyperliquid/hooks';
 import { useCallback, useEffect, useState } from 'react';
 import { Modal, Pressable, StyleSheet } from 'react-native';
-import { toast } from 'sonner-native';
 import { Button, Slider, Spinner, Text, XStack, YStack } from 'tamagui';
 
 const LEVERAGE_MIN = 1;
@@ -11,140 +10,63 @@ const LEVERAGE_STEP = 1;
 interface LeverageAdjustmentModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  leverage: number;
-  marginMode: string;
   coin: string;
 }
 
 export function LeverageAdjustmentModal({
   open,
   onOpenChange,
-  leverage,
-  marginMode,
   coin,
 }: LeverageAdjustmentModalProps) {
-  const { getAgentExchangeClient, getSymbolConverter } = useHyperliquidClient();
-  const [isUpdating, setIsUpdating] = useState(false);
+  // Get real-time margin and leverage data, and update function
+  const { marginLeverage, setMarginLeverage, isUpdating } = useMarginLeverage({ coin });
 
   // Local state to track user's selection before confirming
-  const [selectedLeverage, setSelectedLeverage] = useState(leverage);
-  const [selectedMarginMode, setSelectedMarginMode] = useState(marginMode);
+  const [selectedLeverage, setSelectedLeverage] = useState(marginLeverage.leverage);
+  const [selectedMarginMode, setSelectedMarginMode] = useState<'isolated' | 'cross'>(
+    marginLeverage.marginMode,
+  );
 
-  // Sync local state with props when modal opens
+  // Sync local state with current margin/leverage when modal opens
   useEffect(() => {
     if (open) {
-      setSelectedLeverage(leverage);
-      setSelectedMarginMode(marginMode);
+      setSelectedLeverage(marginLeverage.leverage);
+      setSelectedMarginMode(marginLeverage.marginMode);
     }
-  }, [open, leverage, marginMode]);
+  }, [open, marginLeverage.leverage, marginLeverage.marginMode]);
 
   // Handle margin mode change - immediately call API
   const handleMarginModeChange = useCallback(
-    async (newMode: string) => {
+    async (newMode: 'Cross' | 'Isolated') => {
       if (isUpdating) return;
 
-      const isCross = newMode === 'Cross';
-      setIsUpdating(true);
+      const marginMode: 'isolated' | 'cross' = newMode === 'Cross' ? 'cross' : 'isolated';
 
-      try {
-        const exchangeClient = await getAgentExchangeClient();
-        if (!exchangeClient) {
-          // User cancelled or approval failed
-          setIsUpdating(false);
-          return;
-        }
+      // Update via hook (handles all API logic, error handling, and toasts)
+      await setMarginLeverage({
+        leverage: selectedLeverage,
+        marginMode,
+      });
 
-        const converter = await getSymbolConverter();
-        const assetId = converter.getAssetId(coin);
-
-        if (assetId === undefined) {
-          toast.error('Invalid Asset', {
-            description: `Unable to find asset ID for ${coin}`,
-          });
-          setIsUpdating(false);
-          return;
-        }
-
-        await exchangeClient.updateLeverage({
-          asset: assetId,
-          isCross,
-          leverage: selectedLeverage,
-        });
-
-        // Update local state (WebSocket will update parent component)
-        setSelectedMarginMode(newMode);
-
-        toast.success('Margin Mode Updated', {
-          description: `Successfully switched to ${newMode} margin mode for ${coin}`,
-        });
-      } catch (error) {
-        console.error('Failed to update margin mode:', error);
-        toast.error('Failed to Update Margin Mode', {
-          description: error instanceof Error ? error.message : 'An error occurred',
-        });
-      } finally {
-        setIsUpdating(false);
-      }
+      // Update local state (WebSocket will update the hook's data)
+      setSelectedMarginMode(marginMode);
     },
-    [coin, getAgentExchangeClient, getSymbolConverter, isUpdating, selectedLeverage],
+    [isUpdating, selectedLeverage, setMarginLeverage],
   );
 
   // Handle leverage confirmation - call API on confirm button
   const handleConfirm = useCallback(async () => {
     if (isUpdating) return;
 
-    const isCross = selectedMarginMode === 'Cross';
-    setIsUpdating(true);
+    // Update via hook (handles all API logic, error handling, and toasts)
+    await setMarginLeverage({
+      leverage: selectedLeverage,
+      marginMode: selectedMarginMode,
+    });
 
-    try {
-      const exchangeClient = await getAgentExchangeClient();
-      if (!exchangeClient) {
-        // User cancelled or approval failed
-        setIsUpdating(false);
-        return;
-      }
-
-      const converter = await getSymbolConverter();
-      const assetId = converter.getAssetId(coin);
-
-      if (assetId === undefined) {
-        toast.error('Invalid Asset', {
-          description: `Unable to find asset ID for ${coin}`,
-        });
-        setIsUpdating(false);
-        return;
-      }
-
-      await exchangeClient.updateLeverage({
-        asset: assetId,
-        isCross,
-        leverage: selectedLeverage,
-      });
-
-      // WebSocket will update parent component with new leverage
-      toast.success('Leverage Updated', {
-        description: `Successfully set leverage to ${selectedLeverage}x for ${coin}`,
-      });
-
-      // Close modal
-      onOpenChange(false);
-    } catch (error) {
-      console.error('Failed to update leverage:', error);
-      toast.error('Failed to Update Leverage', {
-        description: error instanceof Error ? error.message : 'An error occurred',
-      });
-    } finally {
-      setIsUpdating(false);
-    }
-  }, [
-    coin,
-    getAgentExchangeClient,
-    getSymbolConverter,
-    isUpdating,
-    onOpenChange,
-    selectedLeverage,
-    selectedMarginMode,
-  ]);
+    // Close modal on success
+    onOpenChange(false);
+  }, [isUpdating, onOpenChange, selectedLeverage, selectedMarginMode, setMarginLeverage]);
 
   return (
     <Modal
@@ -203,8 +125,8 @@ export function LeverageAdjustmentModal({
               <XStack gap="$2">
                 <Button
                   flex={1}
-                  backgroundColor={selectedMarginMode === 'Cross' ? '$accent9' : 'transparent'}
-                  borderColor={selectedMarginMode === 'Cross' ? '$accent9' : '$gray8'}
+                  backgroundColor={selectedMarginMode === 'cross' ? '$accent9' : 'transparent'}
+                  borderColor={selectedMarginMode === 'cross' ? '$accent9' : '$gray8'}
                   borderWidth={1}
                   paddingVertical="$2.5"
                   onPress={() => handleMarginModeChange('Cross')}
@@ -216,15 +138,15 @@ export function LeverageAdjustmentModal({
                   <Text
                     fontFamily="$interSemiBold"
                     fontSize="$3"
-                    color={selectedMarginMode === 'Cross' ? '$accent1' : '$color'}
+                    color={selectedMarginMode === 'cross' ? '$accent1' : '$color'}
                   >
                     Cross
                   </Text>
                 </Button>
                 <Button
                   flex={1}
-                  backgroundColor={selectedMarginMode === 'Isolated' ? '$accent9' : 'transparent'}
-                  borderColor={selectedMarginMode === 'Isolated' ? '$accent9' : '$gray8'}
+                  backgroundColor={selectedMarginMode === 'isolated' ? '$accent9' : 'transparent'}
+                  borderColor={selectedMarginMode === 'isolated' ? '$accent9' : '$gray8'}
                   borderWidth={1}
                   paddingVertical="$2.5"
                   onPress={() => handleMarginModeChange('Isolated')}
@@ -236,7 +158,7 @@ export function LeverageAdjustmentModal({
                   <Text
                     fontFamily="$interSemiBold"
                     fontSize="$3"
-                    color={selectedMarginMode === 'Isolated' ? '$accent1' : '$color'}
+                    color={selectedMarginMode === 'isolated' ? '$accent1' : '$color'}
                   >
                     Isolated
                   </Text>

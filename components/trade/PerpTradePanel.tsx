@@ -11,7 +11,6 @@ import {
   type TpSlResult,
   type TpSlValidationResult,
 } from '@/components/trade/TpSlInput';
-import { formatMarginMode } from '@/lib/hyperliquid/format/formatMarginMode';
 import { formatSize } from '@/lib/hyperliquid/format/formatSize';
 import { formatValue } from '@/lib/hyperliquid/format/formatValue';
 import {
@@ -43,10 +42,9 @@ export function PerpTradePanel() {
     coin,
   });
 
-  // Subscribe to real-time margin and leverage data
+  // Subscribe to real-time margin and leverage data (for margin calculation and order forms)
   const { marginLeverage } = useMarginLeverage({ coin });
   const leverage = marginLeverage.leverage;
-  const marginMode = formatMarginMode(marginLeverage.marginMode);
 
   // Subscribe to real-time available margin data
   const { longAvailableToTrade, shortAvailableToTrade } = useAvailableToTrade({ coin });
@@ -195,7 +193,7 @@ export function PerpTradePanel() {
         {/* Trading Form */}
         <YStack paddingHorizontal="$3" paddingTop="$1" paddingBottom="$3" gap="$2.5">
           {/* Leverage & Margin Type Selector */}
-          <LeverageSelector leverage={leverage} marginMode={marginMode} coin={coin} />
+          <LeverageSelector coin={coin} />
 
           {/* Available to Trade */}
           <XStack justifyContent="space-between" alignItems="center">
