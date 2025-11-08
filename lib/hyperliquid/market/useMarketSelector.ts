@@ -2,10 +2,13 @@ import { useCallback, useMemo, useState } from 'react';
 import type { Market } from './types';
 import { useMarketsStore } from './useMarketsStore';
 import { useAllMids } from './useAllMids';
+import { useThrottle } from '@/lib/riverrun/hooks';
 
 interface UseMarketSelectorParams {
   /** Whether to enable real-time price updates */
   enableRealtimePrices?: boolean;
+  /** Throttle delay for real-time price updates in milliseconds (default: 100ms) */
+  throttleDelay?: number;
 }
 
 interface UseMarketSelectorResult {
@@ -37,14 +40,20 @@ interface UseMarketSelectorResult {
  * - Modal open/close state management
  * - Search query management
  * - Markets filtering and sorting
- * - Real-time price integration
+ * - Real-time price integration with throttling
  * - Favorites management
+ *
+ * Performance optimizations:
+ * - Throttles real-time price updates to reduce re-renders
+ * - Only creates new market objects when prices actually change
+ * - Works with React.memo in MarketListItem for optimal performance
  *
  * @param params - Configuration options
  * @returns Market selector state and actions
  */
 export function useMarketSelector({
   enableRealtimePrices = true,
+  throttleDelay = 100,
 }: UseMarketSelectorParams = {}): UseMarketSelectorResult {
   const { markets, favorites, toggleFavorite } = useMarketsStore();
 
@@ -55,7 +64,11 @@ export function useMarketSelector({
   const [searchQuery, setSearchQuery] = useState('');
 
   // Real-time prices (only when modal is open)
-  const { data: allMidsData } = useAllMids({ enabled: isOpen && enableRealtimePrices });
+  const { data: rawAllMidsData } = useAllMids({ enabled: isOpen && enableRealtimePrices });
+
+  // Throttle price updates to reduce re-render frequency
+  // WebSocket may push updates every 10-50ms, throttling to 100ms reduces load
+  const allMidsData = useThrottle(rawAllMidsData, throttleDelay);
 
   // Open modal
   const open = useCallback(() => {
@@ -70,6 +83,7 @@ export function useMarketSelector({
 
   /**
    * Compute filtered and sorted markets with real-time prices
+   * Optimization: Only create new objects when price actually changes
    */
   const filteredMarkets = useMemo(() => {
     if (markets.length === 0) return [];
@@ -81,25 +95,33 @@ export function useMarketSelector({
           const coinSymbol = market.id.replace('-USD', '').replace('/USDC', '').split('/')[0];
 
           // Get real-time mid price if available
-          const realtimeMidPrice = allMidsData?.mids[coinSymbol];
+          const realtimeMidPriceStr = allMidsData?.mids[coinSymbol];
 
-          // If we have real-time price, update the market data
-          if (realtimeMidPrice) {
-            const currentPrice = parseFloat(realtimeMidPrice);
-            const prevDayPrice = market.price / (1 + market.change / 100); // Calculate prev day price from stored change
-            const priceChange =
-              prevDayPrice > 0
-                ? ((currentPrice - prevDayPrice) / prevDayPrice) * 100
-                : market.change;
+          // If no real-time price available, return original market object
+          if (!realtimeMidPriceStr) return market;
 
-            return {
-              ...market,
-              price: currentPrice,
-              change: priceChange,
-            };
+          const realtimePrice = parseFloat(realtimeMidPriceStr);
+
+          // Key optimization: Only create new object if price actually changed
+          // This allows React.memo to skip re-render for unchanged items
+          const PRICE_EPSILON = 0.0001; // Consider prices within 0.01% as unchanged
+          if (Math.abs(realtimePrice - market.price) < PRICE_EPSILON) {
+            return market; // Return same reference - React.memo won't re-render
           }
 
-          return market;
+          // Price changed - calculate new change percentage
+          const prevDayPrice = market.price / (1 + market.change / 100);
+          const priceChange =
+            prevDayPrice > 0
+              ? ((realtimePrice - prevDayPrice) / prevDayPrice) * 100
+              : market.change;
+
+          // Create new object only when price changed
+          return {
+            ...market,
+            price: realtimePrice,
+            change: priceChange,
+          };
         })
       : markets;
 

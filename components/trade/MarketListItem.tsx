@@ -1,5 +1,6 @@
 import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
 import { Star } from '@tamagui/lucide-icons';
+import { memo } from 'react';
 import { Text, XStack, YStack } from 'tamagui';
 
 type Market = {
@@ -17,7 +18,11 @@ interface MarketListItemProps extends Market {
   onToggleFavorite?: (marketId: string) => void;
 }
 
-export function MarketListItem({
+/**
+ * Market list item component with performance optimizations
+ * Uses React.memo to prevent re-renders when props haven't changed
+ */
+const MarketListItemComponent = ({
   id,
   name,
   price,
@@ -27,7 +32,7 @@ export function MarketListItem({
   isFavorite = false,
   onPress,
   onToggleFavorite,
-}: MarketListItemProps) {
+}: MarketListItemProps) => {
   const isPriceUp = change >= 0;
 
   const handleStarPress = (e: any) => {
@@ -88,4 +93,41 @@ export function MarketListItem({
       </XStack>
     </YStack>
   );
+};
+
+/**
+ * Custom comparison function for React.memo
+ * Only re-render when these specific props change
+ * This is critical for performance with real-time price updates
+ */
+function arePropsEqual(prev: MarketListItemProps, next: MarketListItemProps): boolean {
+  // Always re-render if ID changed (shouldn't happen, but safety check)
+  if (prev.id !== next.id) return false;
+
+  // Re-render if price changed (most common case with real-time updates)
+  if (prev.price !== next.price) return false;
+
+  // Re-render if price change percentage changed
+  if (prev.change !== next.change) return false;
+
+  // Re-render if favorite status changed
+  if (prev.isFavorite !== next.isFavorite) return false;
+
+  // Static data - should never change, but check for safety
+  if (prev.name !== next.name) return false;
+  if (prev.maxLeverage !== next.maxLeverage) return false;
+  if (prev.szDecimals !== next.szDecimals) return false;
+
+  // Callbacks are stable from useCallback, but check if reference changed
+  if (prev.onPress !== next.onPress) return false;
+  if (prev.onToggleFavorite !== next.onToggleFavorite) return false;
+
+  // All relevant props are equal - skip re-render
+  return true;
 }
+
+/**
+ * Memoized MarketListItem component
+ * Prevents unnecessary re-renders when only other items in the list change
+ */
+export const MarketListItem = memo(MarketListItemComponent, arePropsEqual);
