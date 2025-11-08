@@ -78,8 +78,8 @@ export function useMarketSelector({
   const [sortBy, setSortBy] = useState<SortOption>('volume');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
-  // Real-time prices (only when modal is open)
-  const { data: rawAllMidsData } = useAllMids({ enabled: isOpen && enableRealtimePrices });
+  // Real-time prices (controlled by enableRealtimePrices parameter)
+  const { data: rawAllMidsData } = useAllMids({ enabled: enableRealtimePrices });
 
   // Throttle price updates to reduce re-render frequency
   // WebSocket may push updates every 10-50ms, throttling to 100ms reduces load

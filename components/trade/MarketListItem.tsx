@@ -56,7 +56,7 @@ const MarketListItemComponent = ({
   return (
     <XStack
       paddingVertical="$2.5"
-      paddingHorizontal="$3"
+      paddingHorizontal="$2"
       onPress={onPress}
       pressStyle={{ opacity: 0.7, backgroundColor: '$gray2' }}
       backgroundColor="$background"
@@ -64,9 +64,9 @@ const MarketListItemComponent = ({
       gap="$3"
     >
       {/* Left Column: Star + Market Name + Leverage + Volume */}
-      <XStack flex={1} gap="$2" alignItems="center">
+      <XStack flex={1} gap="$1.5" alignItems="center">
         {/* Star Icon */}
-        <XStack onPress={handleStarPress} pressStyle={{ opacity: 0.7 }} padding="$2">
+        <XStack onPress={handleStarPress} pressStyle={{ opacity: 0.7 }} padding="$1.5">
           <Star
             size="$1"
             color={isFavorite ? '#FDB022' : '$gray9'}

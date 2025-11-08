@@ -153,9 +153,9 @@ export function MarketSelectorModal({ open, onOpenChange }: MarketSelectorModalP
                     </Text>
                     {sortBy === 'name' &&
                       (sortDirection === 'asc' ? (
-                        <ArrowUp size="$0.5" color="$gray10" />
+                        <ArrowUp size="$0.75" color="$gray10" />
                       ) : (
-                        <ArrowDown size="$0.5" color="$gray10" />
+                        <ArrowDown size="$0.75" color="$gray10" />
                       ))}
                   </XStack>
                 </Button>
@@ -172,9 +172,9 @@ export function MarketSelectorModal({ open, onOpenChange }: MarketSelectorModalP
                     </Text>
                     {sortBy === 'volume' &&
                       (sortDirection === 'asc' ? (
-                        <ArrowUp size="$0.5" color="$gray10" />
+                        <ArrowUp size="$0.75" color="$gray10" />
                       ) : (
-                        <ArrowDown size="$0.5" color="$gray10" />
+                        <ArrowDown size="$0.75" color="$gray10" />
                       ))}
                   </XStack>
                 </Button>
@@ -196,9 +196,9 @@ export function MarketSelectorModal({ open, onOpenChange }: MarketSelectorModalP
                   </Text>
                   {sortBy === 'price' &&
                     (sortDirection === 'asc' ? (
-                      <ArrowUp size="$0.5" color="$gray10" />
+                      <ArrowUp size="$0.75" color="$gray10" />
                     ) : (
-                      <ArrowDown size="$0.5" color="$gray10" />
+                      <ArrowDown size="$0.75" color="$gray10" />
                     ))}
                 </XStack>
               </Button>
@@ -219,9 +219,9 @@ export function MarketSelectorModal({ open, onOpenChange }: MarketSelectorModalP
                   </Text>
                   {sortBy === 'change' &&
                     (sortDirection === 'asc' ? (
-                      <ArrowUp size="$0.5" color="$gray10" />
+                      <ArrowUp size="$0.75" color="$gray10" />
                     ) : (
-                      <ArrowDown size="$0.5" color="$gray10" />
+                      <ArrowDown size="$0.75" color="$gray10" />
                     ))}
                 </XStack>
               </Button>
