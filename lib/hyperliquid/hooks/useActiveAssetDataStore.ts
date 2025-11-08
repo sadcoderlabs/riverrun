@@ -15,7 +15,6 @@ interface CoinSubscription {
   refCount: number; // Number of components using this subscription
   lastHttpFetch: number; // Timestamp of last HTTP fetch
   httpFetched: boolean; // Whether HTTP fetch has completed
-  cleanupTimeout?: ReturnType<typeof setTimeout>; // Delayed cleanup timer
 }
 
 interface ActiveAssetDataStoreState {
@@ -31,14 +30,12 @@ interface ActiveAssetDataStoreState {
 }
 
 const MIN_HTTP_FETCH_INTERVAL = 500; // 500ms minimum between HTTP fetches per coin
-const CLEANUP_DELAY = 50; // 50ms delay before cleanup (allows reuse on quick switches)
 
 /**
  * Centralized store for activeAssetData subscriptions
  *
  * Features:
  * - Reference counting: multiple components can share one subscription
- * - Delayed cleanup: reuses subscriptions on quick market switches
  * - Rate limiting: prevents rapid HTTP requests
  * - Hybrid strategy: HTTP fetch + WebSocket subscription
  */
@@ -50,22 +47,19 @@ export const useActiveAssetDataStore = create<ActiveAssetDataStoreState>((set, g
     const state = get();
     const existing = state.subscriptions.get(key);
 
-    // Case 1: Subscription exists - increment refCount and cancel cleanup
+    // Case 1: Subscription exists - increment refCount
     if (existing) {
-      if (existing.cleanupTimeout) {
-        clearTimeout(existing.cleanupTimeout);
-        console.log(`[useActiveAssetDataStore] ⏸️  Cancelled cleanup for ${coin}`);
-      }
-
-      existing.refCount++;
-      existing.cleanupTimeout = undefined;
+      const updatedSub: CoinSubscription = {
+        ...existing,
+        refCount: existing.refCount + 1,
+      };
 
       set({
-        subscriptions: new Map(state.subscriptions).set(key, existing),
+        subscriptions: new Map(state.subscriptions).set(key, updatedSub),
       });
 
       console.log(
-        `[useActiveAssetDataStore] 🔄 Reusing subscription for ${coin} (refCount: ${existing.refCount})`,
+        `[useActiveAssetDataStore] 🔄 Reusing subscription for ${coin} (refCount: ${updatedSub.refCount})`,
       );
       return;
     }
@@ -83,7 +77,6 @@ export const useActiveAssetDataStore = create<ActiveAssetDataStoreState>((set, g
       refCount: 1,
       lastHttpFetch: 0,
       httpFetched: false,
-      cleanupTimeout: undefined,
     };
 
     // Update store immediately with loading state
@@ -195,8 +188,10 @@ export const useActiveAssetDataStore = create<ActiveAssetDataStoreState>((set, g
 
   unsubscribe: async (user, coin) => {
     const key = `${user}-${coin}`;
-    const state = get();
-    const existing = state.subscriptions.get(key);
+
+    // Get current state to check refCount and prepare for cleanup
+    const currentState = get();
+    const existing = currentState.subscriptions.get(key);
 
     if (!existing) {
       console.warn(
@@ -205,53 +200,36 @@ export const useActiveAssetDataStore = create<ActiveAssetDataStoreState>((set, g
       return;
     }
 
-    // Decrement refCount
-    existing.refCount--;
+    const newRefCount = existing.refCount - 1;
 
     // If still in use by other components, just update refCount
-    if (existing.refCount > 0) {
+    if (newRefCount > 0) {
+      const updatedSub: CoinSubscription = {
+        ...existing,
+        refCount: newRefCount,
+      };
+
       set({
-        subscriptions: new Map(state.subscriptions).set(key, existing),
+        subscriptions: new Map(currentState.subscriptions).set(key, updatedSub),
       });
       return;
     }
 
-    // Schedule cleanup with delay (allows reuse on quick switches)
-    console.log(
-      `[useActiveAssetDataStore] ⏱️  Scheduling cleanup for ${coin} in ${CLEANUP_DELAY}ms`,
-    );
+    // refCount reached 0, perform cleanup
+    console.log(`[useActiveAssetDataStore] 🧹 Cleaning up subscription for ${coin}`);
 
-    existing.cleanupTimeout = setTimeout(async () => {
-      const currentState = get();
-      const currentSub = currentState.subscriptions.get(key);
+    // Remove from map immediately to prevent duplicate cleanup
+    const newSubscriptions = new Map(currentState.subscriptions);
+    newSubscriptions.delete(key);
+    set({ subscriptions: newSubscriptions });
 
-      // Double-check refCount (may have been resubscribed)
-      if (!currentSub || currentSub.refCount > 0) {
-        console.log(`[useActiveAssetDataStore] ⏸️  Skipping cleanup for ${coin} (resubscribed)`);
-        return;
+    // Cleanup the WebSocket subscription
+    if (existing.subscription) {
+      try {
+        await existing.subscription.unsubscribe();
+      } catch (err) {
+        console.error(`[useActiveAssetDataStore] ❌ Error unsubscribing from ${coin}:`, err);
       }
-
-      // Perform cleanup
-      console.log(`[useActiveAssetDataStore] 🧹 Cleaning up subscription for ${coin}`);
-
-      if (currentSub.subscription) {
-        try {
-          await currentSub.subscription.unsubscribe();
-        } catch (err) {
-          console.error(`[useActiveAssetDataStore] ❌ Error unsubscribing from ${coin}:`, err);
-        }
-      }
-
-      // Remove from map
-      const newSubscriptions = new Map(currentState.subscriptions);
-      newSubscriptions.delete(key);
-
-      set({ subscriptions: newSubscriptions });
-    }, CLEANUP_DELAY);
-
-    // Update store with cleanup timer
-    set({
-      subscriptions: new Map(state.subscriptions).set(key, existing),
-    });
+    }
   },
 }));

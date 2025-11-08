@@ -36,7 +36,6 @@ interface UseActiveAssetDataResult {
  * - Shared subscriptions: multiple components can subscribe to same coin (ref counting)
  * - Hybrid strategy: fast HTTP fetch + real-time WebSocket updates
  * - AppState lifecycle management (pauses in background)
- * - Delayed cleanup: reuses subscriptions on quick market switches
  * - Rate limiting: prevents rapid HTTP requests
  *
  * Architecture:
