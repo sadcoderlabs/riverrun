@@ -25,6 +25,8 @@ import { TamaguiProvider, View } from 'tamagui';
 import { arbitrum } from 'viem/chains';
 import { useAppLifecycle } from '@/lib/hyperliquid/hooks/useAppLifecycle';
 import { subscriptionManager } from '@/lib/hyperliquid/subscription';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from '@/lib/reactQuery';
 
 // Suppress known WalletConnect warnings during session restoration
 LogBox.ignoreLogs(['emitting session_request', 'without any listeners']);
@@ -160,33 +162,35 @@ export default function RootLayout() {
   return (
     <>
       <SafeAreaProvider>
-        <AppKitProvider instance={appKit}>
-          <PrivyProvider
-            appId="cmhaalv5t00jmjt0dyv6yby9h"
-            clientId="client-WY6SSrDi1gWJqto3F2v88JkVeyd9aJJpCUweNA1dhFF92"
-            supportedChains={[arbitrum]}
-            config={{
-              embedded: {
-                ethereum: {
-                  createOnLogin: 'users-without-wallets',
+        <QueryClientProvider client={queryClient}>
+          <AppKitProvider instance={appKit}>
+            <PrivyProvider
+              appId="cmhaalv5t00jmjt0dyv6yby9h"
+              clientId="client-WY6SSrDi1gWJqto3F2v88JkVeyd9aJJpCUweNA1dhFF92"
+              supportedChains={[arbitrum]}
+              config={{
+                embedded: {
+                  ethereum: {
+                    createOnLogin: 'users-without-wallets',
+                  },
                 },
-              },
-            }}
-          >
-            <TamaguiProvider config={tamaguiConfig} defaultTheme={effectiveTheme}>
-              <GestureHandlerRootView>
-                <ActionSheetProvider>
-                  <View style={{ flex: 1 }}>
-                    <WalletInfoDisplay />
-                  </View>
-                </ActionSheetProvider>
-                <Toaster />
-              </GestureHandlerRootView>
-              <PrivyElements />
-            </TamaguiProvider>
-            <AppKit />
-          </PrivyProvider>
-        </AppKitProvider>
+              }}
+            >
+              <TamaguiProvider config={tamaguiConfig} defaultTheme={effectiveTheme}>
+                <GestureHandlerRootView>
+                  <ActionSheetProvider>
+                    <View style={{ flex: 1 }}>
+                      <WalletInfoDisplay />
+                    </View>
+                  </ActionSheetProvider>
+                  <Toaster />
+                </GestureHandlerRootView>
+                <PrivyElements />
+              </TamaguiProvider>
+              <AppKit />
+            </PrivyProvider>
+          </AppKitProvider>
+        </QueryClientProvider>
       </SafeAreaProvider>
     </>
   );

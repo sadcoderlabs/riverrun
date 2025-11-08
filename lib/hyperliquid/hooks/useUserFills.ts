@@ -1,11 +1,16 @@
 /**
- * Hook to manage user's fill history using unified subscription system
+ * Hook to manage user's fill history
+ *
+ * Architecture:
+ * - TanStack Query: Handles HTTP fetch with automatic deduplication and caching
+ * - WebSocket Subscription: Provides real-time fill updates
+ * - Manual Merging: Combines HTTP initial data with WebSocket incremental updates
  *
  * Features:
- * - Reference counting: multiple components share one subscription
- * - Global rate limiting: prevents 429 errors
- * - Hybrid strategy: fast HTTP fetch + real-time WebSocket updates
- * - App lifecycle management: automatic pause/resume
+ * - Request deduplication: Multiple components share one HTTP request
+ * - Global rate limiting: All HTTP requests respect 1200 weight/min limit
+ * - Real-time updates: WebSocket provides incremental fills
+ * - Smart caching: Reduces unnecessary API calls
  *
  * Returns fills in chronological order (most recent first)
  */
@@ -13,7 +18,10 @@
 import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
 import { useSubscription, type UserFillsData } from '../subscription';
 import type { Fill } from '../types/fills';
-import { useMemo, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { createRateLimitedQuery } from '@/lib/reactQuery';
+import { getInfoClient } from '../client/getter';
 
 // ============================================================================
 // Hook Interface
@@ -22,12 +30,10 @@ import { useMemo, useState, useCallback } from 'react';
 export interface UseUserFillsResult {
   /** All fills in chronological order (most recent first) */
   fills: Fill[];
-  /** Loading state */
+  /** Loading state (true if either HTTP or WS is loading) */
   isLoading: boolean;
   /** Error state */
   error: Error | undefined;
-  /** Refetch fills (not implemented in unified subscription) */
-  refetch: () => Promise<void>;
 }
 
 // ============================================================================
@@ -36,61 +42,66 @@ export interface UseUserFillsResult {
 
 export function useUserFills(): UseUserFillsResult {
   const { wallet } = useActiveWallet();
+  const [mergedFills, setMergedFills] = useState<Fill[]>([]);
 
-  // Subscribe using unified subscription system
-  const { data, isLoading, error } = useSubscription<UserFillsData>(
+  // Step 1: HTTP fetch initial fills using TanStack Query
+  // - Automatic deduplication across components
+  // - Smart caching (30s stale time from queryClient config)
+  // - Rate limited via createRateLimitedQuery wrapper
+  const {
+    data: httpData,
+    isLoading: isHttpLoading,
+    error: httpError,
+  } = useQuery({
+    queryKey: ['userFills', wallet?.address],
+    queryFn: createRateLimitedQuery('userFills', async () => {
+      if (!wallet) return null;
+      const infoClient = getInfoClient();
+      const fills = (await infoClient.userFills({ user: wallet.address })) as Fill[];
+      return fills.sort((a, b) => b.time - a.time);
+    }),
+    enabled: !!wallet,
+  });
+
+  // Initialize mergedFills with HTTP data
+  useEffect(() => {
+    if (httpData) {
+      setMergedFills(httpData);
+    }
+  }, [httpData]);
+
+  // Step 2: WebSocket subscription for real-time incremental updates
+  // - Managed by SubscriptionManager (automatic deduplication)
+  // - Receives new fills as they occur
+  const { data: wsData } = useSubscription<UserFillsData>(
     'userFills',
     wallet ? { user: wallet.address } : undefined,
   );
 
-  // Merged fills state (combining HTTP initial data with WebSocket updates)
-  const [mergedFills, setMergedFills] = useState<Fill[]>([]);
+  // Step 3: Merge WebSocket incremental updates with existing fills
+  useEffect(() => {
+    if (wsData?.fills && wsData.fills.length > 0) {
+      setMergedFills(prevFills => {
+        // Merge using Map to deduplicate by tid
+        const fillMap = new Map<number, Fill>();
 
-  // Merge new fills with existing fills when data changes
-  useMemo(() => {
-    if (!data?.fills) {
-      setMergedFills([]);
-      return;
+        // Add existing fills
+        prevFills.forEach(fill => fillMap.set(fill.tid, fill));
+
+        // Add/update with new fills from WebSocket
+        wsData.fills.forEach(fill => fillMap.set(fill.tid, fill));
+
+        // Convert back to array and sort by time (most recent first)
+        return Array.from(fillMap.values()).sort((a, b) => b.time - a.time);
+      });
     }
+  }, [wsData?.fills]);
 
-    setMergedFills(prevFills => {
-      // If this is first data (HTTP fetch), replace all
-      if (prevFills.length === 0) {
-        return data.fills;
-      }
-
-      // Merge new fills with existing (remove duplicates by tid)
-      const fillMap = new Map<number, Fill>();
-
-      // Add existing fills
-      prevFills.forEach(fill => {
-        fillMap.set(fill.tid, fill);
-      });
-
-      // Add/update with new fills
-      data.fills.forEach(fill => {
-        fillMap.set(fill.tid, fill);
-      });
-
-      // Convert back to array and sort by time (most recent first)
-      return Array.from(fillMap.values()).sort((a, b) => b.time - a.time);
-    });
-  }, [data?.fills]);
-
-  // Refetch function (no-op in unified subscription system)
-  const refetch = useCallback(async () => {
-    console.warn('[useUserFills] refetch() is not implemented in unified subscription system');
-  }, []);
-
-  return useMemo(
-    () => ({
-      fills: mergedFills,
-      isLoading,
-      error,
-      refetch,
-    }),
-    [mergedFills, isLoading, error, refetch],
-  );
+  return {
+    fills: mergedFills,
+    isLoading: isHttpLoading,
+    error: httpError || undefined,
+  };
 }
 
 // Re-export types for convenience

@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { subscriptionRegistry } from './SubscriptionRegistry';
 import type { SubscriptionEntry, SubscriptionHandle } from './types';
-import { hyperliquidRateLimiter, RequestPriority } from './RateLimiter';
 
 /**
  * Centralized subscription manager state
@@ -109,8 +108,6 @@ class SubscriptionManager {
       isLoading: true,
       error: undefined,
       subscription: null,
-      lastHttpFetch: 0,
-      httpFetched: false,
       isPaused: false,
       params,
       callback,
@@ -121,58 +118,7 @@ class SubscriptionManager {
       subscriptions: new Map(prevState.subscriptions).set(storeKey, newEntry),
     }));
 
-    // Step 1: HTTP fetch for initial data (if configured)
-    // Uses weight-based rate limiting with CRITICAL priority
-    // CRITICAL priority guarantees initial fetches execute (may be queued if rate limited)
-    if (config.httpFetch) {
-      try {
-        const startTime = Date.now();
-
-        // Execute with CRITICAL priority to guarantee initial data loads
-        const httpData = await hyperliquidRateLimiter.execute(
-          () => config.httpFetch!(params),
-          type, // Subscription type matches endpoint name (e.g., 'webData2', 'userFills')
-          RequestPriority.CRITICAL,
-        );
-
-        const duration = Date.now() - startTime;
-
-        // Only update if subscription still exists
-        const currentState = useSubscriptionStore.getState();
-        const currentEntry = currentState.subscriptions.get(storeKey);
-
-        if (currentEntry) {
-          console.log(
-            `[SubscriptionManager] ✅ HTTP fetch for ${type}:${key} completed in ${duration}ms`,
-          );
-
-          const updatedEntry: SubscriptionEntry<TData> = {
-            ...currentEntry,
-            data: httpData,
-            isLoading: false,
-            httpFetched: true,
-          };
-
-          useSubscriptionStore.setState(prevState => ({
-            subscriptions: new Map(prevState.subscriptions).set(storeKey, updatedEntry),
-          }));
-
-          // Call callback with HTTP data
-          if (callback) {
-            callback(httpData);
-          }
-        }
-      } catch (err) {
-        // Only log if subscription still exists
-        const currentState = useSubscriptionStore.getState();
-        if (currentState.subscriptions.has(storeKey)) {
-          console.error(`[SubscriptionManager] ⚠️ HTTP fetch failed for ${type}:${key}:`, err);
-        }
-        // Don't set error, will try WebSocket
-      }
-    }
-
-    // Step 2: Set up WebSocket subscription
+    // Set up WebSocket subscription
     try {
       const subscription = await config.subscribe(params, (data: TData) => {
         const currentState = useSubscriptionStore.getState();
@@ -182,8 +128,7 @@ class SubscriptionManager {
           const updatedEntry: SubscriptionEntry<TData> = {
             ...currentEntry,
             data,
-            // If HTTP didn't complete yet, WebSocket is the first result
-            isLoading: currentEntry.httpFetched ? currentEntry.isLoading : false,
+            isLoading: false,
           };
 
           useSubscriptionStore.setState(prevState => ({
@@ -222,18 +167,15 @@ class SubscriptionManager {
           err,
         );
 
-        // Only set error if both HTTP and WebSocket failed
-        if (!currentEntry.httpFetched) {
-          const updatedEntry: SubscriptionEntry<TData> = {
-            ...currentEntry,
-            error: err instanceof Error ? err : new Error('Failed to fetch data'),
-            isLoading: false,
-          };
+        const updatedEntry: SubscriptionEntry<TData> = {
+          ...currentEntry,
+          error: err instanceof Error ? err : new Error('Failed to fetch data'),
+          isLoading: false,
+        };
 
-          useSubscriptionStore.setState(prevState => ({
-            subscriptions: new Map(prevState.subscriptions).set(storeKey, updatedEntry),
-          }));
-        }
+        useSubscriptionStore.setState(prevState => ({
+          subscriptions: new Map(prevState.subscriptions).set(storeKey, updatedEntry),
+        }));
       }
     }
 

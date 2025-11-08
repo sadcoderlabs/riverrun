@@ -1,6 +1,9 @@
 import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
 import { useSubscription, type WebData2Data } from '../subscription';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { createRateLimitedQuery } from '@/lib/reactQuery';
+import { getInfoClient } from '../client/getter';
 
 export interface UseWebData2Result {
   data: WebData2Data | undefined;
@@ -19,16 +22,18 @@ export interface UseWebData2Result {
 }
 
 /**
- * Hook to subscribe to Hyperliquid's webData2 WebSocket feed
- * for comprehensive real-time account data including both perpetual and spot trading.
+ * Hook to subscribe to Hyperliquid's webData2 for comprehensive real-time account data
  *
- * This hook uses the unified subscription system which provides:
- * - Reference counting: multiple components share one subscription
- * - Global rate limiting: prevents 429 errors
- * - Hybrid approach: fast HTTP fetch + WebSocket updates
+ * Architecture:
+ * - TanStack Query: Handles HTTP fetch with automatic deduplication and caching
+ * - WebSocket Subscription: Provides real-time updates
+ * - Manual Merging: Prefers WebSocket data when available, falls back to HTTP
  *
- * The totalAccountValue is calculated as:
- * perpAccountValue + spotAccountValue
+ * Features:
+ * - Request deduplication: Multiple components share one HTTP request
+ * - Global rate limiting: All HTTP requests respect 1200 weight/min limit
+ * - Real-time updates: WebSocket provides incremental updates
+ * - Smart caching: Reduces unnecessary API calls
  *
  * IMPORTANT: This hook safely handles accounts with no positions.
  * When an account has no spot positions, the API may not return the `spotState` field at all.
@@ -36,12 +41,45 @@ export interface UseWebData2Result {
  */
 export function useWebData2(): UseWebData2Result {
   const { wallet } = useActiveWallet();
+  const [mergedData, setMergedData] = useState<WebData2Data | undefined>();
 
-  // Subscribe using unified subscription system
-  const { data, isLoading, error } = useSubscription<WebData2Data>(
+  // Step 1: HTTP fetch initial data using TanStack Query
+  const {
+    data: httpData,
+    isLoading: isHttpLoading,
+    error: httpError,
+  } = useQuery({
+    queryKey: ['webData2', wallet?.address],
+    queryFn: createRateLimitedQuery('webData2', async () => {
+      if (!wallet) return null;
+      const infoClient = getInfoClient();
+      return (await infoClient.webData2({ user: wallet.address })) as WebData2Data;
+    }),
+    enabled: !!wallet,
+  });
+
+  // Initialize with HTTP data
+  useEffect(() => {
+    if (httpData) {
+      setMergedData(httpData);
+    }
+  }, [httpData]);
+
+  // Step 2: WebSocket subscription for real-time updates
+  const { data: wsData } = useSubscription<WebData2Data>(
     'webData2',
     wallet ? { user: wallet.address } : undefined,
   );
+
+  // Step 3: Prefer WebSocket data when available
+  useEffect(() => {
+    if (wsData) {
+      setMergedData(wsData);
+    }
+  }, [wsData]);
+
+  // Use merged data for calculations
+  const data = mergedData;
 
   /**
    * Helper function to calculate spot account value from balances.
@@ -126,8 +164,8 @@ export function useWebData2(): UseWebData2Result {
       crossMarginRatio,
       maintenanceMargin,
       crossAccountLeverage,
-      isLoading,
-      error,
+      isLoading: isHttpLoading,
+      error: httpError || undefined,
     }),
     [
       data,
@@ -139,8 +177,8 @@ export function useWebData2(): UseWebData2Result {
       crossMarginRatio,
       maintenanceMargin,
       crossAccountLeverage,
-      isLoading,
-      error,
+      isHttpLoading,
+      httpError,
     ],
   );
 }

@@ -8,8 +8,7 @@ export function AccountEquity() {
   const [isHidden, setIsHidden] = useState(false);
   const [perpsPopoverOpen, setPerpsPopoverOpen] = useState(false);
   const theme = useTheme();
-  const { totalAccountValue, perpAccountValue, spotAccountValue, isLoading, error } =
-    useWebData2();
+  const { totalAccountValue, perpAccountValue, spotAccountValue, isLoading, error } = useWebData2();
 
   const toggleVisibility = () => {
     setIsHidden(!isHidden);

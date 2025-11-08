@@ -10,6 +10,10 @@ import type * as hl from '@nktkas/hyperliquid';
 
 /**
  * Configuration for a subscription type
+ *
+ * Focused solely on WebSocket subscription management.
+ * HTTP data fetching should be handled separately using TanStack Query.
+ *
  * @template TParams - Parameters needed for the subscription (e.g., { user: string, coin: string })
  * @template TData - The data type returned by the subscription
  */
@@ -19,15 +23,6 @@ export interface SubscriptionConfig<TParams = any, TData = any> {
    * Used for RefCount management - subscriptions with same key share the same connection
    */
   getKey: (params: TParams) => string;
-
-  /**
-   * Optional HTTP fetch for initial data (hybrid strategy)
-   * If provided, will be called before WebSocket subscription
-   *
-   * Note: HTTP requests are globally rate-limited to protect the server.
-   * Multiple HTTP requests within 500ms will be throttled.
-   */
-  httpFetch?: (params: TParams) => Promise<TData>;
 
   /**
    * WebSocket subscription function
@@ -75,10 +70,6 @@ export interface SubscriptionEntry<TData = any> {
   error: Error | undefined;
   /** WebSocket subscription reference */
   subscription: hl.Subscription | null;
-  /** Timestamp of last HTTP fetch (for rate limiting) */
-  lastHttpFetch: number;
-  /** Whether HTTP fetch has completed */
-  httpFetched: boolean;
   /** Whether subscription is currently paused (App Lifecycle) */
   isPaused: boolean;
   /** Stored params for resuming after pause */

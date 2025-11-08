@@ -1,10 +1,13 @@
 import { useMarketsStore } from '@/lib/hyperliquid/market';
-import { useSubscription, type MetaAndAssetCtxsData } from '@/lib/hyperliquid/subscription';
 import { Home, TrendingUp } from '@tamagui/lucide-icons';
 import { Tabs } from 'expo-router';
 import { useEffect } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, YStack } from 'tamagui';
+import { useQuery } from '@tanstack/react-query';
+import { createRateLimitedQuery } from '@/lib/reactQuery';
+import { getInfoClient } from '@/lib/hyperliquid/client/getter';
+import type * as hl from '@nktkas/hyperliquid';
 
 /**
  * Tabs Layout
@@ -25,8 +28,16 @@ export default function TabsLayout() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
 
-  // Subscribe to metaAndAssetCtxs and sync to store
-  const { data: marketData } = useSubscription<MetaAndAssetCtxsData>('metaAndAssetCtxs');
+  // Fetch metaAndAssetCtxs using TanStack Query (HTTP only, no WebSocket for this endpoint)
+  const { data: marketData } = useQuery({
+    queryKey: ['metaAndAssetCtxs'],
+    queryFn: createRateLimitedQuery('metaAndAssetCtxs', async () => {
+      const infoClient = getInfoClient();
+      const metaAndAssetCtxs = await infoClient.metaAndAssetCtxs();
+      return { metaAndAssetCtxs } as { metaAndAssetCtxs: hl.MetaAndAssetCtxsResponse };
+    }),
+    staleTime: 60000, // Cache for 1 minute (market metadata doesn't change frequently)
+  });
 
   // Sync subscription data to markets store
   useEffect(() => {

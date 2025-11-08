@@ -1,6 +1,9 @@
 import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
 import { useSubscription, type ActiveAssetData } from '../subscription';
-import { useMemo } from 'react';
+import { useMemo, useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { createRateLimitedQuery } from '@/lib/reactQuery';
+import { getInfoClient } from '../client/getter';
 
 interface UseActiveAssetDataParams {
   coin: string;
@@ -13,32 +16,70 @@ interface UseActiveAssetDataResult {
 }
 
 /**
- * Hook to get Hyperliquid's activeAssetData using unified subscription system
+ * Hook to get Hyperliquid's activeAssetData
+ *
+ * Architecture:
+ * - TanStack Query: Handles HTTP fetch with automatic deduplication and caching
+ * - WebSocket Subscription: Provides real-time updates
+ * - Manual Merging: Prefers WebSocket data when available, falls back to HTTP
  *
  * Features:
- * - Reference counting: multiple components share one subscription per coin
- * - Global rate limiting: prevents 429 errors
- * - Hybrid strategy: fast HTTP fetch + real-time WebSocket updates
- * - App lifecycle management: automatic pause/resume
+ * - Request deduplication: Multiple components share one HTTP request per coin
+ * - Global rate limiting: All HTTP requests respect 1200 weight/min limit
+ * - Real-time updates: WebSocket provides incremental updates
+ * - Smart caching: Reduces unnecessary API calls
  *
  * @param params - { coin: string }
- * @returns Subscription state with activeAssetData
+ * @returns activeAssetData with loading and error states
  */
 export function useActiveAssetData({ coin }: UseActiveAssetDataParams): UseActiveAssetDataResult {
   const { wallet } = useActiveWallet();
+  const [mergedData, setMergedData] = useState<ActiveAssetData | undefined>();
 
-  // Subscribe using unified subscription system
-  const { data, isLoading, error } = useSubscription<ActiveAssetData>(
+  // Step 1: HTTP fetch initial data using TanStack Query
+  const {
+    data: httpData,
+    isLoading: isHttpLoading,
+    error: httpError,
+  } = useQuery({
+    queryKey: ['activeAssetData', wallet?.address, coin],
+    queryFn: createRateLimitedQuery('activeAssetData', async () => {
+      if (!wallet) return null;
+      const infoClient = getInfoClient();
+      return (await infoClient.activeAssetData({
+        coin: coin.toUpperCase(),
+        user: wallet.address,
+      })) as ActiveAssetData;
+    }),
+    enabled: !!wallet && !!coin,
+  });
+
+  // Initialize with HTTP data
+  useEffect(() => {
+    if (httpData) {
+      setMergedData(httpData);
+    }
+  }, [httpData]);
+
+  // Step 2: WebSocket subscription for real-time updates
+  const { data: wsData } = useSubscription<ActiveAssetData>(
     'activeAssetData',
-    wallet ? { user: wallet.address, coin } : undefined,
+    wallet && coin ? { user: wallet.address, coin } : undefined,
   );
+
+  // Step 3: Prefer WebSocket data when available
+  useEffect(() => {
+    if (wsData) {
+      setMergedData(wsData);
+    }
+  }, [wsData]);
 
   return useMemo(
     () => ({
-      data,
-      isLoading,
-      error,
+      data: mergedData,
+      isLoading: isHttpLoading,
+      error: httpError || undefined,
     }),
-    [data, isLoading, error],
+    [mergedData, isHttpLoading, httpError],
   );
 }

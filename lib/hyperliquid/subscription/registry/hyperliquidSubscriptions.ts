@@ -5,7 +5,7 @@
  * Each configuration defines how to subscribe to a specific data feed.
  */
 
-import { getInfoClient, getSubscriptionClient } from '../../client/getter';
+import { getSubscriptionClient } from '../../client/getter';
 import { subscriptionRegistry } from '../core/SubscriptionRegistry';
 import type { NSigFigs } from '../../orderbook/orderbookPrecision';
 import type { Fill } from '../../types/fills';
@@ -51,14 +51,8 @@ subscriptionRegistry.register<AllMidsParams, AllMidsData>('allMids', {
   // No params needed, so key is always 'global'
   getKey: () => 'global',
 
-  // HTTP fetch for initial data
-  httpFetch: async () => {
-    const infoClient = getInfoClient();
-    const mids = await infoClient.allMids();
-    return { mids };
-  },
-
   // WebSocket subscription
+  // HTTP fetch should be handled by TanStack Query in the consuming hook
   subscribe: async (_params, callback) => {
     const subscriptionClient = getSubscriptionClient();
     return await subscriptionClient.allMids({}, data => {
@@ -110,20 +104,8 @@ subscriptionRegistry.register<UserFillsParams, UserFillsData>('userFills', {
   // Key by user address
   getKey: params => params.user,
 
-  // HTTP fetch for initial fills (max 2000 most recent)
-  httpFetch: async params => {
-    const infoClient = getInfoClient();
-    const fills = (await infoClient.userFills({
-      user: params.user,
-    })) as Fill[];
-
-    // Sort by time (most recent first)
-    return {
-      fills: fills.sort((a, b) => b.time - a.time),
-    };
-  },
-
-  // WebSocket subscription for real-time updates
+  // WebSocket subscription for real-time incremental updates
+  // HTTP fetch should be handled by TanStack Query in useUserFills hook
   subscribe: async (params, callback) => {
     const subscriptionClient = getSubscriptionClient();
     return await subscriptionClient.userFills(
@@ -132,8 +114,8 @@ subscriptionRegistry.register<UserFillsParams, UserFillsData>('userFills', {
       },
       (data: any) => {
         // WebSocket sends { fills: Fill[], isSnapshot: boolean }
-        // For real-time updates (isSnapshot: false), we need to merge with existing
-        // For now, just pass through - merging will be handled in the hook
+        // Only forward incremental updates (not snapshots)
+        // Merging logic is handled in useUserFills hook
         if (data.fills && data.fills.length > 0 && !data.isSnapshot) {
           callback({ fills: data.fills as Fill[] });
         }
@@ -150,13 +132,8 @@ subscriptionRegistry.register<WebData2Params, WebData2Data>('webData2', {
   // Key by user address
   getKey: params => params.user,
 
-  // HTTP fetch for initial data
-  httpFetch: async params => {
-    const infoClient = getInfoClient();
-    return await infoClient.webData2({ user: params.user });
-  },
-
   // WebSocket subscription for real-time updates
+  // HTTP fetch should be handled by TanStack Query in useWebData2 hook
   subscribe: async (params, callback) => {
     const subscriptionClient = getSubscriptionClient();
     return await subscriptionClient.webData2(
@@ -178,16 +155,8 @@ subscriptionRegistry.register<ActiveAssetDataParams, ActiveAssetData>('activeAss
   // Key by user and coin
   getKey: params => `${params.user}-${params.coin}`,
 
-  // HTTP fetch for initial data
-  httpFetch: async params => {
-    const infoClient = getInfoClient();
-    return await infoClient.activeAssetData({
-      coin: params.coin.toUpperCase(),
-      user: params.user,
-    });
-  },
-
   // WebSocket subscription for real-time updates
+  // HTTP fetch should be handled by TanStack Query in useActiveAssetData hook
   subscribe: async (params, callback) => {
     const subscriptionClient = getSubscriptionClient();
     return await subscriptionClient.activeAssetData(
@@ -273,19 +242,8 @@ subscriptionRegistry.register<OrderUpdatesParams, OrderUpdatesData>('orderUpdate
   // Key by user address
   getKey: params => params.user,
 
-  // HTTP fetch for initial open orders
-  httpFetch: async params => {
-    const infoClient = getInfoClient();
-    const openOrdersResponse = (await infoClient.frontendOpenOrders({
-      user: params.user,
-    })) as ApiOrderResponse[];
-
-    const orders: Order[] = openOrdersResponse.map(apiOrder => transformApiOrder(apiOrder));
-    return { orders };
-  },
-
-  // WebSocket subscription for incremental updates
-  // Simply log the updates for now to understand what we're receiving
+  // WebSocket subscription for incremental order updates
+  // HTTP fetch for initial orders should be handled by TanStack Query in consuming hook
   subscribe: async (params, callback) => {
     const subscriptionClient = getSubscriptionClient();
 
@@ -327,18 +285,10 @@ subscriptionRegistry.register<MetaAndAssetCtxsParams, MetaAndAssetCtxsData>('met
   // Global key since this fetches all assets
   getKey: () => 'global',
 
-  // HTTP fetch for initial data
-  httpFetch: async () => {
-    const infoClient = getInfoClient();
-    const metaAndAssetCtxs = await infoClient.metaAndAssetCtxs();
-    return { metaAndAssetCtxs };
-  },
-
   // No WebSocket subscription for this endpoint - HTTP only
-  // Data will be refreshed via HTTP fetch when needed
+  // HTTP fetch should be handled by TanStack Query in consuming hook
+  // This is a dummy subscription that does nothing
   subscribe: async (_params, _callback) => {
-    // Return a dummy subscription that does nothing
-    // This endpoint is HTTP-only, data comes from httpFetch
     const dummySignal = new AbortController();
     return {
       unsubscribe: async () => {
