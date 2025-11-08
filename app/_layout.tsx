@@ -23,6 +23,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Toaster } from 'sonner-native';
 import { TamaguiProvider, View } from 'tamagui';
 import { arbitrum } from 'viem/chains';
+import { useAppLifecycle } from '@/lib/hyperliquid/hooks/useAppLifecycle';
+import { subscriptionManager } from '@/lib/hyperliquid/subscription';
 
 // Suppress known WalletConnect warnings during session restoration
 LogBox.ignoreLogs(['emitting session_request', 'without any listeners']);
@@ -32,6 +34,18 @@ SplashScreen.preventAutoHideAsync();
 
 function WalletInfoDisplay() {
   const { isReady, wallet } = useActiveWallet();
+  const appState = useAppLifecycle();
+
+  // App Lifecycle management for unified subscription system
+  // When app goes to background, pause all subscriptions to save battery and data
+  // When app comes to foreground, resume all subscriptions
+  useEffect(() => {
+    if (appState === 'active') {
+      void subscriptionManager.resumeAll();
+    } else if (appState === 'paused') {
+      void subscriptionManager.pauseAll();
+    }
+  }, [appState]);
 
   // Wait for wallet providers to be ready before showing content
   if (!isReady) {
@@ -108,6 +122,14 @@ function WalletInfoDisplay() {
           />
           <Stack.Screen
             name="(modal)/withdraw/withdraw-hl-bridge"
+            options={{
+              headerShown: false,
+              animation: 'slide_from_right',
+            }}
+          />
+          {/* Developer tools (temporary for Phase 1 validation) */}
+          <Stack.Screen
+            name="test-subscription"
             options={{
               headerShown: false,
               animation: 'slide_from_right',

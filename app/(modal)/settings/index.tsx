@@ -108,6 +108,17 @@ export default function Index() {
                 />
               </ListSection>
             </YStack>
+            {/* Developer Section (Temporary for testing) */}
+            <YStack>
+              <ListSection label="Developer">
+                <ListItem
+                  title="Test Subscription System"
+                  subTitle="Verify unified subscription system"
+                  showIosChevron={true}
+                  onPress={() => router.push('/test-subscription')}
+                />
+              </ListSection>
+            </YStack>
             {/* Support Section */}
             <YStack>
               <ListSection label="Support">
