@@ -14,7 +14,8 @@ export function MarketSelectorModal({ open, onOpenChange }: MarketSelectorModalP
   const { setSelectedMarketByCoin, refresh } = useMarketsStore();
 
   // Market selector business logic
-  // Always enable real-time prices for instant modal opening
+  // Enable real-time prices only when modal is open (saves battery)
+  // Hybrid strategy: HTTP fetch provides fast initial data, WebSocket keeps it updated
   const {
     searchQuery,
     setSearchQuery,
@@ -26,7 +27,7 @@ export function MarketSelectorModal({ open, onOpenChange }: MarketSelectorModalP
     sortDirection,
     setSortBy,
     toggleSortDirection,
-  } = useMarketSelector({ enableRealtimePrices: true });
+  } = useMarketSelector({ enableRealtimePrices: open });
 
   const [refreshing, setRefreshing] = useState(false);
 
