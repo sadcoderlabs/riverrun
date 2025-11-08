@@ -1,7 +1,6 @@
 import { MarketListItem } from '@/components/trade/MarketListItem';
-import { useMarketsStore } from '@/lib/riverrun/store/useMarketsStore';
+import { useMarketsStore, useAllMids } from '@/lib/hyperliquid/market';
 import { useSelectedCoinStore } from '@/lib/riverrun/store';
-import { useAllMids } from '@/lib/hyperliquid/hooks/useAllMids';
 import { useHyperliquidClient } from '@/lib/hyperliquid/client/useHyperliquidClient';
 import { Search } from '@tamagui/lucide-icons';
 import { useCallback, useEffect, useMemo, useState } from 'react';

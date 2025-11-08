@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import type * as hl from '@nktkas/hyperliquid';
-import { Market } from '@/lib/riverrun/types/market';
+import type { Market } from './types';
 
 // AsyncStorage keys
 const MARKETS_CACHE_KEY = '@riverrun:markets_cache';
