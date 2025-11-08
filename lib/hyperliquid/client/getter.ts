@@ -1,5 +1,4 @@
 import * as hl from '@nktkas/hyperliquid';
-import { SymbolConverter } from '@nktkas/hyperliquid/utils';
 import type { Signer } from 'ethers';
 
 // Singleton instances - shared across all usages
@@ -7,7 +6,6 @@ let transport: hl.HttpTransport | undefined;
 let infoClient: hl.InfoClient | undefined;
 let wsTransport: hl.WebSocketTransport | undefined;
 let subscriptionClient: hl.SubscriptionClient | undefined;
-let symbolConverter: SymbolConverter | undefined;
 
 // ExchangeClient cache - keyed by wallet address
 interface ExchangeClientCache {
@@ -38,13 +36,6 @@ export function getSubscriptionClient(): hl.SubscriptionClient {
     subscriptionClient = new hl.SubscriptionClient({ transport: wsTransport });
   }
   return subscriptionClient;
-}
-
-export async function getSymbolConverter(): Promise<SymbolConverter> {
-  if (!symbolConverter) {
-    symbolConverter = await SymbolConverter.create({ transport: getTransport() });
-  }
-  return symbolConverter;
 }
 
 /**

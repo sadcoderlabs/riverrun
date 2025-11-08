@@ -1,9 +1,7 @@
 import * as hl from '@nktkas/hyperliquid';
-import { SymbolConverter } from '@nktkas/hyperliquid/utils';
 import { useMemo } from 'react';
 
 import { useAgentExchangeClient } from '@/lib/hyperliquid/agent/hooks/useAgentExchangeClient';
-import { getSymbolConverter } from '@/lib/hyperliquid/client/getter';
 import { useInfoClient } from '@/lib/hyperliquid/client/useInfoClient';
 import { useSubscriptionClient } from '@/lib/hyperliquid/client/useSubscriptionClient';
 import { useMasterExchangeClient } from '@/lib/hyperliquid/client/useMasterExchangeClient';
@@ -13,7 +11,6 @@ interface UseHyperliquidClientResult {
   getMasterExchangeClient: () => Promise<hl.ExchangeClient | undefined>;
   infoClient: hl.InfoClient;
   subscriptionClient: hl.SubscriptionClient;
-  getSymbolConverter: () => Promise<SymbolConverter>;
 }
 
 export function useHyperliquidClient(): UseHyperliquidClientResult {
@@ -30,7 +27,6 @@ export function useHyperliquidClient(): UseHyperliquidClientResult {
       getMasterExchangeClient,
       infoClient,
       subscriptionClient,
-      getSymbolConverter,
     }),
     [getAgentExchangeClient, getMasterExchangeClient, infoClient, subscriptionClient],
   );
