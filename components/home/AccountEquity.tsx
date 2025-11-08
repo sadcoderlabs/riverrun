@@ -2,14 +2,14 @@ import { Eye, EyeOff, Info } from '@tamagui/lucide-icons';
 import React, { useState } from 'react';
 import { Button, Popover, Spinner, Text, XStack, YStack, useTheme } from 'tamagui';
 import { CardContainer } from '../global/CardContainer';
-import { useWebData2Context } from '@/lib/hyperliquid/context/WebData2Context';
+import { useWebData2 } from '@/lib/hyperliquid/hooks/useWebData2';
 
 export function AccountEquity() {
   const [isHidden, setIsHidden] = useState(false);
   const [perpsPopoverOpen, setPerpsPopoverOpen] = useState(false);
   const theme = useTheme();
   const { totalAccountValue, perpAccountValue, spotAccountValue, isLoading, error } =
-    useWebData2Context();
+    useWebData2();
 
   const toggleVisibility = () => {
     setIsHidden(!isHidden);

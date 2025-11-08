@@ -1,4 +1,3 @@
-import { WebData2Provider } from '@/lib/hyperliquid/context/WebData2Context';
 import { useMarketsStore } from '@/lib/hyperliquid/market';
 import { useSubscription, type MetaAndAssetCtxsData } from '@/lib/hyperliquid/subscription';
 import { Home, TrendingUp } from '@tamagui/lucide-icons';
@@ -15,7 +14,6 @@ import { useTheme, YStack } from 'tamagui';
  * - Bottom tab bar (Home, Trade) using Expo Router Tabs
  * - Safe area handling (top and bottom)
  * - Market data initialization (once at app level)
- * - WebData2Provider for real-time market data
  *
  * Benefits over Stack navigation:
  * - Proper unmounting of inactive tabs (fixes memory leaks)
@@ -60,58 +58,56 @@ export default function TabsLayout() {
   }, [marketData, setMarkets]);
 
   return (
-    <WebData2Provider>
-      <YStack flex={1} backgroundColor="$gray3">
-        {/* Top safe area */}
-        <YStack height={insets.top} backgroundColor="$gray3" />
+    <YStack flex={1} backgroundColor="$gray3">
+      {/* Top safe area */}
+      <YStack height={insets.top} backgroundColor="$gray3" />
 
-        {/* Tab navigation */}
-        <Tabs
-          screenOptions={{
-            headerShown: false,
-            // Ensure content doesn't go under tab bar
-            sceneStyle: {
-              backgroundColor: theme.gray3.val,
-            },
-            tabBarStyle: {
-              backgroundColor: theme.background.val,
-              borderTopColor: theme.borderColor.val,
-              borderTopWidth: 1,
-              // Respect safe area: 60px base height + bottom inset
-              height: 60 + insets.bottom,
-              paddingBottom: insets.bottom > 0 ? insets.bottom : 8,
-              paddingTop: 8,
-            },
-            tabBarActiveTintColor: theme.accent9.val,
-            tabBarInactiveTintColor: theme.color9.val,
-            tabBarLabelStyle: {
-              fontSize: 12,
-              fontFamily: 'InterMedium',
-            },
+      {/* Tab navigation */}
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+          // Ensure content doesn't go under tab bar
+          sceneStyle: {
+            backgroundColor: theme.gray3.val,
+          },
+          tabBarStyle: {
+            backgroundColor: theme.background.val,
+            borderTopColor: theme.borderColor.val,
+            borderTopWidth: 1,
+            // Respect safe area: 60px base height + bottom inset
+            height: 60 + insets.bottom,
+            paddingBottom: insets.bottom > 0 ? insets.bottom : 8,
+            paddingTop: 8,
+          },
+          tabBarActiveTintColor: theme.accent9.val,
+          tabBarInactiveTintColor: theme.color9.val,
+          tabBarLabelStyle: {
+            fontSize: 12,
+            fontFamily: 'InterMedium',
+          },
+        }}
+      >
+        <Tabs.Screen
+          name="home"
+          options={{
+            title: 'Home',
+            tabBarIcon: ({ color, size }) => (
+              // @ts-expect-error - React Navigation's color type is string, Tamagui expects specific type
+              <Home size={size} color={color} />
+            ),
           }}
-        >
-          <Tabs.Screen
-            name="home"
-            options={{
-              title: 'Home',
-              tabBarIcon: ({ color, size }) => (
-                // @ts-expect-error - React Navigation's color type is string, Tamagui expects specific type
-                <Home size={size} color={color} />
-              ),
-            }}
-          />
-          <Tabs.Screen
-            name="trade"
-            options={{
-              title: 'Trade',
-              tabBarIcon: ({ color, size }) => (
-                // @ts-expect-error - React Navigation's color type is string, Tamagui expects specific type
-                <TrendingUp size={size} color={color} />
-              ),
-            }}
-          />
-        </Tabs>
-      </YStack>
-    </WebData2Provider>
+        />
+        <Tabs.Screen
+          name="trade"
+          options={{
+            title: 'Trade',
+            tabBarIcon: ({ color, size }) => (
+              // @ts-expect-error - React Navigation's color type is string, Tamagui expects specific type
+              <TrendingUp size={size} color={color} />
+            ),
+          }}
+        />
+      </Tabs>
+    </YStack>
   );
 }

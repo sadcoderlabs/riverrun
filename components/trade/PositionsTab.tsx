@@ -2,7 +2,7 @@ import { formatPercent } from '@/lib/hyperliquid/format/formatPercent';
 import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
 import { formatSize } from '@/lib/hyperliquid/format/formatSize';
 import { formatValue } from '@/lib/hyperliquid/format/formatValue';
-import { useWebData2Context } from '@/lib/hyperliquid/context/WebData2Context';
+import { useWebData2 } from '@/lib/hyperliquid/hooks/useWebData2';
 import { useActiveWallet } from '@/lib/riverrun/wallet';
 import { useMarketsStore } from '@/lib/hyperliquid/market';
 import { useSubscription, type MetaAndAssetCtxsData } from '@/lib/hyperliquid/subscription';
@@ -23,8 +23,8 @@ export default function PositionsTab() {
   const { wallet } = useActiveWallet();
   const { setSelectedMarketByCoin } = useMarketsStore();
 
-  // Get WebData2 from context (shared across all markets, no re-subscription on market switch)
-  const { data: webData, isLoading, error: webError } = useWebData2Context();
+  // Get WebData2 using unified subscription system (automatically shared via RefCount)
+  const { data: webData, isLoading, error: webError } = useWebData2();
 
   // Subscribe to market data using unified subscription system
   const { data: marketData } = useSubscription<MetaAndAssetCtxsData>('metaAndAssetCtxs');
