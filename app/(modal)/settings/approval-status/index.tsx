@@ -6,7 +6,6 @@ import { ArrowLeft } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, RefreshControl } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PortalProvider, ScrollView, Spinner, Text, View, XStack, YStack } from 'tamagui';
 
 /**
@@ -19,7 +18,6 @@ function shortenAddress(address: string | undefined): string {
 
 export default function ApprovalStatus() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
 
   // Referral status
   const {
@@ -72,8 +70,8 @@ export default function ApprovalStatus() {
       <YStack
         flex={1}
         backgroundColor="$background"
-        paddingTop={insets.top}
-        paddingBottom={insets.bottom}
+        
+        
       >
         {/* Header */}
         <XStack

@@ -7,14 +7,12 @@ import { type ThemePreference } from '@/lib/riverrun/store/theme.store';
 import { ArrowLeft, ArrowUpRight } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 import { Pressable } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PortalProvider, ScrollView, Text, View, XStack, YStack } from 'tamagui';
 import { useState } from 'react';
 import ExportWalletModal from '@/components/settings/ExportWalletModal';
 
 export default function Index() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const { preference, setPreference } = useThemePreference();
   const { wallet } = useActiveWallet();
   const [showExportModal, setShowExportModal] = useState(false);
@@ -30,12 +28,7 @@ export default function Index() {
 
   return (
     <PortalProvider>
-      <YStack
-        flex={1}
-        backgroundColor="$background"
-        paddingTop={insets.top}
-        paddingBottom={insets.bottom}
-      >
+      <YStack flex={1} backgroundColor="$background">
         {/* Header */}
         <XStack
           alignItems="center"
@@ -71,19 +64,19 @@ export default function Index() {
                   title="Agent Status"
                   subTitle="Manage trading agents"
                   showIosChevron={true}
-                  onPress={() => router.push('/(tabs)/home/settings/agent-status')}
+                  onPress={() => router.push('/settings/agent-status')}
                 />
                 <ListItem
                   title="Builder Fee Status"
                   subTitle="Manage builder fee approval"
                   showIosChevron={true}
-                  onPress={() => router.push('/(tabs)/home/settings/builder-fee-status')}
+                  onPress={() => router.push('/settings/builder-fee-status')}
                 />
                 <ListItem
                   title="Referral Status"
                   subTitle="Manage referral code"
                   showIosChevron={true}
-                  onPress={() => router.push('/(tabs)/home/settings/approval-status')}
+                  onPress={() => router.push('/settings/approval-status')}
                 />
               </ListSection>
             </YStack>

@@ -3,7 +3,6 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Pressable, ScrollView } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, Input, Spinner, Text, XStack, YStack } from 'tamagui';
 import { toast } from 'sonner-native';
 import { DEPOSIT_TOKENS, ChainName } from '@/lib/riverrun/transfer-fund/constants/depositTokens';
@@ -27,10 +26,10 @@ function shortenAddress(address: string, chars: number = 5): string {
  *
  * Dedicated page for depositing USDC via Hyperliquid Bridge from Arbitrum
  * Shows real-time balance, amount input, and deposit functionality
+ * Safe area is handled by parent layout
  */
 export default function HyperliquidBridgePage() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ symbol: string; chain: string }>();
 
   // Wallet and balance hooks
@@ -49,7 +48,7 @@ export default function HyperliquidBridgePage() {
 
   if (!token || !selectedChain || selectedChain.depositMethod !== 'hyperliquid-bridge') {
     return (
-      <YStack flex={1} backgroundColor="$background" paddingTop={insets.top}>
+      <YStack flex={1} backgroundColor="$background">
         <Text>Invalid token or deposit method</Text>
       </YStack>
     );
@@ -57,7 +56,7 @@ export default function HyperliquidBridgePage() {
 
   if (!wallet) {
     return (
-      <YStack flex={1} backgroundColor="$background" paddingTop={insets.top}>
+      <YStack flex={1} backgroundColor="$background">
         <Text>Please connect your wallet</Text>
       </YStack>
     );
@@ -118,7 +117,7 @@ export default function HyperliquidBridgePage() {
   };
 
   return (
-    <YStack flex={1} backgroundColor="$background" paddingTop={insets.top}>
+    <YStack flex={1} backgroundColor="$background">
       {/* Header */}
       <XStack
         alignItems="center"
@@ -139,7 +138,7 @@ export default function HyperliquidBridgePage() {
       {/* Scrollable Content */}
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
+        contentContainerStyle={{ paddingBottom: 20 }}
       >
         {/* Main Card */}
         <YStack paddingHorizontal="$4" paddingTop="$4" gap="$4">

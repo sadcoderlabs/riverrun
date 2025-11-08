@@ -62,9 +62,52 @@ function WalletInfoDisplay() {
               headerShown: false,
             }}
           />
-          {/* Chart route - full screen without bottom navigation */}
+          {/* Full-screen routes - no bottom tab bar */}
           <Stack.Screen
             name="chart/perp/[coin]/index"
+            options={{
+              headerShown: false,
+              animation: 'slide_from_right',
+            }}
+          />
+          {/* Modal group - includes settings, deposit, withdraw with safe area handling */}
+          <Stack.Screen
+            name="(modal)/settings/index"
+            options={{
+              headerShown: false,
+              animation: 'slide_from_right',
+            }}
+          />
+          <Stack.Screen
+            name="(modal)/settings/approval-status/index"
+            options={{
+              headerShown: false,
+              animation: 'slide_from_right',
+            }}
+          />
+          <Stack.Screen
+            name="(modal)/settings/builder-fee-status/index"
+            options={{
+              headerShown: false,
+              animation: 'slide_from_right',
+            }}
+          />
+          <Stack.Screen
+            name="(modal)/settings/agent-status/index"
+            options={{
+              headerShown: false,
+              animation: 'slide_from_right',
+            }}
+          />
+          <Stack.Screen
+            name="(modal)/deposit/deposit-hl-bridge"
+            options={{
+              headerShown: false,
+              animation: 'slide_from_right',
+            }}
+          />
+          <Stack.Screen
+            name="(modal)/withdraw/withdraw-hl-bridge"
             options={{
               headerShown: false,
               animation: 'slide_from_right',

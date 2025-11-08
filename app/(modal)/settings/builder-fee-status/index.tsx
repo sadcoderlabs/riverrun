@@ -6,12 +6,10 @@ import { ArrowLeft } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, RefreshControl } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PortalProvider, ScrollView, Spinner, Text, View, XStack, YStack } from 'tamagui';
 
 export default function BuilderFeeStatus() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
 
   // Builder fee approval
   const {
@@ -72,8 +70,8 @@ export default function BuilderFeeStatus() {
       <YStack
         flex={1}
         backgroundColor="$background"
-        paddingTop={insets.top}
-        paddingBottom={insets.bottom}
+        
+        
       >
         {/* Header */}
         <XStack

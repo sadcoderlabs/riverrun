@@ -3,7 +3,6 @@ import { useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { Alert, Pressable, ScrollView } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, Input, Spinner, Text, XStack, YStack } from 'tamagui';
 import { toast } from 'sonner-native';
 import { useActiveWallet } from '@/lib/riverrun/wallet';
@@ -19,10 +18,10 @@ function isValidAddress(address: string): boolean {
  *
  * Dedicated page for withdrawing USDC via Hyperliquid Bridge to Arbitrum
  * Shows balance, amount input, and withdraw functionality
+ * Safe area is handled by parent layout
  */
 export default function HyperliquidBridgeWithdrawPage() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
 
   // Wallet hooks
   const { wallet } = useActiveWallet();
@@ -50,7 +49,7 @@ export default function HyperliquidBridgeWithdrawPage() {
 
   if (!wallet) {
     return (
-      <YStack flex={1} backgroundColor="$background" paddingTop={insets.top}>
+      <YStack flex={1} backgroundColor="$background">
         <Text>Please connect your wallet</Text>
       </YStack>
     );
@@ -105,7 +104,7 @@ export default function HyperliquidBridgeWithdrawPage() {
   };
 
   return (
-    <YStack flex={1} backgroundColor="$background" paddingTop={insets.top}>
+    <YStack flex={1} backgroundColor="$background">
       {/* Header */}
       <XStack
         alignItems="center"
@@ -129,7 +128,7 @@ export default function HyperliquidBridgeWithdrawPage() {
       {/* Scrollable Content */}
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
+        contentContainerStyle={{ paddingBottom: 20 }}
       >
         {/* Recipient Address Section */}
         <YStack paddingHorizontal="$4" paddingTop="$4" gap="$2">
