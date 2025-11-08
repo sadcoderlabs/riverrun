@@ -73,30 +73,6 @@ export async function getOrCreateAgentSigner(
   return newSigner;
 }
 
-/**
- * Get agent address from storage without creating signer
- * @param masterAddress - Master wallet address
- * @param provider - Browser provider
- * @returns Agent address or undefined if not found
- */
-export async function getAgentAddress(
-  masterAddress: string,
-  provider: BrowserProvider,
-): Promise<string | undefined> {
-  const privateKey = await getAgentPrivateKey(masterAddress);
-  if (!privateKey) {
-    return undefined;
-  }
-
-  try {
-    const wallet = new Wallet(privateKey).connect(provider);
-    return await wallet.getAddress();
-  } catch (error) {
-    console.error('Failed to get agent address:', error);
-    return undefined;
-  }
-}
-
 // ============================================================================
 // Blockchain Operations
 // ============================================================================
