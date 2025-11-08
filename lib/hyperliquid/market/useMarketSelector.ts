@@ -4,6 +4,9 @@ import { useMarketsStore } from './useMarketsStore';
 import { useAllMids } from './useAllMids';
 import { useThrottle } from '@/lib/riverrun/hooks';
 
+export type SortOption = 'name' | 'volume' | 'price' | 'change';
+export type SortDirection = 'asc' | 'desc';
+
 interface UseMarketSelectorParams {
   /** Whether to enable real-time price updates */
   enableRealtimePrices?: boolean;
@@ -30,6 +33,14 @@ interface UseMarketSelectorResult {
   filteredMarkets: Market[];
   /** Toggle favorite status for a market */
   toggleFavorite: (marketId: string) => Promise<void>;
+  /** Current sort option */
+  sortBy: SortOption;
+  /** Current sort direction */
+  sortDirection: SortDirection;
+  /** Set sort option */
+  setSortBy: (option: SortOption) => void;
+  /** Toggle sort direction */
+  toggleSortDirection: () => void;
 }
 
 /**
@@ -63,6 +74,10 @@ export function useMarketSelector({
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Sort state
+  const [sortBy, setSortBy] = useState<SortOption>('volume');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+
   // Real-time prices (only when modal is open)
   const { data: rawAllMidsData } = useAllMids({ enabled: isOpen && enableRealtimePrices });
 
@@ -79,6 +94,11 @@ export function useMarketSelector({
   const close = useCallback(() => {
     setIsOpen(false);
     setSearchQuery('');
+  }, []);
+
+  // Toggle sort direction
+  const toggleSortDirection = useCallback(() => {
+    setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'));
   }, []);
 
   /**
@@ -125,13 +145,33 @@ export function useMarketSelector({
         })
       : markets;
 
-    // Sort by favorites first, then volume
+    // Sort markets based on user selection
     const sorted = [...marketsWithRealtimePrices].sort((a, b) => {
+      // Always prioritize favorites first
       const aIsFavorite = favorites.includes(a.id);
       const bIsFavorite = favorites.includes(b.id);
       if (aIsFavorite && !bIsFavorite) return -1;
       if (!aIsFavorite && bIsFavorite) return 1;
-      return b.volume - a.volume;
+
+      // Then sort by selected criterion
+      let comparison = 0;
+      switch (sortBy) {
+        case 'name':
+          comparison = a.name.localeCompare(b.name);
+          break;
+        case 'volume':
+          comparison = a.volume - b.volume;
+          break;
+        case 'price':
+          comparison = a.price - b.price;
+          break;
+        case 'change':
+          comparison = a.change - b.change;
+          break;
+      }
+
+      // Apply sort direction
+      return sortDirection === 'asc' ? comparison : -comparison;
     });
 
     // Filter by search query
@@ -151,7 +191,7 @@ export function useMarketSelector({
     );
 
     return [...startsWithMatches, ...includesMatches];
-  }, [markets, favorites, searchQuery, allMidsData, enableRealtimePrices]);
+  }, [markets, favorites, searchQuery, allMidsData, enableRealtimePrices, sortBy, sortDirection]);
 
   return {
     isOpen,
@@ -163,5 +203,9 @@ export function useMarketSelector({
     favorites,
     filteredMarkets,
     toggleFavorite,
+    sortBy,
+    sortDirection,
+    setSortBy,
+    toggleSortDirection,
   };
 }

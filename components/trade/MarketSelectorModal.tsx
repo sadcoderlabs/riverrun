@@ -1,10 +1,10 @@
 import { MarketListItem } from '@/components/trade/MarketListItem';
-import { useMarketData, useMarketSelector } from '@/lib/hyperliquid/market';
+import { useMarketData, useMarketSelector, type SortOption } from '@/lib/hyperliquid/market';
 import { useSelectedCoinStore } from '@/lib/riverrun/store';
-import { Search } from '@tamagui/lucide-icons';
+import { ArrowDown, ArrowUp, Search } from '@tamagui/lucide-icons';
 import { useCallback, useState } from 'react';
 import { FlatList, Modal, Pressable, RefreshControl, StyleSheet } from 'react-native';
-import { Input, Spinner, Text, XStack, YStack } from 'tamagui';
+import { Button, Input, Spinner, Text, XStack, YStack } from 'tamagui';
 
 interface MarketSelectorModalProps {
   open: boolean;
@@ -18,8 +18,18 @@ export function MarketSelectorModal({ open, onOpenChange }: MarketSelectorModalP
   const { isLoading, error: dataError, refresh } = useMarketData();
 
   // Market selector business logic
-  const { searchQuery, setSearchQuery, markets, favorites, filteredMarkets, toggleFavorite } =
-    useMarketSelector({ enableRealtimePrices: open });
+  const {
+    searchQuery,
+    setSearchQuery,
+    markets,
+    favorites,
+    filteredMarkets,
+    toggleFavorite,
+    sortBy,
+    sortDirection,
+    setSortBy,
+    toggleSortDirection,
+  } = useMarketSelector({ enableRealtimePrices: open });
 
   const [refreshing, setRefreshing] = useState(false);
 
@@ -52,6 +62,20 @@ export function MarketSelectorModal({ open, onOpenChange }: MarketSelectorModalP
       setRefreshing(false);
     }
   }, [refresh]);
+
+  // Handle sort column click
+  const handleSortClick = useCallback(
+    (option: SortOption) => {
+      if (sortBy === option) {
+        // Same column - toggle direction
+        toggleSortDirection();
+      } else {
+        // Different column - set new sort
+        setSortBy(option);
+      }
+    },
+    [sortBy, setSortBy, toggleSortDirection],
+  );
 
   // Show loading state only if we don't have markets yet
   const showLoading = isLoading && markets.length === 0;
@@ -112,6 +136,97 @@ export function MarketSelectorModal({ open, onOpenChange }: MarketSelectorModalP
               />
             </XStack>
 
+            {/* Column Headers */}
+            <XStack paddingHorizontal="$3" paddingVertical="$2" alignItems="center" gap="$3">
+              {/* Left: PAIRS */}
+              <XStack flex={1} alignItems="center" gap="$1">
+                <Button
+                  unstyled
+                  onPress={() => handleSortClick('name')}
+                  paddingHorizontal="$2"
+                  paddingVertical="$1"
+                  opacity={sortBy === 'name' ? 1 : 0.6}
+                >
+                  <XStack alignItems="center" gap="$1">
+                    <Text fontSize="$2" fontFamily="$interMedium" color="$gray10">
+                      PAIRS
+                    </Text>
+                    {sortBy === 'name' &&
+                      (sortDirection === 'asc' ? (
+                        <ArrowUp size="$0.75" color="$gray10" />
+                      ) : (
+                        <ArrowDown size="$0.75" color="$gray10" />
+                      ))}
+                  </XStack>
+                </Button>
+                <Button
+                  unstyled
+                  onPress={() => handleSortClick('volume')}
+                  paddingHorizontal="$2"
+                  paddingVertical="$1"
+                  opacity={sortBy === 'volume' ? 1 : 0.6}
+                >
+                  <XStack alignItems="center" gap="$1">
+                    <Text fontSize="$2" fontFamily="$interMedium" color="$gray10">
+                      /VOL
+                    </Text>
+                    {sortBy === 'volume' &&
+                      (sortDirection === 'asc' ? (
+                        <ArrowUp size="$0.75" color="$gray10" />
+                      ) : (
+                        <ArrowDown size="$0.75" color="$gray10" />
+                      ))}
+                  </XStack>
+                </Button>
+              </XStack>
+
+              {/* Middle: PRICE */}
+              <Button
+                unstyled
+                onPress={() => handleSortClick('price')}
+                minWidth={100}
+                alignItems="flex-end"
+                paddingHorizontal="$2"
+                paddingVertical="$1"
+                opacity={sortBy === 'price' ? 1 : 0.6}
+              >
+                <XStack alignItems="center" gap="$1">
+                  <Text fontSize="$2" fontFamily="$interMedium" color="$gray10">
+                    PRICE
+                  </Text>
+                  {sortBy === 'price' &&
+                    (sortDirection === 'asc' ? (
+                      <ArrowUp size="$0.75" color="$gray10" />
+                    ) : (
+                      <ArrowDown size="$0.75" color="$gray10" />
+                    ))}
+                </XStack>
+              </Button>
+
+              {/* Right: 24H CHG */}
+              <Button
+                unstyled
+                onPress={() => handleSortClick('change')}
+                minWidth={80}
+                alignItems="flex-end"
+                paddingHorizontal="$2"
+                paddingVertical="$1"
+                opacity={sortBy === 'change' ? 1 : 0.6}
+              >
+                <XStack alignItems="center" gap="$1">
+                  <Text fontSize="$2" fontFamily="$interMedium" color="$gray10">
+                    24H CHG
+                  </Text>
+                  {sortBy === 'change' &&
+                    (sortDirection === 'asc' ? (
+                      <ArrowUp size="$0.75" color="$gray10" />
+                    ) : (
+                      <ArrowDown size="$0.75" color="$gray10" />
+                    ))}
+                </XStack>
+              </Button>
+            </XStack>
+
             {/* Market List */}
             {showLoading ? (
               <YStack flex={1} justifyContent="center" alignItems="center">
@@ -133,6 +248,7 @@ export function MarketSelectorModal({ open, onOpenChange }: MarketSelectorModalP
                     price={market.price}
                     change={market.change}
                     maxLeverage={market.maxLeverage}
+                    volume={market.volume}
                     szDecimals={market.szDecimals}
                     isFavorite={favorites.includes(market.id)}
                     onPress={() => navigateToMarket(market.id)}

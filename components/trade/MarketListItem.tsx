@@ -9,6 +9,7 @@ type Market = {
   price: number;
   change: number;
   maxLeverage: number;
+  volume: number;
   szDecimals: number;
 };
 
@@ -28,6 +29,7 @@ const MarketListItemComponent = ({
   price,
   change,
   maxLeverage,
+  volume,
   szDecimals,
   isFavorite = false,
   onPress,
@@ -41,57 +43,91 @@ const MarketListItemComponent = ({
   };
 
   // Format price using Hyperliquid standard formatPrice
-  // This corrects precision from allMids (bid + ask) / 2 which may have excess decimals
   const formattedPrice = formatPrice(price, szDecimals, true);
 
+  // Format volume in compact form (e.g., $4.77b, $2.52b)
+  const formatVolume = (vol: number): string => {
+    if (vol >= 1e9) return `$${(vol / 1e9).toFixed(2)}b`;
+    if (vol >= 1e6) return `$${(vol / 1e6).toFixed(2)}m`;
+    if (vol >= 1e3) return `$${(vol / 1e3).toFixed(2)}k`;
+    return `$${vol.toFixed(2)}`;
+  };
+
   return (
-    <YStack
-      paddingVertical="$3"
-      paddingHorizontal="$4"
+    <XStack
+      paddingVertical="$2.5"
+      paddingHorizontal="$3"
       onPress={onPress}
-      pressStyle={{ opacity: 0.7 }}
+      pressStyle={{ opacity: 0.7, backgroundColor: '$gray2' }}
       backgroundColor="$background"
-      borderRadius="$2"
+      alignItems="center"
+      gap="$3"
     >
-      {/* First row: Star, Market Name and Price */}
-      <XStack justifyContent="space-between" alignItems="center" marginBottom="$2">
-        <XStack alignItems="center" gap="$2">
-          <XStack onPress={handleStarPress} pressStyle={{ opacity: 0.7 }} padding="$1">
-            <Star
-              size="$1"
-              color={isFavorite ? '#FDB022' : '$gray9'}
-              fill={isFavorite ? '#FDB022' : 'transparent'}
-            />
-          </XStack>
-          <Text fontFamily="$interSemiBold" fontSize="$4" color="$color">
-            {name}
-          </Text>
+      {/* Left Column: Star + Market Name + Leverage + Volume */}
+      <XStack flex={1} gap="$2" alignItems="center">
+        {/* Star Icon */}
+        <XStack onPress={handleStarPress} pressStyle={{ opacity: 0.7 }} padding="$1">
+          <Star
+            size="$0.75"
+            color={isFavorite ? '#FDB022' : '$gray9'}
+            fill={isFavorite ? '#FDB022' : 'transparent'}
+          />
         </XStack>
-        <Text fontFamily="$interRegular" fontSize="$4" color="$color" fontWeight="500">
+
+        {/* Market Name + Leverage + Volume */}
+        <YStack gap="$0.5" flex={1}>
+          {/* Market Name + Leverage Badge */}
+          <XStack alignItems="center" gap="$2">
+            <Text fontFamily="$interSemiBold" fontSize="$3" color="$color">
+              {name}
+            </Text>
+            <XStack
+              backgroundColor="rgba(255, 100, 50, 0.15)"
+              paddingHorizontal="$1.5"
+              paddingVertical="$0.5"
+              borderRadius="$2"
+              borderWidth={1}
+              borderColor="rgba(255, 100, 50, 0.4)"
+            >
+              <Text fontSize="$1" color="rgba(255, 120, 70, 1)" fontFamily="$interMedium">
+                {maxLeverage}x
+              </Text>
+            </XStack>
+          </XStack>
+
+          {/* Volume */}
+          <Text fontSize="$1" color="$gray10" fontFamily="$interRegular">
+            {formatVolume(volume)}
+          </Text>
+        </YStack>
+      </XStack>
+
+      {/* Middle Column: Price */}
+      <YStack alignItems="flex-end" minWidth={100}>
+        <Text fontFamily="$interSemiBold" fontSize="$4" color="$color">
           ${formattedPrice}
         </Text>
-      </XStack>
+      </YStack>
 
-      {/* Second row: Max Leverage and Price Change */}
-      <XStack justifyContent="space-between" alignItems="center">
+      {/* Right Column: 24h Change */}
+      <YStack alignItems="flex-end" minWidth={80}>
         <XStack
-          backgroundColor="rgba(20, 80, 70, 0.8)"
+          backgroundColor={isPriceUp ? 'rgba(20, 80, 70, 0.6)' : 'rgba(100, 30, 30, 0.6)'}
           paddingHorizontal="$2"
-          paddingVertical="$1"
+          paddingVertical="$1.5"
           borderRadius="$2"
-          alignItems="center"
         >
-          <Text fontSize="$1" color="rgba(100, 220, 180, 1)" fontFamily="$interMedium">
-            {maxLeverage}x
+          <Text
+            fontFamily="$interSemiBold"
+            fontSize="$3"
+            color={isPriceUp ? 'rgba(100, 220, 180, 1)' : 'rgba(255, 100, 100, 1)'}
+          >
+            {isPriceUp ? '+' : ''}
+            {change.toFixed(2)}%
           </Text>
         </XStack>
-
-        <Text fontFamily="$interMedium" fontSize="$3" color={isPriceUp ? '$green9' : '$red9'}>
-          {isPriceUp ? '+' : ''}
-          {change.toFixed(2)}%
-        </Text>
-      </XStack>
-    </YStack>
+      </YStack>
+    </XStack>
   );
 };
 
@@ -112,6 +148,9 @@ function arePropsEqual(prev: MarketListItemProps, next: MarketListItemProps): bo
 
   // Re-render if favorite status changed
   if (prev.isFavorite !== next.isFavorite) return false;
+
+  // Re-render if volume changed (for sorting)
+  if (prev.volume !== next.volume) return false;
 
   // Static data - should never change, but check for safety
   if (prev.name !== next.name) return false;
