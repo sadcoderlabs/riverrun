@@ -11,12 +11,8 @@ import {
 import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
 
 import { DEFAULT_AGENT_NAME } from '../constants';
-import {
-  approveAgentOnChain,
-  getAgentsFromChain,
-  getOrCreateAgentSigner,
-  verifyAgentApproval,
-} from '../service';
+import { getOrCreateAgentSigner } from '../getOrCreateAgentSigner';
+import { approveAgentOnChain, getAgentsFromChain, verifyAgentApproval } from '../service';
 import { hasAgentPrivateKey } from '../storage';
 import { type AgentInfo } from '../types';
 

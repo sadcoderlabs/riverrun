@@ -6,10 +6,10 @@ import { useHyperliquidClient } from '@/lib/hyperliquid/hooks/useHyperliquidClie
 import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
 
 import { DEFAULT_AGENT_NAME } from '../constants';
+import { getOrCreateAgentSigner } from '../getOrCreateAgentSigner';
 import {
   approveAgentOnChain,
   getAgentsFromChain,
-  getOrCreateAgentSigner,
   revokeAgentOnChain,
   verifyAgentApproval,
 } from '../service';
