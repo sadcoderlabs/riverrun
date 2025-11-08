@@ -32,7 +32,7 @@ interface UseMarketSelectorResult {
   /** Filtered and sorted markets (includes real-time prices if enabled) */
   filteredMarkets: Market[];
   /** Toggle favorite status for a market */
-  toggleFavorite: (marketId: string) => Promise<void>;
+  toggleFavorite: (marketId: string) => void;
   /** Current sort option */
   sortBy: SortOption;
   /** Current sort direction */

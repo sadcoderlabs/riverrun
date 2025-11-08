@@ -2,7 +2,7 @@ import { NavBar } from '@/components/global/NavBar';
 import { WebData2Provider } from '@/lib/hyperliquid/context/WebData2Context';
 import { useMarketsStore } from '@/lib/hyperliquid/market';
 import { Stack } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { YStack } from 'tamagui';
 
@@ -18,12 +18,21 @@ import { YStack } from 'tamagui';
  */
 export default function MainLayout() {
   const insets = useSafeAreaInsets();
-  const initialize = useMarketsStore(state => state.initialize);
+  const refresh = useMarketsStore(state => state.refresh);
+  const hasInitialized = useRef(false);
 
   // Initialize market data once at app level
   useEffect(() => {
-    initialize();
-  }, [initialize]);
+    if (!hasInitialized.current) {
+      hasInitialized.current = true;
+
+      // Always refresh in background to get latest data
+      // If we have persisted data, it's already visible (instant UX)
+      refresh().catch(err => {
+        console.error('Failed to refresh markets:', err);
+      });
+    }
+  }, [refresh]);
 
   return (
     <WebData2Provider>
