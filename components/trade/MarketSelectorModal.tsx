@@ -1,14 +1,9 @@
 import { MarketListItem } from '@/components/trade/MarketListItem';
-import {
-  useMarketData,
-  useMarketSelector,
-  useMarketsStore,
-  type SortOption,
-} from '@/lib/hyperliquid/market';
+import { useMarketSelector, useMarketsStore, type SortOption } from '@/lib/hyperliquid/market';
 import { ArrowDown, ArrowUp, Search } from '@tamagui/lucide-icons';
 import { useCallback, useState } from 'react';
 import { FlatList, Modal, Pressable, RefreshControl, StyleSheet } from 'react-native';
-import { Button, Input, Spinner, Text, XStack, YStack } from 'tamagui';
+import { Button, Input, Text, XStack, YStack } from 'tamagui';
 
 interface MarketSelectorModalProps {
   open: boolean;
@@ -16,10 +11,7 @@ interface MarketSelectorModalProps {
 }
 
 export function MarketSelectorModal({ open, onOpenChange }: MarketSelectorModalProps) {
-  const { setSelectedMarketByCoin } = useMarketsStore();
-
-  // Market data fetching and caching (initialized once at app level)
-  const { isLoading, error: dataError, refresh } = useMarketData();
+  const { setSelectedMarketByCoin, refresh } = useMarketsStore();
 
   // Market selector business logic
   const {
@@ -86,9 +78,6 @@ export function MarketSelectorModal({ open, onOpenChange }: MarketSelectorModalP
     },
     [sortBy, setSortBy, toggleSortDirection],
   );
-
-  // Show loading state only if we don't have markets yet
-  const showLoading = isLoading && markets.length === 0;
 
   return (
     <Modal
@@ -238,14 +227,9 @@ export function MarketSelectorModal({ open, onOpenChange }: MarketSelectorModalP
             </XStack>
 
             {/* Market List */}
-            {showLoading ? (
+            {markets.length === 0 ? (
               <YStack flex={1} justifyContent="center" alignItems="center">
-                <Spinner size="large" />
-                <Text marginTop="$2">Loading markets...</Text>
-              </YStack>
-            ) : dataError && markets.length === 0 ? (
-              <YStack flex={1} justifyContent="center" alignItems="center">
-                <Text color="$red10">{dataError.message}</Text>
+                <Text color="$gray10">No markets available</Text>
               </YStack>
             ) : (
               <FlatList

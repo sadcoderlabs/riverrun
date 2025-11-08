@@ -1,6 +1,8 @@
 import { NavBar } from '@/components/global/NavBar';
 import { WebData2Provider } from '@/lib/hyperliquid/context/WebData2Context';
+import { useMarketsStore } from '@/lib/hyperliquid/market';
 import { Stack } from 'expo-router';
+import { useEffect } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { YStack } from 'tamagui';
 
@@ -12,9 +14,16 @@ import { YStack } from 'tamagui';
  * - Bottom navigation bar (Home, Trade)
  * - Safe area padding for bottom
  * - Background color
+ * - Market data initialization (once at app level)
  */
 export default function MainLayout() {
   const insets = useSafeAreaInsets();
+  const initialize = useMarketsStore(state => state.initialize);
+
+  // Initialize market data once at app level
+  useEffect(() => {
+    initialize();
+  }, [initialize]);
 
   return (
     <WebData2Provider>

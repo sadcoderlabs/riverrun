@@ -5,6 +5,7 @@ import { useOrderForm } from '@/components/trade/hooks/useOrderForm';
 import { LeverageSelector } from '@/components/trade/LeverageSelector';
 import { LimitOrderForm, MarketOrderForm, OrderTypeSelector } from '@/components/trade/order-forms';
 import { OrderBook } from '@/components/trade/OrderBook';
+import { FundingRate } from '@/components/trade/FundingRate';
 import {
   TpSlInput,
   type TpSlResult,
@@ -210,6 +211,7 @@ export function PerpTradePanel({ coin }: PerpTradePanelProps) {
     <XStack borderWidth={0}>
       {/* Left Side - Order Book */}
       <YStack flex={5} backgroundColor="$background" borderWidth={0}>
+        <FundingRate />
         <OrderBook onPriceClick={handleOrderBookPriceClick} />
       </YStack>
 
