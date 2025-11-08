@@ -1,7 +1,6 @@
 import AdaptiveSelect from '@/components/global/AdaptiveSelect';
 import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
 import { formatSizeFixedDecimals } from '@/lib/hyperliquid/format/formatSizeFixedDecimals';
-import { useRecentTrades } from '@/lib/hyperliquid/hooks';
 import { useActiveAssetCtx, useMarketsStore } from '@/lib/hyperliquid/market';
 import {
   buildPrecisionMenu,
@@ -9,6 +8,7 @@ import {
   type OrderBookLevel,
   type PrecisionMenuItem,
   useOrderBook,
+  useRecentTrades,
 } from '@/lib/hyperliquid/orderbook';
 import { ArrowDownRight, ArrowUpRight, ChevronDown, Info } from '@tamagui/lucide-icons';
 import { useMemo, useState } from 'react';
