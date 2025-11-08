@@ -5,7 +5,7 @@ export default function Index() {
   const { wallet } = useActiveWallet();
 
   if (wallet) {
-    return <Redirect href="/(main)/home" />;
+    return <Redirect href="/(tabs)/home" />;
   }
 
   return <Redirect href="/login" />;

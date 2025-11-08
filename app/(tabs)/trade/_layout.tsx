@@ -1,10 +1,9 @@
 import { CoinInfo } from '@/components/trade/CoinInfo';
 import { PerpTabs } from '@/components/trade/PerpTabs';
 import { useMarketsStore } from '@/lib/hyperliquid/market';
-import { Slot, usePathname, useSegments } from 'expo-router';
+import { Slot, usePathname } from 'expo-router';
 import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 /**
  * Trade Layout with Fixed Header
@@ -16,26 +15,20 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
  * - Market changes update store only, no URL updates
  *
  * Features:
- * - CoinInfo fixed at the top
+ * - CoinInfo fixed at the top (always shown)
  * - Scrollable content below
- * - All elements stay within safe area
+ * - PerpTabs at the bottom (always shown)
+ * - Safe area is handled by parent layout
  */
 export default function TradeLayout() {
-  const insets = useSafeAreaInsets();
-  const segments = useSegments();
   const pathname = usePathname();
 
   // Zustand store
   const { selectedMarket, setSelectedMarketByCoin } = useMarketsStore();
 
-  // Check if current route is perp trade (for showing CoinInfo and PerpTabs)
-  const isPerpTrade = segments[2] === 'perp';
-
   // Deep link support: read URL query params once to initialize store
   // Example: /trade/perp?coin=BTC
   React.useEffect(() => {
-    if (!isPerpTrade) return;
-
     // Extract query params from pathname
     const [, queryString] = pathname.split('?');
     if (!queryString) return;
@@ -47,19 +40,14 @@ export default function TradeLayout() {
     if (coinFromUrl && coinFromUrl !== selectedMarket?.coin) {
       setSelectedMarketByCoin(coinFromUrl.toUpperCase());
     }
-  }, [pathname, isPerpTrade, setSelectedMarketByCoin, selectedMarket?.coin]);
+  }, [pathname, setSelectedMarketByCoin, selectedMarket?.coin]);
 
   return (
     <View style={styles.container}>
-      {/* Safe area spacing */}
-      <View style={{ height: insets.top, backgroundColor: '#111' }} />
-
       {/* Fixed CoinInfo Header */}
-      {isPerpTrade && (
-        <View style={styles.fixedHeader}>
-          <CoinInfo />
-        </View>
-      )}
+      <View style={styles.fixedHeader}>
+        <CoinInfo />
+      </View>
 
       {/* Scrollable Content */}
       <ScrollView
@@ -70,7 +58,7 @@ export default function TradeLayout() {
         <Slot />
 
         {/* PerpTabs - Inside ScrollView for full-page scrolling, still persists across market switches */}
-        {isPerpTrade && <PerpTabs />}
+        <PerpTabs />
       </ScrollView>
     </View>
   );

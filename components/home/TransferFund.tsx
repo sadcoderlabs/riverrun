@@ -16,7 +16,7 @@ export function TransferFund() {
 
   const handleDeposit = () => {
     router.navigate({
-      pathname: '/(main)/deposit/deposit-hl-bridge',
+      pathname: '/(tabs)/home/deposit/deposit-hl-bridge',
       params: {
         symbol: 'USDC',
         chain: 'arbitrum',
@@ -26,7 +26,7 @@ export function TransferFund() {
 
   const handleWithdraw = () => {
     router.navigate({
-      pathname: '/(main)/withdraw/withdraw-hl-bridge',
+      pathname: '/(tabs)/home/withdraw/withdraw-hl-bridge',
       params: {
         symbol: 'USDC',
         chain: 'arbitrum',

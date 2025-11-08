@@ -45,15 +45,19 @@ function WalletInfoDisplay() {
           freezeOnBlur: true,
           animation: 'default',
           headerShown: false,
+          // Ensure screens respect safe area from the root
+          contentStyle: {
+            backgroundColor: '#111',
+          },
         }}
       >
         <Stack.Protected guard={!wallet}>
           <Stack.Screen name="login" options={{ headerShown: false }} />
         </Stack.Protected>
         <Stack.Protected guard={!!wallet}>
-          {/* Main group - includes bottom navigation layout */}
+          {/* Tabs group - includes bottom tab navigation layout */}
           <Stack.Screen
-            name="(main)"
+            name="(tabs)"
             options={{
               headerShown: false,
             }}

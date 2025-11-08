@@ -5,7 +5,6 @@ import { Link } from 'expo-router';
 import { useState } from 'react';
 import { Pressable } from 'react-native';
 import Jazzicon from 'react-native-jazzicon';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { toast } from 'sonner-native';
 import { styled, Text, useTheme, XStack, YStack } from 'tamagui';
 import { WalletSelectorModal } from './WalletSelectorModal';
@@ -32,7 +31,6 @@ function shortenAddress(address: string): string {
 }
 
 export function WalletInfo() {
-  const insets = useSafeAreaInsets();
   const theme = useTheme();
   const { wallet } = useActiveWallet();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -59,7 +57,7 @@ export function WalletInfo() {
         justifyContent="space-between"
         alignItems="center"
         paddingHorizontal="$4"
-        paddingTop={insets.top + 12}
+        paddingTop={12}
         paddingBottom={12}
         shadowColor="$shadowColor"
         shadowOffset={{ width: 0, height: 2 }}

@@ -8,6 +8,7 @@ import { ScrollView, YStack } from 'tamagui';
  * Home Page
  *
  * Shows account overview with wallet info, account equity, and perps overview
+ * Safe area is handled by parent layout
  */
 export default function Index() {
   return (

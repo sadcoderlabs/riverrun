@@ -69,19 +69,19 @@ export function NavBar() {
   const isHomeActive =
     pathname === '/' ||
     pathname === '/home' ||
-    pathname === '/(main)' ||
-    pathname === '/(main)/home' ||
-    pathname === '/(main)/settings' ||
+    pathname === '/(tabs)' ||
+    pathname === '/(tabs)/home' ||
+    pathname === '/(tabs)/settings' ||
     pathname.includes('/settings'); // More inclusive check for settings paths
   const isTradeActive = pathname.includes('/trade');
 
   const navigateToHome = () => {
-    router.navigate('/(main)/home');
+    router.navigate('/(tabs)/home');
   };
 
   const navigateToTrade = () => {
     // Navigate to trade page - store is the source of truth for selected market
-    router.navigate('/(main)/trade/perp');
+    router.navigate('/(tabs)/trade/perp');
   };
 
   return (
