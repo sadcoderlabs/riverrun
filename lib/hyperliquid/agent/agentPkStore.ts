@@ -1,6 +1,6 @@
 /**
- * Storage layer for agent private keys
- * Handles all AsyncStorage operations related to agent management
+ * Agent private key store
+ * Manages persistence of agent private keys in AsyncStorage
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';

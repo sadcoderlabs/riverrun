@@ -13,7 +13,7 @@ import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
 import { DEFAULT_AGENT_NAME } from '../constants';
 import { getOrCreateAgentSigner } from '../getOrCreateAgentSigner';
 import { approveAgentOnChain, getAgentsFromChain, verifyAgentApproval } from '../agentBlockchain';
-import { hasAgentPrivateKey } from '../storage';
+import { hasAgentPrivateKey } from '../agentPkStore';
 import { type AgentInfo } from '../types';
 
 /**
