@@ -1,7 +1,7 @@
 import * as hl from '@nktkas/hyperliquid';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSubscriptionClient } from '../client/useSubscriptionClient';
-import { useAppStateSubscriptionManager } from '../hooks/useAppStateSubscriptionManager';
+import { useAppLifecycle } from '../hooks/useAppLifecycle';
 import { type NSigFigs } from './orderbookPrecision';
 
 export interface OrderBookLevel {
@@ -50,7 +50,7 @@ interface UseOrderBookResult {
  */
 export function useOrderBook({ coin, nSigFigs }: UseOrderBookParams): UseOrderBookResult {
   const subscriptionClient = useSubscriptionClient();
-  const subscriptionState = useAppStateSubscriptionManager();
+  const appState = useAppLifecycle();
   const [data, setData] = useState<OrderBookData | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | undefined>(undefined);
@@ -78,7 +78,7 @@ export function useOrderBook({ coin, nSigFigs }: UseOrderBookParams): UseOrderBo
     }
 
     // Don't subscribe if app is suspended
-    if (subscriptionState === 'suspended') {
+    if (appState === 'suspended') {
       void cleanup();
       return;
     }
@@ -89,7 +89,7 @@ export function useOrderBook({ coin, nSigFigs }: UseOrderBookParams): UseOrderBo
 
     const setupSubscription = async () => {
       // Only subscribe when app is active
-      if (subscriptionState !== 'active') {
+      if (appState !== 'active') {
         return;
       }
 
@@ -140,7 +140,7 @@ export function useOrderBook({ coin, nSigFigs }: UseOrderBookParams): UseOrderBo
       isMounted = false;
       void cleanup();
     };
-  }, [coin, nSigFigs, subscriptionState, cleanup, subscriptionClient]);
+  }, [coin, nSigFigs, appState, cleanup, subscriptionClient]);
 
   return {
     data,

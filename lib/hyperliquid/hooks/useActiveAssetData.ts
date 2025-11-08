@@ -2,7 +2,7 @@ import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
 import { useEffect, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useActiveAssetDataStore } from './useActiveAssetDataStore';
-import { useAppStateSubscriptionManager } from './useAppStateSubscriptionManager';
+import { useAppLifecycle } from './useAppLifecycle';
 
 export interface ActiveAssetData {
   user: string;
@@ -43,7 +43,7 @@ interface UseActiveAssetDataResult {
  */
 export function useActiveAssetData({ coin }: UseActiveAssetDataParams): UseActiveAssetDataResult {
   const { wallet } = useActiveWallet();
-  const subscriptionState = useAppStateSubscriptionManager();
+  const appState = useAppLifecycle();
 
   // Extract stable walletAddress (avoid wallet object reference changes)
   const walletAddress = wallet?.address;
@@ -61,17 +61,23 @@ export function useActiveAssetData({ coin }: UseActiveAssetDataParams): UseActiv
   useEffect(() => {
     if (!walletAddress || !coin) return;
 
+    // Only subscribe when app is active (not paused/suspended)
+    // This ensures we completely stop data fetching when app is in background
+    // to save battery and data usage
+    if (appState !== 'active') {
+      return;
+    }
+
     const store = useActiveAssetDataStore.getState();
-    const appState = subscriptionState === 'active' ? 'active' : 'suspended';
 
     // Subscribe (will reuse existing subscription if available)
-    void store.subscribe(walletAddress, coin, appState);
+    void store.subscribe(walletAddress, coin);
 
     // Cleanup on unmount or dependency change
     return () => {
       void store.unsubscribe(walletAddress, coin);
     };
-  }, [walletAddress, coin, subscriptionState]);
+  }, [walletAddress, coin, appState]);
 
   // Return data from store subscription
   return useMemo(() => {

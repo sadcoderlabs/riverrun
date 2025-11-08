@@ -20,7 +20,7 @@ interface CoinSubscription {
 
 interface ActiveAssetDataStoreState {
   subscriptions: Map<string, CoinSubscription>;
-  subscribe: (user: string, coin: string, appState: 'active' | 'suspended') => Promise<void>;
+  subscribe: (user: string, coin: string) => Promise<void>;
   unsubscribe: (user: string, coin: string) => Promise<void>;
 }
 
@@ -37,7 +37,7 @@ const MIN_HTTP_FETCH_INTERVAL = 500; // 500ms minimum between HTTP fetches per c
 export const useActiveAssetDataStore = create<ActiveAssetDataStoreState>((set, get) => ({
   subscriptions: new Map(),
 
-  subscribe: async (user, coin, appState) => {
+  subscribe: async (user, coin) => {
     const key = `${user}-${coin}`;
     const state = get();
     const existing = state.subscriptions.get(key);
@@ -126,72 +126,68 @@ export const useActiveAssetDataStore = create<ActiveAssetDataStoreState>((set, g
       );
     }
 
-    // Step 2: Set up WebSocket subscription (only if app is active)
-    if (appState === 'active') {
-      try {
-        const subscriptionClient = getSubscriptionClient();
-        const subscription = await subscriptionClient.activeAssetData(
-          {
-            coin: coin.toUpperCase(),
-            user,
-          },
-          assetData => {
-            const currentState = get();
-            const currentSub = currentState.subscriptions.get(key);
+    // Step 2: Set up WebSocket subscription
+    // Note: This function is only called when app is active (checked in useActiveAssetData)
+    try {
+      const subscriptionClient = getSubscriptionClient();
+      const subscription = await subscriptionClient.activeAssetData(
+        {
+          coin: coin.toUpperCase(),
+          user,
+        },
+        assetData => {
+          const currentState = get();
+          const currentSub = currentState.subscriptions.get(key);
 
-            if (currentSub) {
-              // Create new object to trigger re-render
-              const updatedSub: CoinSubscription = {
-                ...currentSub,
-                data: assetData,
-                // If HTTP didn't complete yet, WebSocket is the first result
-                isLoading: currentSub.httpFetched ? currentSub.isLoading : false,
-              };
+          if (currentSub) {
+            // Create new object to trigger re-render
+            const updatedSub: CoinSubscription = {
+              ...currentSub,
+              data: assetData,
+              // If HTTP didn't complete yet, WebSocket is the first result
+              isLoading: currentSub.httpFetched ? currentSub.isLoading : false,
+            };
 
-              set({
-                subscriptions: new Map(currentState.subscriptions).set(key, updatedSub),
-              });
-            }
-          },
-        );
+            set({
+              subscriptions: new Map(currentState.subscriptions).set(key, updatedSub),
+            });
+          }
+        },
+      );
 
-        // Store subscription reference
-        const currentState = get();
-        const currentSub = currentState.subscriptions.get(key);
+      // Store subscription reference
+      const currentState = get();
+      const currentSub = currentState.subscriptions.get(key);
 
-        if (currentSub) {
-          // Create new object to trigger re-render
-          const updatedSub: CoinSubscription = {
-            ...currentSub,
-            subscription,
-          };
+      if (currentSub) {
+        // Create new object to trigger re-render
+        const updatedSub: CoinSubscription = {
+          ...currentSub,
+          subscription,
+        };
 
-          set({
-            subscriptions: new Map(currentState.subscriptions).set(key, updatedSub),
-          });
-        }
-      } catch (err) {
-        console.error(
-          `[useActiveAssetDataStore] ❌ WebSocket subscription failed for ${coin}:`,
-          err,
-        );
+        set({
+          subscriptions: new Map(currentState.subscriptions).set(key, updatedSub),
+        });
+      }
+    } catch (err) {
+      console.error(`[useActiveAssetDataStore] ❌ WebSocket subscription failed for ${coin}:`, err);
 
-        const currentState = get();
-        const currentSub = currentState.subscriptions.get(key);
+      const currentState = get();
+      const currentSub = currentState.subscriptions.get(key);
 
-        // Only set error if both HTTP and WebSocket failed
-        if (currentSub && !currentSub.httpFetched) {
-          // Create new object to trigger re-render
-          const updatedSub: CoinSubscription = {
-            ...currentSub,
-            error: err instanceof Error ? err : new Error('Failed to fetch data'),
-            isLoading: false,
-          };
+      // Only set error if both HTTP and WebSocket failed
+      if (currentSub && !currentSub.httpFetched) {
+        // Create new object to trigger re-render
+        const updatedSub: CoinSubscription = {
+          ...currentSub,
+          error: err instanceof Error ? err : new Error('Failed to fetch data'),
+          isLoading: false,
+        };
 
-          set({
-            subscriptions: new Map(currentState.subscriptions).set(key, updatedSub),
-          });
-        }
+        set({
+          subscriptions: new Map(currentState.subscriptions).set(key, updatedSub),
+        });
       }
     }
   },

@@ -2,57 +2,55 @@ import { useEffect, useRef, useState } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 
 /**
- * Subscription state that can be controlled by app lifecycle
+ * App lifecycle state
  */
-export type SubscriptionState = 'active' | 'paused' | 'suspended';
+export type AppLifecycleState = 'active' | 'paused' | 'suspended';
 
 /**
- * Configuration for AppState-based subscription management
+ * Configuration for app lifecycle management
  */
-interface SubscriptionManagerConfig {
+export interface AppLifecycleConfig {
   /**
-   * Delay in ms before suspending subscriptions when app goes to background
+   * Delay in ms before suspending when app goes to background
    * Default: 30000 (30 seconds)
    */
   suspendDelay?: number;
 
   /**
-   * Whether to automatically resume subscriptions when app comes to foreground
+   * Whether to automatically resume when app comes to foreground
    * Default: true
    */
   autoResume?: boolean;
 }
 
 /**
- * Hook to manage WebSocket subscriptions based on app lifecycle state
+ * Hook to track app lifecycle state (active/paused/suspended)
  *
- * This hook helps reduce battery drain and network usage by:
- * - Pausing subscriptions when app goes to background
- * - Suspending (unsubscribing) after extended background time
- * - Resuming subscriptions when app returns to foreground
+ * Returns the current lifecycle state which helps optimize resource usage:
+ * - **active**: App in foreground, normal operation
+ * - **paused**: App just went to background, resources maintained for quick resume
+ * - **suspended**: App in background >30s, resources released to save battery/data
  *
  * @param config - Configuration options
- * @returns Current subscription state
+ * @returns Current app lifecycle state
  *
  * @example
  * ```tsx
- * const subscriptionState = useAppStateSubscriptionManager();
+ * const appState = useAppLifecycle();
  *
  * useEffect(() => {
- *   if (subscriptionState === 'active') {
- *     // Subscribe to WebSocket
+ *   if (appState === 'active') {
+ *     // Subscribe to real-time data
  *     const sub = subscriptionClient.subscribe(...);
  *     return () => sub.unsubscribe();
  *   }
- * }, [subscriptionState]);
+ * }, [appState]);
  * ```
  */
-export function useAppStateSubscriptionManager(
-  config: SubscriptionManagerConfig = {},
-): SubscriptionState {
+export function useAppLifecycle(config: AppLifecycleConfig = {}): AppLifecycleState {
   const { suspendDelay = 30000, autoResume = true } = config;
 
-  const [subscriptionState, setSubscriptionState] = useState<SubscriptionState>('active');
+  const [appState, setAppState] = useState<AppLifecycleState>('active');
   const suspendTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const previousAppStateRef = useRef<AppStateStatus>(AppState.currentState);
 
@@ -62,12 +60,12 @@ export function useAppStateSubscriptionManager(
 
       // App going to background
       if (previousState === 'active' && nextAppState.match(/inactive|background/)) {
-        // Immediately pause subscriptions
-        setSubscriptionState('paused');
+        // Immediately pause
+        setAppState('paused');
 
         // Schedule suspension after delay
         suspendTimeoutRef.current = setTimeout(() => {
-          setSubscriptionState('suspended');
+          setAppState('suspended');
         }, suspendDelay);
       }
 
@@ -79,9 +77,9 @@ export function useAppStateSubscriptionManager(
           suspendTimeoutRef.current = null;
         }
 
-        // Resume subscriptions if auto-resume is enabled
+        // Resume if auto-resume is enabled
         if (autoResume) {
-          setSubscriptionState('active');
+          setAppState('active');
         }
       }
 
@@ -100,20 +98,20 @@ export function useAppStateSubscriptionManager(
     };
   }, [suspendDelay, autoResume]);
 
-  return subscriptionState;
+  return appState;
 }
 
 /**
- * Hook variant that provides manual control over subscription state
+ * Hook variant that provides manual control over app lifecycle state
  * Useful when you need to override automatic behavior
  */
-export function useAppStateSubscriptionManagerWithControl(config: SubscriptionManagerConfig = {}) {
-  const automaticState = useAppStateSubscriptionManager(config);
-  const [manualOverride, setManualOverride] = useState<SubscriptionState | null>(null);
+export function useAppLifecycleWithControl(config: AppLifecycleConfig = {}) {
+  const automaticState = useAppLifecycle(config);
+  const [manualOverride, setManualOverride] = useState<AppLifecycleState | null>(null);
 
   return {
-    subscriptionState: manualOverride ?? automaticState,
-    setSubscriptionState: setManualOverride,
+    appState: manualOverride ?? automaticState,
+    setAppState: setManualOverride,
     clearOverride: () => setManualOverride(null),
     automaticState,
   };
