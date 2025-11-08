@@ -69,9 +69,6 @@ export function useActiveAssetCtx({ coin }: UseActiveAssetCtxParams): UseActiveA
         // Cleanup any existing subscription
         await cleanup();
 
-        // Get subscription client
-        
-
         // Subscribe to activeAssetCtx
         const subscription = await subscriptionClient.activeAssetCtx(
           {

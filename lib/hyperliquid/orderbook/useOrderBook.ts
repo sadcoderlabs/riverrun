@@ -1,8 +1,8 @@
 import * as hl from '@nktkas/hyperliquid';
-import { type NSigFigs } from './orderbookPrecision';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useAppStateSubscriptionManager } from '../hooks/useAppStateSubscriptionManager';
 import { useSubscriptionClient } from '../client/useSubscriptionClient';
+import { useAppStateSubscriptionManager } from '../hooks/useAppStateSubscriptionManager';
+import { type NSigFigs } from './orderbookPrecision';
 
 export interface OrderBookLevel {
   px: string; // Price
@@ -96,9 +96,6 @@ export function useOrderBook({ coin, nSigFigs }: UseOrderBookParams): UseOrderBo
       try {
         // Cleanup any existing subscription
         await cleanup();
-
-        // Get subscription client
-        
 
         // Subscribe to l2Book with precision parameter
         // nSigFigs controls price aggregation level:
