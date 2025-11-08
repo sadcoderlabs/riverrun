@@ -71,8 +71,7 @@ export function NavBar() {
     pathname === '/home' ||
     pathname === '/(tabs)' ||
     pathname === '/(tabs)/home' ||
-    pathname === '/(tabs)/settings' ||
-    pathname.includes('/settings'); // More inclusive check for settings paths
+    pathname.includes('/home'); // Includes home, deposit, withdraw, settings
   const isTradeActive = pathname.includes('/trade');
 
   const navigateToHome = () => {

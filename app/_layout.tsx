@@ -70,14 +70,6 @@ function WalletInfoDisplay() {
               animation: 'slide_from_right',
             }}
           />
-          {/* Settings route - full screen without bottom navigation */}
-          <Stack.Screen
-            name="settings/index"
-            options={{
-              headerShown: false,
-              animation: 'slide_from_right',
-            }}
-          />
         </Stack.Protected>
       </Stack>
     </>

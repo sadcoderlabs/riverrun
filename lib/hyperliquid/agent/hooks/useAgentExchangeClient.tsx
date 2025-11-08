@@ -157,7 +157,7 @@ export function useAgentExchangeClient() {
                 {
                   text: 'Go to Settings',
                   onPress: () => {
-                    router.push('/settings/agent-status');
+                    router.push('/(tabs)/home/settings/agent-status');
                     resolve(undefined);
                   },
                 },

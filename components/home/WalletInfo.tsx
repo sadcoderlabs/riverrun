@@ -92,7 +92,7 @@ export function WalletInfo() {
         </YStack>
 
         {/* Settings Icon */}
-        <Link href="/settings" asChild>
+        <Link href="/(tabs)/home/settings" asChild>
           <IconButton>
             <Settings size={24} color={theme.color9} />
           </IconButton>
