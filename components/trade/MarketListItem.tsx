@@ -66,9 +66,9 @@ const MarketListItemComponent = ({
       {/* Left Column: Star + Market Name + Leverage + Volume */}
       <XStack flex={1} gap="$2" alignItems="center">
         {/* Star Icon */}
-        <XStack onPress={handleStarPress} pressStyle={{ opacity: 0.7 }} padding="$1">
+        <XStack onPress={handleStarPress} pressStyle={{ opacity: 0.7 }} padding="$2">
           <Star
-            size="$0.75"
+            size="$1"
             color={isFavorite ? '#FDB022' : '$gray9'}
             fill={isFavorite ? '#FDB022' : 'transparent'}
           />

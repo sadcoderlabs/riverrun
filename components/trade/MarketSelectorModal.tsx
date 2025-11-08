@@ -117,11 +117,11 @@ export function MarketSelectorModal({ open, onOpenChange }: MarketSelectorModalP
               backgroundColor="$gray3"
               rounded="$12"
               paddingHorizontal="$3"
-              paddingVertical="$2"
+              paddingVertical="$1.5"
               alignItems="center"
               gap="$2"
             >
-              <Search size="$1" color="$gray9" />
+              <Search size="$0.75" color="$gray9" />
               <Input
                 flex={1}
                 placeholder="Search tokens"
@@ -130,51 +130,51 @@ export function MarketSelectorModal({ open, onOpenChange }: MarketSelectorModalP
                 onChangeText={setSearchQuery}
                 backgroundColor="transparent"
                 borderWidth={0}
-                fontSize="$3"
+                fontSize="$2"
                 paddingVertical="$0"
                 paddingHorizontal="$0"
               />
             </XStack>
 
             {/* Column Headers */}
-            <XStack paddingHorizontal="$3" paddingVertical="$2" alignItems="center" gap="$3">
+            <XStack paddingHorizontal="$3" paddingVertical="$1" alignItems="center" gap="$3">
               {/* Left: PAIRS */}
               <XStack flex={1} alignItems="center" gap="$1">
                 <Button
                   unstyled
                   onPress={() => handleSortClick('name')}
-                  paddingHorizontal="$2"
-                  paddingVertical="$1"
+                  paddingHorizontal="$1.5"
+                  paddingVertical="$0.5"
                   opacity={sortBy === 'name' ? 1 : 0.6}
                 >
                   <XStack alignItems="center" gap="$1">
-                    <Text fontSize="$2" fontFamily="$interMedium" color="$gray10">
+                    <Text fontSize="$1" fontFamily="$interMedium" color="$gray10">
                       PAIRS
                     </Text>
                     {sortBy === 'name' &&
                       (sortDirection === 'asc' ? (
-                        <ArrowUp size="$0.75" color="$gray10" />
+                        <ArrowUp size="$0.5" color="$gray10" />
                       ) : (
-                        <ArrowDown size="$0.75" color="$gray10" />
+                        <ArrowDown size="$0.5" color="$gray10" />
                       ))}
                   </XStack>
                 </Button>
                 <Button
                   unstyled
                   onPress={() => handleSortClick('volume')}
-                  paddingHorizontal="$2"
-                  paddingVertical="$1"
+                  paddingHorizontal="$1.5"
+                  paddingVertical="$0.5"
                   opacity={sortBy === 'volume' ? 1 : 0.6}
                 >
                   <XStack alignItems="center" gap="$1">
-                    <Text fontSize="$2" fontFamily="$interMedium" color="$gray10">
+                    <Text fontSize="$1" fontFamily="$interMedium" color="$gray10">
                       /VOL
                     </Text>
                     {sortBy === 'volume' &&
                       (sortDirection === 'asc' ? (
-                        <ArrowUp size="$0.75" color="$gray10" />
+                        <ArrowUp size="$0.5" color="$gray10" />
                       ) : (
-                        <ArrowDown size="$0.75" color="$gray10" />
+                        <ArrowDown size="$0.5" color="$gray10" />
                       ))}
                   </XStack>
                 </Button>
@@ -186,19 +186,19 @@ export function MarketSelectorModal({ open, onOpenChange }: MarketSelectorModalP
                 onPress={() => handleSortClick('price')}
                 minWidth={100}
                 alignItems="flex-end"
-                paddingHorizontal="$2"
-                paddingVertical="$1"
+                paddingHorizontal="$1.5"
+                paddingVertical="$0.5"
                 opacity={sortBy === 'price' ? 1 : 0.6}
               >
                 <XStack alignItems="center" gap="$1">
-                  <Text fontSize="$2" fontFamily="$interMedium" color="$gray10">
+                  <Text fontSize="$1" fontFamily="$interMedium" color="$gray10">
                     PRICE
                   </Text>
                   {sortBy === 'price' &&
                     (sortDirection === 'asc' ? (
-                      <ArrowUp size="$0.75" color="$gray10" />
+                      <ArrowUp size="$0.5" color="$gray10" />
                     ) : (
-                      <ArrowDown size="$0.75" color="$gray10" />
+                      <ArrowDown size="$0.5" color="$gray10" />
                     ))}
                 </XStack>
               </Button>
@@ -209,19 +209,19 @@ export function MarketSelectorModal({ open, onOpenChange }: MarketSelectorModalP
                 onPress={() => handleSortClick('change')}
                 minWidth={80}
                 alignItems="flex-end"
-                paddingHorizontal="$2"
-                paddingVertical="$1"
+                paddingHorizontal="$1.5"
+                paddingVertical="$0.5"
                 opacity={sortBy === 'change' ? 1 : 0.6}
               >
                 <XStack alignItems="center" gap="$1">
-                  <Text fontSize="$2" fontFamily="$interMedium" color="$gray10">
+                  <Text fontSize="$1" fontFamily="$interMedium" color="$gray10">
                     24H CHG
                   </Text>
                   {sortBy === 'change' &&
                     (sortDirection === 'asc' ? (
-                      <ArrowUp size="$0.75" color="$gray10" />
+                      <ArrowUp size="$0.5" color="$gray10" />
                     ) : (
-                      <ArrowDown size="$0.75" color="$gray10" />
+                      <ArrowDown size="$0.5" color="$gray10" />
                     ))}
                 </XStack>
               </Button>
