@@ -10,7 +10,7 @@ import { useHyperliquidClient, useUserFills } from '@/lib/hyperliquid/hooks';
 import type { Fill } from '@/lib/hyperliquid/types/fills';
 import { formatTimestamp } from '@/lib/hyperliquid/utils';
 import { useActiveWallet } from '@/lib/riverrun/wallet';
-import { useSelectedCoinStore } from '@/lib/riverrun/store';
+import { useMarketsStore } from '@/lib/hyperliquid/market';
 import type { SymbolConverter } from '@nktkas/hyperliquid/utils';
 import { useEffect, useMemo, useState } from 'react';
 import { Button, Spinner, Text, View, XStack, YStack } from 'tamagui';
@@ -157,7 +157,7 @@ type FillFilter = 'all' | 'long' | 'short';
 export function HistoryTabContent() {
   const { wallet } = useActiveWallet();
   const { getSymbolConverter } = useHyperliquidClient();
-  const { setSelectedCoin } = useSelectedCoinStore();
+  const { setSelectedMarketByCoin } = useMarketsStore();
 
   // Get fills from useUserFills hook
   const { fills, isLoading, error } = useUserFills();
@@ -189,7 +189,7 @@ export function HistoryTabContent() {
 
   // Switch market when fill card is clicked
   const handleFillClick = (coin: string) => {
-    setSelectedCoin(coin);
+    setSelectedMarketByCoin(coin);
     // Note: URL will be synced by TradeLayout's useEffect
   };
 

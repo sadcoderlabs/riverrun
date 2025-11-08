@@ -2,7 +2,7 @@ import { Home, TrendingUp } from '@tamagui/lucide-icons';
 import { usePathname, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { styled, Text, useTheme, XStack, YStack } from 'tamagui';
-import { useSelectedCoinStore } from '@/lib/riverrun/store';
+import { useMarketsStore } from '@/lib/hyperliquid/market';
 
 const NavBarContainer = styled(XStack, {
   backgroundColor: '$background',
@@ -63,7 +63,7 @@ export function NavBar() {
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
   const theme = useTheme();
-  const { selectedCoin } = useSelectedCoinStore();
+  const { selectedMarket } = useMarketsStore();
 
   // Debug the current pathname
   console.log('Current pathname:', pathname);
@@ -83,7 +83,7 @@ export function NavBar() {
 
   const navigateToTrade = () => {
     // Use the current selected coin from store, or default to BTC
-    const coin = selectedCoin || 'BTC';
+    const coin = selectedMarket?.coin || 'BTC';
     router.navigate(`/(main)/trade/perp/${coin}`);
   };
 

@@ -15,7 +15,7 @@ import {
   isMarketOrder,
 } from '@/lib/hyperliquid/utils';
 import { useActiveWallet } from '@/lib/riverrun/wallet';
-import { useSelectedCoinStore } from '@/lib/riverrun/store';
+import { useMarketsStore } from '@/lib/hyperliquid/market';
 import type { SymbolConverter } from '@nktkas/hyperliquid/utils';
 import { useEffect, useMemo, useState } from 'react';
 import { Button, Spinner, Text, View, XStack, YStack } from 'tamagui';
@@ -202,7 +202,7 @@ type OrderFilter = 'all' | 'long' | 'short';
 export function OrdersTabContent() {
   const { wallet } = useActiveWallet();
   const { getSymbolConverter } = useHyperliquidClient();
-  const { setSelectedCoin } = useSelectedCoinStore();
+  const { setSelectedMarketByCoin } = useMarketsStore();
 
   // Get orders from useOrderUpdates (simplified flat structure)
   const { orders, isLoading, error } = useOrderUpdates();
@@ -236,7 +236,7 @@ export function OrdersTabContent() {
 
   // Switch market when order card is clicked (without full page reload)
   const handleOrderClick = (coin: string) => {
-    setSelectedCoin(coin);
+    setSelectedMarketByCoin(coin);
     // Note: URL will be synced by TradeLayout's useEffect
   };
 

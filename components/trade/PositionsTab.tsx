@@ -5,7 +5,7 @@ import { formatValue } from '@/lib/hyperliquid/format/formatValue';
 import { useInfoClient } from '@/lib/hyperliquid/client/useInfoClient';
 import { useWebData2Context } from '@/lib/hyperliquid/context/WebData2Context';
 import { useActiveWallet } from '@/lib/riverrun/wallet';
-import { useSelectedCoinStore } from '@/lib/riverrun/store';
+import { useMarketsStore } from '@/lib/hyperliquid/market';
 import * as hl from '@nktkas/hyperliquid';
 import { useEffect, useMemo, useState } from 'react';
 import { Button, Spinner, Text, View, XStack, YStack } from 'tamagui';
@@ -22,7 +22,7 @@ interface PositionWithMarkPrice extends Position {
 export default function PositionsTab() {
   const { wallet } = useActiveWallet();
   const infoClient = useInfoClient();
-  const { setSelectedCoin } = useSelectedCoinStore();
+  const { setSelectedMarketByCoin } = useMarketsStore();
 
   // Get WebData2 from context (shared across all markets, no re-subscription on market switch)
   const { data: webData, isLoading, error: webError } = useWebData2Context();
@@ -33,7 +33,7 @@ export default function PositionsTab() {
 
   // Switch market when position card is clicked (without full page reload)
   const handlePositionClick = (coin: string) => {
-    setSelectedCoin(coin);
+    setSelectedMarketByCoin(coin);
     // Note: URL will be synced by TradeLayout's useEffect
   };
 

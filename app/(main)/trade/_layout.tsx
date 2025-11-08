@@ -1,10 +1,10 @@
 import { CoinInfo } from '@/components/trade/CoinInfo';
 import { PerpTabs } from '@/components/trade/PerpTabs';
+import { useMarketsStore } from '@/lib/hyperliquid/market';
 import { Slot, usePathname, useRouter, useSegments } from 'expo-router';
 import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useSelectedCoinStore } from '@/lib/riverrun/store';
 
 /**
  * Trade Layout with Fixed Header
@@ -20,8 +20,8 @@ export default function TradeLayout() {
   const pathname = usePathname();
   const router = useRouter();
 
-  // Zustand store for selected coin
-  const { selectedCoin, setSelectedCoin } = useSelectedCoinStore();
+  // Zustand store
+  const { selectedMarket, setSelectedMarketByCoin, markets } = useMarketsStore();
 
   // Extract asset from pathname
   // pathname format: /trade/perp/BTC or /(main)/trade/perp/BTC
@@ -34,19 +34,20 @@ export default function TradeLayout() {
 
   // Track previous values to detect which source changed
   const prevAssetFromUrlRef = React.useRef(assetFromUrl);
-  const prevSelectedCoinRef = React.useRef(selectedCoin);
+  const prevSelectedCoinRef = React.useRef(selectedMarket?.coin);
 
   // Bidirectional sync between URL and store
   React.useEffect(() => {
     if (!isPerpTrade) return;
 
+    const selectedCoin = selectedMarket?.coin;
     const urlChanged = assetFromUrl !== prevAssetFromUrlRef.current;
     const storeChanged = selectedCoin !== prevSelectedCoinRef.current;
 
     if (urlChanged && !storeChanged) {
-      // URL changed (browser navigation) → update store
+      // URL changed (browser navigation) → update store with complete market info
       console.log('[TradeLayout] URL changed, syncing to store:', assetFromUrl);
-      setSelectedCoin(assetFromUrl);
+      setSelectedMarketByCoin(assetFromUrl);
     } else if (storeChanged && !urlChanged) {
       // Store changed (user interaction) → update URL
       console.log('[TradeLayout] Store changed, syncing to URL:', selectedCoin);
@@ -56,10 +57,10 @@ export default function TradeLayout() {
     // Update refs after sync
     prevAssetFromUrlRef.current = assetFromUrl;
     prevSelectedCoinRef.current = selectedCoin;
-  }, [assetFromUrl, selectedCoin, isPerpTrade, setSelectedCoin, router]);
+  }, [assetFromUrl, isPerpTrade, setSelectedMarketByCoin, router, selectedMarket?.coin]);
 
   // Use selectedCoin for display, fallback to assetFromUrl
-  const displayCoin = selectedCoin || assetFromUrl;
+  const displayCoin = selectedMarket?.coin || assetFromUrl;
 
   return (
     <View style={styles.container}>

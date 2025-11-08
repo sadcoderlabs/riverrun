@@ -1,6 +1,10 @@
 import { MarketListItem } from '@/components/trade/MarketListItem';
-import { useMarketData, useMarketSelector, type SortOption } from '@/lib/hyperliquid/market';
-import { useSelectedCoinStore } from '@/lib/riverrun/store';
+import {
+  useMarketData,
+  useMarketSelector,
+  useMarketsStore,
+  type SortOption,
+} from '@/lib/hyperliquid/market';
 import { ArrowDown, ArrowUp, Search } from '@tamagui/lucide-icons';
 import { useCallback, useState } from 'react';
 import { FlatList, Modal, Pressable, RefreshControl, StyleSheet } from 'react-native';
@@ -12,7 +16,7 @@ interface MarketSelectorModalProps {
 }
 
 export function MarketSelectorModal({ open, onOpenChange }: MarketSelectorModalProps) {
-  const { setSelectedCoin } = useSelectedCoinStore();
+  const { setSelectedMarketByCoin } = useMarketsStore();
 
   // Market data fetching and caching (initialized once at app level)
   const { isLoading, error: dataError, refresh } = useMarketData();
@@ -37,12 +41,18 @@ export function MarketSelectorModal({ open, onOpenChange }: MarketSelectorModalP
     (marketId: string) => {
       // Close modal first
       onOpenChange(false);
-      // Extract asset name from marketId (e.g., "BTC-USD" -> "BTC")
-      const asset = marketId.replace('-USD', '').replace('/USDC', '').split('/')[0];
-      // Update selected coin (URL will be synced by TradeLayout's useEffect)
-      setSelectedCoin(asset);
+
+      // Find the market to get coin name
+      const market = markets.find(m => m.id === marketId);
+      if (!market) {
+        console.error('Market not found:', marketId);
+        return;
+      }
+
+      // Update selected market using convenience method
+      setSelectedMarketByCoin(market.name);
     },
-    [setSelectedCoin, onOpenChange],
+    [markets, setSelectedMarketByCoin, onOpenChange],
   );
 
   const handleToggleFavorite = useCallback(

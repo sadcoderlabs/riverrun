@@ -6,24 +6,48 @@ import type { Market } from './types';
 const FAVORITES_KEY = '@riverrun:favorite_markets';
 
 /**
- * Pure state management for markets data
- * This store only handles state, no business logic or data fetching
+ * Selected market information
+ * Contains all necessary data about the currently selected trading market
+ */
+export interface SelectedMarket {
+  /** Market coin symbol (e.g., "BTC", "ETH") */
+  coin: string;
+  /** Full market ID (e.g., "BTC-USD", "ETH-USD") */
+  marketId: string;
+  /** Size decimals for price formatting */
+  szDecimals: number;
+  /** Maximum leverage available for this market */
+  maxLeverage: number;
+  /** Margin table ID (for future dynamic leverage calculation) */
+  marginTableId?: number;
+}
+
+/**
+ * Markets state management
+ * Handles market list, favorites, and currently selected market
  */
 interface MarketsState {
-  // State
+  // Market list state
   markets: Market[];
   favorites: string[];
 
-  // Actions
+  // Currently selected market state
+  selectedMarket: SelectedMarket | null;
+
+  // Market list actions
   setMarkets: (markets: Market[]) => void;
   setFavorites: (favorites: string[]) => void;
   toggleFavorite: (marketId: string) => Promise<void>;
+
+  // Selected market actions
+  setSelectedMarketByCoin: (coin: string) => void;
 }
 
 export const useMarketsStore = create<MarketsState>((set, get) => ({
   // Initial state
   markets: [],
   favorites: [],
+  selectedMarket: null,
 
   /**
    * Set markets data
@@ -60,6 +84,28 @@ export const useMarketsStore = create<MarketsState>((set, get) => ({
       console.error('Error persisting favorite:', error);
       // Revert on error
       set({ favorites });
+    }
+  },
+
+  /**
+   * Set the currently selected market by coin symbol
+   * Finds market from the markets list and updates selectedMarket
+   */
+  setSelectedMarketByCoin: (coin: string) => {
+    const { markets } = get();
+    const market = markets.find(m => m.name === coin.toUpperCase());
+
+    if (market) {
+      set({
+        selectedMarket: {
+          coin: market.name,
+          marketId: market.id,
+          szDecimals: market.szDecimals,
+          maxLeverage: market.maxLeverage,
+        },
+      });
+    } else {
+      console.warn(`[useMarketsStore] Market not found: ${coin}`);
     }
   },
 }));

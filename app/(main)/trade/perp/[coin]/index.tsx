@@ -1,15 +1,15 @@
 import { PerpTradePanel } from '@/components/trade/PerpTradePanel';
+import { useMarketsStore } from '@/lib/hyperliquid/market';
 import { useLocalSearchParams } from 'expo-router';
 import { YStack } from 'tamagui';
-import { useSelectedCoinStore } from '@/lib/riverrun/store';
 
 export default function PerpTradeIndex() {
   const { coin = 'BTC' } = useLocalSearchParams<{ coin: string }>();
-  const { selectedCoin } = useSelectedCoinStore();
+  const { selectedMarket } = useMarketsStore();
 
   // Use selectedCoin from store, fallback to URL param
   // Note: URL sync is handled by _layout.tsx, not here
-  const displayCoin = selectedCoin || (coin as string);
+  const displayCoin = selectedMarket?.coin || (coin as string);
 
   return (
     <YStack backgroundColor="$gray3">
