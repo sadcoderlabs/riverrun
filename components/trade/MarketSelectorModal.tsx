@@ -1,9 +1,8 @@
 import { MarketListItem } from '@/components/trade/MarketListItem';
-import { useMarketsStore, useAllMids } from '@/lib/hyperliquid/market';
+import { useMarketData, useMarketSelector } from '@/lib/hyperliquid/market';
 import { useSelectedCoinStore } from '@/lib/riverrun/store';
-import { useHyperliquidClient } from '@/lib/hyperliquid/client/useHyperliquidClient';
 import { Search } from '@tamagui/lucide-icons';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { FlatList, Modal, Pressable, RefreshControl, StyleSheet } from 'react-native';
 import { Input, Spinner, Text, XStack, YStack } from 'tamagui';
 
@@ -14,87 +13,15 @@ interface MarketSelectorModalProps {
 
 export function MarketSelectorModal({ open, onOpenChange }: MarketSelectorModalProps) {
   const { setSelectedCoin } = useSelectedCoinStore();
-  const { infoClient } = useHyperliquidClient();
 
-  // Get state and actions from store
-  const { markets, favorites, isLoading, initialize, refreshMarkets, toggleFavorite } =
-    useMarketsStore();
+  // Market data fetching and caching (initialized once at app level)
+  const { isLoading, error: dataError, refresh } = useMarketData();
 
-  // Subscribe to real-time prices (only when modal is open)
-  const { data: allMidsData } = useAllMids({ enabled: open });
+  // Market selector business logic
+  const { searchQuery, setSearchQuery, markets, favorites, filteredMarkets, toggleFavorite } =
+    useMarketSelector({ enableRealtimePrices: open });
 
-  const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | undefined>(undefined);
-
-  // Initialize markets data when modal opens
-  useEffect(() => {
-    if (open) {
-      initialize(infoClient);
-    }
-  }, [open, initialize, infoClient]);
-
-  // Compute sorted and filtered markets with real-time prices
-  const filteredMarkets = useMemo(() => {
-    if (markets.length === 0) return [];
-
-    // Merge real-time prices into markets
-    const marketsWithRealtimePrices = markets.map(market => {
-      // Extract coin symbol from market ID (e.g., "BTC-USD" -> "BTC")
-      const coinSymbol = market.id.replace('-USD', '').replace('/USDC', '').split('/')[0];
-
-      // Get real-time mid price if available
-      const realtimeMidPrice = allMidsData?.mids[coinSymbol];
-
-      // If we have real-time price, update the market data
-      if (realtimeMidPrice) {
-        const currentPrice = parseFloat(realtimeMidPrice);
-        const prevDayPrice = market.price / (1 + market.change / 100); // Calculate prev day price from stored change
-        const priceChange =
-          prevDayPrice > 0 ? ((currentPrice - prevDayPrice) / prevDayPrice) * 100 : market.change;
-
-        return {
-          ...market,
-          price: currentPrice,
-          change: priceChange,
-        };
-      }
-
-      return market;
-    });
-
-    // Sort by favorites first, then volume
-    const sorted = [...marketsWithRealtimePrices].sort((a, b) => {
-      const aIsFavorite = favorites.includes(a.id);
-      const bIsFavorite = favorites.includes(b.id);
-      if (aIsFavorite && !bIsFavorite) return -1;
-      if (!aIsFavorite && bIsFavorite) return 1;
-      return b.volume - a.volume;
-    });
-
-    // Filter by search query
-    if (!searchQuery) return sorted;
-
-    const query = searchQuery.toLowerCase();
-    const startsWithMatches = sorted.filter(
-      m => m.id.toLowerCase().startsWith(query) || m.name.toLowerCase().startsWith(query),
-    );
-    const includesMatches = sorted.filter(
-      m =>
-        !m.id.toLowerCase().startsWith(query) &&
-        !m.name.toLowerCase().startsWith(query) &&
-        (m.id.toLowerCase().includes(query) || m.name.toLowerCase().includes(query)),
-    );
-
-    return [...startsWithMatches, ...includesMatches];
-  }, [markets, favorites, searchQuery, allMidsData]);
-
-  // Reset search when modal closes
-  useEffect(() => {
-    if (!open) {
-      setSearchQuery('');
-    }
-  }, [open]);
 
   const navigateToMarket = useCallback(
     (marketId: string) => {
@@ -117,16 +44,14 @@ export function MarketSelectorModal({ open, onOpenChange }: MarketSelectorModalP
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    setError(undefined);
     try {
-      await refreshMarkets(infoClient);
+      await refresh();
     } catch (err) {
       console.error('Error refreshing markets:', err);
-      setError('Failed to refresh markets');
     } finally {
       setRefreshing(false);
     }
-  }, [refreshMarkets, infoClient]);
+  }, [refresh]);
 
   // Show loading state only if we don't have markets yet
   const showLoading = isLoading && markets.length === 0;
@@ -193,9 +118,9 @@ export function MarketSelectorModal({ open, onOpenChange }: MarketSelectorModalP
                 <Spinner size="large" />
                 <Text marginTop="$2">Loading markets...</Text>
               </YStack>
-            ) : error && markets.length === 0 ? (
+            ) : dataError && markets.length === 0 ? (
               <YStack flex={1} justifyContent="center" alignItems="center">
-                <Text color="$red10">{error}</Text>
+                <Text color="$red10">{dataError.message}</Text>
               </YStack>
             ) : (
               <FlatList

@@ -1,109 +1,42 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
-import type * as hl from '@nktkas/hyperliquid';
 import type { Market } from './types';
 
-// AsyncStorage keys
-const MARKETS_CACHE_KEY = '@riverrun:markets_cache';
-const CACHE_EXPIRY_KEY = '@riverrun:markets_cache_expiry';
+// AsyncStorage key for favorites
 const FAVORITES_KEY = '@riverrun:favorite_markets';
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
+/**
+ * Pure state management for markets data
+ * This store only handles state, no business logic or data fetching
+ */
 interface MarketsState {
   // State
   markets: Market[];
   favorites: string[];
-  isInitialized: boolean;
-  isLoading: boolean;
-  isMarketSelectorOpen: boolean;
 
   // Actions
-  initialize: (infoClient: hl.InfoClient) => Promise<void>;
-  refreshMarkets: (infoClient: hl.InfoClient) => Promise<void>;
+  setMarkets: (markets: Market[]) => void;
+  setFavorites: (favorites: string[]) => void;
   toggleFavorite: (marketId: string) => Promise<void>;
-  setMarketSelectorOpen: (open: boolean) => void;
-  clear: () => void;
 }
 
 export const useMarketsStore = create<MarketsState>((set, get) => ({
   // Initial state
   markets: [],
   favorites: [],
-  isInitialized: false,
-  isLoading: false,
-  isMarketSelectorOpen: false,
 
   /**
-   * Initialize the store
-   * - Loads favorites and cached markets from AsyncStorage
-   * - If cache exists, displays it immediately and updates in background
-   * - If no cache, shows loading and fetches from API
-   *
-   * This should be called once when the trade page mounts
+   * Set markets data
    */
-  initialize: async (infoClient: hl.InfoClient) => {
-    const { isInitialized } = get();
-
-    // If already initialized (data in memory), skip
-    if (isInitialized) {
-      return;
-    }
-
-    try {
-      // Load favorites and cached markets from AsyncStorage
-      const [favoritesJson, cachedMarketsJson, expiryTime] = await Promise.all([
-        AsyncStorage.getItem(FAVORITES_KEY),
-        AsyncStorage.getItem(MARKETS_CACHE_KEY),
-        AsyncStorage.getItem(CACHE_EXPIRY_KEY),
-      ]);
-
-      const favorites = favoritesJson ? JSON.parse(favoritesJson) : [];
-
-      // Check if cache is valid (not expired)
-      let cachedMarkets: Market[] | null = null;
-      if (cachedMarketsJson && expiryTime) {
-        const now = Date.now();
-        const cachedTime = parseInt(expiryTime, 10);
-
-        if (now - cachedTime <= CACHE_DURATION) {
-          cachedMarkets = JSON.parse(cachedMarketsJson);
-        }
-      }
-
-      // Update favorites immediately
-      set({ favorites });
-
-      // Decide how to fetch markets based on cache
-      if (cachedMarkets && cachedMarkets.length > 0) {
-        // Have valid cache - show it immediately, then update in background
-        set({
-          markets: cachedMarkets,
-          isInitialized: true,
-        });
-
-        // Fetch fresh data silently in background
-        fetchFromAPI(infoClient, true);
-      } else {
-        // No cache - show loading and fetch from API
-        set({
-          isInitialized: true,
-          isLoading: true,
-        });
-
-        await fetchFromAPI(infoClient, false);
-      }
-    } catch (error) {
-      console.error('Error initializing markets store:', error);
-      set({ isInitialized: true, isLoading: false });
-    }
+  setMarkets: (markets: Market[]) => {
+    set({ markets });
   },
 
   /**
-   * Refresh markets from API
-   * Used for pull-to-refresh
+   * Set favorites list
    */
-  refreshMarkets: async (infoClient: hl.InfoClient) => {
-    await fetchFromAPI(infoClient, false);
+  setFavorites: (favorites: string[]) => {
+    set({ favorites });
   },
 
   /**
@@ -129,94 +62,30 @@ export const useMarketsStore = create<MarketsState>((set, get) => ({
       set({ favorites });
     }
   },
-
-  /**
-   * Set market selector modal open state
-   */
-  setMarketSelectorOpen: (open: boolean) => {
-    set({ isMarketSelectorOpen: open });
-  },
-
-  /**
-   * Clear all data (both memory and cache)
-   */
-  clear: () => {
-    set({
-      markets: [],
-      favorites: [],
-      isInitialized: false,
-      isLoading: false,
-      isMarketSelectorOpen: false,
-    });
-
-    // Clear AsyncStorage in background
-    Promise.all([
-      AsyncStorage.removeItem(MARKETS_CACHE_KEY),
-      AsyncStorage.removeItem(CACHE_EXPIRY_KEY),
-      AsyncStorage.removeItem(FAVORITES_KEY),
-    ]).catch(error => {
-      console.error('Error clearing storage:', error);
-    });
-  },
 }));
 
 /**
- * Internal helper: Fetch markets from Hyperliquid API and cache them
- * @param infoClient - InfoClient instance to use for API calls
- * @param silent - If true, don't show loading state (for background refresh)
+ * Load favorites from AsyncStorage
+ * This is a utility function used by useMarketData
  */
-async function fetchFromAPI(infoClient: hl.InfoClient, silent: boolean) {
-  const setState = useMarketsStore.setState;
-
+export async function loadFavoritesFromStorage(): Promise<string[]> {
   try {
-    if (!silent) {
-      setState({ isLoading: true });
-    }
-
-    // Fetch from Hyperliquid API
-    const [meta, assetCtxs] = await infoClient.metaAndAssetCtxs();
-
-    // Map to Market type
-    const markets: Market[] = meta.universe.map((asset: any, index: number) => {
-      const assetName = asset.name;
-      const ctx = assetCtxs[index];
-
-      const currentPrice = parseFloat(ctx.markPx);
-      const prevDayPrice = parseFloat(ctx.prevDayPx);
-      const priceChange =
-        prevDayPrice > 0 ? ((currentPrice - prevDayPrice) / prevDayPrice) * 100 : 0;
-      const fundingRate = parseFloat(ctx.funding) * 100;
-      const volume = parseFloat(ctx.dayNtlVlm || '0');
-      const marketId = `${assetName}-USD`;
-
-      return {
-        id: marketId,
-        name: marketId,
-        price: currentPrice,
-        change: priceChange,
-        maxLeverage: asset.maxLeverage || 1,
-        fundingRate,
-        volume,
-        szDecimals: asset.szDecimals || 0,
-      };
-    });
-
-    // Save to cache
-    const now = Date.now();
-    await Promise.all([
-      AsyncStorage.setItem(MARKETS_CACHE_KEY, JSON.stringify(markets)),
-      AsyncStorage.setItem(CACHE_EXPIRY_KEY, now.toString()),
-    ]);
-
-    // Update store
-    setState({
-      markets,
-      isInitialized: true,
-      isLoading: false,
-    });
+    const favoritesJson = await AsyncStorage.getItem(FAVORITES_KEY);
+    return favoritesJson ? JSON.parse(favoritesJson) : [];
   } catch (error) {
-    console.error('Error fetching markets from API:', error);
-    setState({ isLoading: false });
-    throw error;
+    console.error('Error loading favorites:', error);
+    return [];
+  }
+}
+
+/**
+ * Clear all favorites from AsyncStorage
+ * This is a utility function that can be used when needed
+ */
+export async function clearFavoritesStorage(): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(FAVORITES_KEY);
+  } catch (error) {
+    console.error('Error clearing favorites:', error);
   }
 }

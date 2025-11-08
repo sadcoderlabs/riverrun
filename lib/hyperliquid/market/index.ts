@@ -7,6 +7,8 @@
 export * from './useAllMids';
 export * from './useActiveAssetCtx';
 export * from './useMarketsStore';
+export * from './useMarketData';
+export * from './useMarketSelector';
 
 // Utilities
 export * from './marketUtils';

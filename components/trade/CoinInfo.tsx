@@ -1,6 +1,6 @@
 import { MarketSelectorModal } from '@/components/trade/MarketSelectorModal';
 import { useHyperliquidClient } from '@/lib/hyperliquid/hooks';
-import { useActiveAssetCtx, formatMarketId, useMarketsStore } from '@/lib/hyperliquid/market';
+import { useActiveAssetCtx, formatMarketId } from '@/lib/hyperliquid/market';
 import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
 import { CandlestickChart, Menu } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
@@ -15,8 +15,8 @@ export function CoinInfo({ coin }: CoinInfoProps) {
   const router = useRouter();
   const { getSymbolConverter } = useHyperliquidClient();
 
-  // Use modal state from Zustand store
-  const { isMarketSelectorOpen, setMarketSelectorOpen } = useMarketsStore();
+  // Local modal state
+  const [isMarketSelectorOpen, setMarketSelectorOpen] = useState(false);
 
   // Format market display (e.g., "BTC-USD")
   const marketDisplay = useMemo(() => formatMarketId(coin, 'perp'), [coin]);
