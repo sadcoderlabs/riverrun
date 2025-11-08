@@ -4,7 +4,7 @@ import { Alert } from 'react-native';
 
 import { REFERRAL_CONFIG } from '@/lib/hyperliquid/referral/config';
 import { useHyperliquidClient } from '@/lib/hyperliquid/client/useHyperliquidClient';
-import { hyperliquidRateLimiter } from '@/lib/hyperliquid/subscription';
+import * as infoClient from '@/lib/hyperliquid/client/infoClient';
 
 /**
  * Referral information for a user
@@ -23,7 +23,7 @@ export interface ReferralInfo {
  * Provides functions to check and set referrer
  */
 export function useReferralStatus() {
-  const { getMasterExchangeClient, infoClient } = useHyperliquidClient();
+  const { getMasterExchangeClient } = useHyperliquidClient();
   const [isLoading, setIsLoading] = useState(false);
   const [referralInfo, setReferralInfo] = useState<ReferralInfo>({
     referrer: undefined,
@@ -47,10 +47,7 @@ export function useReferralStatus() {
       const userAddress = await getWalletAddress(masterExchangeClient.wallet);
 
       // Query referral info
-      const referral = await hyperliquidRateLimiter.execute(
-        () => infoClient.referral({ user: userAddress }),
-        'referral',
-      );
+      const referral = await infoClient.referralInfo({ user: userAddress });
 
       const info: ReferralInfo = {
         referrer: referral.referredBy?.referrer,
@@ -68,7 +65,7 @@ export function useReferralStatus() {
     } finally {
       setIsLoading(false);
     }
-  }, [getMasterExchangeClient, infoClient]);
+  }, [getMasterExchangeClient]);
 
   /**
    * Set referrer code for the user

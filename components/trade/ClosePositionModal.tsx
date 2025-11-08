@@ -3,11 +3,11 @@ import { Modal, Pressable, StyleSheet } from 'react-native';
 import { Button, Slider, Text, XStack, YStack } from 'tamagui';
 import * as hl from '@nktkas/hyperliquid';
 import { Input } from '@/components/global/Input';
-import { useHyperliquidClient, useOrder } from '@/lib/hyperliquid/hooks';
+import { useOrder } from '@/lib/hyperliquid/hooks';
 import { formatSize } from '@/lib/hyperliquid/format/formatSize';
 import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
 import { formatValue } from '@/lib/hyperliquid/format/formatValue';
-import { hyperliquidRateLimiter } from '@/lib/hyperliquid/subscription';
+import * as infoClient from '@/lib/hyperliquid/client/infoClient';
 
 type Position = hl.ClearinghouseStateResponse['assetPositions'][number]['position'];
 
@@ -29,7 +29,6 @@ export default function ClosePositionModal({
   onOpenChange,
   position,
 }: ClosePositionModalProps) {
-  const { infoClient } = useHyperliquidClient();
   const { placeCloseMarketOrder, placeCloseLimitOrder, isPlacingOrder } = useOrder();
   const [orderType, setOrderType] = useState<OrderType>('market');
   const [sizeUnit, setSizeUnit] = useState<SizeUnit>('asset');
@@ -148,8 +147,8 @@ export default function ClosePositionModal({
 
   const handleMidPrice = async () => {
     try {
-      // Get mid price from allMids API using rate limiter
-      const allMids = await hyperliquidRateLimiter.execute(() => infoClient.allMids(), 'allMids');
+      // Get mid price from allMids API
+      const allMids = await infoClient.allMids();
       const midPrice = allMids[position.coin];
 
       if (midPrice) {

@@ -20,8 +20,7 @@ import { useSubscription, type UserFillsData } from '../subscription';
 import type { Fill } from '../types/fills';
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { createRateLimitedQuery } from '@/lib/reactQuery';
-import { getInfoClient } from '../client/getter';
+import * as infoClient from '../client/infoClient';
 
 // ============================================================================
 // Hook Interface
@@ -54,12 +53,11 @@ export function useUserFills(): UseUserFillsResult {
     error: httpError,
   } = useQuery({
     queryKey: ['userFills', wallet?.address],
-    queryFn: createRateLimitedQuery('userFills', async () => {
+    queryFn: async () => {
       if (!wallet) return null;
-      const infoClient = getInfoClient();
       const fills = (await infoClient.userFills({ user: wallet.address })) as Fill[];
       return fills.sort((a, b) => b.time - a.time);
-    }),
+    },
     enabled: !!wallet,
   });
 

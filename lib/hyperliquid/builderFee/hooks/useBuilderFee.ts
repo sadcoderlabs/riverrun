@@ -4,14 +4,14 @@ import { Alert } from 'react-native';
 import { BUILDER_CONFIG } from '@/lib/hyperliquid/builderFee/config';
 import { useHyperliquidClient } from '@/lib/hyperliquid/client/useHyperliquidClient';
 import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
-import { hyperliquidRateLimiter } from '@/lib/hyperliquid/subscription';
+import * as infoClient from '@/lib/hyperliquid/client/infoClient';
 
 /**
  * Hook for managing builder fee approval status
  * Provides functions to check, approve, and revoke builder fee
  */
 export function useBuilderFee() {
-  const { getMasterExchangeClient, infoClient } = useHyperliquidClient();
+  const { getMasterExchangeClient } = useHyperliquidClient();
   const { wallet } = useActiveWallet();
   const [isBuilderFeeLoading, setIsBuilderFeeLoading] = useState(false);
   const [maxApprovedFee, setMaxApprovedFee] = useState<number>(0);
@@ -28,14 +28,10 @@ export function useBuilderFee() {
         return 0;
       }
 
-      const maxFee = await hyperliquidRateLimiter.execute(
-        () =>
-          infoClient.maxBuilderFee({
-            user: wallet.address,
-            builder: BUILDER_CONFIG.address,
-          }),
-        'maxBuilderFee',
-      );
+      const maxFee = await infoClient.maxBuilderFee({
+        user: wallet.address,
+        builder: BUILDER_CONFIG.address,
+      });
 
       setMaxApprovedFee(maxFee);
       return maxFee;
@@ -46,7 +42,7 @@ export function useBuilderFee() {
     } finally {
       setIsBuilderFeeLoading(false);
     }
-  }, [wallet, infoClient]);
+  }, [wallet]);
 
   /**
    * Core approval logic - executes the approval transaction and verifies success
@@ -137,14 +133,10 @@ export function useBuilderFee() {
       }
 
       // Check if builder fee is already approved with sufficient amount
-      const maxFee = await hyperliquidRateLimiter.execute(
-        () =>
-          infoClient.maxBuilderFee({
-            user: wallet.address,
-            builder: BUILDER_CONFIG.address,
-          }),
-        'maxBuilderFee',
-      );
+      const maxFee = await infoClient.maxBuilderFee({
+        user: wallet.address,
+        builder: BUILDER_CONFIG.address,
+      });
 
       setMaxApprovedFee(maxFee);
 
@@ -186,7 +178,7 @@ export function useBuilderFee() {
     } finally {
       setIsBuilderFeeLoading(false);
     }
-  }, [wallet, infoClient, executeApproval]);
+  }, [wallet, executeApproval]);
 
   /**
    * Revoke builder fee by setting max fee rate to 0%

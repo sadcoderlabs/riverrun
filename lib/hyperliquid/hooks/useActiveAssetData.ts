@@ -2,8 +2,7 @@ import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
 import { useSubscription, type ActiveAssetData } from '../subscription';
 import { useMemo, useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { createRateLimitedQuery } from '@/lib/reactQuery';
-import { getInfoClient } from '../client/getter';
+import * as infoClient from '../client/infoClient';
 
 interface UseActiveAssetDataParams {
   coin: string;
@@ -43,14 +42,13 @@ export function useActiveAssetData({ coin }: UseActiveAssetDataParams): UseActiv
     error: httpError,
   } = useQuery({
     queryKey: ['activeAssetData', wallet?.address, coin],
-    queryFn: createRateLimitedQuery('activeAssetData', async () => {
+    queryFn: async () => {
       if (!wallet) return null;
-      const infoClient = getInfoClient();
       return (await infoClient.activeAssetData({
         coin: coin.toUpperCase(),
         user: wallet.address,
       })) as ActiveAssetData;
-    }),
+    },
     enabled: !!wallet && !!coin,
   });
 

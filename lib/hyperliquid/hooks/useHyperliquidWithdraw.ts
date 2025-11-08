@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { Alert } from 'react-native';
 import { useHyperliquidClient } from '../client/useHyperliquidClient';
 import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
-import { hyperliquidRateLimiter } from '../subscription';
+import * as infoClient from '../client/infoClient';
 
 // Minimum withdrawal amount in USDC
 export const MIN_WITHDRAW_AMOUNT = 2;
@@ -25,7 +25,7 @@ interface UseHyperliquidWithdrawResult {
  */
 export function useHyperliquidWithdraw(): UseHyperliquidWithdrawResult {
   const { wallet } = useActiveWallet();
-  const { getMasterExchangeClient, infoClient } = useHyperliquidClient();
+  const { getMasterExchangeClient } = useHyperliquidClient();
 
   const [withdrawableBalance, setWithdrawableBalance] = useState<string | null>(null);
   const [isLoadingBalance, setIsLoadingBalance] = useState(false);
@@ -44,10 +44,7 @@ export function useHyperliquidWithdraw(): UseHyperliquidWithdrawResult {
     try {
       setIsLoadingBalance(true);
 
-      const state = await hyperliquidRateLimiter.execute(
-        () => infoClient.clearinghouseState({ user: wallet.address }),
-        'clearinghouseState',
-      );
+      const state = await infoClient.clearinghouseState({ user: wallet.address });
       setWithdrawableBalance(state.withdrawable);
     } catch (error) {
       console.error('Failed to fetch withdrawable balance:', error);
@@ -59,7 +56,7 @@ export function useHyperliquidWithdraw(): UseHyperliquidWithdrawResult {
     } finally {
       setIsLoadingBalance(false);
     }
-  }, [wallet, infoClient]);
+  }, [wallet]);
 
   /**
    * Execute USDC withdrawal to Arbitrum

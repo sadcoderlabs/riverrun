@@ -2,8 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { Market } from './types';
-import { getInfoClient } from '../client/getter';
-import { hyperliquidRateLimiter } from '../subscription';
+import * as infoClient from '../client/infoClient';
 
 /**
  * Selected market information
@@ -101,14 +100,8 @@ export const useMarketsStore = create<MarketsState>()(
        * Uses rate limiter to prevent 429 errors
        */
       refresh: async () => {
-        // Get infoClient internally
-        const infoClient = getInfoClient();
-
-        // Use rate limiter for refresh
-        const [meta, assetCtxs] = await hyperliquidRateLimiter.execute(
-          () => infoClient.metaAndAssetCtxs(),
-          'metaAndAssetCtxs',
-        );
+        // Fetch meta and asset contexts
+        const [meta, assetCtxs] = await infoClient.metaAndAssetCtxs();
 
         const markets: Market[] = meta.universe.map((asset: any, index: number) => {
           const assetName = asset.name;

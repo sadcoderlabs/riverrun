@@ -5,8 +5,7 @@ import { useEffect } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, YStack } from 'tamagui';
 import { useQuery } from '@tanstack/react-query';
-import { createRateLimitedQuery } from '@/lib/reactQuery';
-import { getInfoClient } from '@/lib/hyperliquid/client/getter';
+import * as infoClient from '@/lib/hyperliquid/client/infoClient';
 import type * as hl from '@nktkas/hyperliquid';
 
 /**
@@ -31,11 +30,10 @@ export default function TabsLayout() {
   // Fetch metaAndAssetCtxs using TanStack Query (HTTP only, no WebSocket for this endpoint)
   const { data: marketData } = useQuery({
     queryKey: ['metaAndAssetCtxs'],
-    queryFn: createRateLimitedQuery('metaAndAssetCtxs', async () => {
-      const infoClient = getInfoClient();
+    queryFn: async () => {
       const metaAndAssetCtxs = await infoClient.metaAndAssetCtxs();
       return { metaAndAssetCtxs } as { metaAndAssetCtxs: hl.MetaAndAssetCtxsResponse };
-    }),
+    },
     staleTime: 60000, // Cache for 1 minute (market metadata doesn't change frequently)
   });
 

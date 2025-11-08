@@ -4,7 +4,7 @@
  */
 
 import * as hl from '@nktkas/hyperliquid';
-import { hyperliquidRateLimiter } from '../subscription';
+import * as infoClient from '../client/infoClient';
 
 /**
  * Agent information from Hyperliquid blockchain
@@ -59,14 +59,11 @@ export async function revokeAgentOnChain(
  * @returns Array of agent information
  */
 export async function getAgentsFromChain(
-  infoClient: hl.InfoClient,
+  _infoClient: hl.InfoClient,
   masterAddress: string,
 ): Promise<AgentInfo[]> {
   try {
-    const agents = await hyperliquidRateLimiter.execute(
-      () => infoClient.extraAgents({ user: masterAddress }),
-      'extraAgents',
-    );
+    const agents = await infoClient.extraAgents({ user: masterAddress });
     return agents.map(agent => ({
       address: agent.address,
       name: agent.name,

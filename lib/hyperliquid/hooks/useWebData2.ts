@@ -2,8 +2,7 @@ import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
 import { useSubscription, type WebData2Data } from '../subscription';
 import { useCallback, useMemo, useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { createRateLimitedQuery } from '@/lib/reactQuery';
-import { getInfoClient } from '../client/getter';
+import * as infoClient from '../client/infoClient';
 
 export interface UseWebData2Result {
   data: WebData2Data | undefined;
@@ -50,11 +49,10 @@ export function useWebData2(): UseWebData2Result {
     error: httpError,
   } = useQuery({
     queryKey: ['webData2', wallet?.address],
-    queryFn: createRateLimitedQuery('webData2', async () => {
+    queryFn: async () => {
       if (!wallet) return null;
-      const infoClient = getInfoClient();
       return (await infoClient.webData2({ user: wallet.address })) as WebData2Data;
-    }),
+    },
     enabled: !!wallet,
   });
 
