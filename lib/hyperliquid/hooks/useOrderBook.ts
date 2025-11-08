@@ -2,7 +2,7 @@ import * as hl from '@nktkas/hyperliquid';
 import { type NSigFigs } from '@/lib/hyperliquid/market';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAppStateSubscriptionManager } from './useAppStateSubscriptionManager';
-import { useHyperliquidClient } from '../client/useHyperliquidClient';
+import { useSubscriptionClient } from '../client/useSubscriptionClient';
 
 export interface OrderBookLevel {
   px: string; // Price
@@ -49,7 +49,7 @@ interface UseOrderBookResult {
  * - Automatic cleanup and resubscription
  */
 export function useOrderBook({ coin, nSigFigs }: UseOrderBookParams): UseOrderBookResult {
-  const { subscriptionClient } = useHyperliquidClient();
+  const subscriptionClient = useSubscriptionClient();
   const subscriptionState = useAppStateSubscriptionManager();
   const [data, setData] = useState<OrderBookData | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);

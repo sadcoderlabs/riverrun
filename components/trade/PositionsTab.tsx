@@ -2,7 +2,7 @@ import { formatPercent } from '@/lib/hyperliquid/format/formatPercent';
 import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
 import { formatSize } from '@/lib/hyperliquid/format/formatSize';
 import { formatValue } from '@/lib/hyperliquid/format/formatValue';
-import { useHyperliquidClient } from '@/lib/hyperliquid/hooks';
+import { useInfoClient } from '@/lib/hyperliquid/client/useInfoClient';
 import { useWebData2Context } from '@/lib/hyperliquid/context/WebData2Context';
 import { useActiveWallet } from '@/lib/riverrun/wallet';
 import { useSelectedCoinStore } from '@/lib/riverrun/store';
@@ -21,7 +21,7 @@ interface PositionWithMarkPrice extends Position {
 
 export default function PositionsTab() {
   const { wallet } = useActiveWallet();
-  const { infoClient } = useHyperliquidClient();
+  const infoClient = useInfoClient();
   const { setSelectedCoin } = useSelectedCoinStore();
 
   // Get WebData2 from context (shared across all markets, no re-subscription on market switch)

@@ -1,6 +1,6 @@
 import * as hl from '@nktkas/hyperliquid';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useHyperliquidClient } from '../client/useHyperliquidClient';
+import { useSubscriptionClient } from '../client/useSubscriptionClient';
 
 export interface ActiveAssetCtx {
   coin: string;
@@ -33,7 +33,7 @@ interface UseActiveAssetCtxResult {
  * for real-time market data including price, funding rate, and volume.
  */
 export function useActiveAssetCtx({ coin }: UseActiveAssetCtxParams): UseActiveAssetCtxResult {
-  const { subscriptionClient } = useHyperliquidClient();
+  const subscriptionClient = useSubscriptionClient();
   const [data, setData] = useState<ActiveAssetCtx | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | undefined>(undefined);

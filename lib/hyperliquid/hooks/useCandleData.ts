@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useHyperliquidClient } from '../client/useHyperliquidClient';
+import { useInfoClient } from '../client/useInfoClient';
 
 /**
  * Candle interval type
@@ -103,7 +103,7 @@ export function useCandleData({
   endTime,
   refreshInterval,
 }: UseCandleDataOptions): UseCandleDataResult {
-  const { infoClient } = useHyperliquidClient();
+  const infoClient = useInfoClient();
   const [data, setData] = useState<FormattedCandleData[]>([]);
   const [rawData, setRawData] = useState<CandleData[]>([]);
   const [loading, setLoading] = useState(true);

@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useCallback, useEffect, useState } from 'react';
-import { useHyperliquidClient } from '../client/useHyperliquidClient';
+import { useInfoClient } from '../client/useInfoClient';
 import type { Market } from './types';
 import { useMarketsStore, loadFavoritesFromStorage } from './useMarketsStore';
 
@@ -25,7 +25,7 @@ interface UseMarketDataResult {
  * This hook should be used once at the app level to initialize market data
  */
 export function useMarketData(): UseMarketDataResult {
-  const { infoClient } = useHyperliquidClient();
+  const infoClient = useInfoClient();
   const { setMarkets, setFavorites } = useMarketsStore();
 
   const [isLoading, setIsLoading] = useState(true);

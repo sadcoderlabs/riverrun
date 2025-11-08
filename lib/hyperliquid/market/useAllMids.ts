@@ -1,6 +1,6 @@
 import * as hl from '@nktkas/hyperliquid';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useHyperliquidClient } from '../client/useHyperliquidClient';
+import { useSubscriptionClient } from '../client/useSubscriptionClient';
 
 export interface AllMidsData {
   mids: Record<string, string>;
@@ -26,7 +26,7 @@ interface UseAllMidsResult {
  * @param enabled - Whether to subscribe to the feed (default: true)
  */
 export function useAllMids({ enabled = true }: UseAllMidsParams = {}): UseAllMidsResult {
-  const { subscriptionClient } = useHyperliquidClient();
+  const subscriptionClient = useSubscriptionClient();
   const [data, setData] = useState<AllMidsData | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | undefined>(undefined);

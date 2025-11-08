@@ -8,7 +8,7 @@ import {
   getAgentExchangeClient as getCachedAgentExchangeClient,
 } from '@/lib/hyperliquid/client/getter';
 import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
-import { useHyperliquidClient } from '@/lib/hyperliquid/client/useHyperliquidClient';
+import { useInfoClient } from '@/lib/hyperliquid/client/useInfoClient';
 
 import { DEFAULT_AGENT_NAME } from '../constants';
 import { getOrCreateAgentSigner } from '../getOrCreateAgentSigner';
@@ -105,7 +105,7 @@ async function approveAgent(
 export function useAgentExchangeClient() {
   const { wallet } = useActiveWallet();
   const router = useRouter();
-  const { infoClient } = useHyperliquidClient();
+  const infoClient = useInfoClient();
 
   /**
    * Get agent exchange client with simplified approval flow
