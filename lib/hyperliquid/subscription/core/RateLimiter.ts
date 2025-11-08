@@ -50,30 +50,11 @@ export const REQUEST_WEIGHTS = {
 export type EndpointName = keyof typeof REQUEST_WEIGHTS;
 
 // ============================================================================
-// Request Queue Item
-// ============================================================================
-
-interface QueuedRequest<T> {
-  weight: number;
-  execute: () => Promise<T>;
-  resolve: (value: T) => void;
-  reject: (error: any) => void;
-  timestamp: number;
-  endpoint: string;
-}
-
-// ============================================================================
 // Hyperliquid Rate Limiter
 // ============================================================================
 
 export class HyperliquidRateLimiter {
   private rateLimiter: any; // RateLimiterMemory from rate-limiter-flexible
-  private queue: QueuedRequest<any>[] = [];
-  private processing = false;
-
-  // Monitoring: track usage per minute window
-  private usageHistory: Array<{ timestamp: number; endpoint: string; weight: number }> = [];
-  private lastResetTime = Date.now();
 
   constructor() {
     // Hyperliquid limit: 1200 weight per minute
@@ -87,6 +68,9 @@ export class HyperliquidRateLimiter {
   /**
    * Execute a request with rate limiting
    *
+   * Simple implementation that relies on rate-limiter-flexible's built-in waiting mechanism.
+   * When rate limit is exceeded, it automatically waits until capacity is available.
+   *
    * @param request - Function that performs the HTTP request
    * @param endpoint - Endpoint name (used to determine weight)
    * @returns Promise that resolves with the request result
@@ -95,189 +79,12 @@ export class HyperliquidRateLimiter {
     // Get weight for this endpoint
     const weight = REQUEST_WEIGHTS[endpoint as EndpointName] ?? REQUEST_WEIGHTS.default;
 
-    // Track usage
-    this.trackUsage(endpoint, weight);
+    // Wait until we have capacity, then execute
+    // rate-limiter-flexible automatically handles waiting when limit is exceeded
+    await this.rateLimiter.consume('hyperliquid', weight);
 
-    // Try to execute immediately if we have capacity
-    try {
-      await this.rateLimiter.consume('hyperliquid', weight);
-      console.log(
-        `[RateLimiter] ✅ Executing ${endpoint} (weight: ${weight}, total: ${this.getCurrentWindowUsage()}/1200)`,
-      );
-      return await request();
-    } catch (rateLimiterRes: any) {
-      // Rate limit exceeded - queue the request
-      const msBeforeNext = rateLimiterRes?.msBeforeNext || 1000;
-      console.log(
-        `[RateLimiter] ⏳ Queued ${endpoint} (weight: ${weight}, wait: ~${msBeforeNext}ms, total: ${this.getCurrentWindowUsage()}/1200)`,
-      );
-
-      // Add to queue and wait
-      return new Promise<T>((resolve, reject) => {
-        this.queue.push({
-          weight,
-          execute: request,
-          resolve,
-          reject,
-          timestamp: Date.now(),
-          endpoint,
-        });
-
-        // Sort queue by timestamp (FIFO - oldest first)
-        this.queue.sort((a, b) => a.timestamp - b.timestamp);
-
-        // Start processing queue
-        void this.processQueue();
-      });
-    }
-  }
-
-  /**
-   * Process queued requests
-   */
-  private async processQueue(): Promise<void> {
-    if (this.processing || this.queue.length === 0) {
-      return;
-    }
-
-    this.processing = true;
-
-    while (this.queue.length > 0) {
-      const item = this.queue[0]; // Peek at first queued item (FIFO)
-
-      try {
-        // Try to consume points
-        await this.rateLimiter.consume('hyperliquid', item.weight);
-
-        // Success - remove from queue and execute
-        this.queue.shift();
-
-        const waitTime = Date.now() - item.timestamp;
-        console.log(
-          `[RateLimiter] ⚡ Executing queued ${item.endpoint} (weight: ${item.weight}, waited: ${waitTime}ms)`,
-        );
-
-        try {
-          const result = await item.execute();
-          item.resolve(result);
-        } catch (err) {
-          item.reject(err);
-        }
-      } catch (rateLimiterRes: any) {
-        // Still rate limited - wait and retry
-        const msBeforeNext = rateLimiterRes?.msBeforeNext || 1000;
-        await new Promise(resolve => setTimeout(resolve, msBeforeNext));
-      }
-    }
-
-    this.processing = false;
-  }
-
-  /**
-   * Get current queue size (for monitoring)
-   */
-  getQueueSize(): number {
-    return this.queue.length;
-  }
-
-  /**
-   * Clear the queue (for cleanup)
-   */
-  clearQueue(): void {
-    this.queue.forEach(item => {
-      item.reject(new Error('Rate limiter queue cleared'));
-    });
-    this.queue = [];
-  }
-
-  /**
-   * Track usage for monitoring
-   */
-  private trackUsage(endpoint: string, weight: number): void {
-    const now = Date.now();
-
-    // Add to history
-    this.usageHistory.push({
-      timestamp: now,
-      endpoint,
-      weight,
-    });
-
-    // Clean up old entries (older than 60 seconds)
-    this.usageHistory = this.usageHistory.filter(entry => now - entry.timestamp < 60000);
-
-    // Log summary every 60 seconds
-    if (now - this.lastResetTime >= 60000) {
-      this.printUsageSummary();
-      this.lastResetTime = now;
-    }
-  }
-
-  /**
-   * Get current window usage (last 60 seconds)
-   */
-  private getCurrentWindowUsage(): number {
-    const now = Date.now();
-    return this.usageHistory
-      .filter(entry => now - entry.timestamp < 60000)
-      .reduce((sum, entry) => sum + entry.weight, 0);
-  }
-
-  /**
-   * Print usage summary for monitoring
-   */
-  private printUsageSummary(): void {
-    const totalWeight = this.getCurrentWindowUsage();
-    const endpointCounts: Record<string, { count: number; totalWeight: number }> = {};
-
-    this.usageHistory.forEach(entry => {
-      if (!endpointCounts[entry.endpoint]) {
-        endpointCounts[entry.endpoint] = { count: 0, totalWeight: 0 };
-      }
-      endpointCounts[entry.endpoint].count++;
-      endpointCounts[entry.endpoint].totalWeight += entry.weight;
-    });
-
-    console.log('\n' + '='.repeat(60));
-    console.log(`📊 [RateLimiter] Usage Summary (last 60s)`);
-    console.log('='.repeat(60));
-    console.log(`Total weight used: ${totalWeight}/1200 (${((totalWeight / 1200) * 100).toFixed(1)}%)`);
-    console.log('\nBreakdown by endpoint:');
-
-    Object.entries(endpointCounts)
-      .sort((a, b) => b[1].totalWeight - a[1].totalWeight)
-      .forEach(([endpoint, stats]) => {
-        const percentage = ((stats.totalWeight / totalWeight) * 100).toFixed(1);
-        console.log(
-          `  ${endpoint.padEnd(25)} ${stats.count.toString().padStart(3)}x = ${stats.totalWeight.toString().padStart(4)} (${percentage}%)`,
-        );
-      });
-    console.log('='.repeat(60) + '\n');
-  }
-
-  /**
-   * Get usage statistics (for debugging)
-   */
-  getUsageStats(): {
-    currentUsage: number;
-    queueSize: number;
-    endpointBreakdown: Record<string, { count: number; totalWeight: number }>;
-  } {
-    const endpointCounts: Record<string, { count: number; totalWeight: number }> = {};
-
-    this.usageHistory.forEach(entry => {
-      if (!endpointCounts[entry.endpoint]) {
-        endpointCounts[entry.endpoint] = { count: 0, totalWeight: 0 };
-      }
-      endpointCounts[entry.endpoint].count++;
-      endpointCounts[entry.endpoint].totalWeight += entry.weight;
-    });
-
-    return {
-      currentUsage: this.getCurrentWindowUsage(),
-      queueSize: this.queue.length,
-      endpointBreakdown: endpointCounts,
-    };
+    // Execute the request
+    return await request();
   }
 }
 
