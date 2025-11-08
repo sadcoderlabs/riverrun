@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { subscriptionRegistry } from './SubscriptionRegistry';
 import type { SubscriptionEntry, SubscriptionHandle } from './types';
+import { hyperliquidRateLimiter, RequestPriority } from './RateLimiter';
 
 /**
  * Centralized subscription manager state
@@ -24,20 +25,18 @@ const useSubscriptionStore = create<SubscriptionManagerState>(() => ({
  * - Reference counting: multiple components can share one subscription
  * - App Lifecycle management: pauseAll/resumeAll for background/foreground
  * - Hybrid strategy: HTTP fetch + WebSocket subscription
- * - Global rate limiting: protects Hyperliquid server from rapid HTTP requests
+ * - Weight-based rate limiting: respects Hyperliquid's 1200 weight/minute limit
+ * - Priority queue: guarantees CRITICAL requests (initial fetches) execute
  *
  * Architecture:
  * - All subscription state stored in Zustand store
  * - Subscriptions identified by "type:key" (e.g., "activeAssetData:0x123-ETH")
  * - RefCount tracks how many components are using each subscription
  * - When refCount reaches 0, subscription is cleaned up
- * - Global HTTP rate limiting: minimum 500ms between any HTTP requests
+ * - Weight-based rate limiting: each endpoint has specific weight (2, 20, or 60)
+ * - Initial HTTP fetches use CRITICAL priority to guarantee execution
  */
 class SubscriptionManager {
-  // Global HTTP rate limiting to protect Hyperliquid server
-  // All HTTP requests (regardless of subscription type) share this limit
-  private lastGlobalHttpFetch = 0;
-  private readonly GLOBAL_HTTP_MIN_INTERVAL = 500; // 500ms global minimum
   /**
    * Subscribe to a data feed
    *
@@ -122,59 +121,54 @@ class SubscriptionManager {
       subscriptions: new Map(prevState.subscriptions).set(storeKey, newEntry),
     }));
 
-    // Step 1: Try HTTP fetch for initial data (if configured)
-    // Uses global rate limiting to protect Hyperliquid server
+    // Step 1: HTTP fetch for initial data (if configured)
+    // Uses weight-based rate limiting with CRITICAL priority
+    // CRITICAL priority guarantees initial fetches execute (may be queued if rate limited)
     if (config.httpFetch) {
-      const now = Date.now();
-      const timeSinceGlobalFetch = now - this.lastGlobalHttpFetch;
+      try {
+        const startTime = Date.now();
 
-      // Check global rate limit (applies to ALL HTTP requests)
-      if (timeSinceGlobalFetch >= this.GLOBAL_HTTP_MIN_INTERVAL) {
-        try {
-          const startTime = Date.now();
-          // Update global timestamp BEFORE request to prevent concurrent requests
-          this.lastGlobalHttpFetch = now;
-
-          const httpData = await config.httpFetch(params);
-          const duration = Date.now() - startTime;
-
-          // Only update if subscription still exists
-          const currentState = useSubscriptionStore.getState();
-          const currentEntry = currentState.subscriptions.get(storeKey);
-
-          if (currentEntry) {
-            console.log(
-              `[SubscriptionManager] ✅ HTTP fetch for ${type}:${key} completed in ${duration}ms`,
-            );
-
-            const updatedEntry: SubscriptionEntry<TData> = {
-              ...currentEntry,
-              data: httpData,
-              isLoading: false,
-              httpFetched: true,
-            };
-
-            useSubscriptionStore.setState(prevState => ({
-              subscriptions: new Map(prevState.subscriptions).set(storeKey, updatedEntry),
-            }));
-
-            // Call callback with HTTP data
-            if (callback) {
-              callback(httpData);
-            }
-          }
-        } catch (err) {
-          // Only log if subscription still exists
-          const currentState = useSubscriptionStore.getState();
-          if (currentState.subscriptions.has(storeKey)) {
-            console.error(`[SubscriptionManager] ⚠️ HTTP fetch failed for ${type}:${key}:`, err);
-          }
-          // Don't set error, will try WebSocket
-        }
-      } else {
-        console.log(
-          `[SubscriptionManager] ⏭️  Skipping HTTP fetch for ${type}:${key} (global rate limit: ${timeSinceGlobalFetch}ms < ${this.GLOBAL_HTTP_MIN_INTERVAL}ms)`,
+        // Execute with CRITICAL priority to guarantee initial data loads
+        const httpData = await hyperliquidRateLimiter.execute(
+          () => config.httpFetch!(params),
+          type, // Subscription type matches endpoint name (e.g., 'webData2', 'userFills')
+          RequestPriority.CRITICAL,
         );
+
+        const duration = Date.now() - startTime;
+
+        // Only update if subscription still exists
+        const currentState = useSubscriptionStore.getState();
+        const currentEntry = currentState.subscriptions.get(storeKey);
+
+        if (currentEntry) {
+          console.log(
+            `[SubscriptionManager] ✅ HTTP fetch for ${type}:${key} completed in ${duration}ms`,
+          );
+
+          const updatedEntry: SubscriptionEntry<TData> = {
+            ...currentEntry,
+            data: httpData,
+            isLoading: false,
+            httpFetched: true,
+          };
+
+          useSubscriptionStore.setState(prevState => ({
+            subscriptions: new Map(prevState.subscriptions).set(storeKey, updatedEntry),
+          }));
+
+          // Call callback with HTTP data
+          if (callback) {
+            callback(httpData);
+          }
+        }
+      } catch (err) {
+        // Only log if subscription still exists
+        const currentState = useSubscriptionStore.getState();
+        if (currentState.subscriptions.has(storeKey)) {
+          console.error(`[SubscriptionManager] ⚠️ HTTP fetch failed for ${type}:${key}:`, err);
+        }
+        // Don't set error, will try WebSocket
       }
     }
 
@@ -223,7 +217,10 @@ class SubscriptionManager {
 
       // Only log and set error if subscription still exists
       if (currentEntry) {
-        console.error(`[SubscriptionManager] ❌ WebSocket subscription failed for ${type}:${key}:`, err);
+        console.error(
+          `[SubscriptionManager] ❌ WebSocket subscription failed for ${type}:${key}:`,
+          err,
+        );
 
         // Only set error if both HTTP and WebSocket failed
         if (!currentEntry.httpFetched) {

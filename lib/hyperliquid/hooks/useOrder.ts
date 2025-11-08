@@ -1,11 +1,11 @@
 import * as hl from '@nktkas/hyperliquid';
-import { SymbolConverter } from '@nktkas/hyperliquid/utils';
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner-native';
 import { roundPrice } from '@/components/trade/priceUtils';
 import { getBuilderParam } from '@/lib/hyperliquid/builderFee/config';
 import { useBuilderFee } from '@/lib/hyperliquid/builderFee/hooks/useBuilderFee';
 import { useHyperliquidClient } from '../client/useHyperliquidClient';
+import { useMarketsStore } from '../market';
 
 /**
  * Validate that a size string has the correct number of decimal places
@@ -196,23 +196,21 @@ interface OrderContext {
 async function getOrderContext(
   coin: string,
   getAgentExchangeClient: () => Promise<hl.ExchangeClient | null | undefined>,
-  getSymbolConverter: () => Promise<SymbolConverter>,
+  markets: Array<{ coin: string; assetId: number; szDecimals: number }>,
 ): Promise<OrderContext | null> {
   const exchangeClient = await getAgentExchangeClient();
   if (!exchangeClient) {
     return null;
   }
 
-  const converter = await getSymbolConverter();
-  const assetId = converter.getAssetId(coin);
-  const szDecimals = converter.getSzDecimals(coin);
+  // Get asset metadata from markets store (from metaAndAssetCtxs subscription)
+  const market = markets.find(m => m.coin === coin);
+  if (!market) {
+    throw new Error(`Unable to find market data for ${coin}`);
+  }
 
-  if (assetId === undefined) {
-    throw new Error(`Unable to find asset ID for ${coin}`);
-  }
-  if (szDecimals === undefined) {
-    throw new Error(`Unable to find size decimals for ${coin}`);
-  }
+  const assetId = market.assetId;
+  const szDecimals = market.szDecimals;
 
   return { exchangeClient, assetId, szDecimals };
 }
@@ -349,8 +347,9 @@ function buildSuccessMessage(params: PlaceOrderParams): { title: string; descrip
 // ============================================================================
 
 export function useOrder(): UseOrderResult {
-  const { getAgentExchangeClient, getSymbolConverter } = useHyperliquidClient();
+  const { getAgentExchangeClient } = useHyperliquidClient();
   const { ensureBuilderFeeApproval } = useBuilderFee();
+  const { markets } = useMarketsStore();
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [isCanceling, setIsCanceling] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -386,18 +385,14 @@ export function useOrder(): UseOrderResult {
           return false;
         }
 
-        // 3. Get asset metadata
-        const converter = await getSymbolConverter();
-        const assetId = converter.getAssetId(params.coin);
-        const szDecimals = converter.getSzDecimals(params.coin);
+        // 3. Get asset metadata from markets store (from metaAndAssetCtxs subscription)
+        const market = markets.find(m => m.coin === params.coin);
+        if (!market) {
+          throw new Error(`Unable to find market data for ${params.coin}`);
+        }
 
-        // Validation
-        if (assetId === undefined) {
-          throw new Error(`Unable to find asset ID for ${params.coin}`);
-        }
-        if (szDecimals === undefined) {
-          throw new Error(`Unable to find size decimals for ${params.coin}`);
-        }
+        const assetId = market.assetId;
+        const szDecimals = market.szDecimals;
 
         // 4. Validate size decimals
         validateSizeDecimals(params.size, szDecimals, params.coin);
@@ -457,7 +452,7 @@ export function useOrder(): UseOrderResult {
         setIsPlacingOrder(false);
       }
     },
-    [ensureBuilderFeeApproval, getAgentExchangeClient, getSymbolConverter],
+    [ensureBuilderFeeApproval, getAgentExchangeClient, markets],
   );
 
   /**
@@ -491,18 +486,14 @@ export function useOrder(): UseOrderResult {
           return false;
         }
 
-        // 3. Get asset metadata
-        const converter = await getSymbolConverter();
-        const assetId = converter.getAssetId(params.coin);
-        const szDecimals = converter.getSzDecimals(params.coin);
+        // 3. Get asset metadata from markets store (from metaAndAssetCtxs subscription)
+        const market = markets.find(m => m.coin === params.coin);
+        if (!market) {
+          throw new Error(`Unable to find market data for ${params.coin}`);
+        }
 
-        // Validation
-        if (assetId === undefined) {
-          throw new Error(`Unable to find asset ID for ${params.coin}`);
-        }
-        if (szDecimals === undefined) {
-          throw new Error(`Unable to find size decimals for ${params.coin}`);
-        }
+        const assetId = market.assetId;
+        const szDecimals = market.szDecimals;
 
         // 4. Validate size decimals
         validateSizeDecimals(params.size, szDecimals, params.coin);
@@ -558,7 +549,7 @@ export function useOrder(): UseOrderResult {
         setIsPlacingOrder(false);
       }
     },
-    [ensureBuilderFeeApproval, getAgentExchangeClient, getSymbolConverter],
+    [ensureBuilderFeeApproval, getAgentExchangeClient, markets],
   );
 
   /**
@@ -579,14 +570,13 @@ export function useOrder(): UseOrderResult {
           return false;
         }
 
-        // 2. Get asset metadata
-        const converter = await getSymbolConverter();
-        const assetId = converter.getAssetId(params.coin);
-
-        // Validation
-        if (assetId === undefined) {
-          throw new Error(`Unable to find asset ID for ${params.coin}`);
+        // 2. Get asset metadata from markets store (from metaAndAssetCtxs subscription)
+        const market = markets.find(m => m.coin === params.coin);
+        if (!market) {
+          throw new Error(`Unable to find market data for ${params.coin}`);
         }
+
+        const assetId = market.assetId;
 
         // 3. Execute cancellation
         await exchangeClient.cancel({
@@ -615,7 +605,7 @@ export function useOrder(): UseOrderResult {
         setIsCanceling(false);
       }
     },
-    [getAgentExchangeClient, getSymbolConverter],
+    [getAgentExchangeClient, markets],
   );
 
   /**
@@ -636,19 +626,16 @@ export function useOrder(): UseOrderResult {
           return false;
         }
 
-        // 2. Get asset metadata
-        const converter = await getSymbolConverter();
-
-        // 3. Build cancels array
+        // 2. Build cancels array using markets data
         const cancels = params.orders
           .map(order => {
-            const assetId = converter.getAssetId(order.coin);
-            if (assetId === undefined) {
-              console.error(`Unable to find asset ID for ${order.coin}`);
+            const market = markets.find(m => m.coin === order.coin);
+            if (!market) {
+              console.error(`Unable to find market data for ${order.coin}`);
               return null;
             }
             return {
-              a: assetId,
+              a: market.assetId,
               o: order.orderId,
             };
           })
@@ -679,7 +666,7 @@ export function useOrder(): UseOrderResult {
         setIsCanceling(false);
       }
     },
-    [getAgentExchangeClient, getSymbolConverter],
+    [getAgentExchangeClient, markets],
   );
 
   /**
@@ -715,18 +702,14 @@ export function useOrder(): UseOrderResult {
           return false;
         }
 
-        // 3. Get asset metadata
-        const converter = await getSymbolConverter();
-        const assetId = converter.getAssetId(params.coin);
-        const szDecimals = converter.getSzDecimals(params.coin);
+        // 3. Get asset metadata from markets store (from metaAndAssetCtxs subscription)
+        const market = markets.find(m => m.coin === params.coin);
+        if (!market) {
+          throw new Error(`Unable to find market data for ${params.coin}`);
+        }
 
-        // Validation
-        if (assetId === undefined) {
-          throw new Error(`Unable to find asset ID for ${params.coin}`);
-        }
-        if (szDecimals === undefined) {
-          throw new Error(`Unable to find size decimals for ${params.coin}`);
-        }
+        const assetId = market.assetId;
+        const szDecimals = market.szDecimals;
 
         // Validate at least one TP or SL is provided
         if (!params.tpTriggerPrice && !params.slTriggerPrice) {
@@ -836,7 +819,7 @@ export function useOrder(): UseOrderResult {
         setIsPlacingOrder(false);
       }
     },
-    [ensureBuilderFeeApproval, getAgentExchangeClient, getSymbolConverter],
+    [ensureBuilderFeeApproval, getAgentExchangeClient, markets],
   );
 
   /**
@@ -870,11 +853,7 @@ export function useOrder(): UseOrderResult {
         }
 
         // 3. Get order context (client, asset metadata)
-        const context = await getOrderContext(
-          params.coin,
-          getAgentExchangeClient,
-          getSymbolConverter,
-        );
+        const context = await getOrderContext(params.coin, getAgentExchangeClient, markets);
         if (!context) {
           toast.info('Cancelled', {
             description: 'Order placement was cancelled',
@@ -945,7 +924,7 @@ export function useOrder(): UseOrderResult {
         setIsPlacingOrder(false);
       }
     },
-    [ensureBuilderFeeApproval, getAgentExchangeClient, getSymbolConverter],
+    [ensureBuilderFeeApproval, getAgentExchangeClient, markets],
   );
 
   return {

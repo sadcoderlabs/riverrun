@@ -1,7 +1,7 @@
 import * as hl from '@nktkas/hyperliquid';
 import { create } from 'zustand';
 import { getInfoClient, getSubscriptionClient } from '../client/getter';
-import { type ActiveAssetData } from '../subscription';
+import { type ActiveAssetData, hyperliquidRateLimiter, RequestPriority } from '../subscription';
 
 /**
  * Subscription state for a single coin + user combination
@@ -89,10 +89,15 @@ export const useActiveAssetDataStore = create<ActiveAssetDataStoreState>((set, g
         newSub.lastHttpFetch = now;
 
         const infoClient = getInfoClient();
-        const httpData = await infoClient.activeAssetData({
-          coin: coin.toUpperCase(),
-          user,
-        });
+        const httpData = await hyperliquidRateLimiter.execute(
+          () =>
+            infoClient.activeAssetData({
+              coin: coin.toUpperCase(),
+              user,
+            }),
+          'activeAssetData',
+          RequestPriority.CRITICAL,
+        );
 
         const duration = Date.now() - startTime;
 

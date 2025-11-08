@@ -6,13 +6,12 @@
 import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
 import { formatSize } from '@/lib/hyperliquid/format/formatSize';
 import { formatValue } from '@/lib/hyperliquid/format/formatValue';
-import { useHyperliquidClient, useUserFills } from '@/lib/hyperliquid/hooks';
+import { useUserFills } from '@/lib/hyperliquid/hooks';
 import type { Fill } from '@/lib/hyperliquid/types/fills';
 import { formatTimestamp } from '@/lib/hyperliquid/utils';
 import { useActiveWallet } from '@/lib/riverrun/wallet';
 import { useMarketsStore } from '@/lib/hyperliquid/market';
-import type { SymbolConverter } from '@nktkas/hyperliquid/utils';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Button, Spinner, Text, View, XStack, YStack } from 'tamagui';
 
 // ============================================================================
@@ -22,21 +21,16 @@ import { Button, Spinner, Text, View, XStack, YStack } from 'tamagui';
 interface FillCardProps {
   fill: Fill;
   onPress: () => void;
-  getSymbolConverter: () => Promise<SymbolConverter>;
 }
 
-function FillCard({ fill, onPress, getSymbolConverter }: FillCardProps) {
-  const [szDecimals, setSzDecimals] = useState(4);
+function FillCard({ fill, onPress }: FillCardProps) {
+  const { markets } = useMarketsStore();
 
-  // Load szDecimals for this coin
-  useEffect(() => {
-    getSymbolConverter().then(converter => {
-      const decimals = converter.getSzDecimals(fill.coin);
-      if (decimals !== undefined) {
-        setSzDecimals(decimals);
-      }
-    });
-  }, [getSymbolConverter, fill.coin]);
+  // Get szDecimals from markets data (from metaAndAssetCtxs subscription)
+  const szDecimals = useMemo(() => {
+    const market = markets.find(m => m.coin === fill.coin);
+    return market?.szDecimals ?? 4;
+  }, [markets, fill.coin]);
 
   // Early return if fill data is invalid
   if (!fill.coin) {
@@ -156,7 +150,6 @@ type FillFilter = 'all' | 'long' | 'short';
 
 export function HistoryTabContent() {
   const { wallet } = useActiveWallet();
-  const { getSymbolConverter } = useHyperliquidClient();
   const { setSelectedMarketByCoin } = useMarketsStore();
 
   // Get fills from useUserFills hook
@@ -273,7 +266,6 @@ export function HistoryTabContent() {
             key={`fill-${fill.tid}`}
             fill={fill}
             onPress={() => handleFillClick(fill.coin)}
-            getSymbolConverter={getSymbolConverter}
           />
         ))
       )}

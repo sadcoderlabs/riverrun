@@ -4,6 +4,7 @@ import { Alert } from 'react-native';
 import { BUILDER_CONFIG } from '@/lib/hyperliquid/builderFee/config';
 import { useHyperliquidClient } from '@/lib/hyperliquid/client/useHyperliquidClient';
 import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
+import { hyperliquidRateLimiter, RequestPriority } from '@/lib/hyperliquid/subscription';
 
 /**
  * Hook for managing builder fee approval status
@@ -27,10 +28,15 @@ export function useBuilderFee() {
         return 0;
       }
 
-      const maxFee = await infoClient.maxBuilderFee({
-        user: wallet.address,
-        builder: BUILDER_CONFIG.address,
-      });
+      const maxFee = await hyperliquidRateLimiter.execute(
+        () =>
+          infoClient.maxBuilderFee({
+            user: wallet.address,
+            builder: BUILDER_CONFIG.address,
+          }),
+        'maxBuilderFee',
+        RequestPriority.HIGH,
+      );
 
       setMaxApprovedFee(maxFee);
       return maxFee;
@@ -132,10 +138,15 @@ export function useBuilderFee() {
       }
 
       // Check if builder fee is already approved with sufficient amount
-      const maxFee = await infoClient.maxBuilderFee({
-        user: wallet.address,
-        builder: BUILDER_CONFIG.address,
-      });
+      const maxFee = await hyperliquidRateLimiter.execute(
+        () =>
+          infoClient.maxBuilderFee({
+            user: wallet.address,
+            builder: BUILDER_CONFIG.address,
+          }),
+        'maxBuilderFee',
+        RequestPriority.HIGH,
+      );
 
       setMaxApprovedFee(maxFee);
 

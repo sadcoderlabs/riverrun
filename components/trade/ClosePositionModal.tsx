@@ -7,6 +7,7 @@ import { useHyperliquidClient, useOrder } from '@/lib/hyperliquid/hooks';
 import { formatSize } from '@/lib/hyperliquid/format/formatSize';
 import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
 import { formatValue } from '@/lib/hyperliquid/format/formatValue';
+import { hyperliquidRateLimiter, RequestPriority } from '@/lib/hyperliquid/subscription';
 
 type Position = hl.ClearinghouseStateResponse['assetPositions'][number]['position'];
 
@@ -28,7 +29,7 @@ export default function ClosePositionModal({
   onOpenChange,
   position,
 }: ClosePositionModalProps) {
-  const { getSymbolConverter, infoClient } = useHyperliquidClient();
+  const { infoClient } = useHyperliquidClient();
   const { placeCloseMarketOrder, placeCloseLimitOrder, isPlacingOrder } = useOrder();
   const [orderType, setOrderType] = useState<OrderType>('market');
   const [sizeUnit, setSizeUnit] = useState<SizeUnit>('asset');
@@ -38,19 +39,12 @@ export default function ClosePositionModal({
   const [usdSize, setUsdSize] = useState<string>('');
   const [szDecimals, setSzDecimals] = useState<number | undefined>(undefined);
 
-  // Fetch szDecimals when position changes
+  // Use position.szDecimals directly (already available from WebData2)
   useEffect(() => {
-    const fetchSzDecimals = async () => {
-      if (position) {
-        const converter = await getSymbolConverter();
-        const decimals = converter.getSzDecimals(position.coin);
-        if (decimals !== undefined) {
-          setSzDecimals(decimals);
-        }
-      }
-    };
-    fetchSzDecimals();
-  }, [position, getSymbolConverter]);
+    if (position?.szDecimals !== undefined) {
+      setSzDecimals(position.szDecimals);
+    }
+  }, [position]);
 
   // Reset state when modal opens/closes or position changes
   useEffect(() => {
@@ -154,9 +148,12 @@ export default function ClosePositionModal({
 
   const handleMidPrice = async () => {
     try {
-      // Get mid price from allMids API
-
-      const allMids = await infoClient.allMids();
+      // Get mid price from allMids API using rate limiter
+      const allMids = await hyperliquidRateLimiter.execute(
+        () => infoClient.allMids(),
+        'allMids',
+        RequestPriority.HIGH, // User-initiated action
+      );
       const midPrice = allMids[position.coin];
 
       if (midPrice) {

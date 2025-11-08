@@ -1,8 +1,9 @@
 import { WebData2Provider } from '@/lib/hyperliquid/context/WebData2Context';
 import { useMarketsStore } from '@/lib/hyperliquid/market';
+import { useSubscription, type MetaAndAssetCtxsData } from '@/lib/hyperliquid/subscription';
 import { Home, TrendingUp } from '@tamagui/lucide-icons';
 import { Tabs } from 'expo-router';
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, YStack } from 'tamagui';
 
@@ -22,23 +23,41 @@ import { useTheme, YStack } from 'tamagui';
  * - Better performance and UX
  */
 export default function TabsLayout() {
-  const refresh = useMarketsStore(state => state.refresh);
-  const hasInitialized = useRef(false);
+  const setMarkets = useMarketsStore(state => state.setMarkets);
   const theme = useTheme();
   const insets = useSafeAreaInsets();
 
-  // Initialize market data once at app level
-  useEffect(() => {
-    if (!hasInitialized.current) {
-      hasInitialized.current = true;
+  // Subscribe to metaAndAssetCtxs and sync to store
+  const { data: marketData } = useSubscription<MetaAndAssetCtxsData>('metaAndAssetCtxs');
 
-      // Always refresh in background to get latest data
-      // If we have persisted data, it's already visible (instant UX)
-      refresh().catch(err => {
-        console.error('Failed to refresh markets:', err);
+  // Sync subscription data to markets store
+  useEffect(() => {
+    if (marketData?.metaAndAssetCtxs) {
+      const [meta, assetCtxs] = marketData.metaAndAssetCtxs;
+
+      const markets = meta.universe.map((asset: any, index: number) => {
+        const ctx = assetCtxs[index];
+        const currentPrice = parseFloat(ctx.markPx);
+        const prevDayPrice = parseFloat(ctx.prevDayPx);
+        const priceChange =
+          prevDayPrice > 0 ? ((currentPrice - prevDayPrice) / prevDayPrice) * 100 : 0;
+
+        return {
+          marketPair: `${asset.name}-USD`,
+          coin: asset.name,
+          assetId: index, // Asset ID is the index in meta.universe array
+          price: currentPrice,
+          change: priceChange,
+          maxLeverage: asset.maxLeverage || 1,
+          fundingRate: parseFloat(ctx.funding) * 100,
+          volume: parseFloat(ctx.dayNtlVlm || '0'),
+          szDecimals: asset.szDecimals || 0,
+        };
       });
+
+      setMarkets(markets);
     }
-  }, [refresh]);
+  }, [marketData, setMarkets]);
 
   return (
     <WebData2Provider>

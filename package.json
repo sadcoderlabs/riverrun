@@ -69,6 +69,7 @@
     "expo-web-browser": "15.0.8",
     "fast-text-encoding": "1.0.6",
     "lightweight-charts": "5.0.9",
+    "rate-limiter-flexible": "^8.1.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-hook-form": "7.65.0",

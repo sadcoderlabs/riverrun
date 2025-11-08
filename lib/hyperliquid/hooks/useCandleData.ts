@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useInfoClient } from '../client/useInfoClient';
+import { hyperliquidRateLimiter, RequestPriority } from '../subscription';
 
 /**
  * Candle interval type
@@ -134,12 +135,17 @@ export function useCandleData({
       // Default to 24 hours ago if startTime not provided
       const defaultStartTime = startTime || Date.now() - 24 * 60 * 60 * 1000;
 
-      const candles = await infoClient.candleSnapshot({
-        coin,
-        interval,
-        startTime: defaultStartTime,
-        endTime,
-      });
+      const candles = await hyperliquidRateLimiter.execute(
+        () =>
+          infoClient.candleSnapshot({
+            coin,
+            interval,
+            startTime: defaultStartTime,
+            endTime,
+          }),
+        'candleSnapshot',
+        RequestPriority.NORMAL,
+      );
 
       setRawData(candles);
       setData(formatCandleData(candles));

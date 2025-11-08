@@ -6,7 +6,7 @@
 import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
 import { formatSize } from '@/lib/hyperliquid/format/formatSize';
 import { formatValue } from '@/lib/hyperliquid/format/formatValue';
-import { useHyperliquidClient, useOrder, useOrderUpdates } from '@/lib/hyperliquid/hooks';
+import { useOrder, useOrderUpdates } from '@/lib/hyperliquid/hooks';
 import type { Order } from '@/lib/hyperliquid/types/orders';
 import {
   calculateOrderMetrics,
@@ -16,8 +16,7 @@ import {
 } from '@/lib/hyperliquid/utils';
 import { useActiveWallet } from '@/lib/riverrun/wallet';
 import { useMarketsStore } from '@/lib/hyperliquid/market';
-import type { SymbolConverter } from '@nktkas/hyperliquid/utils';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Button, Spinner, Text, View, XStack, YStack } from 'tamagui';
 
 // ============================================================================
@@ -29,21 +28,16 @@ interface OrderCardProps {
   onCancel: (oid: number) => Promise<void>;
   onPress: () => void;
   canceling: boolean;
-  getSymbolConverter: () => Promise<SymbolConverter>;
 }
 
-function OrderCard({ order, onCancel, onPress, canceling, getSymbolConverter }: OrderCardProps) {
-  const [szDecimals, setSzDecimals] = useState(4);
+function OrderCard({ order, onCancel, onPress, canceling }: OrderCardProps) {
+  const { markets } = useMarketsStore();
 
-  // Load szDecimals for this coin
-  useEffect(() => {
-    getSymbolConverter().then(converter => {
-      const decimals = converter.getSzDecimals(order.coin);
-      if (decimals !== undefined) {
-        setSzDecimals(decimals);
-      }
-    });
-  }, [getSymbolConverter, order.coin]);
+  // Get szDecimals from markets data (from metaAndAssetCtxs subscription)
+  const szDecimals = useMemo(() => {
+    const market = markets.find(m => m.coin === order.coin);
+    return market?.szDecimals ?? 4;
+  }, [markets, order.coin]);
 
   // Early return if order data is invalid
   if (!order.coin) {
@@ -201,7 +195,6 @@ type OrderFilter = 'all' | 'long' | 'short';
 
 export function OrdersTabContent() {
   const { wallet } = useActiveWallet();
-  const { getSymbolConverter } = useHyperliquidClient();
   const { setSelectedMarketByCoin } = useMarketsStore();
 
   // Get orders from useOrderUpdates (simplified flat structure)
@@ -395,7 +388,6 @@ export function OrdersTabContent() {
             onCancel={handleCancelOrder}
             onPress={() => handleOrderClick(order.coin)}
             canceling={cancelingOrderIds[order.oid] ?? false}
-            getSymbolConverter={getSymbolConverter}
           />
         ))
       )}

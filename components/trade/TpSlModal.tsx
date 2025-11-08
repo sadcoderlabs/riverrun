@@ -24,15 +24,14 @@ interface TpSlModalProps {
 }
 
 export default function TpSlModal({ open, onOpenChange, position }: TpSlModalProps) {
-  const { getSymbolConverter } = useHyperliquidClient();
   const { placeTpSlOrders, cancelOrder, isPlacingOrder } = useOrder();
   const { orders } = useOrderUpdates();
 
   // Refs
   const scrollViewRef = useRef<ScrollView>(null);
 
-  // Position metadata
-  const [szDecimals, setSzDecimals] = useState<number | undefined>(undefined);
+  // Get szDecimals from position (available from WebData2 subscription)
+  const szDecimals = position?.szDecimals;
 
   // Find existing TP/SL orders for this position
   const existingTpSlOrders = useMemo(() => {
@@ -78,20 +77,6 @@ export default function TpSlModal({ open, onOpenChange, position }: TpSlModalPro
   const [limitPrice, setLimitPrice] = useState<boolean>(false);
   const [tpLimitPrice, setTpLimitPrice] = useState<string>('');
   const [slLimitPrice, setSlLimitPrice] = useState<string>('');
-
-  // Fetch szDecimals when position changes
-  useEffect(() => {
-    const fetchSzDecimals = async () => {
-      if (position) {
-        const converter = await getSymbolConverter();
-        const decimals = converter.getSzDecimals(position.coin);
-        if (decimals !== undefined) {
-          setSzDecimals(decimals);
-        }
-      }
-    };
-    fetchSzDecimals();
-  }, [position, getSymbolConverter]);
 
   // Reset state when modal opens/closes or position changes
   useEffect(() => {

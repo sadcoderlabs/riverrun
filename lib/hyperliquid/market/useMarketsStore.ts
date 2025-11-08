@@ -3,6 +3,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { Market } from './types';
 import { getInfoClient } from '../client/getter';
+import { hyperliquidRateLimiter, RequestPriority } from '../subscription';
 
 /**
  * Selected market information
@@ -97,11 +98,18 @@ export const useMarketsStore = create<MarketsState>()(
 
       /**
        * Refresh markets data from Hyperliquid API
+       * Uses rate limiter to prevent 429 errors
        */
       refresh: async () => {
         // Get infoClient internally
         const infoClient = getInfoClient();
-        const [meta, assetCtxs] = await infoClient.metaAndAssetCtxs();
+
+        // Use rate limiter with NORMAL priority for refresh
+        const [meta, assetCtxs] = await hyperliquidRateLimiter.execute(
+          () => infoClient.metaAndAssetCtxs(),
+          'metaAndAssetCtxs',
+          RequestPriority.NORMAL,
+        );
 
         const markets: Market[] = meta.universe.map((asset: any, index: number) => {
           const assetName = asset.name;
@@ -118,6 +126,7 @@ export const useMarketsStore = create<MarketsState>()(
           return {
             marketPair,
             coin: assetName,
+            assetId: index, // Asset ID is the index in meta.universe array
             price: currentPrice,
             change: priceChange,
             maxLeverage: asset.maxLeverage || 1,

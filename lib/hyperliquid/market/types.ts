@@ -6,6 +6,8 @@ export type Market = {
   marketPair: string;
   /** Coin symbol (e.g., "BTC", "ETH") */
   coin: string;
+  /** Asset ID used by Hyperliquid API for order placement */
+  assetId: number;
   /** Current market price */
   price: number;
   /** 24-hour price change percentage */

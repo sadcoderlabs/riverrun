@@ -7,7 +7,8 @@
  * - Reference counting: multiple components can share one subscription
  * - App Lifecycle management: automatic pause/resume when app goes to background/foreground
  * - Hybrid strategy: HTTP fetch + WebSocket subscription for fast initial load
- * - Rate limiting: prevents rapid HTTP requests
+ * - Weight-based rate limiting: respects Hyperliquid's 1200 weight/minute limit
+ * - Priority queue: guarantees critical requests (initial fetches) always execute
  * - Simple API: single `useSubscription` hook for all data types
  *
  * Usage:
@@ -30,6 +31,10 @@ import './registry/hyperliquidSubscriptions';
 
 // Export core types
 export type { SubscriptionConfig, SubscriptionState, SubscriptionHandle } from './core/types';
+
+// Export rate limiter types and priority enum
+export { RequestPriority } from './core/RateLimiter';
+export { hyperliquidRateLimiter } from './core/RateLimiter';
 
 // Export data types
 export type {

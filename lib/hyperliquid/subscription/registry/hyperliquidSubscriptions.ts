@@ -285,73 +285,26 @@ subscriptionRegistry.register<OrderUpdatesParams, OrderUpdatesData>('orderUpdate
   },
 
   // WebSocket subscription for incremental updates
-  // Uses a full refresh strategy: fetch all open orders on each update
-  // This is necessary because WebSocket orderUpdates provides incomplete data
+  // Simply log the updates for now to understand what we're receiving
   subscribe: async (params, callback) => {
     const subscriptionClient = getSubscriptionClient();
-    const infoClient = getInfoClient();
 
-    // Track last HTTP fetch time to implement rate limiting
-    let lastFetchTime = 0;
-    const MIN_FETCH_INTERVAL = 1000; // 1 second minimum between HTTP refreshes
-    let pendingRefresh = false;
-
-    const refreshOrders = async () => {
-      if (pendingRefresh) {
-        return; // Already have a pending refresh
-      }
-
-      const now = Date.now();
-      const timeSinceLastFetch = now - lastFetchTime;
-
-      if (timeSinceLastFetch < MIN_FETCH_INTERVAL) {
-        // Schedule a delayed refresh
-        if (!pendingRefresh) {
-          pendingRefresh = true;
-          const delay = MIN_FETCH_INTERVAL - timeSinceLastFetch;
-          setTimeout(() => {
-            pendingRefresh = false;
-            void refreshOrders();
-          }, delay);
-        }
-        return;
-      }
-
-      // Refresh all open orders
-      try {
-        lastFetchTime = now;
-
-        const openOrdersResponse = (await infoClient.frontendOpenOrders({
-          user: params.user,
-        })) as ApiOrderResponse[];
-
-        const orders: Order[] = openOrdersResponse.map(apiOrder => transformApiOrder(apiOrder));
-        callback({ orders });
-      } catch (err) {
-        console.error('[orderUpdates] Error refreshing orders:', err);
-      }
-    };
-
+    // Subscribe to order updates
     const subscription = await subscriptionClient.orderUpdates(
       {
         user: params.user,
       },
       async (orderUpdates: any[]) => {
-        // Check if there are any meaningful updates (new orders or status changes)
-        const hasNewOrders = orderUpdates.some(
-          update =>
-            update.status === 'open' || update.status === 'filled' || update.status === 'canceled',
+        // Log everything we receive from WebSocket
+        console.log(
+          `[orderUpdates] WebSocket received ${orderUpdates.length} updates:`,
+          JSON.stringify(orderUpdates, null, 2),
         );
 
-        if (hasNewOrders) {
-          await refreshOrders();
-        }
+        // For now, just log and don't process
+        // This will help us understand what triggers 429 errors
       },
     );
-
-    // Immediately fetch initial orders after WebSocket connection is established
-    // This ensures we have data even if HTTP fetch was skipped due to rate limiting
-    void refreshOrders();
 
     return subscription;
   },

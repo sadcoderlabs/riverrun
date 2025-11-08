@@ -62,7 +62,7 @@ export interface SetMarginLeverageParams {
  * ```
  */
 export function useMarginLeverage(): UseMarginLeverageResult {
-  const { getAgentExchangeClient, getSymbolConverter } = useHyperliquidClient();
+  const { getAgentExchangeClient } = useHyperliquidClient();
   const { selectedMarket, markets } = useMarketsStore();
 
   // Fail fast if no market is selected
@@ -136,17 +136,17 @@ export function useMarginLeverage(): UseMarginLeverageResult {
           return;
         }
 
-        // Get asset ID from symbol converter
-        const converter = await getSymbolConverter();
-        const assetId = converter.getAssetId(coin);
-
-        if (assetId === undefined) {
+        // Get asset ID from markets store (from metaAndAssetCtxs subscription)
+        const market = markets.find(m => m.coin === coin);
+        if (!market) {
           toast.error('Invalid Asset', {
-            description: `Unable to find asset ID for ${coin}`,
+            description: `Unable to find market data for ${coin}`,
           });
           setIsUpdating(false);
           return;
         }
+
+        const assetId = market.assetId;
 
         // Convert marginMode to isCross for API
         const isCross = marginMode === 'cross';
@@ -171,7 +171,7 @@ export function useMarginLeverage(): UseMarginLeverageResult {
         setIsUpdating(false);
       }
     },
-    [coin, getAgentExchangeClient, getSymbolConverter, isUpdating, marginLeverage],
+    [coin, getAgentExchangeClient, markets, isUpdating, marginLeverage],
   );
 
   return {
