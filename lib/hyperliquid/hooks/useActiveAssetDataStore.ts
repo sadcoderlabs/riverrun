@@ -95,15 +95,17 @@ export const useActiveAssetDataStore = create<ActiveAssetDataStoreState>((set, g
         });
 
         const duration = Date.now() - startTime;
-        console.log(
-          `[useActiveAssetDataStore] ✅ HTTP fetch for ${coin} completed in ${duration}ms`,
-        );
 
         // Update store with HTTP data
         const currentState = get();
         const currentSub = currentState.subscriptions.get(key);
 
+        // Only log and update if subscription still exists
+        // (it may have been cleaned up if app went to background during fetch)
         if (currentSub) {
+          console.log(
+            `[useActiveAssetDataStore] ✅ HTTP fetch for ${coin} completed in ${duration}ms`,
+          );
           // Create new object to trigger re-render
           const updatedSub: CoinSubscription = {
             ...currentSub,
@@ -117,7 +119,11 @@ export const useActiveAssetDataStore = create<ActiveAssetDataStoreState>((set, g
           });
         }
       } catch (err) {
-        console.error(`[useActiveAssetDataStore] ⚠️ HTTP fetch failed for ${coin}:`, err);
+        // Only log if subscription still exists
+        const currentState = get();
+        if (currentState.subscriptions.has(key)) {
+          console.error(`[useActiveAssetDataStore] ⚠️ HTTP fetch failed for ${coin}:`, err);
+        }
         // Don't set error, will try WebSocket
       }
     } else {
@@ -171,23 +177,26 @@ export const useActiveAssetDataStore = create<ActiveAssetDataStoreState>((set, g
         });
       }
     } catch (err) {
-      console.error(`[useActiveAssetDataStore] ❌ WebSocket subscription failed for ${coin}:`, err);
-
       const currentState = get();
       const currentSub = currentState.subscriptions.get(key);
 
-      // Only set error if both HTTP and WebSocket failed
-      if (currentSub && !currentSub.httpFetched) {
-        // Create new object to trigger re-render
-        const updatedSub: CoinSubscription = {
-          ...currentSub,
-          error: err instanceof Error ? err : new Error('Failed to fetch data'),
-          isLoading: false,
-        };
+      // Only log and set error if subscription still exists
+      if (currentSub) {
+        console.error(`[useActiveAssetDataStore] ❌ WebSocket subscription failed for ${coin}:`, err);
 
-        set({
-          subscriptions: new Map(currentState.subscriptions).set(key, updatedSub),
-        });
+        // Only set error if both HTTP and WebSocket failed
+        if (!currentSub.httpFetched) {
+          // Create new object to trigger re-render
+          const updatedSub: CoinSubscription = {
+            ...currentSub,
+            error: err instanceof Error ? err : new Error('Failed to fetch data'),
+            isLoading: false,
+          };
+
+          set({
+            subscriptions: new Map(currentState.subscriptions).set(key, updatedSub),
+          });
+        }
       }
     }
   },
