@@ -8,16 +8,11 @@ const LEVERAGE_STEP = 1;
 interface LeverageAdjustmentModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  coin: string;
 }
 
-export function LeverageAdjustmentModal({
-  open,
-  onOpenChange,
-  coin,
-}: LeverageAdjustmentModalProps) {
+export function LeverageAdjustmentModal({ open, onOpenChange }: LeverageAdjustmentModalProps) {
   // Get real-time margin and leverage data, and update function
-  const { marginLeverage, setMarginLeverage, isUpdating } = useMarginLeverage({ coin });
+  const { marginLeverage, setMarginLeverage, isUpdating } = useMarginLeverage();
 
   // Extract min/max leverage from marginLeverage
   const leverageMin = marginLeverage.minLeverage;

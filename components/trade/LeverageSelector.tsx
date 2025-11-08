@@ -4,15 +4,11 @@ import { ChevronDown } from '@tamagui/lucide-icons';
 import { useState } from 'react';
 import { Text, XStack } from 'tamagui';
 
-interface LeverageSelectorProps {
-  coin: string;
-}
-
-export function LeverageSelector({ coin }: LeverageSelectorProps) {
+export function LeverageSelector() {
   const [leverageModalOpen, setLeverageModalOpen] = useState(false);
 
   // Get real-time margin and leverage data
-  const { marginLeverage } = useMarginLeverage({ coin });
+  const { marginLeverage } = useMarginLeverage();
 
   return (
     <>
@@ -36,11 +32,7 @@ export function LeverageSelector({ coin }: LeverageSelectorProps) {
       </XStack>
 
       {/* Leverage Adjustment Modal */}
-      <LeverageAdjustmentModal
-        open={leverageModalOpen}
-        onOpenChange={setLeverageModalOpen}
-        coin={coin}
-      />
+      <LeverageAdjustmentModal open={leverageModalOpen} onOpenChange={setLeverageModalOpen} />
     </>
   );
 }

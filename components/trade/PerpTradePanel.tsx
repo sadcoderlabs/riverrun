@@ -43,7 +43,7 @@ export function PerpTradePanel() {
   });
 
   // Subscribe to real-time margin and leverage data (for margin calculation and order forms)
-  const { marginLeverage } = useMarginLeverage({ coin });
+  const { marginLeverage } = useMarginLeverage();
   const leverage = marginLeverage.leverage;
 
   // Subscribe to real-time available margin data
@@ -193,7 +193,7 @@ export function PerpTradePanel() {
         {/* Trading Form */}
         <YStack paddingHorizontal="$3" paddingTop="$1" paddingBottom="$3" gap="$2.5">
           {/* Leverage & Margin Type Selector */}
-          <LeverageSelector coin={coin} />
+          <LeverageSelector />
 
           {/* Available to Trade */}
           <XStack justifyContent="space-between" alignItems="center">

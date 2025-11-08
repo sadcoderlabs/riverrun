@@ -5,10 +5,6 @@ import { useMarketsStore } from '../market';
 import { useActiveAssetData } from './useActiveAssetData';
 import { useWebData2 } from './useWebData2';
 
-interface UseMarginLeverageParams {
-  coin: string;
-}
-
 export interface MarginLeverage {
   /** Leverage value (e.g., 5, 10, 20) */
   leverage: number;
@@ -39,17 +35,18 @@ export interface SetMarginLeverageParams {
 }
 
 /**
- * Hook to get and update real-time margin mode and leverage for a specific coin
+ * Hook to get and update real-time margin mode and leverage for the currently selected market
  *
  * Provides current margin and leverage data from WebSocket feed and a method to
  * update them via the Hyperliquid Exchange API.
  *
- * @param coin - Asset symbol (e.g., 'BTC', 'ETH', 'SOL')
+ * Uses the selected market from `useMarketsStore` as the single source of truth.
+ *
  * @returns Object containing margin/leverage data, loading states, and setMarginLeverage function
  *
  * @example
  * ```typescript
- * const { marginLeverage, setMarginLeverage, isUpdating } = useMarginLeverage({ coin: 'BTC' });
+ * const { marginLeverage, setMarginLeverage, isUpdating } = useMarginLeverage();
  *
  * // Access margin and leverage data
  * console.log(marginLeverage.leverage);    // 5
@@ -63,11 +60,12 @@ export interface SetMarginLeverageParams {
  * await setMarginLeverage({ leverage: 10, marginMode: 'isolated' });
  * ```
  */
-export function useMarginLeverage({ coin }: UseMarginLeverageParams): UseMarginLeverageResult {
+export function useMarginLeverage(): UseMarginLeverageResult {
   const { getAgentExchangeClient, getSymbolConverter } = useHyperliquidClient();
+  const { selectedMarket, markets } = useMarketsStore();
+  const coin = selectedMarket?.coin || 'BTC'; // Fallback to BTC if no market selected
   const { data: activeAssetData, isLoading } = useActiveAssetData({ coin });
   const { data: webData } = useWebData2();
-  const { markets } = useMarketsStore();
 
   const [isUpdating, setIsUpdating] = useState(false);
 
