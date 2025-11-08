@@ -28,6 +28,11 @@ interface UseActiveAssetDataResult {
   error: Error | undefined;
 }
 
+// Global state to prevent rapid HTTP requests (rate limiting protection)
+// Key: `${user}-${coin}`, Value: timestamp
+const lastHttpFetchTimes = new Map<string, number>();
+const MIN_HTTP_FETCH_INTERVAL = 500; // 500ms minimum between HTTP fetches per coin
+
 /**
  * Hook to get Hyperliquid's activeAssetData using hybrid strategy:
  * 1. Fast initial fetch via HTTP API (100-300ms)
@@ -82,21 +87,34 @@ export function useActiveAssetData({ coin }: UseActiveAssetDataParams): UseActiv
     httpFetchedRef.current = false;
 
     const fetchAndSubscribe = async () => {
-      try {
-        // Step 1: Fast HTTP fetch for initial data
-        const httpData = await infoClient.activeAssetData({
-          coin: coin.toUpperCase(),
-          user: wallet.address,
-        });
+      // Step 1: Fast HTTP fetch for initial data (with rate limiting protection)
+      const fetchKey = `${wallet.address}-${coin}`;
+      const now = Date.now();
+      const lastFetchTime = lastHttpFetchTimes.get(fetchKey) || 0;
+      const timeSinceLastFetch = now - lastFetchTime;
 
-        if (isMounted) {
-          setData(httpData);
-          setIsLoading(false);
-          httpFetchedRef.current = true;
+      if (timeSinceLastFetch >= MIN_HTTP_FETCH_INTERVAL) {
+        try {
+          lastHttpFetchTimes.set(fetchKey, now);
+          const httpData = await infoClient.activeAssetData({
+            coin: coin.toUpperCase(),
+            user: wallet.address,
+          });
+
+          if (isMounted) {
+            setData(httpData);
+            setIsLoading(false);
+            httpFetchedRef.current = true;
+          }
+        } catch (err) {
+          console.error('[useActiveAssetData] HTTP fetch failed:', err);
+          // Don't set error state, will try WebSocket
         }
-      } catch (err) {
-        console.error('[useActiveAssetData] HTTP fetch failed:', err);
-        // Don't set error state, will try WebSocket
+      } else {
+        // Skip HTTP fetch if too soon, rely on WebSocket only
+        console.log(
+          `[useActiveAssetData] Skipping HTTP fetch for ${coin} (${timeSinceLastFetch}ms since last fetch)`,
+        );
       }
 
       // Step 2: Set up WebSocket subscription for real-time updates
