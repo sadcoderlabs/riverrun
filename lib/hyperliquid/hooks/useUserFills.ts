@@ -10,7 +10,7 @@ import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
 import * as hl from '@nktkas/hyperliquid';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Fill } from '../types/fills';
-import { useHyperliquidClient } from './useHyperliquidClient';
+import { useHyperliquidClient } from '../client/useHyperliquidClient';
 
 // ============================================================================
 // Hook Interface

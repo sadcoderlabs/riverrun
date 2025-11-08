@@ -1,7 +1,7 @@
 import * as hl from '@nktkas/hyperliquid';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
-import { useHyperliquidClient } from './useHyperliquidClient';
+import { useHyperliquidClient } from '../client/useHyperliquidClient';
 
 // Use the actual types from the SDK
 type WebData2Response = hl.WebData2Response;

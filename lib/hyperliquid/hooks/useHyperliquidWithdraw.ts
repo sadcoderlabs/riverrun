@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { Alert } from 'react-native';
-import { useHyperliquidClient } from './useHyperliquidClient';
+import { useHyperliquidClient } from '../client/useHyperliquidClient';
 import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
 
 // Minimum withdrawal amount in USDC

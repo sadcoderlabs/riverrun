@@ -2,7 +2,7 @@ import { getWalletAddress } from '@nktkas/hyperliquid/signing';
 import { useCallback, useState } from 'react';
 import { Alert } from 'react-native';
 
-import { useHyperliquidClient } from '@/lib/hyperliquid/hooks/useHyperliquidClient';
+import { useHyperliquidClient } from '@/lib/hyperliquid/client/useHyperliquidClient';
 import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
 
 import { DEFAULT_AGENT_NAME } from '../constants';

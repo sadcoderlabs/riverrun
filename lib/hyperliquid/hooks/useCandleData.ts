@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useHyperliquidClient } from './useHyperliquidClient';
+import { useHyperliquidClient } from '../client/useHyperliquidClient';
 
 /**
  * Candle interval type
