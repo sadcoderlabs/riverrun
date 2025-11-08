@@ -1,10 +1,8 @@
 import { useMarginLeverage } from '@/lib/hyperliquid/hooks';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Modal, Pressable, StyleSheet } from 'react-native';
 import { Button, Slider, Spinner, Text, XStack, YStack } from 'tamagui';
 
-const LEVERAGE_MIN = 1;
-const LEVERAGE_MAX = 20;
 const LEVERAGE_STEP = 1;
 
 interface LeverageAdjustmentModalProps {
@@ -21,6 +19,10 @@ export function LeverageAdjustmentModal({
   // Get real-time margin and leverage data, and update function
   const { marginLeverage, setMarginLeverage, isUpdating } = useMarginLeverage({ coin });
 
+  // Extract min/max leverage from marginLeverage
+  const leverageMin = marginLeverage.minLeverage;
+  const leverageMax = marginLeverage.maxLeverage;
+
   // Local state to track user's selection before confirming
   const [selectedLeverage, setSelectedLeverage] = useState(marginLeverage.leverage);
   const [selectedMarginMode, setSelectedMarginMode] = useState<'isolated' | 'cross'>(
@@ -30,10 +32,12 @@ export function LeverageAdjustmentModal({
   // Sync local state with current margin/leverage when modal opens
   useEffect(() => {
     if (open) {
-      setSelectedLeverage(marginLeverage.leverage);
+      // Clamp the leverage to the valid range
+      const clampedLeverage = Math.max(leverageMin, Math.min(leverageMax, marginLeverage.leverage));
+      setSelectedLeverage(clampedLeverage);
       setSelectedMarginMode(marginLeverage.marginMode);
     }
-  }, [open, marginLeverage.leverage, marginLeverage.marginMode]);
+  }, [open, marginLeverage.leverage, marginLeverage.marginMode, leverageMin, leverageMax]);
 
   // Handle margin mode change - immediately call API
   const handleMarginModeChange = useCallback(
@@ -179,11 +183,11 @@ export function LeverageAdjustmentModal({
                   borderRadius="$2"
                   onPress={() => {
                     if (!isUpdating) {
-                      setSelectedLeverage(Math.max(LEVERAGE_MIN, selectedLeverage - 1));
+                      setSelectedLeverage(Math.max(leverageMin, selectedLeverage - 1));
                     }
                   }}
                   pressStyle={{ opacity: 0.7 }}
-                  opacity={isUpdating ? 0.5 : 1}
+                  opacity={isUpdating || selectedLeverage <= leverageMin ? 0.5 : 1}
                 >
                   <Text fontSize="$5" color="$color">
                     −
@@ -201,11 +205,11 @@ export function LeverageAdjustmentModal({
                   borderRadius="$2"
                   onPress={() => {
                     if (!isUpdating) {
-                      setSelectedLeverage(Math.min(LEVERAGE_MAX, selectedLeverage + 1));
+                      setSelectedLeverage(Math.min(leverageMax, selectedLeverage + 1));
                     }
                   }}
                   pressStyle={{ opacity: 0.7 }}
-                  opacity={isUpdating ? 0.5 : 1}
+                  opacity={isUpdating || selectedLeverage >= leverageMax ? 0.5 : 1}
                 >
                   <Text fontSize="$5" color="$color">
                     +
@@ -213,11 +217,21 @@ export function LeverageAdjustmentModal({
                 </XStack>
               </XStack>
 
+              {/* Leverage Range Info */}
+              <XStack justifyContent="center" alignItems="center" gap="$2">
+                <Text fontFamily="$interRegular" fontSize="$2" color="$gray10">
+                  Available Range:
+                </Text>
+                <Text fontFamily="$interSemiBold" fontSize="$2" color="$color">
+                  {leverageMin}x - {leverageMax}x
+                </Text>
+              </XStack>
+
               {/* Leverage Slider */}
               <Slider
                 value={[selectedLeverage]}
-                min={LEVERAGE_MIN}
-                max={LEVERAGE_MAX}
+                min={leverageMin}
+                max={leverageMax}
                 step={LEVERAGE_STEP}
                 disabled={isUpdating}
                 onValueChange={values => {
@@ -227,8 +241,8 @@ export function LeverageAdjustmentModal({
                     return;
                   }
                   const clampedValue = Math.max(
-                    LEVERAGE_MIN,
-                    Math.min(LEVERAGE_MAX, Math.round(next)),
+                    leverageMin,
+                    Math.min(leverageMax, Math.round(next)),
                   );
                   setSelectedLeverage(clampedValue);
                 }}
@@ -245,29 +259,6 @@ export function LeverageAdjustmentModal({
                   circular
                 />
               </Slider>
-
-              {/* Leverage Dots Selector */}
-              <XStack justifyContent="space-between" paddingHorizontal="$1">
-                {Array.from(
-                  { length: LEVERAGE_MAX - LEVERAGE_MIN + 1 },
-                  (_, i) => i + LEVERAGE_MIN,
-                ).map(lev => (
-                  <XStack
-                    key={lev}
-                    width="$0.75"
-                    height="$0.75"
-                    backgroundColor={selectedLeverage === lev ? '$accent9' : '$gray8'}
-                    borderRadius="$10"
-                    onPress={() => {
-                      if (!isUpdating) {
-                        setSelectedLeverage(lev);
-                      }
-                    }}
-                    pressStyle={{ opacity: 0.7 }}
-                    opacity={isUpdating ? 0.5 : 1}
-                  />
-                ))}
-              </XStack>
             </YStack>
 
             {/* Warning Text */}

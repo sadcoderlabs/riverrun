@@ -2,6 +2,8 @@ import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner-native';
 import { useActiveAssetData } from './useActiveAssetData';
 import { useHyperliquidClient } from '../client/useHyperliquidClient';
+import { useWebData2 } from './useWebData2';
+import { useMarketsStore } from '../market';
 
 interface UseMarginLeverageParams {
   coin: string;
@@ -12,6 +14,10 @@ export interface MarginLeverage {
   leverage: number;
   /** Margin mode */
   marginMode: 'isolated' | 'cross';
+  /** Minimum leverage allowed (always 1) */
+  minLeverage: number;
+  /** Maximum leverage allowed based on current position size and margin tiers */
+  maxLeverage: number;
 }
 
 interface UseMarginLeverageResult {
@@ -60,22 +66,57 @@ export interface SetMarginLeverageParams {
 export function useMarginLeverage({ coin }: UseMarginLeverageParams): UseMarginLeverageResult {
   const { getAgentExchangeClient, getSymbolConverter } = useHyperliquidClient();
   const { data: activeAssetData, isLoading } = useActiveAssetData({ coin });
+  const { data: webData } = useWebData2();
+  const { markets } = useMarketsStore();
 
   const [isUpdating, setIsUpdating] = useState(false);
 
   // Extract and memoize margin and leverage data
-  const marginLeverage = useMemo<MarginLeverage>(
-    () => ({
-      leverage: activeAssetData?.leverage?.value ?? 5,
-      marginMode: activeAssetData?.leverage?.type ?? 'isolated',
-    }),
-    [activeAssetData],
-  );
+  const marginLeverage = useMemo<MarginLeverage>(() => {
+    const leverage = activeAssetData?.leverage?.value ?? 5;
+    const marginMode = activeAssetData?.leverage?.type ?? 'isolated';
+
+    // Get base max leverage for this market from meta API
+    const market = markets.find(m => m.coin === coin);
+    const baseMaxLeverage = market?.maxLeverage ?? 20;
+
+    // If user has a position, use the calculated maxLeverage from clearinghouseState
+    // This considers the current notional position value and margin tiers
+    let maxLeverage = baseMaxLeverage;
+
+    if (webData?.clearinghouseState?.assetPositions) {
+      const position = webData.clearinghouseState.assetPositions.find(
+        asset => asset.position.coin === coin,
+      );
+
+      if (position) {
+        // Use the maxLeverage from the position data (calculated by API based on margin tiers)
+        // This is more restrictive than baseMaxLeverage when position size is large
+        maxLeverage = position.position.maxLeverage;
+      }
+    }
+
+    return {
+      leverage,
+      marginMode,
+      minLeverage: 1,
+      maxLeverage,
+    };
+  }, [activeAssetData, webData, coin, markets]);
 
   // Update margin mode and leverage via Hyperliquid API
   const setMarginLeverage = useCallback(
     async ({ leverage: newLeverage, marginMode }: SetMarginLeverageParams) => {
       if (isUpdating) {
+        return;
+      }
+
+      // Validate leverage range
+      const currentMaxLeverage = marginLeverage.maxLeverage;
+      if (newLeverage < 1 || newLeverage > currentMaxLeverage) {
+        toast.error('Invalid Leverage', {
+          description: `Leverage must be between 1 and ${currentMaxLeverage}`,
+        });
         return;
       }
 
@@ -126,7 +167,7 @@ export function useMarginLeverage({ coin }: UseMarginLeverageParams): UseMarginL
         setIsUpdating(false);
       }
     },
-    [coin, getAgentExchangeClient, getSymbolConverter, isUpdating],
+    [coin, getAgentExchangeClient, getSymbolConverter, isUpdating, marginLeverage.maxLeverage],
   );
 
   return {
