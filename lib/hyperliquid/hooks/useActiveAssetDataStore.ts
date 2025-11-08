@@ -108,12 +108,16 @@ export const useActiveAssetDataStore = create<ActiveAssetDataStoreState>((set, g
         const currentSub = currentState.subscriptions.get(key);
 
         if (currentSub) {
-          currentSub.data = httpData;
-          currentSub.isLoading = false;
-          currentSub.httpFetched = true;
+          // Create new object to trigger re-render
+          const updatedSub: CoinSubscription = {
+            ...currentSub,
+            data: httpData,
+            isLoading: false,
+            httpFetched: true,
+          };
 
           set({
-            subscriptions: new Map(currentState.subscriptions).set(key, currentSub),
+            subscriptions: new Map(currentState.subscriptions).set(key, updatedSub),
           });
         }
       } catch (err) {
@@ -139,15 +143,16 @@ export const useActiveAssetDataStore = create<ActiveAssetDataStoreState>((set, g
             const currentSub = currentState.subscriptions.get(key);
 
             if (currentSub) {
-              currentSub.data = assetData;
-
-              // If HTTP didn't complete yet, WebSocket is the first result
-              if (!currentSub.httpFetched) {
-                currentSub.isLoading = false;
-              }
+              // Create new object to trigger re-render
+              const updatedSub: CoinSubscription = {
+                ...currentSub,
+                data: assetData,
+                // If HTTP didn't complete yet, WebSocket is the first result
+                isLoading: currentSub.httpFetched ? currentSub.isLoading : false,
+              };
 
               set({
-                subscriptions: new Map(currentState.subscriptions).set(key, currentSub),
+                subscriptions: new Map(currentState.subscriptions).set(key, updatedSub),
               });
             }
           },
@@ -158,10 +163,14 @@ export const useActiveAssetDataStore = create<ActiveAssetDataStoreState>((set, g
         const currentSub = currentState.subscriptions.get(key);
 
         if (currentSub) {
-          currentSub.subscription = subscription;
+          // Create new object to trigger re-render
+          const updatedSub: CoinSubscription = {
+            ...currentSub,
+            subscription,
+          };
 
           set({
-            subscriptions: new Map(currentState.subscriptions).set(key, currentSub),
+            subscriptions: new Map(currentState.subscriptions).set(key, updatedSub),
           });
         }
       } catch (err) {
@@ -175,11 +184,15 @@ export const useActiveAssetDataStore = create<ActiveAssetDataStoreState>((set, g
 
         // Only set error if both HTTP and WebSocket failed
         if (currentSub && !currentSub.httpFetched) {
-          currentSub.error = err instanceof Error ? err : new Error('Failed to fetch data');
-          currentSub.isLoading = false;
+          // Create new object to trigger re-render
+          const updatedSub: CoinSubscription = {
+            ...currentSub,
+            error: err instanceof Error ? err : new Error('Failed to fetch data'),
+            isLoading: false,
+          };
 
           set({
-            subscriptions: new Map(currentState.subscriptions).set(key, currentSub),
+            subscriptions: new Map(currentState.subscriptions).set(key, updatedSub),
           });
         }
       }

@@ -79,13 +79,18 @@ export function useActiveAssetData({ coin }: UseActiveAssetDataParams): UseActiv
 
   // Return data from store subscription
   return useMemo(() => {
+    if (!walletAddress || !coin) {
+      return { data: undefined, isLoading: false, error: undefined };
+    }
+
     if (!subscription) {
       return { data: undefined, isLoading: true, error: undefined };
     }
+
     return {
       data: subscription.data,
       isLoading: subscription.isLoading,
       error: subscription.error,
     };
-  }, [subscription]);
+  }, [subscription, walletAddress, coin]);
 }
