@@ -4,10 +4,10 @@ import { formatSizeFixedDecimals } from '@/lib/hyperliquid/format/formatSizeFixe
 import { useActiveAssetCtx, useMarketsStore } from '@/lib/hyperliquid/market';
 import {
   buildPrecisionMenu,
+  useRecentTrades,
   type NSigFigs,
   type OrderBookLevel,
   type PrecisionMenuItem,
-  useRecentTrades,
 } from '@/lib/hyperliquid/orderbook';
 import { useSubscription, type OrderBookData } from '@/lib/hyperliquid/subscription';
 import { ArrowDownRight, ArrowUpRight, ChevronDown, Info } from '@tamagui/lucide-icons';
@@ -69,7 +69,8 @@ export function OrderBook({ onPriceClick }: OrderBookProps) {
   }, [markPx, szDecimals]);
 
   // Default to first menu item (finest precision) if not selected
-  const effectiveNSigFigs = selectedPrecision ?? precisionMenuItems[0]?.nSigFigs;
+  // Use null instead of undefined to prevent subscription from restarting when precisionMenuItems loads
+  const effectiveNSigFigs = selectedPrecision ?? precisionMenuItems[0]?.nSigFigs ?? null;
 
   // Subscribe to order book using unified subscription system
   const { data, isLoading, error } = useSubscription<OrderBookData>('orderBook', {
