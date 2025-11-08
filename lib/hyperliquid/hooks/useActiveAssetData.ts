@@ -1,8 +1,9 @@
 import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
-import * as hl from '@nktkas/hyperliquid';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useInfoClient } from '../client/useInfoClient';
 import { useSubscriptionClient } from '../client/useSubscriptionClient';
+import { useActiveAssetDataStore } from './useActiveAssetDataStore';
 import { useAppStateSubscriptionManager } from './useAppStateSubscriptionManager';
 
 export interface ActiveAssetData {
@@ -28,147 +29,64 @@ interface UseActiveAssetDataResult {
   error: Error | undefined;
 }
 
-// Global state to prevent rapid HTTP requests (rate limiting protection)
-// Key: `${user}-${coin}`, Value: timestamp
-const lastHttpFetchTimes = new Map<string, number>();
-const MIN_HTTP_FETCH_INTERVAL = 500; // 500ms minimum between HTTP fetches per coin
-
 /**
- * Hook to get Hyperliquid's activeAssetData using hybrid strategy:
- * 1. Fast initial fetch via HTTP API (100-300ms)
- * 2. Real-time updates via WebSocket subscription
+ * Hook to get Hyperliquid's activeAssetData using shared subscription store.
  *
  * Features:
+ * - Shared subscriptions: multiple components can subscribe to same coin (ref counting)
+ * - Hybrid strategy: fast HTTP fetch + real-time WebSocket updates
  * - AppState lifecycle management (pauses in background)
- * - Automatic cleanup and resubscription
- * - Hybrid strategy for optimal UX (fast initial load + real-time updates)
+ * - Delayed cleanup: reuses subscriptions on quick market switches
+ * - Rate limiting: prevents rapid HTTP requests
+ *
+ * Architecture:
+ * - All subscription logic moved to useActiveAssetDataStore (Zustand)
+ * - This hook is now a thin wrapper that manages subscription lifecycle
+ * - Uses useShallow for optimal performance (only re-renders when needed)
  */
 export function useActiveAssetData({ coin }: UseActiveAssetDataParams): UseActiveAssetDataResult {
   const { wallet } = useActiveWallet();
   const infoClient = useInfoClient();
   const subscriptionClient = useSubscriptionClient();
   const subscriptionState = useAppStateSubscriptionManager();
-  const [data, setData] = useState<ActiveAssetData | undefined>(undefined);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | undefined>(undefined);
 
-  const subscriptionRef = useRef<hl.Subscription | null>(null);
-  const httpFetchedRef = useRef(false);
+  // Extract stable walletAddress (avoid wallet object reference changes)
+  const walletAddress = wallet?.address;
 
-  // Cleanup function
-  const cleanup = useCallback(async () => {
-    if (subscriptionRef.current) {
-      try {
-        await subscriptionRef.current.unsubscribe();
-      } catch (err) {
-        console.error('Error unsubscribing from activeAssetData:', err);
-      }
-      subscriptionRef.current = null;
-    }
-  }, []);
+  // Get subscription data from store (use useShallow to prevent unnecessary re-renders)
+  const subscription = useActiveAssetDataStore(
+    useShallow(state => {
+      if (!walletAddress || !coin) return undefined;
+      const key = `${walletAddress}-${coin}`;
+      return state.subscriptions.get(key);
+    }),
+  );
 
+  // Manage subscription lifecycle
   useEffect(() => {
-    // Don't fetch if conditions aren't met
-    if (!wallet || !coin) {
-      setIsLoading(false);
-      setData(undefined);
-      return;
-    }
+    if (!walletAddress || !coin) return;
 
-    // Don't subscribe if app is suspended
-    if (subscriptionState === 'suspended') {
-      void cleanup();
-      return;
-    }
+    const store = useActiveAssetDataStore.getState();
+    const appState = subscriptionState === 'active' ? 'active' : 'suspended';
 
-    let isMounted = true;
-    setIsLoading(true);
-    setError(undefined);
-    httpFetchedRef.current = false;
+    // Subscribe (will reuse existing subscription if available)
+    void store.subscribe(walletAddress, coin, appState, infoClient, subscriptionClient);
 
-    const fetchAndSubscribe = async () => {
-      // Step 1: Fast HTTP fetch for initial data (with rate limiting protection)
-      const fetchKey = `${wallet.address}-${coin}`;
-      const now = Date.now();
-      const lastFetchTime = lastHttpFetchTimes.get(fetchKey) || 0;
-      const timeSinceLastFetch = now - lastFetchTime;
-
-      if (timeSinceLastFetch >= MIN_HTTP_FETCH_INTERVAL) {
-        try {
-          lastHttpFetchTimes.set(fetchKey, now);
-          const httpData = await infoClient.activeAssetData({
-            coin: coin.toUpperCase(),
-            user: wallet.address,
-          });
-
-          if (isMounted) {
-            setData(httpData);
-            setIsLoading(false);
-            httpFetchedRef.current = true;
-          }
-        } catch (err) {
-          console.error('[useActiveAssetData] HTTP fetch failed:', err);
-          // Don't set error state, will try WebSocket
-        }
-      } else {
-        // Skip HTTP fetch if too soon, rely on WebSocket only
-        console.log(
-          `[useActiveAssetData] Skipping HTTP fetch for ${coin} (${timeSinceLastFetch}ms since last fetch)`,
-        );
-      }
-
-      // Step 2: Set up WebSocket subscription for real-time updates
-      // Only subscribe when app is active
-      if (subscriptionState !== 'active') {
-        return;
-      }
-
-      try {
-        // Cleanup any existing subscription
-        await cleanup();
-
-        // Subscribe to activeAssetData for real-time updates
-        const subscription = await subscriptionClient.activeAssetData(
-          {
-            coin: coin.toUpperCase(),
-            user: wallet.address,
-          },
-          assetData => {
-            if (isMounted) {
-              setData(assetData);
-              // If HTTP didn't return yet, WebSocket is the first result
-              if (!httpFetchedRef.current) {
-                setIsLoading(false);
-              }
-            }
-          },
-        );
-
-        subscriptionRef.current = subscription;
-      } catch (err) {
-        if (isMounted) {
-          console.error('[useActiveAssetData] WebSocket subscription failed:', err);
-          // Only set error if both HTTP and WebSocket failed
-          if (!httpFetchedRef.current) {
-            setError(err instanceof Error ? err : new Error('Failed to fetch data'));
-            setIsLoading(false);
-          }
-        }
-      }
-    };
-
-    void fetchAndSubscribe();
-
-    // Cleanup on unmount or when dependencies change
+    // Cleanup on unmount or dependency change
     return () => {
-      isMounted = false;
-      void cleanup();
+      void store.unsubscribe(walletAddress, coin);
     };
-  }, [wallet, coin, subscriptionState, cleanup, infoClient, subscriptionClient]);
+  }, [walletAddress, coin, subscriptionState, infoClient, subscriptionClient]);
 
-  return {
-    data,
-    isLoading,
-    error,
-  };
+  // Return data from store subscription
+  return useMemo(() => {
+    if (!subscription) {
+      return { data: undefined, isLoading: true, error: undefined };
+    }
+    return {
+      data: subscription.data,
+      isLoading: subscription.isLoading,
+      error: subscription.error,
+    };
+  }, [subscription]);
 }

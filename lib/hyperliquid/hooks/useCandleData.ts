@@ -131,8 +131,6 @@ export function useCandleData({
       setLoading(true);
       setError(null);
 
-      
-
       // Default to 24 hours ago if startTime not provided
       const defaultStartTime = startTime || Date.now() - 24 * 60 * 60 * 1000;
 

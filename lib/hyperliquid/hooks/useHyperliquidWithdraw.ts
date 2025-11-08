@@ -42,7 +42,7 @@ export function useHyperliquidWithdraw(): UseHyperliquidWithdrawResult {
 
     try {
       setIsLoadingBalance(true);
-      
+
       const state = await infoClient.clearinghouseState({ user: wallet.address });
       setWithdrawableBalance(state.withdrawable);
     } catch (error) {

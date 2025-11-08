@@ -44,7 +44,6 @@ export function useReferralStatus() {
       }
 
       const userAddress = await getWalletAddress(masterExchangeClient.wallet);
-      
 
       // Query referral info
       const referral = await infoClient.referral({ user: userAddress });

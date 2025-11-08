@@ -279,7 +279,6 @@ export function useOrderUpdates(): UseOrderUpdatesResult {
         await cleanup();
 
         // Step 1: Fetch initial open orders using InfoClient
-        
 
         // Use frontendOpenOrders to get full order data including orderType, triggerCondition, etc.
         const openOrdersResponse = (await infoClient.frontendOpenOrders({
@@ -296,7 +295,6 @@ export function useOrderUpdates(): UseOrderUpdatesResult {
         }
 
         // Step 2: Subscribe to orderUpdates WebSocket for incremental updates
-        
 
         const subscription = await subscriptionClient.orderUpdates(
           {

@@ -84,8 +84,6 @@ export function useUserFills(): UseUserFillsResult {
       return [];
     }
 
-    
-
     // Fetch user fills (max 2000 most recent fills)
     const response = (await infoClient.userFills({
       user: wallet.address,
@@ -135,7 +133,6 @@ export function useUserFills(): UseUserFillsResult {
         }
 
         // Step 2: Subscribe to userFills WebSocket for real-time updates
-        
 
         const subscription = await subscriptionClient.userFills(
           {

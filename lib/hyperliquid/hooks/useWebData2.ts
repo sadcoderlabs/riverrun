@@ -109,7 +109,7 @@ export function useWebData2(): UseWebData2Result {
         await cleanup();
 
         // Step 1: Fetch initial data using InfoClient
-        
+
         const initialData = await infoClient.webData2({ user: wallet.address });
 
         if (isMounted) {
@@ -117,7 +117,6 @@ export function useWebData2(): UseWebData2Result {
         }
 
         // Step 2: Subscribe to webData2 WebSocket for real-time updates
-        
 
         const subscription = await subscriptionClient.webData2(
           {

@@ -82,9 +82,8 @@ export function NavBar() {
   };
 
   const navigateToTrade = () => {
-    // Use the current selected coin from store, or default to BTC
-    const coin = selectedMarket?.coin || 'BTC';
-    router.navigate(`/(main)/trade/perp/${coin}`);
+    // Navigate to trade page - store is the source of truth for selected market
+    router.navigate('/(main)/trade/perp');
   };
 
   return (

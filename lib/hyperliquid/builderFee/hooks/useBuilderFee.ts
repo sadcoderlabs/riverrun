@@ -27,7 +27,6 @@ export function useBuilderFee() {
         return 0;
       }
 
-      
       const maxFee = await infoClient.maxBuilderFee({
         user: wallet.address,
         builder: BUILDER_CONFIG.address,
@@ -131,8 +130,6 @@ export function useBuilderFee() {
       if (!wallet) {
         return false;
       }
-
-      
 
       // Check if builder fee is already approved with sufficient amount
       const maxFee = await infoClient.maxBuilderFee({

@@ -42,7 +42,6 @@ export function useAgentApproval() {
       }
 
       const masterAddress = await getWalletAddress(masterExchangeClient.wallet);
-      
 
       // Get provider from useActiveWallet
       if (!wallet) {
@@ -91,7 +90,6 @@ export function useAgentApproval() {
       }
 
       const masterAddress = await getWalletAddress(masterExchangeClient.wallet);
-      
 
       const agents = await getAgentsFromChain(infoClient, masterAddress);
       setAllAgents(agents);
@@ -138,7 +136,6 @@ export function useAgentApproval() {
                   }
 
                   const masterAddress = await getWalletAddress(masterExchangeClient.wallet);
-                  
 
                   // Revoke using service
                   await revokeAgentOnChain(masterExchangeClient, agentName);
@@ -231,7 +228,7 @@ export function useAgentApproval() {
       await approveAgentOnChain(masterExchangeClient, agentAddr, DEFAULT_AGENT_NAME);
 
       // Verify approval
-      
+
       const approved = await verifyAgentApproval(infoClient, masterAddress, agentAddr);
 
       if (approved) {

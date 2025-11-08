@@ -66,42 +66,42 @@ This includes hooks, utilities, services, types, and other non-component files:
 
 ## Naming Reference Table
 
-| File Type | File Naming | Export Naming | Example |
-|-----------|-------------|---------------|---------|
-| Route files | kebab-case | PascalCase | `deposit-hl-bridge.tsx` → `DepositHLBridge` |
-| React Component | PascalCase | PascalCase | `WalletInfo.tsx` → `WalletInfo` |
-| Hook | camelCase | camelCase | `useOrderBook.ts` → `useOrderBook` |
-| Utility | camelCase | camelCase | `marketUtils.ts` → `formatPrice` |
-| Type/Interface | camelCase | PascalCase | `orders.ts` → `Order` |
-| Constant | camelCase | UPPER_SNAKE_CASE | `constants.ts` → `MAX_LEVERAGE` |
+| File Type       | File Naming | Export Naming    | Example                                     |
+| --------------- | ----------- | ---------------- | ------------------------------------------- |
+| Route files     | kebab-case  | PascalCase       | `deposit-hl-bridge.tsx` → `DepositHLBridge` |
+| React Component | PascalCase  | PascalCase       | `WalletInfo.tsx` → `WalletInfo`             |
+| Hook            | camelCase   | camelCase        | `useOrderBook.ts` → `useOrderBook`          |
+| Utility         | camelCase   | camelCase        | `marketUtils.ts` → `formatPrice`            |
+| Type/Interface  | camelCase   | PascalCase       | `orders.ts` → `Order`                       |
+| Constant        | camelCase   | UPPER_SNAKE_CASE | `constants.ts` → `MAX_LEVERAGE`             |
 
 ## Code Naming Conventions
 
 ```typescript
 // ✅ Component
-export const WalletSelector = () => {}
+export const WalletSelector = () => {};
 
 // ✅ Hook
-export const useHyperliquidClient = () => {}
+export const useHyperliquidClient = () => {};
 
 // ✅ Function
-export const formatPrice = (price: number) => {}
+export const formatPrice = (price: number) => {};
 
 // ✅ Variable
-const orderBook = useOrderBook()
+const orderBook = useOrderBook();
 
 // ✅ Constant
-export const MAX_ORDER_SIZE = 1000
-export const API_BASE_URL = "https://api.example.com"
+export const MAX_ORDER_SIZE = 1000;
+export const API_BASE_URL = 'https://api.example.com';
 
 // ✅ Type/Interface
-export type Order = {}
+export type Order = {};
 export interface UserData {}
 
 // ✅ Enum
 export enum OrderType {
-  Market = "market",
-  Limit = "limit",
+  Market = 'market',
+  Limit = 'limit',
 }
 ```
 

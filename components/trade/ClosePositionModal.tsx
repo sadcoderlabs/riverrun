@@ -155,7 +155,7 @@ export default function ClosePositionModal({
   const handleMidPrice = async () => {
     try {
       // Get mid price from allMids API
-      
+
       const allMids = await infoClient.allMids();
       const midPrice = allMids[position.coin];
 

@@ -21,10 +21,10 @@ export function TradeTypeNav({ currentType, asset = 'BTC' }: TradeTypeNavProps) 
     if (!tabs.find(t => t.key === type)?.enabled) return;
     if (type === currentType) return;
 
-    // Navigate to the new trade type with the same asset
-    // Note: perp uses [coin], spot uses [market]
+    // Navigate to the new trade type
+    // Store is the source of truth for selected market
     if (type === 'perp') {
-      router.replace(`/trade/perp/${asset}` as any);
+      router.replace('/trade/perp');
     } else if (type === 'spot') {
       router.replace(`/trade/spot/${asset}` as any);
     }
