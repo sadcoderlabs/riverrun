@@ -44,8 +44,8 @@ export function PerpTradePanel() {
   // Subscribe to real-time available margin data
   const { longAvailableToTrade, shortAvailableToTrade } = useAvailableToTrade({ coin });
 
-  // Get current position for this coin
-  const { position: currentPosition, size: positionSize } = useCurrentPosition({ coin });
+  // Get current position size for this coin (positive = long, negative = short)
+  const currentPositionSize = useCurrentPosition({ coin });
 
   // Initialize React Hook Form (only manages order-specific fields)
   const { form, validation } = useOrderForm({});
@@ -216,10 +216,16 @@ export function PerpTradePanel() {
             <Text
               fontFamily="$interSemiBold"
               fontSize="$3"
-              color={currentPosition ? (positionSize > 0 ? '$green10' : '$red10') : '$color'}
+              color={
+                currentPositionSize !== 0
+                  ? currentPositionSize > 0
+                    ? '$green10'
+                    : '$red10'
+                  : '$color'
+              }
             >
-              {currentPosition
-                ? `${formatSize(Math.abs(positionSize), szDecimals, false)} ${coin}`
+              {currentPositionSize !== 0
+                ? `${formatSize(Math.abs(currentPositionSize), szDecimals, false)} ${coin}`
                 : `0 ${coin}`}
             </Text>
           </XStack>

@@ -5,66 +5,43 @@ interface UseCurrentPositionParams {
   coin: string;
 }
 
-// Infer position type from WebData2 response
-type Position = NonNullable<
-  NonNullable<ReturnType<typeof useWebData2>['data']>['clearinghouseState']
->['assetPositions'][number]['position'];
-
-interface UseCurrentPositionResult {
-  /** Current position for the specified coin, undefined if no position exists or size is zero */
-  position: Position | undefined;
-  /** Position size with sign (positive = long, negative = short, zero = no position) */
-  size: number;
-}
-
 /**
- * Hook to get real-time position data for a specific coin
+ * Hook to get real-time position size for a specific coin
  *
- * Retrieves the current position from WebData2 feed and provides
- * convenient accessors for position details.
+ * Returns the current position size from WebData2 feed with sign
+ * indicating direction (positive = long, negative = short).
  *
  * @param coin - Asset symbol (e.g., 'BTC', 'ETH', 'SOL')
- * @returns Object containing position data, direction, and size
+ * @returns Position size with sign (positive = long, negative = short, zero = no position)
  *
  * @example
  * ```typescript
- * const { position, size } = useCurrentPosition({ coin: 'BTC' });
+ * const positionSize = useCurrentPosition({ coin: 'BTC' });
  *
- * if (position) {
- *   const direction = size > 0 ? 'LONG' : 'SHORT';
- *   console.log(`Position: ${direction} ${Math.abs(size)} BTC`);
+ * if (positionSize !== 0) {
+ *   const direction = positionSize > 0 ? 'LONG' : 'SHORT';
+ *   console.log(`Position: ${direction} ${Math.abs(positionSize)} BTC`);
  * }
  * ```
  */
-export function useCurrentPosition({ coin }: UseCurrentPositionParams): UseCurrentPositionResult {
+export function useCurrentPosition({ coin }: UseCurrentPositionParams): number {
   const { data: webData } = useWebData2();
 
-  const result = useMemo(() => {
+  const positionSize = useMemo(() => {
     if (!webData?.clearinghouseState?.assetPositions) {
-      return {
-        position: undefined,
-        size: 0,
-      };
+      return 0;
     }
 
     const assetPosition = webData.clearinghouseState.assetPositions.find(
       asset => asset.position.coin === coin,
     );
 
-    if (!assetPosition || Number(assetPosition.position.szi) === 0) {
-      return {
-        position: undefined,
-        size: 0,
-      };
+    if (!assetPosition) {
+      return 0;
     }
 
-    const szi = Number(assetPosition.position.szi);
-
-    return {
-      position: assetPosition.position,
-      size: szi, // Keep the sign (positive = long, negative = short)
-    };
+    return Number(assetPosition.position.szi);
   }, [webData, coin]);
 
-  return result;
+  return positionSize;
 }
