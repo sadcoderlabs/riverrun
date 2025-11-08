@@ -2,7 +2,6 @@ import { Home, TrendingUp } from '@tamagui/lucide-icons';
 import { usePathname, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { styled, Text, useTheme, XStack, YStack } from 'tamagui';
-import { useMarketsStore } from '@/lib/hyperliquid/market';
 
 const NavBarContainer = styled(XStack, {
   backgroundColor: '$background',
@@ -63,7 +62,6 @@ export function NavBar() {
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
   const theme = useTheme();
-  const { selectedMarket } = useMarketsStore();
 
   // Debug the current pathname
   console.log('Current pathname:', pathname);
