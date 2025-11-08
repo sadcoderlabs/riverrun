@@ -12,9 +12,13 @@ import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
 
 import { DEFAULT_AGENT_NAME } from '../constants';
 import { getOrCreateAgentSigner } from '../getOrCreateAgentSigner';
-import { approveAgentOnChain, getAgentsFromChain, verifyAgentApproval } from '../agentBlockchain';
+import {
+  approveAgentOnChain,
+  getAgentsFromChain,
+  verifyAgentApproval,
+  type AgentInfo,
+} from '../agentBlockchain';
 import { hasAgentPrivateKey } from '../agentPkStore';
-import { type AgentInfo } from '../types';
 
 /**
  * Count named agents on blockchain

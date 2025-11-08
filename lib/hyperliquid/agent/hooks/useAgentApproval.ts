@@ -12,9 +12,9 @@ import {
   getAgentsFromChain,
   revokeAgentOnChain,
   verifyAgentApproval,
+  type AgentInfo,
 } from '../agentBlockchain';
 import { clearAgentPrivateKey } from '../agentPkStore';
-import { type AgentInfo } from '../types';
 
 /**
  * Hook for managing agent approval status

@@ -4,7 +4,9 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AGENT_STORAGE_PREFIX } from './constants';
+
+/** Storage key prefix for agent private keys in AsyncStorage */
+const AGENT_STORAGE_PREFIX = 'hl-agent:private-key:';
 
 /**
  * Generate storage key for a master address

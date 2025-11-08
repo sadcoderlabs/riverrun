@@ -4,7 +4,16 @@
  */
 
 import * as hl from '@nktkas/hyperliquid';
-import { type AgentInfo } from './types';
+
+/**
+ * Agent information from Hyperliquid blockchain
+ */
+export interface AgentInfo {
+  /** Agent wallet address */
+  address: string;
+  /** Optional agent name (undefined for unnamed agents) */
+  name: string | undefined;
+}
 
 // ============================================================================
 // Blockchain Operations
