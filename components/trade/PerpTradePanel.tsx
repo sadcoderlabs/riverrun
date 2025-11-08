@@ -44,7 +44,7 @@ export function PerpTradePanel() {
 
   // Subscribe to real-time margin and leverage data (for margin calculation and order forms)
   const { marginLeverage } = useMarginLeverage();
-  const leverage = marginLeverage.leverage;
+  const leverage = marginLeverage?.leverage ?? 1;
 
   // Subscribe to real-time available margin data
   const { longAvailableToTrade, shortAvailableToTrade } = useAvailableToTrade({ coin });

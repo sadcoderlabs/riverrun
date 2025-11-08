@@ -7,8 +7,8 @@ import { Text, XStack } from 'tamagui';
 export function LeverageSelector() {
   const [leverageModalOpen, setLeverageModalOpen] = useState(false);
 
-  // Get real-time margin and leverage data
-  const { marginLeverage } = useMarginLeverage();
+  // Get real-time margin and leverage data (hybrid strategy: fast HTTP + real-time WebSocket)
+  const { marginLeverage, isLoading } = useMarginLeverage();
 
   return (
     <>
@@ -25,9 +25,15 @@ export function LeverageSelector() {
         onPress={() => setLeverageModalOpen(true)}
         pressStyle={{ opacity: 0.7 }}
       >
-        <Text color="$color" fontSize="$2" fontFamily="$interRegular">
-          {marginLeverage.leverage}x {marginLeverage.marginMode.toUpperCase()}
-        </Text>
+        {isLoading || !marginLeverage ? (
+          <Text color="$gray10" fontSize="$2" fontFamily="$interRegular">
+            Loading...
+          </Text>
+        ) : (
+          <Text color="$color" fontSize="$2" fontFamily="$interRegular">
+            {marginLeverage.leverage}x {marginLeverage.marginMode.toUpperCase()}
+          </Text>
+        )}
         <ChevronDown size="$0.75" color="$color" />
       </XStack>
 

@@ -1,6 +1,7 @@
 import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
 import * as hl from '@nktkas/hyperliquid';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useInfoClient } from '../client/useInfoClient';
 import { useSubscriptionClient } from '../client/useSubscriptionClient';
 import { useAppStateSubscriptionManager } from './useAppStateSubscriptionManager';
 
@@ -28,15 +29,18 @@ interface UseActiveAssetDataResult {
 }
 
 /**
- * Hook to subscribe to Hyperliquid's activeAssetData WebSocket feed
- * for real-time leverage and margin mode updates.
+ * Hook to get Hyperliquid's activeAssetData using hybrid strategy:
+ * 1. Fast initial fetch via HTTP API (100-300ms)
+ * 2. Real-time updates via WebSocket subscription
  *
  * Features:
  * - AppState lifecycle management (pauses in background)
  * - Automatic cleanup and resubscription
+ * - Hybrid strategy for optimal UX (fast initial load + real-time updates)
  */
 export function useActiveAssetData({ coin }: UseActiveAssetDataParams): UseActiveAssetDataResult {
   const { wallet } = useActiveWallet();
+  const infoClient = useInfoClient();
   const subscriptionClient = useSubscriptionClient();
   const subscriptionState = useAppStateSubscriptionManager();
   const [data, setData] = useState<ActiveAssetData | undefined>(undefined);
@@ -44,6 +48,7 @@ export function useActiveAssetData({ coin }: UseActiveAssetDataParams): UseActiv
   const [error, setError] = useState<Error | undefined>(undefined);
 
   const subscriptionRef = useRef<hl.Subscription | null>(null);
+  const httpFetchedRef = useRef(false);
 
   // Cleanup function
   const cleanup = useCallback(async () => {
@@ -58,7 +63,7 @@ export function useActiveAssetData({ coin }: UseActiveAssetDataParams): UseActiv
   }, []);
 
   useEffect(() => {
-    // Don't subscribe if conditions aren't met
+    // Don't fetch if conditions aren't met
     if (!wallet || !coin) {
       setIsLoading(false);
       setData(undefined);
@@ -74,8 +79,27 @@ export function useActiveAssetData({ coin }: UseActiveAssetDataParams): UseActiv
     let isMounted = true;
     setIsLoading(true);
     setError(undefined);
+    httpFetchedRef.current = false;
 
-    const setupSubscription = async () => {
+    const fetchAndSubscribe = async () => {
+      try {
+        // Step 1: Fast HTTP fetch for initial data
+        const httpData = await infoClient.activeAssetData({
+          coin: coin.toUpperCase(),
+          user: wallet.address,
+        });
+
+        if (isMounted) {
+          setData(httpData);
+          setIsLoading(false);
+          httpFetchedRef.current = true;
+        }
+      } catch (err) {
+        console.error('[useActiveAssetData] HTTP fetch failed:', err);
+        // Don't set error state, will try WebSocket
+      }
+
+      // Step 2: Set up WebSocket subscription for real-time updates
       // Only subscribe when app is active
       if (subscriptionState !== 'active') {
         return;
@@ -85,7 +109,7 @@ export function useActiveAssetData({ coin }: UseActiveAssetDataParams): UseActiv
         // Cleanup any existing subscription
         await cleanup();
 
-        // Subscribe to activeAssetData
+        // Subscribe to activeAssetData for real-time updates
         const subscription = await subscriptionClient.activeAssetData(
           {
             coin: coin.toUpperCase(),
@@ -94,7 +118,10 @@ export function useActiveAssetData({ coin }: UseActiveAssetDataParams): UseActiv
           assetData => {
             if (isMounted) {
               setData(assetData);
-              setIsLoading(false);
+              // If HTTP didn't return yet, WebSocket is the first result
+              if (!httpFetchedRef.current) {
+                setIsLoading(false);
+              }
             }
           },
         );
@@ -102,21 +129,24 @@ export function useActiveAssetData({ coin }: UseActiveAssetDataParams): UseActiv
         subscriptionRef.current = subscription;
       } catch (err) {
         if (isMounted) {
-          console.error('[useActiveAssetData] Error setting up subscription:', err);
-          setError(err instanceof Error ? err : new Error('Failed to subscribe'));
-          setIsLoading(false);
+          console.error('[useActiveAssetData] WebSocket subscription failed:', err);
+          // Only set error if both HTTP and WebSocket failed
+          if (!httpFetchedRef.current) {
+            setError(err instanceof Error ? err : new Error('Failed to fetch data'));
+            setIsLoading(false);
+          }
         }
       }
     };
 
-    void setupSubscription();
+    void fetchAndSubscribe();
 
     // Cleanup on unmount or when dependencies change
     return () => {
       isMounted = false;
       void cleanup();
     };
-  }, [wallet, coin, subscriptionState, cleanup, subscriptionClient]);
+  }, [wallet, coin, subscriptionState, cleanup, infoClient, subscriptionClient]);
 
   return {
     data,

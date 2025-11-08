@@ -3,7 +3,6 @@ import { toast } from 'sonner-native';
 import { useHyperliquidClient } from '../client/useHyperliquidClient';
 import { useMarketsStore } from '../market';
 import { useActiveAssetData } from './useActiveAssetData';
-import { useWebData2 } from './useWebData2';
 
 export interface MarginLeverage {
   /** Leverage value (e.g., 5, 10, 20) */
@@ -17,8 +16,8 @@ export interface MarginLeverage {
 }
 
 interface UseMarginLeverageResult {
-  /** Current margin and leverage data from real-time WebSocket feed */
-  marginLeverage: MarginLeverage;
+  /** Current margin and leverage data (undefined while loading) */
+  marginLeverage: MarginLeverage | undefined;
   /** Whether margin leverage data is still loading */
   isLoading: boolean;
   /** Whether a margin/leverage update is in progress */
@@ -37,8 +36,9 @@ export interface SetMarginLeverageParams {
 /**
  * Hook to get and update real-time margin mode and leverage for the currently selected market
  *
- * Provides current margin and leverage data from WebSocket feed and a method to
- * update them via the Hyperliquid Exchange API.
+ * Hybrid Strategy:
+ * 1. Fast HTTP API fetch for initial data (100-300ms)
+ * 2. WebSocket subscription for real-time updates
  *
  * Uses the selected market from `useMarketsStore` as the single source of truth.
  *
@@ -46,15 +46,16 @@ export interface SetMarginLeverageParams {
  *
  * @example
  * ```typescript
- * const { marginLeverage, setMarginLeverage, isUpdating } = useMarginLeverage();
+ * const { marginLeverage, isLoading, setMarginLeverage } = useMarginLeverage();
+ *
+ * // Handle loading state
+ * if (isLoading || !marginLeverage) {
+ *   return <Loading />;
+ * }
  *
  * // Access margin and leverage data
- * console.log(marginLeverage.leverage);    // 5
- * console.log(marginLeverage.marginMode);  // "isolated" or "cross"
- *
- * // Format for display
- * const displayMode = marginLeverage.marginMode === 'cross' ? 'Cross' : 'Isolated';
- * console.log(`${marginLeverage.leverage}x ${displayMode}`); // "5x Isolated"
+ * console.log(marginLeverage.leverage);
+ * console.log(marginLeverage.marginMode);
  *
  * // Update margin mode and leverage
  * await setMarginLeverage({ leverage: 10, marginMode: 'isolated' });
@@ -63,44 +64,43 @@ export interface SetMarginLeverageParams {
 export function useMarginLeverage(): UseMarginLeverageResult {
   const { getAgentExchangeClient, getSymbolConverter } = useHyperliquidClient();
   const { selectedMarket, markets } = useMarketsStore();
-  const coin = selectedMarket?.coin || 'BTC'; // Fallback to BTC if no market selected
-  const { data: activeAssetData, isLoading } = useActiveAssetData({ coin });
-  const { data: webData } = useWebData2();
+
+  // Fail fast if no market is selected
+  if (!selectedMarket) {
+    throw new Error('[useMarginLeverage] No market selected in store');
+  }
+
+  const coin = selectedMarket.coin;
+  const { data: activeAssetData, isLoading: isLoadingActiveAsset } = useActiveAssetData({ coin });
 
   const [isUpdating, setIsUpdating] = useState(false);
 
   // Extract and memoize margin and leverage data
-  const marginLeverage = useMemo<MarginLeverage>(() => {
-    const leverage = activeAssetData?.leverage?.value ?? 5;
-    const marginMode = activeAssetData?.leverage?.type ?? 'isolated';
-
+  const marginLeverage = useMemo<MarginLeverage | undefined>(() => {
     // Get base max leverage for this market from meta API
     const market = markets.find(m => m.coin === coin);
-    const baseMaxLeverage = market?.maxLeverage ?? 20;
-
-    // If user has a position, use the calculated maxLeverage from clearinghouseState
-    // This considers the current notional position value and margin tiers
-    let maxLeverage = baseMaxLeverage;
-
-    if (webData?.clearinghouseState?.assetPositions) {
-      const position = webData.clearinghouseState.assetPositions.find(
-        asset => asset.position.coin === coin,
-      );
-
-      if (position) {
-        // Use the maxLeverage from the position data (calculated by API based on margin tiers)
-        // This is more restrictive than baseMaxLeverage when position size is large
-        maxLeverage = position.position.maxLeverage;
-      }
+    if (!market) {
+      throw new Error(`[useMarginLeverage] Market not found for ${coin}`);
     }
+
+    const baseMaxLeverage = market.maxLeverage;
+
+    // While loading or no data yet, return undefined to show loading UI
+    if (isLoadingActiveAsset || !activeAssetData?.leverage) {
+      return undefined;
+    }
+
+    // Once data is loaded, show real leverage data
+    const leverage = activeAssetData.leverage.value;
+    const marginMode = activeAssetData.leverage.type;
 
     return {
       leverage,
       marginMode,
       minLeverage: 1,
-      maxLeverage,
+      maxLeverage: baseMaxLeverage,
     };
-  }, [activeAssetData, webData, coin, markets]);
+  }, [activeAssetData, coin, markets, isLoadingActiveAsset]);
 
   // Update margin mode and leverage via Hyperliquid API
   const setMarginLeverage = useCallback(
@@ -110,6 +110,13 @@ export function useMarginLeverage(): UseMarginLeverageResult {
       }
 
       // Validate leverage range
+      if (!marginLeverage) {
+        toast.error('Data Not Ready', {
+          description: 'Leverage data is still loading',
+        });
+        return;
+      }
+
       const currentMaxLeverage = marginLeverage.maxLeverage;
       if (newLeverage < 1 || newLeverage > currentMaxLeverage) {
         toast.error('Invalid Leverage', {
@@ -164,12 +171,12 @@ export function useMarginLeverage(): UseMarginLeverageResult {
         setIsUpdating(false);
       }
     },
-    [coin, getAgentExchangeClient, getSymbolConverter, isUpdating, marginLeverage.maxLeverage],
+    [coin, getAgentExchangeClient, getSymbolConverter, isUpdating, marginLeverage],
   );
 
   return {
     marginLeverage,
-    isLoading,
+    isLoading: isLoadingActiveAsset,
     isUpdating,
     setMarginLeverage,
   };
