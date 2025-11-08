@@ -12,7 +12,7 @@ import {
   getAgentsFromChain,
   revokeAgentOnChain,
   verifyAgentApproval,
-} from '../service';
+} from '../agentBlockchain';
 import { clearAgentPrivateKey } from '../storage';
 import { type AgentInfo } from '../types';
 

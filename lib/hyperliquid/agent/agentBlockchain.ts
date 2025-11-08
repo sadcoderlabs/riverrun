@@ -1,10 +1,9 @@
 /**
- * Agent service layer
- * Consolidates blockchain interactions and validation logic
+ * Agent blockchain operations
+ * Handles on-chain agent approval, revocation, and querying
  */
 
 import * as hl from '@nktkas/hyperliquid';
-import { AGENT_APPROVAL_WAIT_TIME } from './constants';
 import { type AgentInfo } from './types';
 
 // ============================================================================
@@ -26,9 +25,6 @@ export async function approveAgentOnChain(
     agentAddress,
     agentName,
   });
-
-  // Wait for blockchain propagation
-  await new Promise(resolve => setTimeout(resolve, AGENT_APPROVAL_WAIT_TIME));
 }
 
 /**
@@ -44,9 +40,6 @@ export async function revokeAgentOnChain(
     agentAddress: '0x0000000000000000000000000000000000000000',
     agentName,
   });
-
-  // Wait for blockchain propagation
-  await new Promise(resolve => setTimeout(resolve, AGENT_APPROVAL_WAIT_TIME));
 }
 
 /**
