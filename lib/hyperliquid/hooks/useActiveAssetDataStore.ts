@@ -1,5 +1,6 @@
 import * as hl from '@nktkas/hyperliquid';
 import { create } from 'zustand';
+import { getInfoClient, getSubscriptionClient } from '../client/getter';
 import { type ActiveAssetData } from './useActiveAssetData';
 
 /**
@@ -19,13 +20,7 @@ interface CoinSubscription {
 
 interface ActiveAssetDataStoreState {
   subscriptions: Map<string, CoinSubscription>;
-  subscribe: (
-    user: string,
-    coin: string,
-    appState: 'active' | 'suspended',
-    infoClient: hl.InfoClient,
-    subscriptionClient: hl.SubscriptionClient,
-  ) => Promise<void>;
+  subscribe: (user: string, coin: string, appState: 'active' | 'suspended') => Promise<void>;
   unsubscribe: (user: string, coin: string) => Promise<void>;
 }
 
@@ -42,7 +37,7 @@ const MIN_HTTP_FETCH_INTERVAL = 500; // 500ms minimum between HTTP fetches per c
 export const useActiveAssetDataStore = create<ActiveAssetDataStoreState>((set, get) => ({
   subscriptions: new Map(),
 
-  subscribe: async (user, coin, appState, infoClient, subscriptionClient) => {
+  subscribe: async (user, coin, appState) => {
     const key = `${user}-${coin}`;
     const state = get();
     const existing = state.subscriptions.get(key);
@@ -93,6 +88,7 @@ export const useActiveAssetDataStore = create<ActiveAssetDataStoreState>((set, g
         const startTime = Date.now();
         newSub.lastHttpFetch = now;
 
+        const infoClient = getInfoClient();
         const httpData = await infoClient.activeAssetData({
           coin: coin.toUpperCase(),
           user,
@@ -133,6 +129,7 @@ export const useActiveAssetDataStore = create<ActiveAssetDataStoreState>((set, g
     // Step 2: Set up WebSocket subscription (only if app is active)
     if (appState === 'active') {
       try {
+        const subscriptionClient = getSubscriptionClient();
         const subscription = await subscriptionClient.activeAssetData(
           {
             coin: coin.toUpperCase(),

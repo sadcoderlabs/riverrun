@@ -1,8 +1,6 @@
 import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
 import { useEffect, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { useInfoClient } from '../client/useInfoClient';
-import { useSubscriptionClient } from '../client/useSubscriptionClient';
 import { useActiveAssetDataStore } from './useActiveAssetDataStore';
 import { useAppStateSubscriptionManager } from './useAppStateSubscriptionManager';
 
@@ -45,8 +43,6 @@ interface UseActiveAssetDataResult {
  */
 export function useActiveAssetData({ coin }: UseActiveAssetDataParams): UseActiveAssetDataResult {
   const { wallet } = useActiveWallet();
-  const infoClient = useInfoClient();
-  const subscriptionClient = useSubscriptionClient();
   const subscriptionState = useAppStateSubscriptionManager();
 
   // Extract stable walletAddress (avoid wallet object reference changes)
@@ -69,13 +65,13 @@ export function useActiveAssetData({ coin }: UseActiveAssetDataParams): UseActiv
     const appState = subscriptionState === 'active' ? 'active' : 'suspended';
 
     // Subscribe (will reuse existing subscription if available)
-    void store.subscribe(walletAddress, coin, appState, infoClient, subscriptionClient);
+    void store.subscribe(walletAddress, coin, appState);
 
     // Cleanup on unmount or dependency change
     return () => {
       void store.unsubscribe(walletAddress, coin);
     };
-  }, [walletAddress, coin, subscriptionState, infoClient, subscriptionClient]);
+  }, [walletAddress, coin, subscriptionState]);
 
   // Return data from store subscription
   return useMemo(() => {
