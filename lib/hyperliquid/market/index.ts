@@ -4,12 +4,15 @@
  *
  * Note: useAllMids has been migrated to the unified subscription system.
  * Use `useSubscription('allMids')` instead.
+ *
+ * Note: useMarketsStore, useMarketSelector, and Market type have been moved to
+ * @/lib/riverrun/market but are re-exported here for backward compatibility.
  */
 
 // Hooks
 export * from './useActiveAssetCtx';
-export * from './useMarketsStore';
-export * from './useMarketSelector';
+export * from '@/lib/riverrun/market/useMarketsStore';
+export * from '@/lib/riverrun/market/useMarketSelector';
 
 // Types
-export * from './types';
+export * from '@/lib/riverrun/market/types';

@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { Market } from './types';
-import * as infoClient from '../client/infoClient';
+import * as infoClient from '@/lib/hyperliquid/client/infoClient';
 
 /**
  * Selected market information

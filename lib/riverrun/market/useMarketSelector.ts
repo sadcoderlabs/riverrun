@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import type { Market } from './types';
 import { useMarketsStore } from './useMarketsStore';
-import { useSubscription } from '../subscription';
+import { useSubscription } from '@/lib/hyperliquid/subscription';
 import { useThrottle } from '@/lib/riverrun/hooks';
 
 export type SortOption = 'name' | 'volume' | 'price' | 'change';
