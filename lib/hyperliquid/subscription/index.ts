@@ -29,9 +29,6 @@ import './registry/hyperliquidSubscriptions';
 // Export core types
 export type { SubscriptionConfig, SubscriptionState, SubscriptionHandle } from './core/types';
 
-// Export rate limiter
-export { hyperliquidRateLimiter } from '../client/RateLimiter';
-
 // Export data types
 export type {
   AllMidsData,
