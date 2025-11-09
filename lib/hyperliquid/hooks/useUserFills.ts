@@ -46,7 +46,7 @@ export function useUserFills(): UseUserFillsResult {
   // Step 1: HTTP fetch initial fills using TanStack Query
   // - Automatic deduplication across components
   // - Smart caching (30s stale time from queryClient config)
-  // - Rate limited via createRateLimitedQuery wrapper
+  // - Rate limited via infoClient wrapper
   const {
     data: httpData,
     isLoading: isHttpLoading,
