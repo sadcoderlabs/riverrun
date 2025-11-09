@@ -74,3 +74,23 @@ export interface OrderUpdatesData {
 export interface MetaAndAssetCtxsData {
   metaAndAssetCtxs: hl.MetaAndAssetCtxsResponse;
 }
+
+/**
+ * ActiveAssetCtx subscription data
+ * Contains real-time market data for a specific coin
+ */
+export interface ActiveAssetCtxData {
+  coin: string;
+  ctx: {
+    markPx: string;
+    funding: string;
+    prevDayPx: string;
+    dayNtlVlm: string;
+    openInterest: string;
+    midPx: string | null;
+    oraclePx: string;
+    premium: string | null;
+    impactPxs: string[] | null;
+    dayBaseVlm: string;
+  };
+}

@@ -10,7 +10,13 @@ import { subscriptionRegistry } from '../core/SubscriptionRegistry';
 import type { NSigFigs } from '../../orderbook/orderbookPrecision';
 import type { Fill } from '../../types/fills';
 import type * as hl from '@nktkas/hyperliquid';
-import type { AllMidsData, OrderBookData, UserFillsData, ActiveAssetData } from '../types';
+import type {
+  AllMidsData,
+  OrderBookData,
+  UserFillsData,
+  ActiveAssetData,
+  ActiveAssetCtxData,
+} from '../types';
 import type { Order, ApiOrderResponse } from '../../types/orders';
 
 // ============================================================================
@@ -40,6 +46,10 @@ type WebData2Data = hl.WebData2Response;
 
 interface ActiveAssetDataParams {
   user: string;
+  coin: string;
+}
+
+interface ActiveAssetCtxParams {
   coin: string;
 }
 
@@ -296,6 +306,28 @@ subscriptionRegistry.register<MetaAndAssetCtxsParams, MetaAndAssetCtxsData>('met
       },
       resubscribeSignal: dummySignal.signal,
     };
+  },
+});
+
+// ============================================================================
+// Configuration 8: activeAssetCtx (real-time market data for a specific coin)
+// ============================================================================
+
+subscriptionRegistry.register<ActiveAssetCtxParams, ActiveAssetCtxData>('activeAssetCtx', {
+  // Key by coin
+  getKey: params => params.coin.toUpperCase(),
+
+  // WebSocket subscription for real-time market data
+  subscribe: async (params, callback) => {
+    const subscriptionClient = getSubscriptionClient();
+    return await subscriptionClient.activeAssetCtx(
+      {
+        coin: params.coin.toUpperCase(),
+      },
+      (assetCtx: ActiveAssetCtxData) => {
+        callback(assetCtx);
+      },
+    );
   },
 });
 

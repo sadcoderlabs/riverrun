@@ -41,6 +41,7 @@ export type {
   OrderBookData,
   UserFillsData,
   ActiveAssetData,
+  ActiveAssetCtxData,
   WebData2Data,
   OrderUpdatesData,
   MetaAndAssetCtxsData,
