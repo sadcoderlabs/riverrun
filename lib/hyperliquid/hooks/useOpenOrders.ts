@@ -11,7 +11,7 @@
  */
 
 import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
-import type { Order } from '../types/orders';
+import type { Order } from '@/lib/riverrun/order/orders';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import * as infoClient from '../client/infoClient';
@@ -232,4 +232,4 @@ export function useOpenOrders(): UseOpenOrdersResult {
 }
 
 // Re-export types for convenience
-export type { Order } from '../types/orders';
+export type { Order } from '@/lib/riverrun/order/orders';

@@ -17,7 +17,7 @@
 
 import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
 import { useSubscription, type UserFillsData } from '../subscription';
-import type { Fill } from '../types/fills';
+import type { Fill } from '@/lib/riverrun/history/fills';
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import * as infoClient from '../client/infoClient';
@@ -103,4 +103,4 @@ export function useUserFills(): UseUserFillsResult {
 }
 
 // Re-export types for convenience
-export type { Fill } from '../types/fills';
+export type { Fill } from '@/lib/riverrun/history/fills';

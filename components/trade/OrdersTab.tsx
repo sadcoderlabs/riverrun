@@ -7,7 +7,7 @@ import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
 import { formatSize } from '@/lib/hyperliquid/format/formatSize';
 import { formatValue } from '@/lib/hyperliquid/format/formatValue';
 import { useOrder, useOpenOrders } from '@/lib/hyperliquid/hooks';
-import type { Order } from '@/lib/hyperliquid/types/orders';
+import type { Order } from '@/lib/riverrun/order/orders';
 import {
   calculateOrderMetrics,
   formatTimestamp,

@@ -5,7 +5,7 @@
  */
 
 import type { OrderBookLevel } from '@/lib/riverrun/orderbook/orderbookPrecision';
-import type { Fill } from '../types/fills';
+import type { Fill } from '@/lib/riverrun/history/fills';
 import type * as hl from '@nktkas/hyperliquid';
 
 /**

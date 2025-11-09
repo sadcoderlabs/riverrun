@@ -3,7 +3,7 @@
  * Includes type checking, calculations, formatting, and display helpers
  */
 
-import type { Order, OrderMetrics, OrderType } from '@/lib/hyperliquid/types/orders';
+import type { Order, OrderMetrics, OrderType } from './orders';
 import type { PlaceOrderParams } from '@/lib/hyperliquid/hooks/useOrder';
 import { calculatePriceFromPercent, validatePrice } from './tpslUtils';
 

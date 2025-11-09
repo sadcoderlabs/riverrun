@@ -7,7 +7,7 @@ import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
 import { formatSize } from '@/lib/hyperliquid/format/formatSize';
 import { formatValue } from '@/lib/hyperliquid/format/formatValue';
 import { useUserFills } from '@/lib/hyperliquid/hooks';
-import type { Fill } from '@/lib/hyperliquid/types/fills';
+import type { Fill } from '@/lib/riverrun/history/fills';
 import { formatTimestamp } from '@/lib/riverrun/order';
 import { useActiveWallet } from '@/lib/riverrun/wallet';
 import { useMarketsStore } from '@/lib/riverrun/market';
