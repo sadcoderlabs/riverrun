@@ -13,8 +13,8 @@ import {
   revokeAgentOnChain,
   verifyAgentApproval,
   type AgentInfo,
-} from '@/lib/hyperliquid/agent/agentBlockchain';
-import { clearAgentPrivateKey } from '@/lib/hyperliquid/agent/agentPkStore';
+} from './agentBlockchain';
+import { clearAgentPrivateKey } from './agentPkStore';
 
 /**
  * Hook for managing agent approval status

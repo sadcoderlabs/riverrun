@@ -17,8 +17,8 @@ import {
   getAgentsFromChain,
   verifyAgentApproval,
   type AgentInfo,
-} from '@/lib/hyperliquid/agent/agentBlockchain';
-import { hasAgentPrivateKey } from '@/lib/hyperliquid/agent/agentPkStore';
+} from './agentBlockchain';
+import { hasAgentPrivateKey } from './agentPkStore';
 
 /**
  * Count named agents on blockchain
