@@ -33,7 +33,7 @@ import './registry/hyperliquidSubscriptions';
 export type { SubscriptionConfig, SubscriptionState, SubscriptionHandle } from './core/types';
 
 // Export rate limiter
-export { hyperliquidRateLimiter } from './core/RateLimiter';
+export { hyperliquidRateLimiter } from '../client/RateLimiter';
 
 // Export data types
 export type {

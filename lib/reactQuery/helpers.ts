@@ -5,7 +5,7 @@
  * while using TanStack Query for caching and deduplication.
  */
 
-import { hyperliquidRateLimiter } from '../hyperliquid/subscription/core/RateLimiter';
+import { hyperliquidRateLimiter } from '../hyperliquid/client/RateLimiter';
 
 /**
  * Wraps a query function with rate limiting

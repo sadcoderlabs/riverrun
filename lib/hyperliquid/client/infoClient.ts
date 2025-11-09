@@ -24,7 +24,7 @@
 
 import type * as hl from '@nktkas/hyperliquid';
 import { getInfoClient } from './getter';
-import { hyperliquidRateLimiter, REQUEST_WEIGHTS } from '../subscription/core/RateLimiter';
+import { hyperliquidRateLimiter, REQUEST_WEIGHTS } from './RateLimiter';
 
 // ============================================================================
 // Meta & Asset Context
