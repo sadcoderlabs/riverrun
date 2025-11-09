@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { Alert } from 'react-native';
 
-import { BUILDER_CONFIG } from '@/lib/hyperliquid/builderFee/config';
+import { BUILDER_CONFIG } from './config';
 import { useHyperliquidClient } from '@/lib/hyperliquid/client/useHyperliquidClient';
 import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
 import * as infoClient from '@/lib/hyperliquid/client/infoClient';

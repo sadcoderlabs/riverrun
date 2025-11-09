@@ -2,8 +2,8 @@ import * as hl from '@nktkas/hyperliquid';
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner-native';
 import { roundPrice } from '@/components/trade/priceUtils';
-import { getBuilderParam } from '@/lib/hyperliquid/builderFee/config';
-import { useBuilderFee } from '@/lib/hyperliquid/builderFee/hooks/useBuilderFee';
+import { getBuilderParam } from '@/lib/riverrun/builderFee/config';
+import { useBuilderFee } from '@/lib/riverrun/builderFee/useBuilderFee';
 import { useHyperliquidClient } from '@/lib/hyperliquid/client/useHyperliquidClient';
 import { useMarketsStore } from '@/lib/riverrun/market';
 
