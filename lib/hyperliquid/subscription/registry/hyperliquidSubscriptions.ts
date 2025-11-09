@@ -7,7 +7,7 @@
 
 import type * as hl from '@nktkas/hyperliquid';
 import { getSubscriptionClient } from '../../client/getter';
-import type { NSigFigs } from '../../orderbook/orderbookPrecision';
+import type { NSigFigs } from '@/lib/riverrun/orderbook/orderbookPrecision';
 import type { Fill } from '../../types/fills';
 import { subscriptionRegistry } from '../core/SubscriptionRegistry';
 import type {

@@ -3,13 +3,13 @@ import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
 import { formatSizeFixedDecimals } from '@/lib/hyperliquid/format/formatSizeFixedDecimals';
 import { useActiveAssetCtx, useTrades } from '@/lib/hyperliquid/hooks';
 import { useMarketsStore } from '@/lib/riverrun/market';
-import { useLatestPrice } from '@/lib/riverrun/orderbook';
+import { useLatestPrice } from '@/lib/riverrun/orderbook/useLatestPrice';
 import {
   buildPrecisionMenu,
   type NSigFigs,
   type OrderBookLevel,
   type PrecisionMenuItem,
-} from '@/lib/hyperliquid/orderbook';
+} from '@/lib/riverrun/orderbook/orderbookPrecision';
 import { useSubscription, type OrderBookData } from '@/lib/hyperliquid/subscription';
 import { ArrowDownRight, ArrowUpRight, ChevronDown, Info } from '@tamagui/lucide-icons';
 import { useMemo, useState } from 'react';

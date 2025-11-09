@@ -4,7 +4,7 @@
  * These types define the shape of data returned by each subscription type.
  */
 
-import type { OrderBookLevel } from '../orderbook/orderbookPrecision';
+import type { OrderBookLevel } from '@/lib/riverrun/orderbook/orderbookPrecision';
 import type { Fill } from '../types/fills';
 import type * as hl from '@nktkas/hyperliquid';
 
