@@ -230,3 +230,48 @@ subscriptionRegistry.register<TradesParams, TradesData>('trades', {
     );
   },
 });
+
+// ============================================================================
+// Configuration 8: orderUpdates (real-time order status changes)
+// ============================================================================
+
+interface OrderUpdatesParams {
+  user: string;
+}
+
+interface OrderUpdate {
+  order: {
+    coin: string;
+    side: 'B' | 'A';
+    limitPx: string;
+    sz: string;
+    oid: number;
+    timestamp: number;
+    origSz: string;
+  };
+  status?: string;
+}
+
+interface OrderUpdatesData {
+  updates: OrderUpdate[];
+}
+
+subscriptionRegistry.register<OrderUpdatesParams, OrderUpdatesData>('orderUpdates', {
+  // Key by user address
+  getKey: params => params.user,
+
+  // WebSocket subscription for real-time order updates
+  // HTTP fetch should be handled by TanStack Query in useOpenOrders hook
+  subscribe: async (params, callback) => {
+    const subscriptionClient = getSubscriptionClient();
+    return await subscriptionClient.orderUpdates(
+      {
+        user: params.user,
+      },
+      (updates: OrderUpdate[]) => {
+        // Forward updates array to callback
+        callback({ updates });
+      },
+    );
+  },
+});

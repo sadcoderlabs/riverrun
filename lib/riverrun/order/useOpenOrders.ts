@@ -12,11 +12,10 @@
 
 import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
 import type { Order } from '@/lib/riverrun/order/orders';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import * as infoClient from '@/lib/hyperliquid/client/infoClient';
-import * as hl from '@nktkas/hyperliquid';
-import { getSubscriptionClient } from '@/lib/hyperliquid/client/getter';
+import { useSubscription } from '@/lib/hyperliquid/subscription';
 
 // ============================================================================
 // Hook Interface
@@ -97,7 +96,6 @@ const FAILED_ORDER_STATUSES = new Set([
 export function useOpenOrders(): UseOpenOrdersResult {
   const { wallet } = useActiveWallet();
   const [mergedOrders, setMergedOrders] = useState<Order[]>([]);
-  const subscriptionRef = useRef<hl.Subscription | null>(null);
 
   // Step 1: HTTP fetch initial open orders using TanStack Query
   const {
@@ -120,109 +118,79 @@ export function useOpenOrders(): UseOpenOrdersResult {
     }
   }, [httpData]);
 
-  // Cleanup function
-  const cleanup = useCallback(async () => {
-    if (subscriptionRef.current) {
-      try {
-        await subscriptionRef.current.unsubscribe();
-      } catch {
-        // Silently handle unsubscribe errors
-      }
-      subscriptionRef.current = null;
-    }
-  }, []);
+  // Step 2: WebSocket subscription using useSubscription
+  const { data: wsData } = useSubscription<{ updates: OrderUpdate[] }>(
+    'orderUpdates',
+    wallet ? { user: wallet.address } : undefined,
+  );
 
-  // Step 2: WebSocket subscription for real-time order updates
+  // Step 3: Process WebSocket updates
+  useEffect(() => {
+    if (!wsData?.updates || !wallet) return;
+
+    const processUpdates = async () => {
+      const updatedOrdersMap = new Map<number, Order | null>();
+
+      for (const update of wsData.updates) {
+        const oid = update.order.oid;
+        const status = update.status;
+
+        // If order was canceled or filled, mark for removal
+        if (status && FAILED_ORDER_STATUSES.has(status)) {
+          updatedOrdersMap.set(oid, null);
+          continue;
+        }
+
+        // Fetch complete order data using orderStatus
+        try {
+          const orderData = await infoClient.orderStatus({
+            user: wallet.address,
+            oid,
+          });
+
+          // orderStatus returns { status: string, order?: Order }
+          if (orderData.status === 'order' && orderData.order) {
+            // Extract just the order data we need
+            updatedOrdersMap.set(oid, orderData.order as any);
+          } else if (orderData.status && FAILED_ORDER_STATUSES.has(orderData.status)) {
+            // Order is no longer open (canceled/filled)
+            updatedOrdersMap.set(oid, null);
+          }
+        } catch (error) {
+          console.error(`[useOpenOrders] Failed to fetch order ${oid}:`, error);
+          // Keep existing order data if fetch fails
+        }
+      }
+
+      // Update merged orders
+      setMergedOrders(prevOrders => {
+        // Build a map from existing orders
+        const orderMap = new Map(prevOrders.map(order => [order.oid, order]));
+
+        // Apply updates
+        updatedOrdersMap.forEach((order, oid) => {
+          if (order === null) {
+            // Remove order
+            orderMap.delete(oid);
+          } else {
+            // Add or update order
+            orderMap.set(oid, order);
+          }
+        });
+
+        return Array.from(orderMap.values());
+      });
+    };
+
+    void processUpdates();
+  }, [wsData, wallet]);
+
+  // Reset orders when wallet disconnects
   useEffect(() => {
     if (!wallet) {
       setMergedOrders([]);
-      return;
     }
-
-    let isMounted = true;
-
-    const setupSubscription = async () => {
-      try {
-        await cleanup();
-
-        const subscriptionClient = getSubscriptionClient();
-
-        // Subscribe to order updates
-        const subscription = await subscriptionClient.orderUpdates(
-          {
-            user: wallet.address,
-          },
-          async (orderUpdates: OrderUpdate[]) => {
-            if (!isMounted) return;
-
-            // Process each order update
-            const updatedOrdersMap = new Map<number, Order | null>();
-
-            for (const update of orderUpdates) {
-              const oid = update.order.oid;
-              const status = update.status;
-
-              // If order was canceled or filled, mark for removal
-              if (status && FAILED_ORDER_STATUSES.has(status)) {
-                updatedOrdersMap.set(oid, null);
-                continue;
-              }
-
-              // Fetch complete order data using orderStatus
-              try {
-                const orderData = await infoClient.orderStatus({
-                  user: wallet.address,
-                  oid,
-                });
-
-                // orderStatus returns { status: string, order?: Order }
-                if (orderData.status === 'order' && orderData.order) {
-                  // Extract just the order data we need
-                  updatedOrdersMap.set(oid, orderData.order as any);
-                } else if (orderData.status && FAILED_ORDER_STATUSES.has(orderData.status)) {
-                  // Order is no longer open (canceled/filled)
-                  updatedOrdersMap.set(oid, null);
-                }
-              } catch (error) {
-                console.error(`[useOpenOrders] Failed to fetch order ${oid}:`, error);
-                // Keep existing order data if fetch fails
-              }
-            }
-
-            // Update merged orders
-            setMergedOrders(prevOrders => {
-              // Build a map from existing orders
-              const orderMap = new Map(prevOrders.map(order => [order.oid, order]));
-
-              // Apply updates
-              updatedOrdersMap.forEach((order, oid) => {
-                if (order === null) {
-                  // Remove order
-                  orderMap.delete(oid);
-                } else {
-                  // Add or update order
-                  orderMap.set(oid, order);
-                }
-              });
-
-              return Array.from(orderMap.values());
-            });
-          },
-        );
-
-        subscriptionRef.current = subscription;
-      } catch (error) {
-        console.error('[useOpenOrders] Error setting up subscription:', error);
-      }
-    };
-
-    void setupSubscription();
-
-    return () => {
-      isMounted = false;
-      void cleanup();
-    };
-  }, [wallet, cleanup]);
+  }, [wallet]);
 
   return {
     orders: mergedOrders,
