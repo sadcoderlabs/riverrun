@@ -1,7 +1,7 @@
 import { ListButton, ListItem } from '@/components/global/ListItem';
 import { ListSection } from '@/components/global/ListSection';
-import { useReferralStatus } from '@/lib/hyperliquid/referral/hooks/useReferralStatus';
-import { useReferralHintsStore } from '@/lib/hyperliquid/referral/store/hints.store';
+import { useReferralStatus } from '@/lib/riverrun/referral/hooks/useReferralStatus';
+import { useReferralHintsStore } from '@/lib/riverrun/referral/store/hints.store';
 import { ArrowLeft } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';

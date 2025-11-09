@@ -2,7 +2,7 @@ import { getWalletAddress } from '@nktkas/hyperliquid/signing';
 import { useCallback, useState } from 'react';
 import { Alert } from 'react-native';
 
-import { REFERRAL_CONFIG } from '@/lib/hyperliquid/referral/config';
+import { REFERRAL_CONFIG } from '../config';
 import { useHyperliquidClient } from '@/lib/hyperliquid/client/useHyperliquidClient';
 import * as infoClient from '@/lib/hyperliquid/client/infoClient';
 
