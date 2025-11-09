@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import type { Market } from './types';
 import { useMarketsStore } from './useMarketsStore';
 import { useSubscription } from '@/lib/hyperliquid/subscription';
-import { useThrottle } from '@/lib/riverrun/hooks';
+import { useThrottle } from './useThrottle';
 
 export type SortOption = 'name' | 'volume' | 'price' | 'change';
 export type SortDirection = 'asc' | 'desc';

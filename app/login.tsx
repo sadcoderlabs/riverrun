@@ -1,6 +1,6 @@
 import { Button } from '@/components/global/Button';
 import { Heading } from '@/components/global/Heading';
-import { useThemePreference } from '@/lib/riverrun/hooks';
+import { useThemePreference } from '@/lib/riverrun/theme/useThemePreference';
 import { useWalletManager } from '@/lib/riverrun/wallet';
 import { Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

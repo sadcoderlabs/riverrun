@@ -6,7 +6,7 @@ import * as Clipboard from 'expo-clipboard';
 import { Button, Input, Spinner, Text, XStack, YStack } from 'tamagui';
 import { toast } from 'sonner-native';
 import { DEPOSIT_TOKENS, ChainName } from '@/lib/riverrun/transfer-fund/constants/depositTokens';
-import { useArbitrumUsdc, ARBITRUM_USDC_ADDRESS } from '@/lib/riverrun/hooks';
+import { useArbitrumUsdc, ARBITRUM_USDC_ADDRESS } from '@/lib/riverrun/transfer-fund/useArbitrumUsdc';
 import { useActiveWallet } from '@/lib/riverrun/wallet';
 
 // Hyperliquid Bridge contract address on Arbitrum
