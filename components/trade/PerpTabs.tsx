@@ -3,7 +3,8 @@ import PositionsTab from '@/components/trade/PositionsTab';
 import HistoryTab from '@/components/trade/HistoryTab';
 import { useState, useEffect } from 'react';
 import { Text, XStack, YStack } from 'tamagui';
-import { useOrderCount, usePositionCount } from '@/lib/hyperliquid/hooks';
+import { useOrderCount } from '@/lib/riverrun/order/useOrderCount';
+import { usePositionCount } from '@/lib/riverrun/position/usePositionCount';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 export function PerpTabs() {
