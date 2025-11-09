@@ -13,7 +13,7 @@ import {
   formatTimestamp,
   getOrderDirection,
   isMarketOrder,
-} from '@/lib/hyperliquid/utils';
+} from '@/lib/riverrun/order';
 import { useActiveWallet } from '@/lib/riverrun/wallet';
 import { useMarketsStore } from '@/lib/riverrun/market';
 import { useMemo, useState } from 'react';

@@ -4,7 +4,7 @@
  * Handles price/percentage conversions and validation for Take Profit and Stop Loss orders
  */
 
-import { formatPrice } from '../format/formatPrice';
+import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
 
 /**
  * Type of TP/SL order

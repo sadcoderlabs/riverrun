@@ -7,8 +7,8 @@ import {
   calculatePercentFromPrice,
   calculatePriceFromPercent,
   type TpSlType,
-} from '@/lib/hyperliquid/utils/tpslUtils';
-import { calculateTpSlPrices, validateTpSl } from '@/lib/hyperliquid/utils/orderUtils';
+} from '@/lib/riverrun/order/tpslUtils';
+import { calculateTpSlPrices, validateTpSl } from '@/lib/riverrun/order/orderUtils';
 
 type UnitType = 'USD' | '%';
 

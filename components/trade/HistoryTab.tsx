@@ -8,7 +8,7 @@ import { formatSize } from '@/lib/hyperliquid/format/formatSize';
 import { formatValue } from '@/lib/hyperliquid/format/formatValue';
 import { useUserFills } from '@/lib/hyperliquid/hooks';
 import type { Fill } from '@/lib/hyperliquid/types/fills';
-import { formatTimestamp } from '@/lib/hyperliquid/utils';
+import { formatTimestamp } from '@/lib/riverrun/order';
 import { useActiveWallet } from '@/lib/riverrun/wallet';
 import { useMarketsStore } from '@/lib/riverrun/market';
 import { useMemo, useState } from 'react';
