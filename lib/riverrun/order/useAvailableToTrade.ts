@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useActiveAssetData } from './useActiveAssetData';
+import { useActiveAssetData } from '@/lib/hyperliquid/hooks/useActiveAssetData';
 
 interface UseAvailableToTradeParams {
   coin: string;

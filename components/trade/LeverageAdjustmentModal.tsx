@@ -1,4 +1,4 @@
-import { useMarginLeverage } from '@/lib/hyperliquid/hooks';
+import { useMarginLeverage } from '@/lib/riverrun/margin/useMarginLeverage';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Modal, Pressable, StyleSheet } from 'react-native';
 import { Button, Slider, Spinner, Text, XStack, YStack } from 'tamagui';

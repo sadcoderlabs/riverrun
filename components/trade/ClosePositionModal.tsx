@@ -3,7 +3,7 @@ import { Modal, Pressable, StyleSheet } from 'react-native';
 import { Button, Slider, Text, XStack, YStack } from 'tamagui';
 import * as hl from '@nktkas/hyperliquid';
 import { Input } from '@/components/global/Input';
-import { useOrder } from '@/lib/hyperliquid/hooks';
+import { useOrder } from '@/lib/riverrun/order/useOrder';
 import { formatSize } from '@/lib/hyperliquid/format/formatSize';
 import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
 import { formatValue } from '@/lib/hyperliquid/format/formatValue';

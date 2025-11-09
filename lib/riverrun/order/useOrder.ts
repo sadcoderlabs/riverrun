@@ -4,7 +4,7 @@ import { toast } from 'sonner-native';
 import { roundPrice } from '@/components/trade/priceUtils';
 import { getBuilderParam } from '@/lib/hyperliquid/builderFee/config';
 import { useBuilderFee } from '@/lib/hyperliquid/builderFee/hooks/useBuilderFee';
-import { useHyperliquidClient } from '../client/useHyperliquidClient';
+import { useHyperliquidClient } from '@/lib/hyperliquid/client/useHyperliquidClient';
 import { useMarketsStore } from '@/lib/riverrun/market';
 
 /**

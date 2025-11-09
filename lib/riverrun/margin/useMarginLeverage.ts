@@ -1,8 +1,8 @@
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner-native';
-import { useHyperliquidClient } from '../client/useHyperliquidClient';
+import { useHyperliquidClient } from '@/lib/hyperliquid/client/useHyperliquidClient';
 import { useMarketsStore } from '@/lib/riverrun/market';
-import { useActiveAssetData } from './useActiveAssetData';
+import { useActiveAssetData } from '@/lib/hyperliquid/hooks/useActiveAssetData';
 
 export interface MarginLeverage {
   /** Leverage value (e.g., 5, 10, 20) */

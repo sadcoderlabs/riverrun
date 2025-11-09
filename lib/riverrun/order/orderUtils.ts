@@ -4,7 +4,7 @@
  */
 
 import type { Order, OrderMetrics, OrderType } from './orders';
-import type { PlaceOrderParams } from '@/lib/hyperliquid/hooks/useOrder';
+import type { PlaceOrderParams } from './useOrder';
 import { calculatePriceFromPercent, validatePrice } from './tpslUtils';
 
 // ============================================================================

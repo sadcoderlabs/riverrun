@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Spinner, Text, XStack, YStack, Popover, Button } from 'tamagui';
 import { Info } from '@tamagui/lucide-icons';
 import { CardContainer } from '../global/CardContainer';
-import { useWebData2 } from '@/lib/hyperliquid/hooks/useWebData2';
+import { useAccountMetrics } from '@/lib/riverrun/account/useAccountMetrics';
 
 interface MetricRowProps {
   label: string;
@@ -76,7 +76,7 @@ export function PerpsOverview() {
     crossAccountLeverage,
     isLoading,
     error,
-  } = useWebData2();
+  } = useAccountMetrics();
 
   const formatCurrency = (value: number | undefined) => {
     if (value === undefined) return '$0.00';

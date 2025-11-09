@@ -13,13 +13,11 @@ import {
 } from '@/components/trade/TpSlInput';
 import { formatSize } from '@/lib/hyperliquid/format/formatSize';
 import { formatValue } from '@/lib/hyperliquid/format/formatValue';
-import {
-  useActiveAssetData,
-  useAvailableToTrade,
-  useCurrentPosition,
-  useMarginLeverage,
-  useOrder,
-} from '@/lib/hyperliquid/hooks';
+import { useActiveAssetData } from '@/lib/hyperliquid/hooks';
+import { useAvailableToTrade } from '@/lib/riverrun/order/useAvailableToTrade';
+import { useCurrentPosition } from '@/lib/riverrun/position/useCurrentPosition';
+import { useMarginLeverage } from '@/lib/riverrun/margin/useMarginLeverage';
+import { useOrder } from '@/lib/riverrun/order/useOrder';
 import { useMarketsStore } from '@/lib/riverrun/market';
 
 import { Checkbox } from '@tamagui/checkbox';

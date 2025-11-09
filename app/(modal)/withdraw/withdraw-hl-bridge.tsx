@@ -6,7 +6,7 @@ import * as Clipboard from 'expo-clipboard';
 import { Button, Input, Spinner, Text, XStack, YStack } from 'tamagui';
 import { toast } from 'sonner-native';
 import { useActiveWallet } from '@/lib/riverrun/wallet';
-import { useHyperliquidWithdraw } from '@/lib/hyperliquid/hooks';
+import { useHyperliquidWithdraw } from '@/lib/riverrun/withdrawal/useHyperliquidWithdraw';
 
 // Validate Ethereum address format
 function isValidAddress(address: string): boolean {

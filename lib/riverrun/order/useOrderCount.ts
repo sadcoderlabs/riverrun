@@ -5,7 +5,7 @@
 
 import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
 import { useMemo } from 'react';
-import { useOpenOrders } from '@/lib/hyperliquid/hooks/useOpenOrders';
+import { useOpenOrders } from './useOpenOrders';
 
 /**
  * Get the count of open orders

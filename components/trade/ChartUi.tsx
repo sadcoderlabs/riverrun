@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
 import { Spinner, Text, YStack, XStack, Button } from 'tamagui';
-import { useCandleData, type CandleInterval } from '@/lib/hyperliquid/hooks';
+import { useCandleData, type CandleInterval } from '@/lib/riverrun/candle/useCandleData';
 
 interface ChartUIProps {
   marketId?: string;

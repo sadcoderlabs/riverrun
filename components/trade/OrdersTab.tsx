@@ -6,7 +6,8 @@
 import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
 import { formatSize } from '@/lib/hyperliquid/format/formatSize';
 import { formatValue } from '@/lib/hyperliquid/format/formatValue';
-import { useOrder, useOpenOrders } from '@/lib/hyperliquid/hooks';
+import { useOrder } from '@/lib/riverrun/order/useOrder';
+import { useOpenOrders } from '@/lib/riverrun/order/useOpenOrders';
 import type { Order } from '@/lib/riverrun/order/orders';
 import {
   calculateOrderMetrics,

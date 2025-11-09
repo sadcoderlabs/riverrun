@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useWebData2 } from './useWebData2';
+import { useWebData2 } from '@/lib/hyperliquid/hooks/useWebData2';
 
 interface UseCurrentPositionParams {
   coin: string;

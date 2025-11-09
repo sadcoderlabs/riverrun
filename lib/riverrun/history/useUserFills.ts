@@ -16,11 +16,11 @@
  */
 
 import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
-import { useSubscription, type UserFillsData } from '../subscription';
+import { useSubscription, type UserFillsData } from '@/lib/hyperliquid/subscription';
 import type { Fill } from '@/lib/riverrun/history/fills';
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import * as infoClient from '../client/infoClient';
+import * as infoClient from '@/lib/hyperliquid/client/infoClient';
 
 // ============================================================================
 // Hook Interface

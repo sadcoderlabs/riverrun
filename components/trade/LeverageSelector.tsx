@@ -1,5 +1,5 @@
 import { LeverageAdjustmentModal } from '@/components/trade/LeverageAdjustmentModal';
-import { useMarginLeverage } from '@/lib/hyperliquid/hooks';
+import { useMarginLeverage } from '@/lib/riverrun/margin/useMarginLeverage';
 import { ChevronDown } from '@tamagui/lucide-icons';
 import { useState } from 'react';
 import { Text, XStack } from 'tamagui';
