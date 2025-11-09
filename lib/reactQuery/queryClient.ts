@@ -3,13 +3,13 @@
  *
  * Provides global configuration for HTTP query management:
  * - Request deduplication: Multiple components requesting same data share one request
- * - Intelligent caching: Reduces unnecessary API calls
+ * - Short cache (1s): Avoids duplicate requests while maintaining near real-time updates
  * - Stale-while-revalidate: Show cached data while fetching fresh data in background
  *
  * Rate Limiting Integration:
- * - Individual queryFn should wrap calls with rateLimiter.executeRequest()
- * - This ensures HTTP requests respect global 1200 weight/min limit
- * - Works alongside WebSocket subscriptions (managed by SubscriptionManager)
+ * - All API calls go through infoClient wrapper with automatic rate limiting
+ * - Respects global 1200 weight/min limit
+ * - Works alongside WebSocket subscriptions for real-time data
  */
 
 import { QueryClient } from '@tanstack/react-query';
@@ -18,7 +18,7 @@ export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       // Cache Configuration
-      staleTime: 30000, // 30 seconds - data is fresh for 30s, won't refetch
+      staleTime: 1000, // 1 second - balance between real-time updates and avoiding duplicate requests
       gcTime: 300000, // 5 minutes - cache cleanup time (previously cacheTime)
 
       // Network Configuration
@@ -30,11 +30,12 @@ export const queryClient = new QueryClient({
       refetchOnReconnect: true, // Refetch when network reconnects
       refetchOnMount: true, // Refetch when component mounts if data is stale
 
-      // Note: Rate limiting should be handled in individual queryFn functions
+      // Note: Rate limiting is handled automatically by infoClient wrapper
       // Example:
-      //   queryFn: () => rateLimiter.executeRequest('userFills',
-      //     () => infoClient.userFills({ user: address })
-      //   )
+      //   queryFn: () => infoClient.userFills({ user: address })
+      //
+      // For static data that changes rarely, override staleTime:
+      //   staleTime: 60000  // Cache market metadata for 1 minute
     },
     mutations: {
       retry: 1,
