@@ -17,25 +17,23 @@
 
 ### What is this system?
 
-A **unified subscription system** that manages WebSocket subscriptions and HTTP data fetching for the Hyperliquid trading platform, with built-in support for:
+A **unified subscription system** that manages WebSocket subscriptions for the Hyperliquid trading platform, with built-in support for:
 
 - **Reference Counting (RefCount)**: Automatic sharing of subscriptions across components
 - **App Lifecycle Management**: Pause/resume subscriptions when app goes to background/foreground
-- **Global Rate Limiting**: Protect the Hyperliquid server from rapid concurrent HTTP requests
-- **HTTP + WebSocket Hybrid**: Fast initial data via HTTP, real-time updates via WebSocket
 
 ### Why was it built?
 
 **Before**: Each feature (allMids, orderBook, userFills, etc.) had its own custom hook with duplicated logic:
 - Manual RefCount management (Zustand stores)
 - Manual App Lifecycle handling (multiple `useAppLifecycle()` listeners)
-- Manual HTTP rate limiting (per-subscription variables)
+- Manual WebSocket subscription lifecycle
 - 340 lines for activeAssetData alone
 
 **After**: All features share a unified system:
 - Automatic RefCount management
 - Single App Lifecycle listener (in `_layout.tsx`)
-- Global HTTP rate limiting
+- Centralized WebSocket subscription management
 - ~30 lines per new subscription
 
 **Code Reduction**:
@@ -65,19 +63,16 @@ A **unified subscription system** that manages WebSocket subscriptions and HTTP 
 │  • subscribe() / unsubscribe()                              │
 │  • pauseAll() / resumeAll()                                 │
 │  • RefCount management                                       │
-│  • Global Rate Limiting                                      │
 └─────────────────────────────────────────────────────────────┘
                             ↓
 ┌─────────────────────────────────────────────────────────────┐
 │                 Subscription Registry                        │
 │  • Subscription configurations                              │
-│  • HTTP fetch functions                                      │
 │  • WebSocket subscribe functions                            │
 └─────────────────────────────────────────────────────────────┘
                             ↓
 ┌─────────────────────────────────────────────────────────────┐
 │                   Hyperliquid API                            │
-│  • InfoClient (HTTP)                                         │
 │  • SubscriptionClient (WebSocket)                           │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -89,7 +84,7 @@ lib/hyperliquid/subscription/
 ├── core/
 │   ├── types.ts                    # Type definitions
 │   ├── SubscriptionRegistry.ts     # Registry singleton
-│   └── SubscriptionManager.ts      # Manager singleton (RefCount + Lifecycle + Rate Limiting)
+│   └── SubscriptionManager.ts      # Manager singleton (RefCount + Lifecycle)
 ├── hooks/
 │   └── useSubscription.ts          # Unified React hook API
 ├── registry/
@@ -107,46 +102,15 @@ lib/hyperliquid/subscription/
 **Decision**: Centralized management via singletons
 
 **Rationale**:
-- Global state (RefCount, rate limiting) needs to be shared across ALL components
+- Global state (RefCount) needs to be shared across ALL components
 - Prevents duplicate subscriptions
 - Simplifies App Lifecycle management (single listener instead of N)
 
 **Alternative Considered**: React Context
 - Rejected: Would require wrapping entire app, more complex setup
-- RefCount and rate limiting are not React-specific concerns
+- RefCount is not a React-specific concern
 
-### 2. Global HTTP Rate Limiting
-
-**Decision**: All HTTP requests share a 500ms minimum interval
-
-**Original Design** (Phase 1):
-```typescript
-subscriptionRegistry.register('allMids', {
-  rateLimitMs: 1000  // ❌ Per-subscription rate limiting
-});
-```
-
-**Improved Design** (Phase 2):
-```typescript
-// In SubscriptionManager.ts
-private lastGlobalHttpFetch = 0;
-private readonly GLOBAL_HTTP_MIN_INTERVAL = 500;
-```
-
-**Rationale** (from user feedback):
-- All HTTP requests go to the same Hyperliquid server via `infoClient`
-- Per-subscription rate limiting doesn't protect against concurrent requests from different subscriptions
-- Global rate limiting is simpler and more effective
-
-**Example**:
-```typescript
-// Component A: useSubscription('allMids')        → HTTP fetch at t=0ms
-// Component B: useSubscription('userFills')      → HTTP fetch skipped (1ms < 500ms)
-// Component C: useSubscription('activeAssetData') → HTTP fetch skipped (2ms < 500ms)
-// Result: Only 1 HTTP request to server
-```
-
-### 3. App Lifecycle Management
+### 2. App Lifecycle Management
 
 **Decision**: Single global listener in `_layout.tsx`, no per-hook listeners
 
@@ -190,7 +154,7 @@ useEffect(() => {
 - `pauseAll()`/`resumeAll()` preserves RefCount and state
 - Prevents duplicate event listeners
 
-### 4. iOS Face ID Resume Debouncing
+### 3. iOS Face ID Resume Debouncing
 
 **Decision**: 200ms debounce on resume, immediate pause
 
@@ -226,7 +190,7 @@ if (nextAppState === 'active') {
 - True unlock keeps app `active` for >200ms
 - 200ms is fast enough to be unnoticeable to users
 
-### 5. Data Transformation Location
+### 4. Data Transformation Location
 
 **Decision**: Keep Registry simple, put complex logic in specialized hooks
 
@@ -234,9 +198,6 @@ if (nextAppState === 'active') {
 ```typescript
 register('webData2', {
   key: (params) => params.user,
-  httpFetch: async (params) => {
-    return await infoClient.userState({ user: params.user });
-  },
   subscribe: async (params, callback) => {
     return await subscriptionClient.webData2({ user: params.user }, callback);
   },
@@ -262,7 +223,7 @@ export function useWebData2() {
 - Hooks can customize transformation logic
 - Better separation of concerns
 
-### 6. Backward Compatibility Strategy
+### 5. Backward Compatibility Strategy
 
 **Decision**: Create `.v2` files, keep old files temporarily
 
@@ -421,12 +382,6 @@ subscriptionRegistry.register('myNewSubscription', {
   // Generate unique key for this subscription
   key: (params: { userId: string }) => params.userId,
 
-  // HTTP fetch (optional, for initial fast data)
-  httpFetch: async (params) => {
-    const data = await infoClient.someEndpoint({ user: params.userId });
-    return data;
-  },
-
   // WebSocket subscribe (required for real-time updates)
   subscribe: async (params, callback) => {
     const subscription = await subscriptionClient.someEvent(
@@ -487,9 +442,6 @@ import { subscriptionRegistry } from '@/lib/hyperliquid/subscription';
 
 subscriptionRegistry.register('exchange2_ticker', {
   key: (params) => params.symbol,
-  httpFetch: async (params) => {
-    // Fetch from Exchange2 REST API
-  },
   subscribe: async (params, callback) => {
     // Subscribe to Exchange2 WebSocket
   },
@@ -502,28 +454,6 @@ const { data } = useSubscription('exchange2_ticker', { symbol: 'BTC-USD' });
 ```
 
 **The system is data-source agnostic!**
-
-### Adding Custom Rate Limiting Per Subscription
-
-If you need per-subscription rate limiting in addition to global:
-
-```typescript
-// In subscription config
-let lastFetchTime = 0;
-
-subscriptionRegistry.register('rateLimitedSub', {
-  httpFetch: async (params) => {
-    const now = Date.now();
-    if (now - lastFetchTime < 2000) {
-      console.log('Skipping per-subscription rate limit');
-      return undefined; // Skip HTTP, rely on WebSocket
-    }
-    lastFetchTime = now;
-    return await infoClient.someEndpoint();
-  },
-  // ...
-});
-```
 
 ---
 
@@ -541,10 +471,6 @@ subscriptionRegistry.register('rateLimitedSub', {
 - Total: ~5-20KB
 
 ### Network Usage
-
-**HTTP**:
-- Global 500ms rate limit prevents request bursts
-- Only fetches when data is stale
 
 **WebSocket**:
 - Shared connections via RefCount
@@ -616,15 +542,6 @@ Array.from(allSubs.entries()).forEach(([key, entry]) => {
 2. Missing cleanup in useEffect
 3. RefCount increment without corresponding decrement (bug in SubscriptionManager)
 
-### Issue: Rate limiting too aggressive
-
-**Symptom**: HTTP fetch always skipped
-
-**Solution**: Adjust `GLOBAL_HTTP_MIN_INTERVAL` in `SubscriptionManager.ts`:
-```typescript
-private readonly GLOBAL_HTTP_MIN_INTERVAL = 500;  // Increase if needed
-```
-
 ### Issue: iOS Face ID still causing resume
 
 **Symptom**: Subscriptions resume during lock screen
@@ -648,7 +565,6 @@ resumeDebounceRef.current = setTimeout(() => {
 ### Phase 2 (Migration)
 - ✅ Migrated 3 subscriptions: userFills, webData2, activeAssetData
 - ✅ Created .v2 hooks
-- ✅ Global HTTP rate limiting (user feedback)
 - ✅ Code reduction: activeAssetData 340 → 50 lines (-85%)
 
 ### Phase 2.5 (iOS Face ID Fix)
@@ -677,7 +593,7 @@ resumeDebounceRef.current = setTimeout(() => {
 - Integration: `app/_layout.tsx`
 
 **Key Files**:
-- `SubscriptionManager.ts`: RefCount + Lifecycle + Rate Limiting
+- `SubscriptionManager.ts`: RefCount + Lifecycle management
 - `SubscriptionRegistry.ts`: Subscription configs
 - `useSubscription.ts`: React hook API
 - `hyperliquidSubscriptions.ts`: All registered subscriptions

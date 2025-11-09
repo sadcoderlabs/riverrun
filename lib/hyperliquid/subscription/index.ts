@@ -1,14 +1,11 @@
 /**
  * Unified Subscription System
  *
- * A centralized, type-safe subscription management system for Hyperliquid data feeds.
+ * A centralized, type-safe subscription management system for Hyperliquid WebSocket data feeds.
  *
  * Features:
  * - Reference counting: multiple components can share one subscription
  * - App Lifecycle management: automatic pause/resume when app goes to background/foreground
- * - Hybrid strategy: HTTP fetch + WebSocket subscription for fast initial load
- * - Weight-based rate limiting: respects Hyperliquid's 1200 weight/minute limit
- * - Priority queue: guarantees critical requests (initial fetches) always execute
  * - Simple API: single `useSubscription` hook for all data types
  *
  * Usage:
