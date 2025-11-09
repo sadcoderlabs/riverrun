@@ -3,7 +3,7 @@ import { ListItem } from '@/components/global/ListItem';
 import { ListSection } from '@/components/global/ListSection';
 import { useThemePreference } from '@/lib/riverrun/theme/useThemePreference';
 import { useActiveWallet } from '@/lib/riverrun/wallet';
-import { type ThemePreference } from '@/lib/riverrun/store/theme.store';
+import { type ThemePreference } from '@/lib/riverrun/theme/theme.store';
 import { ArrowLeft, ArrowUpRight } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 import { Pressable } from 'react-native';

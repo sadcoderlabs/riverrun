@@ -1,4 +1,4 @@
-import { useThemeStore, type ThemePreference } from '@/lib/riverrun/store/theme.store'; // Import from zustand store
+import { useThemeStore, type ThemePreference } from './theme.store';
 import tamaguiConfig from '@/tamagui.config';
 import { useEffect } from 'react';
 import { Appearance, Platform, useColorScheme } from 'react-native'; // Added imports
