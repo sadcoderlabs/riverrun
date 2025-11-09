@@ -5,7 +5,7 @@ interface MarketOrderFormProps {
   onSizeChange: (value: string) => void;
   leverage: number;
   availableToTrade: number;
-  marketPrice: number;
+  markPrice: number;
   coin: string;
   szDecimals: number;
 }
@@ -15,7 +15,7 @@ export function MarketOrderForm({
   onSizeChange,
   leverage,
   availableToTrade,
-  marketPrice,
+  markPrice,
   coin,
   szDecimals,
 }: MarketOrderFormProps) {
@@ -25,7 +25,7 @@ export function MarketOrderForm({
       onSizeChange={onSizeChange}
       leverage={leverage}
       availableToTrade={availableToTrade}
-      priceForCalculation={marketPrice}
+      priceForCalculation={markPrice}
       coin={coin}
       szDecimals={szDecimals}
     />

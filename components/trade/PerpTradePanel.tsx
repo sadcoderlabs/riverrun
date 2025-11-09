@@ -6,23 +6,26 @@ import { useOrderForm } from '@/components/trade/hooks/useOrderForm';
 import { LeverageSelector } from '@/components/trade/LeverageSelector';
 import { LimitOrderForm, MarketOrderForm, OrderTypeSelector } from '@/components/trade/order-forms';
 import { OrderBook } from '@/components/trade/OrderBook';
+import { OrderPreview } from '@/components/trade/OrderPreview';
+import { PositionSummary } from '@/components/trade/PositionSummary';
 import {
   TpSlInput,
   type TpSlResult,
   type TpSlValidationResult,
 } from '@/components/trade/TpSlInput';
-import { formatSize } from '@/lib/hyperliquid/format/formatSize';
-import { formatValue } from '@/lib/hyperliquid/format/formatValue';
-import { useActiveAssetData } from '@/lib/hyperliquid/hooks';
 import { useAvailableToTrade } from '@/lib/riverrun/order/useAvailableToTrade';
 import { useCurrentPosition } from '@/lib/riverrun/position/useCurrentPosition';
 import { useMarginLeverage } from '@/lib/riverrun/margin/useMarginLeverage';
 import { useOrder } from '@/lib/riverrun/order/useOrder';
+import { useOrderValue } from '@/lib/riverrun/order/useOrderValue';
+import { useMarginRequired } from '@/lib/riverrun/order/useMarginRequired';
+import { useOrderValidation } from '@/lib/riverrun/order/useOrderValidation';
 import { useMarketsStore } from '@/lib/riverrun/market';
+import { useMarkPrice, useMidPrice, useExecutionPrice } from '@/lib/riverrun/price';
 
 import { Checkbox } from '@tamagui/checkbox';
 import { Check } from '@tamagui/lucide-icons';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useWatch } from 'react-hook-form';
 import { toast } from 'sonner-native';
 import { Button, Text, XStack, YStack } from 'tamagui';
@@ -35,10 +38,9 @@ export function PerpTradePanel() {
   const coin = selectedMarket?.coin || 'BTC'; // Fallback to BTC if no market selected
   const szDecimals = selectedMarket?.szDecimals || 4; // Fallback to 4 decimals
 
-  // Subscribe to active asset data (for market price)
-  const { data: activeAssetData, isLoading: isLoadingAssetData } = useActiveAssetData({
-    coin,
-  });
+  // Subscribe to price data
+  const { markPrice, isLoading: isLoadingMarkPrice } = useMarkPrice({ coin });
+  const { midPrice } = useMidPrice({ coin });
 
   // Subscribe to real-time margin and leverage data (for margin calculation and order forms)
   const { marginLeverage } = useMarginLeverage();
@@ -51,7 +53,7 @@ export function PerpTradePanel() {
   const currentPositionSize = useCurrentPosition({ coin });
 
   // Initialize React Hook Form (only manages order-specific fields)
-  const { form, validation } = useOrderForm({});
+  const { form } = useOrderForm({});
 
   const { setValue, control } = form;
 
@@ -65,49 +67,28 @@ export function PerpTradePanel() {
   // Get available margin based on order side
   const availableToTrade = orderSide === 'Long' ? longAvailableToTrade : shortAvailableToTrade;
 
-  // Memoize marketPrice to prevent unnecessary re-renders when markPx updates
-  // This stabilizes the price used for size calculations
-  const marketPrice = useMemo(
-    () => parseFloat(activeAssetData?.markPx || '0'),
-    [activeAssetData?.markPx],
-  );
+  // Calculate execution price based on order type and limit price
+  const { executionPrice } = useExecutionPrice({
+    orderType,
+    limitPrice,
+    markPrice,
+  });
+
+  // Calculate order value and margin required
+  const { orderValue } = useOrderValue({ size, executionPrice });
+  const { marginRequired } = useMarginRequired({ orderValue, leverage });
 
   // TP/SL state: stores result and validation from TpSlInput component
   const [tpSlResult, setTpSlResult] = useState<TpSlResult | undefined>(undefined);
   const [tpSlValidation, setTpSlValidation] = useState<TpSlValidationResult>({ isValid: true });
 
-  // Get entry price for TP/SL calculations
-  const entryPriceForTpSl = useMemo(() => {
-    if (orderType === 'Market') {
-      return marketPrice;
-    } else {
-      const limit = parseFloat(limitPrice || '0');
-      return limit > 0 ? limit : marketPrice;
-    }
-  }, [orderType, marketPrice, limitPrice]);
-
-  // Calculate execution price for order value calculation
-  const executionPrice = useMemo(() => {
-    if (orderType === 'Market') {
-      return marketPrice;
-    } else {
-      const limit = parseFloat(limitPrice || '0');
-      return limit > 0 ? limit : marketPrice;
-    }
-  }, [orderType, marketPrice, limitPrice]);
-
-  // Calculate order value (size * execution price)
-  const orderValue = useMemo(() => {
-    const sizeNum = parseFloat(size || '0');
-    if (sizeNum <= 0 || executionPrice <= 0) return 0;
-    return sizeNum * executionPrice;
-  }, [size, executionPrice]);
-
-  // Calculate margin required (order value / leverage)
-  const marginRequired = useMemo(() => {
-    if (leverage <= 0) return 0;
-    return orderValue / leverage;
-  }, [orderValue, leverage]);
+  // Validate order inputs
+  const orderValidation = useOrderValidation({
+    orderType,
+    size,
+    limitPrice,
+    tpSlValidation,
+  });
 
   // Handler for TP/SL changes
   const handleTpSlChange = useCallback(
@@ -120,30 +101,15 @@ export function PerpTradePanel() {
 
   // Handler for Place Order button
   const handlePlaceOrder = useCallback(async () => {
+    // Validation - show error toast if validation fails
+    if (!orderValidation.isValid) {
+      toast.error(orderValidation.errorTitle || 'Invalid Order', {
+        description: orderValidation.errorDescription || 'Please check your order inputs',
+      });
+      return;
+    }
+
     const data = form.getValues();
-
-    // Validation
-    if (!validation.hasValidSize) {
-      toast.error('Size Required', {
-        description: 'Please enter an order size',
-      });
-      return;
-    }
-
-    if (!validation.hasValidLimitPrice) {
-      toast.error('Invalid Price', {
-        description: 'Please enter a valid limit price',
-      });
-      return;
-    }
-
-    // Check TP/SL validation
-    if (!tpSlValidation.isValid) {
-      toast.error(tpSlValidation.errorTitle || 'Invalid TP/SL', {
-        description: tpSlValidation.errorDescription || 'Please check your TP/SL values',
-      });
-      return;
-    }
 
     // Single unified call - tpSlResult is already calculated and validated
     await placeOrder({
@@ -152,20 +118,11 @@ export function PerpTradePanel() {
       size: data.size,
       orderType: data.orderType,
       limitPrice: data.limitPrice || undefined,
-      marketPrice: data.orderType === 'Market' ? marketPrice : undefined,
+      marketPrice: data.orderType === 'Market' ? markPrice : undefined,
       reduceOnly: data.reduceOnly,
       tpSl: tpSlResult,
     });
-  }, [
-    coin,
-    form,
-    validation.hasValidSize,
-    validation.hasValidLimitPrice,
-    marketPrice,
-    placeOrder,
-    tpSlResult,
-    tpSlValidation,
-  ]);
+  }, [coin, form, markPrice, placeOrder, tpSlResult, orderValidation]);
 
   // Handle order book price click - update limit price when in Limit order mode
   const handleOrderBookPriceClick = useCallback(
@@ -193,41 +150,14 @@ export function PerpTradePanel() {
           {/* Leverage & Margin Type Selector */}
           <LeverageSelector />
 
-          {/* Available to Trade */}
-          <XStack justifyContent="space-between" alignItems="center">
-            <Text fontFamily="$interRegular" fontSize="$2" color="$gray10">
-              Available to trade
-            </Text>
-            <Text fontFamily="$interSemiBold" fontSize="$3" color="$color">
-              {isLoadingAssetData ? (
-                <Text color="$gray10">Loading...</Text>
-              ) : (
-                `$${formatValue(availableToTrade, 2)}`
-              )}
-            </Text>
-          </XStack>
-
-          {/* Current Position */}
-          <XStack justifyContent="space-between" alignItems="center">
-            <Text fontFamily="$interRegular" fontSize="$2" color="$gray10">
-              Current Position
-            </Text>
-            <Text
-              fontFamily="$interSemiBold"
-              fontSize="$3"
-              color={
-                currentPositionSize !== 0
-                  ? currentPositionSize > 0
-                    ? '$green10'
-                    : '$red10'
-                  : '$color'
-              }
-            >
-              {currentPositionSize !== 0
-                ? `${formatSize(Math.abs(currentPositionSize), szDecimals, false)} ${coin}`
-                : `0 ${coin}`}
-            </Text>
-          </XStack>
+          {/* Account & Position Summary */}
+          <PositionSummary
+            availableToTrade={availableToTrade}
+            currentPositionSize={currentPositionSize}
+            coin={coin}
+            szDecimals={szDecimals}
+            isLoadingAssetData={isLoadingMarkPrice}
+          />
 
           {/* Order Type Selector */}
           <OrderTypeSelector
@@ -285,7 +215,7 @@ export function PerpTradePanel() {
               }
               leverage={leverage}
               availableToTrade={availableToTrade}
-              marketPrice={marketPrice}
+              markPrice={markPrice}
               coin={coin}
               szDecimals={szDecimals}
             />
@@ -301,7 +231,8 @@ export function PerpTradePanel() {
               }
               leverage={leverage}
               availableToTrade={availableToTrade}
-              marketPrice={marketPrice}
+              midPrice={midPrice}
+              markPrice={markPrice}
               coin={coin}
               szDecimals={szDecimals}
             />
@@ -309,7 +240,7 @@ export function PerpTradePanel() {
 
           {/* TP/SL */}
           <TpSlInput
-            entryPrice={entryPriceForTpSl}
+            entryPrice={executionPrice}
             isLong={orderSide === 'Long'}
             szDecimals={szDecimals}
             onChange={handleTpSlChange}
@@ -331,33 +262,13 @@ export function PerpTradePanel() {
             </Checkbox>
           </XStack>
 
-          {/* Order Value */}
-          <XStack justifyContent="space-between" alignItems="center">
-            <Text fontFamily="$interRegular" fontSize="$2" color="$gray10">
-              Order Value
-            </Text>
-            <Text fontFamily="$interSemiBold" fontSize="$3" color="$color">
-              ${formatValue(orderValue, 2)}
-            </Text>
-          </XStack>
-
-          {/* Margin Required */}
-          <XStack justifyContent="space-between" alignItems="center">
-            <Text fontFamily="$interRegular" fontSize="$2" color="$gray10">
-              Margin Required
-            </Text>
-            <Text fontFamily="$interSemiBold" fontSize="$3" color="$color">
-              ${formatValue(marginRequired, 2)}
-            </Text>
-          </XStack>
-
           {/* Place Order Button */}
           <Button
             backgroundColor={orderSide === 'Long' ? '$green9' : '$red9'}
             paddingVertical="$2.5"
             marginTop="$1"
             borderRadius="$3"
-            disabled={validation.buttonDisabled || isPlacingOrder}
+            disabled={isPlacingOrder}
             onPress={handlePlaceOrder}
             pressStyle={{ opacity: 0.8 }}
           >
@@ -366,9 +277,14 @@ export function PerpTradePanel() {
               fontSize="$3"
               color={orderSide === 'Long' ? '$green1' : '$red1'}
             >
-              {isPlacingOrder ? 'Placing Order...' : validation.buttonText}
+              {isPlacingOrder ? 'Placing Order...' : 'Place Order'}
             </Text>
           </Button>
+
+          {/* Order Preview - Only show when valid inputs */}
+          {orderValidation.hasValidSize && orderValidation.hasValidLimitPrice && (
+            <OrderPreview orderValue={orderValue} marginRequired={marginRequired} />
+          )}
         </YStack>
       </YStack>
     </XStack>

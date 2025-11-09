@@ -42,7 +42,8 @@ interface LimitOrderFormProps {
   onSizeChange: (value: string) => void;
   leverage: number;
   availableToTrade: number;
-  marketPrice: number;
+  midPrice: number | undefined;
+  markPrice: number;
   coin: string;
   szDecimals: number;
 }
@@ -54,13 +55,17 @@ export function LimitOrderForm({
   onSizeChange,
   leverage,
   availableToTrade,
-  marketPrice,
+  midPrice,
+  markPrice,
   coin,
   szDecimals,
 }: LimitOrderFormProps) {
-  // Calculate price for size calculations - use limit price if valid, otherwise market price
+  // Use mid price for "Mid" button, fallback to mark price if unavailable
+  const priceForMidButton = midPrice ?? markPrice;
+
+  // Calculate price for size calculations - use limit price if valid, otherwise mark price
   const hasValidLimitPrice = limitPrice && limitPrice !== '' && limitPrice !== '0';
-  const priceForCalculation = hasValidLimitPrice ? parseFloat(limitPrice) : marketPrice;
+  const priceForCalculation = hasValidLimitPrice ? parseFloat(limitPrice) : markPrice;
 
   return (
     <YStack gap="$2.5">
@@ -74,7 +79,7 @@ export function LimitOrderForm({
             fontFamily="$interRegular"
             fontSize="$2"
             color="$accent9"
-            onPress={() => onLimitPriceChange(marketPrice.toString())}
+            onPress={() => onLimitPriceChange(priceForMidButton.toString())}
             pressStyle={{ opacity: 0.7 }}
           >
             Mid
