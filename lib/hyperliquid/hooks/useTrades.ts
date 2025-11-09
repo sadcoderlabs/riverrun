@@ -2,24 +2,19 @@
  * Hook to subscribe to Hyperliquid's trades WebSocket feed
  * for real-time trade updates.
  *
- * Provides a list of recent trades (up to last 10).
- * Use with useLatestPrice to derive latest price and direction.
+ * Architecture:
+ * - Uses unified subscription system for WebSocket management
+ * - Maintains rolling list of recent trades (up to last 10)
+ * - Use with useLatestPrice to derive latest price and direction
+ *
+ * Features:
+ * - Automatic subscription management (subscribe/unsubscribe)
+ * - Shared subscriptions (multiple components share one WebSocket)
+ * - App lifecycle integration (pause/resume)
  */
 
-import * as hl from '@nktkas/hyperliquid';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { getSubscriptionClient } from '../client/getter';
-
-export interface Trade {
-  coin: string;
-  side: 'B' | 'A'; // "B" = Bid/Buy, "A" = Ask/Sell
-  px: string; // Price
-  sz: string; // Size
-  time: number; // Timestamp in ms
-  hash: string;
-  tid: number;
-  users: [string, string]; // [Maker, Taker]
-}
+import { useEffect, useState } from 'react';
+import { useSubscription, type Trade, type TradesData } from '../subscription';
 
 interface UseTradesParams {
   coin: string;
@@ -42,78 +37,23 @@ interface UseTradesResult {
  */
 export function useTrades({ coin }: UseTradesParams): UseTradesResult {
   const [trades, setTrades] = useState<Trade[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | undefined>(undefined);
 
-  const subscriptionRef = useRef<hl.Subscription | null>(null);
+  // Subscribe to trades WebSocket via unified subscription system
+  const {
+    data: wsData,
+    isLoading,
+    error,
+  } = useSubscription<TradesData>('trades', coin ? { coin } : undefined);
 
-  // Cleanup function
-  const cleanup = useCallback(async () => {
-    if (subscriptionRef.current) {
-      try {
-        await subscriptionRef.current.unsubscribe();
-      } catch (err) {
-        console.error('[useTrades] Error unsubscribing:', err);
-      }
-      subscriptionRef.current = null;
-    }
-  }, []);
-
+  // Merge new trades with existing trades, keeping last 10
   useEffect(() => {
-    // Don't subscribe if coin is not provided
-    if (!coin) {
-      setIsLoading(false);
-      setTrades([]);
-      return;
+    if (wsData?.trades && wsData.trades.length > 0) {
+      setTrades(prevTrades => {
+        const newTrades = [...prevTrades, ...wsData.trades].slice(-10);
+        return newTrades;
+      });
     }
-
-    let isMounted = true;
-    setIsLoading(true);
-    setError(undefined);
-
-    const setupSubscription = async () => {
-      try {
-        // Cleanup any existing subscription
-        await cleanup();
-
-        const subscriptionClient = getSubscriptionClient();
-
-        // Subscribe to trades
-        const subscription = await subscriptionClient.trades(
-          {
-            coin: coin.toUpperCase(),
-          },
-          (tradesData: Trade[]) => {
-            if (isMounted && tradesData.length > 0) {
-              // Update trades list, keeping last 10
-              setTrades(prevTrades => {
-                const newTrades = [...prevTrades, ...tradesData].slice(-10);
-                return newTrades;
-              });
-
-              setIsLoading(false);
-            }
-          },
-        );
-
-        subscriptionRef.current = subscription;
-      } catch (err) {
-        if (isMounted) {
-          console.error('[useTrades] Error setting up subscription:', err);
-          setError(err instanceof Error ? err : new Error('Failed to subscribe'));
-          setIsLoading(false);
-        }
-      }
-    };
-
-    void setupSubscription();
-
-    // Cleanup on unmount or when dependencies change
-    return () => {
-      isMounted = false;
-      void cleanup();
-    };
-  }, [coin, cleanup]);
+  }, [wsData]);
 
   return {
     trades,
@@ -121,3 +61,6 @@ export function useTrades({ coin }: UseTradesParams): UseTradesResult {
     error,
   };
 }
+
+// Re-export Trade type for convenience
+export type { Trade } from '../subscription';

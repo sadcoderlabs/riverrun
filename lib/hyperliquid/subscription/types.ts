@@ -77,3 +77,26 @@ export interface ActiveAssetCtxData {
     dayBaseVlm: string;
   };
 }
+
+/**
+ * Trade data
+ * Individual trade information
+ */
+export interface Trade {
+  coin: string;
+  side: 'B' | 'A'; // "B" = Bid/Buy, "A" = Ask/Sell
+  px: string; // Price
+  sz: string; // Size
+  time: number; // Timestamp in ms
+  hash: string;
+  tid: number;
+  users: [string, string]; // [Maker, Taker]
+}
+
+/**
+ * Trades subscription data
+ * Contains array of recent trades
+ */
+export interface TradesData {
+  trades: Trade[];
+}

@@ -16,6 +16,8 @@ import type {
   AllMidsData,
   OrderBookData,
   UserFillsData,
+  TradesData,
+  Trade,
 } from '../types';
 
 // ============================================================================
@@ -49,6 +51,10 @@ interface ActiveAssetDataParams {
 }
 
 interface ActiveAssetCtxParams {
+  coin: string;
+}
+
+interface TradesParams {
   coin: string;
 }
 
@@ -203,8 +209,24 @@ subscriptionRegistry.register<ActiveAssetCtxParams, ActiveAssetCtxData>('activeA
 });
 
 // ============================================================================
-// Future configurations (Phase 2 - remaining)
+// Configuration 7: trades (real-time trade updates for a specific coin)
 // ============================================================================
 
-// TODO: Add these in Phase 2 migration:
-// - trades
+subscriptionRegistry.register<TradesParams, TradesData>('trades', {
+  // Key by coin
+  getKey: params => params.coin.toUpperCase(),
+
+  // WebSocket subscription for real-time trades
+  subscribe: async (params, callback) => {
+    const subscriptionClient = getSubscriptionClient();
+    return await subscriptionClient.trades(
+      {
+        coin: params.coin.toUpperCase(),
+      },
+      (trades: Trade[]) => {
+        // Forward trades array to callback
+        callback({ trades });
+      },
+    );
+  },
+});

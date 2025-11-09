@@ -43,6 +43,8 @@ export type {
   ActiveAssetData,
   ActiveAssetCtxData,
   WebData2Data,
+  TradesData,
+  Trade,
 } from './types';
 
 // Export registry (for adding custom subscriptions)
