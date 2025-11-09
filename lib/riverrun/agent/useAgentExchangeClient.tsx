@@ -1,14 +1,14 @@
 import * as hl from '@nktkas/hyperliquid';
 import { useRouter } from 'expo-router';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { Alert } from 'react-native';
 
 import {
   getMasterExchangeClient,
   getAgentExchangeClient as getCachedAgentExchangeClient,
+  getInfoClient,
 } from '@/lib/hyperliquid/client/getter';
 import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
-import { useInfoClient } from '@/lib/hyperliquid/client/useInfoClient';
 
 import { DEFAULT_AGENT_NAME } from './constants';
 import { getOrCreateAgentSigner } from './getOrCreateAgentSigner';
@@ -105,7 +105,7 @@ async function approveAgent(
 export function useAgentExchangeClient() {
   const { wallet } = useActiveWallet();
   const router = useRouter();
-  const infoClient = useInfoClient();
+  const infoClient = useMemo(() => getInfoClient(), []);
 
   /**
    * Get agent exchange client with simplified approval flow

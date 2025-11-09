@@ -2,8 +2,8 @@ import * as hl from '@nktkas/hyperliquid';
 import { useMemo } from 'react';
 
 import { useAgentExchangeClient } from '@/lib/riverrun/agent/useAgentExchangeClient';
-import { useInfoClient } from '@/lib/hyperliquid/client/useInfoClient';
 import { useMasterExchangeClient } from '@/lib/hyperliquid/client/useMasterExchangeClient';
+import { getInfoClient } from '@/lib/hyperliquid/client/getter';
 
 interface UseHyperliquidClientResult {
   getAgentExchangeClient: () => Promise<hl.ExchangeClient | undefined>;
@@ -15,8 +15,8 @@ export function useHyperliquidClient(): UseHyperliquidClientResult {
   const { getAgentExchangeClient } = useAgentExchangeClient();
   const { getMasterExchangeClient } = useMasterExchangeClient();
 
-  // Get singleton instances from hooks
-  const infoClient = useInfoClient();
+  // Get singleton instance
+  const infoClient = useMemo(() => getInfoClient(), []);
 
   return useMemo(
     () => ({
