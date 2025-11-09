@@ -1,11 +1,11 @@
 import AdaptiveSelect from '@/components/global/AdaptiveSelect';
 import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
 import { formatSizeFixedDecimals } from '@/lib/hyperliquid/format/formatSizeFixedDecimals';
-import { useActiveAssetCtx } from '@/lib/hyperliquid/hooks/useActiveAssetCtx';
+import { useActiveAssetCtx, useTrades } from '@/lib/hyperliquid/hooks';
 import { useMarketsStore } from '@/lib/riverrun/market';
+import { useLatestPrice } from '@/lib/riverrun/orderbook';
 import {
   buildPrecisionMenu,
-  useRecentTrades,
   type NSigFigs,
   type OrderBookLevel,
   type PrecisionMenuItem,
@@ -50,8 +50,9 @@ export function OrderBook({ onPriceClick }: OrderBookProps) {
   const { data: assetCtx } = useActiveAssetCtx({ coin });
   const markPx = assetCtx?.ctx.markPx || '0';
 
-  // Subscribe to recent trades for last trade price
-  const { lastTrade } = useRecentTrades({ coin });
+  // Subscribe to recent trades and extract latest price
+  const { trades } = useTrades({ coin });
+  const { latestPrice } = useLatestPrice({ trades });
 
   // Calculate precision menu items based on current mark price
   // This menu dynamically adjusts based on the price level of the asset
@@ -315,18 +316,18 @@ export function OrderBook({ onPriceClick }: OrderBookProps) {
           backgroundColor="$background"
           gap="$1"
         >
-          {lastTrade ? (
+          {latestPrice ? (
             <>
               {/* Last trade price - colored by trade direction */}
               <XStack justifyContent="center" alignItems="center" gap="$1.5">
                 <Text
                   fontFamily="$interSemiBold"
                   fontSize="$5"
-                  color={lastTrade.side === 'B' ? '$green10' : '$red10'}
+                  color={latestPrice.direction === 'buy' ? '$green10' : '$red10'}
                 >
-                  {formatPrice(lastTrade.px, szDecimals, true)}
+                  {formatPrice(latestPrice.price, szDecimals, true)}
                 </Text>
-                {lastTrade.side === 'B' ? (
+                {latestPrice.direction === 'buy' ? (
                   <ArrowUpRight size={14} color="$green10" />
                 ) : (
                   <ArrowDownRight size={14} color="$red10" />

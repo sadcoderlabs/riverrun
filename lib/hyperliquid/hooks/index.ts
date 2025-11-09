@@ -14,3 +14,4 @@ export * from './useUserFills';
 export * from './useWebData2';
 export * from './useActiveAssetCtx';
 export * from './useMetaAndAssetCtxs';
+export * from './useTrades';

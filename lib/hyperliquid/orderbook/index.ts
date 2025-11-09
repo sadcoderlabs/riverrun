@@ -4,10 +4,11 @@
  *
  * Note: useOrderBook has been migrated to the unified subscription system.
  * Use `useSubscription('orderBook', { coin, nSigFigs })` instead.
+ *
+ * Note: useRecentTrades has been split into two hooks:
+ * - useTrades (from '@/lib/hyperliquid/hooks') for Hyperliquid trades subscription
+ * - useLatestPrice (from '@/lib/riverrun/orderbook') for extracting latest price
  */
-
-// Hooks
-export * from './useRecentTrades';
 
 // Utilities
 export * from './orderbookPrecision';

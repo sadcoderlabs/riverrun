@@ -1,6 +1,14 @@
+/**
+ * Hook to subscribe to Hyperliquid's trades WebSocket feed
+ * for real-time trade updates.
+ *
+ * Provides a list of recent trades (up to last 10).
+ * Use with useLatestPrice to derive latest price and direction.
+ */
+
 import * as hl from '@nktkas/hyperliquid';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useSubscriptionClient } from '../client/useSubscriptionClient';
+import { getSubscriptionClient } from '../client/getter';
 
 export interface Trade {
   coin: string;
@@ -13,13 +21,11 @@ export interface Trade {
   users: [string, string]; // [Maker, Taker]
 }
 
-interface UseRecentTradesParams {
+interface UseTradesParams {
   coin: string;
 }
 
-interface UseRecentTradesResult {
-  /** Most recent trade for the coin */
-  lastTrade: Trade | undefined;
+interface UseTradesResult {
   /** All recent trades (up to last 10) */
   trades: Trade[];
   isLoading: boolean;
@@ -27,14 +33,14 @@ interface UseRecentTradesResult {
 }
 
 /**
- * Hook to subscribe to Hyperliquid's trades WebSocket feed
- * for real-time trade updates.
+ * Hook to subscribe to trades WebSocket feed
  *
- * Provides the most recent trade and maintains a list of recent trades.
+ * @example
+ * ```typescript
+ * const { trades, isLoading } = useTrades({ coin: 'BTC' });
+ * ```
  */
-export function useRecentTrades({ coin }: UseRecentTradesParams): UseRecentTradesResult {
-  const subscriptionClient = useSubscriptionClient();
-  const [lastTrade, setLastTrade] = useState<Trade | undefined>(undefined);
+export function useTrades({ coin }: UseTradesParams): UseTradesResult {
   const [trades, setTrades] = useState<Trade[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | undefined>(undefined);
@@ -47,7 +53,7 @@ export function useRecentTrades({ coin }: UseRecentTradesParams): UseRecentTrade
       try {
         await subscriptionRef.current.unsubscribe();
       } catch (err) {
-        console.error('Error unsubscribing from trades:', err);
+        console.error('[useTrades] Error unsubscribing:', err);
       }
       subscriptionRef.current = null;
     }
@@ -57,7 +63,6 @@ export function useRecentTrades({ coin }: UseRecentTradesParams): UseRecentTrade
     // Don't subscribe if coin is not provided
     if (!coin) {
       setIsLoading(false);
-      setLastTrade(undefined);
       setTrades([]);
       return;
     }
@@ -71,6 +76,8 @@ export function useRecentTrades({ coin }: UseRecentTradesParams): UseRecentTrade
         // Cleanup any existing subscription
         await cleanup();
 
+        const subscriptionClient = getSubscriptionClient();
+
         // Subscribe to trades
         const subscription = await subscriptionClient.trades(
           {
@@ -78,10 +85,6 @@ export function useRecentTrades({ coin }: UseRecentTradesParams): UseRecentTrade
           },
           (tradesData: Trade[]) => {
             if (isMounted && tradesData.length > 0) {
-              // Get the most recent trade (last in array)
-              const mostRecent = tradesData[tradesData.length - 1];
-              setLastTrade(mostRecent);
-
               // Update trades list, keeping last 10
               setTrades(prevTrades => {
                 const newTrades = [...prevTrades, ...tradesData].slice(-10);
@@ -96,7 +99,7 @@ export function useRecentTrades({ coin }: UseRecentTradesParams): UseRecentTrade
         subscriptionRef.current = subscription;
       } catch (err) {
         if (isMounted) {
-          console.error('Error setting up trades subscription:', err);
+          console.error('[useTrades] Error setting up subscription:', err);
           setError(err instanceof Error ? err : new Error('Failed to subscribe'));
           setIsLoading(false);
         }
@@ -110,10 +113,9 @@ export function useRecentTrades({ coin }: UseRecentTradesParams): UseRecentTrade
       isMounted = false;
       void cleanup();
     };
-  }, [coin, cleanup, subscriptionClient]);
+  }, [coin, cleanup]);
 
   return {
-    lastTrade,
     trades,
     isLoading,
     error,
