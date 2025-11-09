@@ -4,7 +4,7 @@
  */
 
 import { BaseWallet, BrowserProvider, Wallet } from 'ethers';
-import { getAgentPrivateKey, setAgentPrivateKey } from './agentPkStore';
+import { getAgentPrivateKey, setAgentPrivateKey } from '@/lib/hyperliquid/agent/agentPkStore';
 
 /**
  * Create a new random agent wallet

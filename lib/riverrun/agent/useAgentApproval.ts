@@ -5,16 +5,16 @@ import { Alert } from 'react-native';
 import { useHyperliquidClient } from '@/lib/hyperliquid/client/useHyperliquidClient';
 import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
 
-import { DEFAULT_AGENT_NAME } from '../constants';
-import { getOrCreateAgentSigner } from '../getOrCreateAgentSigner';
+import { DEFAULT_AGENT_NAME } from './constants';
+import { getOrCreateAgentSigner } from './getOrCreateAgentSigner';
 import {
   approveAgentOnChain,
   getAgentsFromChain,
   revokeAgentOnChain,
   verifyAgentApproval,
   type AgentInfo,
-} from '../agentBlockchain';
-import { clearAgentPrivateKey } from '../agentPkStore';
+} from '@/lib/hyperliquid/agent/agentBlockchain';
+import { clearAgentPrivateKey } from '@/lib/hyperliquid/agent/agentPkStore';
 
 /**
  * Hook for managing agent approval status
