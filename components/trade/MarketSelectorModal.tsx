@@ -1,5 +1,5 @@
 import { MarketListItem } from '@/components/trade/MarketListItem';
-import { useMarketSelector, useMarketsStore, type SortOption } from '@/lib/hyperliquid/market';
+import { useMarketSelector, useMarketsStore, type SortOption } from '@/lib/riverrun/market';
 import { ArrowDown, ArrowUp, Search } from '@tamagui/lucide-icons';
 import { useCallback, useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet } from 'react-native';

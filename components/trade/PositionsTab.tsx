@@ -4,7 +4,7 @@ import { formatSize } from '@/lib/hyperliquid/format/formatSize';
 import { formatValue } from '@/lib/hyperliquid/format/formatValue';
 import { useWebData2 } from '@/lib/hyperliquid/hooks/useWebData2';
 import { useActiveWallet } from '@/lib/riverrun/wallet';
-import { useMarketsStore } from '@/lib/hyperliquid/market';
+import { useMarketsStore } from '@/lib/riverrun/market';
 import { useSubscription, type MetaAndAssetCtxsData } from '@/lib/hyperliquid/subscription';
 import * as hl from '@nktkas/hyperliquid';
 import { useMemo, useState } from 'react';

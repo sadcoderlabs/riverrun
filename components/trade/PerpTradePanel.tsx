@@ -20,7 +20,7 @@ import {
   useMarginLeverage,
   useOrder,
 } from '@/lib/hyperliquid/hooks';
-import { useMarketsStore } from '@/lib/hyperliquid/market';
+import { useMarketsStore } from '@/lib/riverrun/market';
 
 import { Checkbox } from '@tamagui/checkbox';
 import { Check } from '@tamagui/lucide-icons';

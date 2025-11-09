@@ -1,4 +1,4 @@
-import { useMarketsStore } from '@/lib/hyperliquid/market';
+import { useMarketsStore } from '@/lib/riverrun/market';
 import { Home, TrendingUp } from '@tamagui/lucide-icons';
 import { Tabs } from 'expo-router';
 import { useEffect } from 'react';

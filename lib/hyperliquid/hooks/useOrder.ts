@@ -5,7 +5,7 @@ import { roundPrice } from '@/components/trade/priceUtils';
 import { getBuilderParam } from '@/lib/hyperliquid/builderFee/config';
 import { useBuilderFee } from '@/lib/hyperliquid/builderFee/hooks/useBuilderFee';
 import { useHyperliquidClient } from '../client/useHyperliquidClient';
-import { useMarketsStore } from '../market';
+import { useMarketsStore } from '@/lib/riverrun/market';
 
 /**
  * Validate that a size string has the correct number of decimal places

@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner-native';
 import { useHyperliquidClient } from '../client/useHyperliquidClient';
-import { useMarketsStore } from '../market';
+import { useMarketsStore } from '@/lib/riverrun/market';
 import { useActiveAssetData } from './useActiveAssetData';
 
 export interface MarginLeverage {

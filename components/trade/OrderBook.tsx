@@ -1,7 +1,8 @@
 import AdaptiveSelect from '@/components/global/AdaptiveSelect';
 import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
 import { formatSizeFixedDecimals } from '@/lib/hyperliquid/format/formatSizeFixedDecimals';
-import { useActiveAssetCtx, useMarketsStore } from '@/lib/hyperliquid/market';
+import { useActiveAssetCtx } from '@/lib/hyperliquid/hooks/useActiveAssetCtx';
+import { useMarketsStore } from '@/lib/riverrun/market';
 import {
   buildPrecisionMenu,
   useRecentTrades,

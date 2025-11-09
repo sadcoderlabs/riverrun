@@ -1,5 +1,5 @@
 import { MarketSelectorModal } from '@/components/trade/MarketSelectorModal';
-import { useMarketsStore, type SelectedMarket } from '@/lib/hyperliquid/market';
+import { useMarketsStore, type SelectedMarket } from '@/lib/riverrun/market';
 import { CandlestickChart, Menu } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';

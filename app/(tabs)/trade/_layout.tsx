@@ -1,6 +1,6 @@
 import { CoinInfo } from '@/components/trade/CoinInfo';
 import { PerpTabs } from '@/components/trade/PerpTabs';
-import { useMarketsStore } from '@/lib/hyperliquid/market';
+import { useMarketsStore } from '@/lib/riverrun/market';
 import { Slot, usePathname } from 'expo-router';
 import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';

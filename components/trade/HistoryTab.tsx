@@ -10,7 +10,7 @@ import { useUserFills } from '@/lib/hyperliquid/hooks';
 import type { Fill } from '@/lib/hyperliquid/types/fills';
 import { formatTimestamp } from '@/lib/hyperliquid/utils';
 import { useActiveWallet } from '@/lib/riverrun/wallet';
-import { useMarketsStore } from '@/lib/hyperliquid/market';
+import { useMarketsStore } from '@/lib/riverrun/market';
 import { useMemo, useState } from 'react';
 import { Button, Spinner, Text, View, XStack, YStack } from 'tamagui';
 

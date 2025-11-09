@@ -12,6 +12,4 @@ export * from './useOpenOrders';
 export * from './usePositionCount';
 export * from './useUserFills';
 export * from './useWebData2';
-
-// Re-export market-related hooks from market module
-export * from '../market';
+export * from './useActiveAssetCtx';

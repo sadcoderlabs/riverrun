@@ -1,4 +1,5 @@
-import { useActiveAssetCtx, useMarketsStore } from '@/lib/hyperliquid/market';
+import { useActiveAssetCtx } from '@/lib/hyperliquid/hooks/useActiveAssetCtx';
+import { useMarketsStore } from '@/lib/riverrun/market';
 import { Info } from '@tamagui/lucide-icons';
 import { useEffect, useMemo, useState } from 'react';
 import { Button, Popover, Text, XStack, YStack } from 'tamagui';
