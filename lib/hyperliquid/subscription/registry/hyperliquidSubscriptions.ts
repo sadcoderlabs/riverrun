@@ -279,38 +279,7 @@ subscriptionRegistry.register<OrderUpdatesParams, OrderUpdatesData>('orderUpdate
 });
 
 // ============================================================================
-// Configuration 7: metaAndAssetCtxs (for all asset contexts including markPx)
-// ============================================================================
-
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-interface MetaAndAssetCtxsParams {
-  // No params needed
-}
-
-interface MetaAndAssetCtxsData {
-  metaAndAssetCtxs: hl.MetaAndAssetCtxsResponse;
-}
-
-subscriptionRegistry.register<MetaAndAssetCtxsParams, MetaAndAssetCtxsData>('metaAndAssetCtxs', {
-  // Global key since this fetches all assets
-  getKey: () => 'global',
-
-  // No WebSocket subscription for this endpoint - HTTP only
-  // HTTP fetch should be handled by TanStack Query in consuming hook
-  // This is a dummy subscription that does nothing
-  subscribe: async (_params, _callback) => {
-    const dummySignal = new AbortController();
-    return {
-      unsubscribe: async () => {
-        dummySignal.abort();
-      },
-      resubscribeSignal: dummySignal.signal,
-    };
-  },
-});
-
-// ============================================================================
-// Configuration 8: activeAssetCtx (real-time market data for a specific coin)
+// Configuration 7: activeAssetCtx (real-time market data for a specific coin)
 // ============================================================================
 
 subscriptionRegistry.register<ActiveAssetCtxParams, ActiveAssetCtxData>('activeAssetCtx', {

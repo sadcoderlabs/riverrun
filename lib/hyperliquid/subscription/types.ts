@@ -68,14 +68,6 @@ export interface OrderUpdatesData {
 }
 
 /**
- * MetaAndAssetCtxs subscription data
- * Contains metadata and asset contexts for all markets
- */
-export interface MetaAndAssetCtxsData {
-  metaAndAssetCtxs: hl.MetaAndAssetCtxsResponse;
-}
-
-/**
  * ActiveAssetCtx subscription data
  * Contains real-time market data for a specific coin
  */

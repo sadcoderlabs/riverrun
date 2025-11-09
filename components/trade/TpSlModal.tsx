@@ -15,6 +15,7 @@ type Position = hl.ClearinghouseStateResponse['assetPositions'][number]['positio
 
 interface PositionWithMarkPrice extends Position {
   markPx: string;
+  szDecimals: number;
 }
 
 interface TpSlModalProps {

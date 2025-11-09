@@ -2,10 +2,9 @@ import { formatPercent } from '@/lib/hyperliquid/format/formatPercent';
 import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
 import { formatSize } from '@/lib/hyperliquid/format/formatSize';
 import { formatValue } from '@/lib/hyperliquid/format/formatValue';
-import { useWebData2 } from '@/lib/hyperliquid/hooks/useWebData2';
+import { useWebData2, useMetaAndAssetCtxs } from '@/lib/hyperliquid/hooks';
 import { useActiveWallet } from '@/lib/riverrun/wallet';
 import { useMarketsStore } from '@/lib/riverrun/market';
-import { useSubscription, type MetaAndAssetCtxsData } from '@/lib/hyperliquid/subscription';
 import * as hl from '@nktkas/hyperliquid';
 import { useMemo, useState } from 'react';
 import { Button, Spinner, Text, View, XStack, YStack } from 'tamagui';
@@ -26,8 +25,8 @@ export default function PositionsTab() {
   // Get WebData2 using unified subscription system (automatically shared via RefCount)
   const { data: webData, isLoading, error: webError } = useWebData2();
 
-  // Subscribe to market data using unified subscription system
-  const { data: marketData } = useSubscription<MetaAndAssetCtxsData>('metaAndAssetCtxs');
+  // Get market metadata using TanStack Query
+  const { marketDataMap } = useMetaAndAssetCtxs();
 
   const [closeModalOpen, setCloseModalOpen] = useState(false);
   const [tpSlModalOpen, setTpSlModalOpen] = useState(false);
@@ -37,28 +36,6 @@ export default function PositionsTab() {
   const handlePositionClick = (coin: string) => {
     setSelectedMarketByCoin(coin);
   };
-
-  // Create market data map from subscription
-  const marketDataMap = useMemo(() => {
-    if (!marketData?.metaAndAssetCtxs) {
-      return new Map<string, { markPx: string; szDecimals: number }>();
-    }
-
-    const [meta, assetCtxs] = marketData.metaAndAssetCtxs;
-    const dataMap = new Map<string, { markPx: string; szDecimals: number }>();
-
-    meta.universe.forEach((asset, index) => {
-      const assetCtx = assetCtxs[index];
-      if (assetCtx) {
-        dataMap.set(asset.name, {
-          markPx: assetCtx.markPx,
-          szDecimals: asset.szDecimals,
-        });
-      }
-    });
-
-    return dataMap;
-  }, [marketData]);
 
   // Extract and enrich positions from WebSocket data
   const positions = useMemo<PositionWithMarkPrice[]>(() => {
