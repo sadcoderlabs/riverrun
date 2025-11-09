@@ -6,7 +6,6 @@
 
 import type { OrderBookLevel } from '../orderbook/orderbookPrecision';
 import type { Fill } from '../types/fills';
-import type { Order } from '../types/orders';
 import type * as hl from '@nktkas/hyperliquid';
 
 /**
@@ -58,14 +57,6 @@ export interface ActiveAssetData {
  * Contains comprehensive account data including positions, margin, and spot balances
  */
 export type WebData2Data = hl.WebData2Response;
-
-/**
- * OrderUpdates subscription data
- * Contains user's open orders
- */
-export interface OrderUpdatesData {
-  orders: Order[];
-}
 
 /**
  * ActiveAssetCtx subscription data

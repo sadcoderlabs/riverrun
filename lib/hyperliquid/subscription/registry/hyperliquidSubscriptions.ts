@@ -5,19 +5,18 @@
  * Each configuration defines how to subscribe to a specific data feed.
  */
 
+import type * as hl from '@nktkas/hyperliquid';
 import { getSubscriptionClient } from '../../client/getter';
-import { subscriptionRegistry } from '../core/SubscriptionRegistry';
 import type { NSigFigs } from '../../orderbook/orderbookPrecision';
 import type { Fill } from '../../types/fills';
-import type * as hl from '@nktkas/hyperliquid';
+import { subscriptionRegistry } from '../core/SubscriptionRegistry';
 import type {
+  ActiveAssetCtxData,
+  ActiveAssetData,
   AllMidsData,
   OrderBookData,
   UserFillsData,
-  ActiveAssetData,
-  ActiveAssetCtxData,
 } from '../types';
-import type { Order, ApiOrderResponse } from '../../types/orders';
 
 // ============================================================================
 // Subscription Parameter Types
@@ -182,104 +181,7 @@ subscriptionRegistry.register<ActiveAssetDataParams, ActiveAssetData>('activeAss
 });
 
 // ============================================================================
-// Configuration 6: orderUpdates
-// ============================================================================
-
-interface OrderUpdatesParams {
-  user: string;
-}
-
-interface OrderUpdatesData {
-  orders: Order[];
-}
-
-// Helper function to transform API order to typed Order
-function transformApiOrder(apiOrder: ApiOrderResponse): Order {
-  const isTrigger =
-    apiOrder.isTrigger === true ||
-    (apiOrder.triggerPx && apiOrder.triggerPx !== '0.0' && apiOrder.triggerPx !== '0');
-
-  // Infer order type
-  let orderType = apiOrder.orderType;
-  if (!orderType) {
-    if (isTrigger) {
-      orderType =
-        apiOrder.limitPx === '0' || apiOrder.limitPx === '0.0' ? 'Stop Market' : 'Stop Limit';
-    } else if (apiOrder.tif === 'FrontendMarket' || apiOrder.tif === 'LiquidationMarket') {
-      orderType = 'Market';
-    } else {
-      orderType = 'Limit';
-    }
-  }
-
-  if (isTrigger) {
-    return {
-      coin: apiOrder.coin,
-      side: apiOrder.side,
-      limitPx: apiOrder.limitPx,
-      sz: apiOrder.sz,
-      oid: apiOrder.oid,
-      timestamp: apiOrder.timestamp,
-      origSz: apiOrder.origSz,
-      cloid: apiOrder.cloid ?? undefined,
-      reduceOnly: apiOrder.reduceOnly ?? false,
-      orderType: orderType as any,
-      tif: apiOrder.tif ?? null,
-      isTrigger: true,
-      triggerPx: apiOrder.triggerPx || '0.0',
-      triggerCondition: apiOrder.triggerCondition || 'N/A',
-    };
-  } else {
-    return {
-      coin: apiOrder.coin,
-      side: apiOrder.side,
-      limitPx: apiOrder.limitPx,
-      sz: apiOrder.sz,
-      oid: apiOrder.oid,
-      timestamp: apiOrder.timestamp,
-      origSz: apiOrder.origSz,
-      cloid: apiOrder.cloid ?? undefined,
-      reduceOnly: apiOrder.reduceOnly ?? false,
-      orderType: orderType as any,
-      tif: apiOrder.tif ?? null,
-      triggerPx: apiOrder.triggerPx,
-      triggerCondition: apiOrder.triggerCondition,
-    };
-  }
-}
-
-subscriptionRegistry.register<OrderUpdatesParams, OrderUpdatesData>('orderUpdates', {
-  // Key by user address
-  getKey: params => params.user,
-
-  // WebSocket subscription for incremental order updates
-  // HTTP fetch for initial orders should be handled by TanStack Query in consuming hook
-  subscribe: async (params, callback) => {
-    const subscriptionClient = getSubscriptionClient();
-
-    // Subscribe to order updates
-    const subscription = await subscriptionClient.orderUpdates(
-      {
-        user: params.user,
-      },
-      async (orderUpdates: any[]) => {
-        // Log everything we receive from WebSocket
-        console.log(
-          `[orderUpdates] WebSocket received ${orderUpdates.length} updates:`,
-          JSON.stringify(orderUpdates, null, 2),
-        );
-
-        // For now, just log and don't process
-        // This will help us understand what triggers 429 errors
-      },
-    );
-
-    return subscription;
-  },
-});
-
-// ============================================================================
-// Configuration 7: activeAssetCtx (real-time market data for a specific coin)
+// Configuration 6: activeAssetCtx (real-time market data for a specific coin)
 // ============================================================================
 
 subscriptionRegistry.register<ActiveAssetCtxParams, ActiveAssetCtxData>('activeAssetCtx', {
