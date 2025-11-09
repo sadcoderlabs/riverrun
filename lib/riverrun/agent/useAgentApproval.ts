@@ -21,7 +21,7 @@ import { clearAgentPrivateKey } from './agentPkStore';
  * Provides functions to check, approve, and revoke agent
  */
 export function useAgentApproval() {
-  const { getMasterExchangeClient, infoClient } = useHyperliquidClient();
+  const { getMasterExchangeClient } = useHyperliquidClient();
   const { wallet } = useActiveWallet();
   const [isLoading, setIsLoading] = useState(false);
   const [agentAddress, setAgentAddress] = useState<string | undefined>(undefined);
@@ -57,7 +57,7 @@ export function useAgentApproval() {
       const agentAddr = await agentSigner.getAddress();
 
       // Check if agent is approved
-      const approved = await verifyAgentApproval(infoClient, masterAddress, agentAddr);
+      const approved = await verifyAgentApproval(masterAddress, agentAddr);
 
       console.log('checkStatus debug:', {
         localAgentAddress: agentAddr,
@@ -76,7 +76,7 @@ export function useAgentApproval() {
     } finally {
       setIsLoading(false);
     }
-  }, [getMasterExchangeClient, infoClient, wallet]);
+  }, [getMasterExchangeClient, wallet]);
 
   /**
    * Get all agents for the current user
@@ -91,14 +91,14 @@ export function useAgentApproval() {
 
       const masterAddress = await getWalletAddress(masterExchangeClient.wallet);
 
-      const agents = await getAgentsFromChain(infoClient, masterAddress);
+      const agents = await getAgentsFromChain(masterAddress);
       setAllAgents(agents);
       return agents;
     } catch (error) {
       console.error('Failed to get all agents:', error);
       return [];
     }
-  }, [getMasterExchangeClient, infoClient]);
+  }, [getMasterExchangeClient]);
 
   /**
    * Revoke a named agent from blockchain using 0x0 address
@@ -146,7 +146,7 @@ export function useAgentApproval() {
                   }
 
                   // Verify revoke
-                  const agents = await getAgentsFromChain(infoClient, masterAddress);
+                  const agents = await getAgentsFromChain(masterAddress);
                   const stillExists = agents.some(
                     agent => agent.name?.toLowerCase() === agentName.toLowerCase(),
                   );
@@ -191,7 +191,7 @@ export function useAgentApproval() {
         );
       });
     },
-    [getMasterExchangeClient, infoClient, checkStatus, getAllAgents],
+    [getMasterExchangeClient, checkStatus, getAllAgents],
   );
 
   /**
@@ -228,8 +228,7 @@ export function useAgentApproval() {
       await approveAgentOnChain(masterExchangeClient, agentAddr, DEFAULT_AGENT_NAME);
 
       // Verify approval
-
-      const approved = await verifyAgentApproval(infoClient, masterAddress, agentAddr);
+      const approved = await verifyAgentApproval(masterAddress, agentAddr);
 
       if (approved) {
         setAgentAddress(agentAddr);
@@ -247,7 +246,7 @@ export function useAgentApproval() {
     } finally {
       setIsLoading(false);
     }
-  }, [getMasterExchangeClient, wallet, infoClient]);
+  }, [getMasterExchangeClient, wallet]);
 
   return {
     agentAddress,

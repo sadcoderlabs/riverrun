@@ -54,14 +54,10 @@ export async function revokeAgentOnChain(
 
 /**
  * Get all agents from blockchain
- * @param infoClient - Info client for querying blockchain
  * @param masterAddress - Master wallet address
  * @returns Array of agent information
  */
-export async function getAgentsFromChain(
-  _infoClient: hl.InfoClient,
-  masterAddress: string,
-): Promise<AgentInfo[]> {
+export async function getAgentsFromChain(masterAddress: string): Promise<AgentInfo[]> {
   try {
     const agents = await infoClient.extraAgents({ user: masterAddress });
     return agents.map((agent: { address: string; name?: string }) => ({
@@ -76,18 +72,16 @@ export async function getAgentsFromChain(
 
 /**
  * Verify if agent is approved on blockchain
- * @param infoClient - Info client for querying blockchain
  * @param masterAddress - Master wallet address
  * @param agentAddress - Agent address to verify
  * @returns True if agent is approved
  */
 export async function verifyAgentApproval(
-  infoClient: hl.InfoClient,
   masterAddress: string,
   agentAddress: string,
 ): Promise<boolean> {
   try {
-    const agents = await getAgentsFromChain(infoClient, masterAddress);
+    const agents = await getAgentsFromChain(masterAddress);
     return agents.some(agent => agent.address.toLowerCase() === agentAddress.toLowerCase());
   } catch (error) {
     console.error('Failed to verify agent approval:', error);
