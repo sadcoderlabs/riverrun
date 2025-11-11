@@ -1,19 +1,8 @@
 import { createStore } from 'zustand/vanilla';
-import { useStore } from 'zustand';
 
 import type { AgentInfo, AgentState } from '../ports/types';
 
 interface AgentStateStore extends AgentState {
-  /**
-   * Set agent address
-   */
-  setAgentAddress: (address: string | undefined) => void;
-
-  /**
-   * Set approval status
-   */
-  setIsApproved: (isApproved: boolean) => void;
-
   /**
    * Set all agents list
    */
@@ -23,11 +12,6 @@ interface AgentStateStore extends AgentState {
    * Update multiple state fields at once
    */
   updateState: (partial: Partial<AgentState>) => void;
-
-  /**
-   * Reset to initial state
-   */
-  reset: () => void;
 }
 
 const initialState: AgentState = {
@@ -52,23 +36,6 @@ const initialState: AgentState = {
 export const agentStateStore = createStore<AgentStateStore>(set => ({
   ...initialState,
 
-  setAgentAddress: address => set({ agentAddress: address }),
-  setIsApproved: isApproved => set({ isApproved }),
   setAllAgents: agents => set({ allAgents: agents }),
   updateState: partial => set(partial),
-  reset: () => set(initialState),
 }));
-
-/**
- * React hook for accessing agent state store
- *
- * This binds the vanilla store to React, allowing components to subscribe
- * to state changes and trigger re-renders.
- *
- * @example
- * ```tsx
- * const agentAddress = useAgentStateStore(state => state.agentAddress);
- * const isApproved = useAgentStateStore(state => state.isApproved);
- * ```
- */
-export const useAgentStateStore = () => useStore(agentStateStore);
