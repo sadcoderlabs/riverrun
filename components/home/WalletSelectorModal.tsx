@@ -1,5 +1,4 @@
-import { useWalletComposition } from '@/core/composition';
-import { useActiveWallet } from '@/core/composition/hooks/useActiveWallet';
+import { useWalletContext } from '@/core/composition';
 import { LogOut } from '@tamagui/lucide-icons';
 import { Modal, Pressable, StyleSheet, ScrollView } from 'react-native';
 import { toast } from 'sonner-native';
@@ -14,14 +13,13 @@ interface WalletSelectorModalProps {
 }
 
 export function WalletSelectorModal({ visible, onClose }: WalletSelectorModalProps) {
-  const { walletService } = useWalletComposition();
-  const { selectedSource } = useActiveWallet();
+  const { wallet, connect, disconnect, setActive, listAvailable } = useWalletContext();
   const [availableWallets, setAvailableWallets] = useState<WalletInfo[]>([]);
 
   // Fetch available wallets
   useEffect(() => {
-    walletService.listAvailable().then(setAvailableWallets);
-  }, [walletService]);
+    listAvailable().then(setAvailableWallets);
+  }, [listAvailable]);
 
   // Get wallet status for each type
   const privyWallet = availableWallets.find(w => w.source === 'privy');
@@ -29,7 +27,7 @@ export function WalletSelectorModal({ visible, onClose }: WalletSelectorModalPro
 
   const handleSwitchWallet = async (source: 'privy' | 'reown') => {
     try {
-      await walletService.setActive(source);
+      await setActive(source);
       onClose();
     } catch (error) {
       console.error('Error switching wallet:', error);
@@ -41,7 +39,7 @@ export function WalletSelectorModal({ visible, onClose }: WalletSelectorModalPro
 
   const handleDisconnectPrivy = async () => {
     try {
-      await walletService.disconnect('privy');
+      await disconnect('privy');
       toast.success('Wallet Disconnected', {
         description: 'Successfully disconnected from Privy',
       });
@@ -55,7 +53,7 @@ export function WalletSelectorModal({ visible, onClose }: WalletSelectorModalPro
 
   const handleDisconnectReown = async () => {
     try {
-      await walletService.disconnect('reown');
+      await disconnect('reown');
       toast.success('Wallet Disconnected', {
         description: 'Successfully disconnected from Reown',
       });
@@ -72,7 +70,7 @@ export function WalletSelectorModal({ visible, onClose }: WalletSelectorModalPro
     // Small delay to let modal close first
     setTimeout(async () => {
       try {
-        await walletService.connect('privy');
+        await connect('privy');
       } catch (error) {
         console.error('Error connecting Privy wallet:', error);
         toast.error('Connection Failed', {
@@ -87,7 +85,7 @@ export function WalletSelectorModal({ visible, onClose }: WalletSelectorModalPro
     // Small delay to let modal close first
     setTimeout(async () => {
       try {
-        await walletService.connect('reown');
+        await connect('reown');
       } catch (error) {
         console.error('Error connecting Reown wallet:', error);
         toast.error('Connection Failed', {
@@ -150,7 +148,7 @@ export function WalletSelectorModal({ visible, onClose }: WalletSelectorModalPro
                   <YStack gap="$2">
                     <WalletListItem
                       wallet={privyWallet}
-                      isSelected={privyWallet.source === selectedSource}
+                      isSelected={privyWallet.address === wallet?.address}
                       onPress={() => handleSwitchWallet('privy')}
                     />
                     <Button
@@ -188,7 +186,7 @@ export function WalletSelectorModal({ visible, onClose }: WalletSelectorModalPro
                   <YStack gap="$2">
                     <WalletListItem
                       wallet={reownWallet}
-                      isSelected={reownWallet.source === selectedSource}
+                      isSelected={reownWallet.address === wallet?.address}
                       onPress={() => handleSwitchWallet('reown')}
                     />
                     <Button

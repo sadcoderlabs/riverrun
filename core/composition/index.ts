@@ -6,5 +6,5 @@
  */
 
 export { WalletCompositionProvider, useWalletComposition } from './walletComposition';
-export { useActiveWallet } from './hooks/useActiveWallet';
-export type { UseActiveWalletResult } from './hooks/useActiveWallet';
+export { useWalletContext } from './hooks/useWalletContext';
+export type { UseWalletContextResult } from './hooks/useWalletContext';
