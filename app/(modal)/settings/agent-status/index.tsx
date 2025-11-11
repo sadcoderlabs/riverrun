@@ -1,6 +1,6 @@
 import { Button } from '@/components/global/Button';
 import { DEFAULT_AGENT_NAME } from '@/lib/riverrun/agent/constants';
-import { useAgentApproval } from '@/lib/riverrun/agent/useAgentApproval';
+import { useAgentContext } from '@/core/composition';
 import { ArrowLeft } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
@@ -18,7 +18,7 @@ function shortenAddress(address: string | undefined): string {
 export default function AgentStatus() {
   const router = useRouter();
 
-  // Agent approval
+  // Agent context
   const {
     agentAddress,
     isApproved: isAgentApproved,
@@ -28,7 +28,7 @@ export default function AgentStatus() {
     approve: approveAgent,
     revoke: revokeAgent,
     getAllAgents,
-  } = useAgentApproval();
+  } = useAgentContext();
 
   // Loading and refresh states
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -91,10 +91,19 @@ export default function AgentStatus() {
         {
           text: 'Approve',
           onPress: async () => {
-            const success = await approveAgent();
-            if (success) {
-              await checkAgentStatus();
-              await getAllAgents();
+            try {
+              const success = await approveAgent();
+              if (success) {
+                Alert.alert('Success', `${DEFAULT_AGENT_NAME} approved successfully`);
+                await checkAgentStatus();
+                await getAllAgents();
+              }
+            } catch (error) {
+              console.error('Failed to approve agent:', error);
+              Alert.alert(
+                'Error',
+                error instanceof Error ? error.message : 'Failed to approve agent',
+              );
             }
           },
         },
@@ -107,11 +116,45 @@ export default function AgentStatus() {
    */
   const handleRevokeAgent = useCallback(
     async (agentName: string) => {
-      const success = await revokeAgent(agentName);
-      if (success) {
-        await checkAgentStatus();
-        await getAllAgents();
-      }
+      const isRiverrunAgent = agentName === DEFAULT_AGENT_NAME;
+
+      Alert.alert(
+        isRiverrunAgent ? `Revoke ${DEFAULT_AGENT_NAME}` : 'Revoke Agent',
+        isRiverrunAgent
+          ? `This will revoke the ${DEFAULT_AGENT_NAME} from the blockchain and clear local storage. You will need to approve a new agent for future trading.`
+          : `This will revoke "${agentName}" from the blockchain. The agent will no longer be able to trade on your behalf. Continue?`,
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel',
+          },
+          {
+            text: 'Revoke',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                const success = await revokeAgent(agentName);
+                if (success) {
+                  Alert.alert(
+                    'Success',
+                    isRiverrunAgent
+                      ? `${DEFAULT_AGENT_NAME} revoked successfully`
+                      : `"${agentName}" has been revoked successfully.`,
+                  );
+                  await checkAgentStatus();
+                  await getAllAgents();
+                }
+              } catch (error) {
+                console.error('Failed to revoke agent:', error);
+                Alert.alert(
+                  'Error',
+                  error instanceof Error ? error.message : 'Failed to revoke agent',
+                );
+              }
+            },
+          },
+        ],
+      );
     },
     [revokeAgent, checkAgentStatus, getAllAgents],
   );
@@ -123,12 +166,7 @@ export default function AgentStatus() {
 
   return (
     <PortalProvider>
-      <YStack
-        flex={1}
-        backgroundColor="$background"
-        
-        
-      >
+      <YStack flex={1} backgroundColor="$background">
         {/* Header */}
         <XStack
           alignItems="center"

@@ -1,7 +1,7 @@
 import * as hl from '@nktkas/hyperliquid';
 import { useMemo } from 'react';
 
-import { useAgentExchangeClient } from '@/lib/riverrun/agent/useAgentExchangeClient';
+import { useAgentExchangeClient } from '@/lib/hyperliquid/client/useAgentExchangeClient';
 import { useMasterExchangeClient } from '@/lib/hyperliquid/client/useMasterExchangeClient';
 
 interface UseHyperliquidClientResult {
