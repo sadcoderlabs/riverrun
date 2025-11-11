@@ -8,6 +8,7 @@
  * 1. WalletCompositionProvider (no dependencies)
  * 2. AgentCompositionProvider (depends on Wallet)
  * 3. BuilderFeeCompositionProvider (depends on Wallet)
+ * 4. ReferralCompositionProvider (depends on Wallet)
  * ... (future contexts)
  */
 
@@ -16,6 +17,7 @@ import React from 'react';
 import { WalletCompositionProvider } from '../contexts/wallet/reactNative/walletComposition';
 import { AgentCompositionProvider } from '../contexts/agent/reactNative/agentComposition';
 import { BuilderFeeCompositionProvider } from '../contexts/builderFee/reactNative/builderFeeComposition';
+import { ReferralCompositionProvider } from '../contexts/referral/reactNative/referralComposition';
 
 interface AppCompositionProviderProps {
   children: React.ReactNode;
@@ -40,7 +42,9 @@ export function AppCompositionProvider({ children }: AppCompositionProviderProps
   return (
     <WalletCompositionProvider>
       <AgentCompositionProvider>
-        <BuilderFeeCompositionProvider>{children}</BuilderFeeCompositionProvider>
+        <BuilderFeeCompositionProvider>
+          <ReferralCompositionProvider>{children}</ReferralCompositionProvider>
+        </BuilderFeeCompositionProvider>
       </AgentCompositionProvider>
     </WalletCompositionProvider>
   );

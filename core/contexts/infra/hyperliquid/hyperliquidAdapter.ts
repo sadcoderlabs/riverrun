@@ -9,7 +9,6 @@
  * - Stateless and simple
  */
 
-import * as hl from '@nktkas/hyperliquid';
 import type { Signer } from 'ethers';
 
 import * as infoClient from '@/lib/hyperliquid/client/infoClient';
@@ -121,6 +120,49 @@ export class HyperliquidAdapter {
     } catch (error) {
       console.error('[HyperliquidAdapter] Failed to get max builder fee:', error);
       return 0;
+    }
+  }
+
+  // ============================================================================
+  // Referral Operations
+  // ============================================================================
+
+  /**
+   * Set referrer code for the user
+   *
+   * @param signer - Signer for the master wallet
+   * @param code - Referral code to set
+   */
+  async setReferrer(signer: Signer, code: string): Promise<void> {
+    const client = getMasterExchangeClient(signer);
+    await client.setReferrer({ code });
+  }
+
+  /**
+   * Get referral information for a user
+   *
+   * @param userAddress - User address
+   * @returns Referral information including referrer, code, and cumulative volume
+   */
+  async getReferralInfo(userAddress: string): Promise<{
+    referrer: string | undefined;
+    code: string | undefined;
+    cumVlm: string;
+  }> {
+    try {
+      const referral = await infoClient.referralInfo({ user: userAddress });
+      return {
+        referrer: referral.referredBy?.referrer,
+        code: referral.referredBy?.code,
+        cumVlm: referral.cumVlm,
+      };
+    } catch (error) {
+      console.error('[HyperliquidAdapter] Failed to get referral info:', error);
+      return {
+        referrer: undefined,
+        code: undefined,
+        cumVlm: '0',
+      };
     }
   }
 }
