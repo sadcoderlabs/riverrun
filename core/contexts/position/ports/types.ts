@@ -41,8 +41,6 @@ export interface PositionMetrics {
 export interface PositionState {
   /** List of enriched positions */
   positions: EnrichedPosition[];
-  /** Number of open positions */
-  positionCount: number;
   /** Whether positions are being loaded */
   isLoading: boolean;
 }

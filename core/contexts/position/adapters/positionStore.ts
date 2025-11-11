@@ -34,7 +34,6 @@ interface PositionStateActions {
  */
 const initialState: PositionState = {
   positions: [],
-  positionCount: 0,
   isLoading: false,
 };
 
@@ -47,7 +46,6 @@ export const positionStore = createStore<PositionState & PositionStateActions>(s
   setPositions: (positions: EnrichedPosition[]) =>
     set({
       positions,
-      positionCount: positions.length,
     }),
 
   setLoading: (isLoading: boolean) =>

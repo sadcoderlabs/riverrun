@@ -24,7 +24,7 @@ export function usePositions(): EnrichedPosition[] {
  * @returns Number of open positions
  */
 export function usePositionCount(): number {
-  return useStore(positionStore, state => state.positionCount);
+  return useStore(positionStore, state => state.positions.length);
 }
 
 /**
