@@ -21,7 +21,7 @@ import type { AgentApprovalStatus, AgentInfo, AgentWallet } from '../ports/types
 import type { ActiveWallet } from '../../wallet/ports/types';
 import { HyperliquidAgentAdapter } from '../adapters/hyperliquidAgentAdapter';
 import { AgentStorageAdapter } from '../adapters/agentStorageAdapter';
-import { AgentSignerAdapter } from '../adapters/agentSignerAdapter';
+import { AgentWalletManager } from './agentWalletManager';
 import { agentStateStore } from '../adapters/agentStateStore';
 
 /**
@@ -33,7 +33,7 @@ interface AgentOperationContext {
   wallet: ActiveWallet;
   blockchainAdapter: HyperliquidAgentAdapter;
   storageAdapter: AgentStorageAdapter;
-  signerAdapter: AgentSignerAdapter;
+  walletManager: AgentWalletManager;
 }
 
 /**
@@ -67,10 +67,10 @@ export class AgentService implements AgentPort {
 
     const masterAddress = await getWalletAddress(masterExchangeClient.wallet);
 
-    // Create adapters
+    // Create adapters and managers
     const blockchainAdapter = new HyperliquidAgentAdapter(masterAddress, masterExchangeClient);
     const storageAdapter = new AgentStorageAdapter(masterAddress);
-    const signerAdapter = new AgentSignerAdapter(provider, storageAdapter);
+    const walletManager = new AgentWalletManager(provider, storageAdapter);
 
     return {
       masterAddress,
@@ -78,8 +78,25 @@ export class AgentService implements AgentPort {
       wallet,
       blockchainAdapter,
       storageAdapter,
-      signerAdapter,
+      walletManager,
     };
+  }
+
+  /**
+   * Verify if agent is approved on blockchain (business logic)
+   * @private
+   */
+  private async verifyAgentApprovalOnChain(
+    blockchainAdapter: HyperliquidAgentAdapter,
+    agentAddress: string,
+  ): Promise<boolean> {
+    try {
+      const agents = await blockchainAdapter.getAgents();
+      return agents.some(agent => agent.address.toLowerCase() === agentAddress.toLowerCase());
+    } catch (error) {
+      console.error('Failed to verify agent approval:', error);
+      return false;
+    }
   }
 
   /**
@@ -95,10 +112,13 @@ export class AgentService implements AgentPort {
       }
 
       // Get or create agent wallet
-      const agentWallet = await ctx.signerAdapter.getOrCreateAgentSigner();
+      const agentWallet = await ctx.walletManager.getOrCreateWallet();
 
       // Check if agent is approved on blockchain
-      const isApproved = await ctx.blockchainAdapter.verifyApproval(agentWallet.address);
+      const isApproved = await this.verifyAgentApprovalOnChain(
+        ctx.blockchainAdapter,
+        agentWallet.address,
+      );
 
       console.log('checkApprovalStatus:', {
         agentAddress: agentWallet.address,
@@ -137,13 +157,16 @@ export class AgentService implements AgentPort {
       }
 
       // Get or create agent wallet
-      const agentWallet = await ctx.signerAdapter.getOrCreateAgentSigner();
+      const agentWallet = await ctx.walletManager.getOrCreateWallet();
 
       // Approve agent on blockchain
       await ctx.blockchainAdapter.approveAgent(agentWallet.address, DEFAULT_AGENT_NAME);
 
       // Verify approval
-      const isApproved = await ctx.blockchainAdapter.verifyApproval(agentWallet.address);
+      const isApproved = await this.verifyAgentApprovalOnChain(
+        ctx.blockchainAdapter,
+        agentWallet.address,
+      );
 
       if (!isApproved) {
         throw new Error('Agent approval was not confirmed on blockchain');
@@ -244,7 +267,7 @@ export class AgentService implements AgentPort {
       throw new Error('Failed to get wallet context');
     }
 
-    return ctx.signerAdapter.getOrCreateAgentSigner();
+    return ctx.walletManager.getOrCreateWallet();
   }
 
   /**
@@ -287,7 +310,7 @@ export class AgentService implements AgentPort {
         return false;
       }
 
-      return ctx.blockchainAdapter.verifyApproval(agentAddress);
+      return this.verifyAgentApprovalOnChain(ctx.blockchainAdapter, agentAddress);
     } catch (error) {
       console.error('Failed to verify agent approval:', error);
       return false;

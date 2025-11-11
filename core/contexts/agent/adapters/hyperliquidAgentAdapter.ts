@@ -58,19 +58,4 @@ export class HyperliquidAgentAdapter {
       return [];
     }
   }
-
-  /**
-   * Verify if agent is approved on blockchain
-   * @param agentAddress - Agent address to verify
-   * @returns True if agent is approved
-   */
-  async verifyApproval(agentAddress: string): Promise<boolean> {
-    try {
-      const agents = await this.getAgents();
-      return agents.some(agent => agent.address.toLowerCase() === agentAddress.toLowerCase());
-    } catch (error) {
-      console.error('Failed to verify agent approval:', error);
-      return false;
-    }
-  }
 }
