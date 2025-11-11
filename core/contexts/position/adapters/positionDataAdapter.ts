@@ -1,58 +1,45 @@
 /**
  * Position Data Adapter
  *
- * Implements HTTP + WebSocket hybrid strategy for position data:
- * 1. Initial fetch via HTTP for fast display (~100ms)
- * 2. Establish WebSocket subscription for real-time updates (~1s)
+ * Adapts WebData2Repository to PositionDataPort interface.
+ * This is a true Adapter in DDD terms - it simply adapts one interface to another.
  *
- * This provides better UX by showing data immediately while maintaining
- * real-time updates through WebSocket.
+ * The Repository handles:
+ * - HTTP + WebSocket hybrid strategy
+ * - Data source coordination
+ * - Error handling
+ *
+ * The Adapter handles:
+ * - Interface adaptation (Repository → Port)
+ * - Type conversion if needed
  */
 
-import type * as hl from '@nktkas/hyperliquid';
-import type { SubscriptionHandle, SubscriptionPort, WebData2Data } from '../ports/subscriptionPort';
+import type { WebData2Repository } from '@/core/infra/hyperliquid/repositories';
+import type { PositionData, PositionDataPort, SubscriptionHandle } from '../ports/positionDataPort';
 
 /**
  * Position Data Adapter
  *
- * Coordinates HTTP fetch and WebSocket subscription for position data
+ * Adapts WebData2Repository to implement PositionDataPort
  */
-export class PositionDataAdapter {
-  constructor(
-    private readonly httpClient: hl.InfoClient,
-    private readonly subscriptionPort: SubscriptionPort,
-  ) {}
+export class PositionDataAdapter implements PositionDataPort {
+  constructor(private readonly repository: WebData2Repository) {}
 
   /**
-   * Start position data subscription with HTTP + WebSocket hybrid strategy
+   * Subscribe to position data
    *
-   * Flow:
-   * 1. Fetch initial data via HTTP API (fast, ~100ms)
-   * 2. Invoke callback immediately with HTTP data
-   * 3. Establish WebSocket subscription for real-time updates
-   * 4. Future updates come through WebSocket
+   * Delegates to Repository which handles HTTP + WebSocket hybrid strategy
    *
    * @param userAddress - User address to subscribe to
-   * @param callback - Callback invoked with position data (both HTTP and WS)
+   * @param callback - Called when position data updates
    * @returns Subscription handle for cleanup
    */
-  async startSubscription(
+  async subscribe(
     userAddress: string,
-    callback: (data: WebData2Data) => void,
+    callback: (data: PositionData) => void,
   ): Promise<SubscriptionHandle> {
-    // Step 1: HTTP fetch for immediate data
-    try {
-      const httpData = await this.httpClient.webData2({ user: userAddress });
-      // Immediately show data to user (~100ms)
-      callback(httpData);
-    } catch (error) {
-      console.warn('[PositionDataAdapter] HTTP fetch failed, will rely on WebSocket:', error);
-      // Not fatal - WebSocket will provide data shortly
-    }
-
-    // Step 2: Establish WebSocket subscription for real-time updates
-    const handle = await this.subscriptionPort.subscribeWebData2(userAddress, callback);
-
-    return handle;
+    // Simply delegate to repository
+    // Repository handles all the complexity (HTTP + WS hybrid, error handling, etc.)
+    return this.repository.subscribe(userAddress, callback);
   }
 }

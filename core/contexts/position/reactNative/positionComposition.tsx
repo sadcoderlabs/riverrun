@@ -7,9 +7,9 @@
 
 import React, { createContext, useMemo, useEffect } from 'react';
 import { subscriptionManager } from '@/core/infra/hyperliquid/subscription';
+import { WebData2Repository } from '@/core/infra/hyperliquid/repositories';
 import { getInfoClient } from '@/lib/hyperliquid/client/getter';
 import { PositionService } from '../application/positionService';
-import { SubscriptionAdapter } from '../adapters/subscriptionAdapter';
 import { PositionDataAdapter } from '../adapters/positionDataAdapter';
 import { MarketAdapter } from '../adapters/marketAdapter';
 import type { PositionPort } from '../ports/positionPort';
@@ -36,12 +36,19 @@ interface PositionCompositionProviderProps {
 /**
  * Position Composition Provider
  *
- * Sets up the dependency graph for the position context:
- * - PositionDataAdapter (HTTP + WS hybrid strategy)
- *   - InfoClient (HTTP fetch)
- *   - SubscriptionAdapter (WebSocket subscription)
- * - MarketAdapter (wraps market store)
- * - PositionService (core business logic)
+ * Sets up the dependency graph following Repository Pattern:
+ *
+ * Infrastructure Layer:
+ * - InfoClient: HTTP API client
+ * - SubscriptionManager: WebSocket manager
+ * - WebData2Repository: HTTP + WS hybrid strategy (reusable)
+ *
+ * Adapter Layer:
+ * - PositionDataAdapter: Adapts Repository → PositionDataPort
+ * - MarketAdapter: Adapts market store → MarketPort
+ *
+ * Domain Layer:
+ * - PositionService: Core business logic (depends on Ports)
  *
  * The PositionService autonomously monitors active wallet changes
  * and manages position subscriptions internally.
@@ -49,11 +56,17 @@ interface PositionCompositionProviderProps {
 export function PositionCompositionProvider({ children }: PositionCompositionProviderProps) {
   // Create service instances (stable across renders)
   const positionService = useMemo(() => {
+    // Infrastructure: HTTP & WebSocket clients
     const infoClient = getInfoClient();
-    const subscriptionAdapter = new SubscriptionAdapter(subscriptionManager);
-    const positionDataAdapter = new PositionDataAdapter(infoClient, subscriptionAdapter);
+
+    // Infrastructure: Repository with HTTP + WS hybrid strategy
+    const webData2Repository = new WebData2Repository(infoClient, subscriptionManager);
+
+    // Adapter: Repository → Domain Port
+    const positionDataAdapter = new PositionDataAdapter(webData2Repository);
     const marketAdapter = new MarketAdapter();
 
+    // Domain: Service depends on Ports (not concrete implementations)
     return new PositionService(positionDataAdapter, marketAdapter);
   }, []);
 

@@ -24,13 +24,20 @@
 
 ## 架構設計
 
+### 目錄結構
+
 ```
-core/infra/hyperliquid/subscription/
-├── types.ts                  # 核心類型定義
-├── subscriptionRegistry.ts   # 訂閱配置註冊表
-├── subscriptionManager.ts    # 訂閱管理器 (Pure JS Map)
-├── configs.ts               # 訂閱配置 (目前: webData2)
-└── index.ts                # 統一導出
+core/infra/hyperliquid/
+├── subscription/             # WebSocket 訂閱管理
+│   ├── types.ts             # 核心類型定義
+│   ├── subscriptionRegistry.ts  # 訂閱配置註冊表
+│   ├── subscriptionManager.ts   # 訂閱管理器 (Pure JS Map)
+│   ├── configs.ts           # 訂閱配置
+│   └── index.ts            # 統一導出
+│
+└── repositories/            # Repository Pattern (DDD) ⭐ 新增
+    ├── webData2Repository.ts   # WebData2 數據訪問
+    └── index.ts            # 統一導出
 ```
 
 ### 核心組件
@@ -56,6 +63,53 @@ subscriptionRegistry.register<WebData2Params, WebData2Data>('webData2', {
   },
 });
 ```
+
+#### 3. Repository Pattern ⭐ 核心設計
+
+**為什麼需要 Repository？**
+
+Repository 是 DDD 的標準模式，用於封裝數據訪問邏輯：
+
+- ✅ 隱藏數據源細節（HTTP、WebSocket、Cache）
+- ✅ 實現 HTTP + WS 混合策略
+- ✅ 可被多個 Context 複用
+- ✅ 符合 DDD 分層原則
+
+**WebData2Repository 示例**：
+
+```typescript
+export class WebData2Repository {
+  constructor(
+    private readonly httpClient: hl.InfoClient,
+    private readonly subscriptionManager: ISubscriptionManager,
+  ) {}
+
+  async subscribe(
+    userAddress: string,
+    callback: (data: hl.WebData2Response) => void,
+  ): Promise<SubscriptionHandle> {
+    // Step 1: HTTP fetch (~100ms) - 快速顯示
+    const httpData = await this.httpClient.webData2({ user: userAddress });
+    callback(httpData);
+
+    // Step 2: WebSocket subscription (~1s) - 實時更新
+    const handle = await this.subscriptionManager.subscribe(
+      'webData2',
+      { user: userAddress },
+      callback,
+    );
+
+    return { unsubscribe: () => this.subscriptionManager.unsubscribe(handle) };
+  }
+}
+```
+
+**關鍵優勢**：
+
+1. **可複用**: WebData2Repository 可被 Position、Account 等多個 Context 使用
+2. **職責單一**: Repository 只負責數據訪問，不包含業務邏輯
+3. **易於測試**: 可以 mock Repository 測試 Service
+4. **符合 DDD**: Infrastructure Layer 的標準設計模式
 
 ---
 
@@ -104,83 +158,208 @@ useEffect(() => {
 
 將所有 subscription 遷移到 `core/infra/hyperliquid/subscription/`，完全移除 `lib/hyperliquid/subscription/`。
 
-### 📋 遷移檢查清單
+### 📋 遷移檢查清單 (Repository Pattern)
 
 當準備遷移某個 subscription 時：
 
-- [ ] 在 `configs.ts` 中註冊新的 subscription type
-- [ ] 創建對應的 Adapter 實現 HTTP + WS 混合策略（如需要）
-- [ ] 更新對應的 Context 使用新的 infrastructure
-- [ ] 測試 AppState Lifecycle（pause/resume）
-- [ ] 測試 RefCount 機制（多訂閱者共享連接）
-- [ ] 移除 `lib/hyperliquid/subscription/` 中對應的使用
+1. **Infrastructure Layer**
+   - [ ] 在 `configs.ts` 中註冊新的 subscription type
+   - [ ] 創建 Repository（封裝 HTTP + WS 混合策略）
 
-### 📚 遷移範例：Position Context
+2. **Domain Layer**
+   - [ ] 創建 Port 接口（Domain 抽象）
+   - [ ] 創建 Adapter（Repository → Port）
+   - [ ] 更新 Service 使用 Port
 
-Position Context 是第一個完成遷移的範例，展示了完整的遷移模式。
+3. **Testing**
+   - [ ] 測試 AppState Lifecycle（pause/resume）
+   - [ ] 測試 RefCount 機制（多訂閱者共享連接）
+   - [ ] 測試 HTTP + WS 混合策略
+
+4. **Cleanup**
+   - [ ] 移除 `lib/hyperliquid/subscription/` 中對應的使用
+
+### 📚 遷移範例：Position Context (Repository Pattern)
+
+Position Context 採用完整的 Repository Pattern，是標準的遷移範例。
+
+#### 架構分層
+
+```
+┌─────────────────────────────────────────────────┐
+│          Infrastructure Layer                    │
+│  ┌──────────────────────────────────────────┐  │
+│  │ WebData2Repository                       │  │
+│  │ - HTTP + WS hybrid strategy              │  │
+│  │ - Reusable across contexts               │  │
+│  └──────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────┘
+                    ↑
+                    │ implements
+                    │
+┌─────────────────────────────────────────────────┐
+│            Adapter Layer                         │
+│  ┌──────────────────────────────────────────┐  │
+│  │ PositionDataAdapter                      │  │
+│  │ - Adapts Repository → PositionDataPort   │  │
+│  │ - Simple interface translation           │  │
+│  └──────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────┘
+                    ↑
+                    │ depends on
+                    │
+┌─────────────────────────────────────────────────┐
+│            Domain Layer                          │
+│  ┌──────────────────────────────────────────┐  │
+│  │ PositionService                          │  │
+│  │ - Business logic                         │  │
+│  │ - Depends on PositionDataPort (abstract) │  │
+│  └──────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────┘
+```
 
 #### 目錄結構
 
 ```
-core/contexts/position/
-├── ports/                     # Interface definitions
-│   ├── subscriptionPort.ts   # WebSocket 訂閱介面
-│   └── positionPort.ts       # Position 服務介面
-├── adapters/                 # Infrastructure adapters
-│   ├── subscriptionAdapter.ts      # WebSocket 訂閱 adapter
-│   ├── positionDataAdapter.ts      # HTTP + WS 混合策略 ⭐
-│   └── marketAdapter.ts            # 市場數據 adapter
-├── application/
-│   └── positionService.ts    # 核心業務邏輯
-└── reactNative/
-    └── positionComposition.tsx  # 依賴注入組裝
+core/
+├── infra/hyperliquid/repositories/
+│   └── webData2Repository.ts        # ⭐ Repository (可複用)
+│
+└── contexts/position/
+    ├── ports/
+    │   ├── positionDataPort.ts      # Domain 抽象
+    │   └── positionPort.ts
+    ├── adapters/
+    │   ├── positionDataAdapter.ts   # ⭐ Repository → Port
+    │   └── marketAdapter.ts
+    ├── application/
+    │   └── positionService.ts       # 依賴 Port
+    └── reactNative/
+        └── positionComposition.tsx  # 組裝依賴
 ```
 
-#### 關鍵設計：PositionDataAdapter ⭐
+#### 關鍵設計：Repository Pattern ⭐
 
-實現 HTTP + WebSocket 混合策略：
+**1. Repository（Infrastructure Layer）**
 
 ```typescript
-export class PositionDataAdapter {
+// core/infra/hyperliquid/repositories/webData2Repository.ts
+export class WebData2Repository {
   constructor(
     private readonly httpClient: hl.InfoClient,
-    private readonly subscriptionPort: SubscriptionPort,
+    private readonly subscriptionManager: ISubscriptionManager,
   ) {}
 
-  async startSubscription(
+  async subscribe(
     userAddress: string,
-    callback: (data: WebData2Data) => void,
+    callback: (data: hl.WebData2Response) => void,
   ): Promise<SubscriptionHandle> {
-    // Step 1: HTTP fetch for immediate data (~100ms)
-    try {
-      const httpData = await this.httpClient.webData2({ user: userAddress });
-      callback(httpData); // 立即顯示數據
-    } catch (error) {
-      console.warn('HTTP fetch failed, will rely on WebSocket:', error);
-    }
+    // HTTP 快速獲取
+    const httpData = await this.httpClient.webData2({ user: userAddress });
+    callback(httpData);
 
-    // Step 2: Establish WebSocket subscription for real-time updates
-    const handle = await this.subscriptionPort.subscribeWebData2(userAddress, callback);
+    // WebSocket 實時更新
+    const handle = await this.subscriptionManager.subscribe(
+      'webData2',
+      { user: userAddress },
+      callback,
+    );
 
-    return handle;
+    return { unsubscribe: () => this.subscriptionManager.unsubscribe(handle) };
   }
 }
 ```
 
-#### 組裝依賴
-
-在 `positionComposition.tsx` 中：
+**2. Port（Domain Layer）**
 
 ```typescript
+// core/contexts/position/ports/positionDataPort.ts
+export interface PositionDataPort {
+  subscribe(
+    userAddress: string,
+    callback: (data: PositionData) => void,
+  ): Promise<SubscriptionHandle>;
+}
+```
+
+**3. Adapter（Adapter Layer）**
+
+```typescript
+// core/contexts/position/adapters/positionDataAdapter.ts
+export class PositionDataAdapter implements PositionDataPort {
+  constructor(private readonly repository: WebData2Repository) {}
+
+  async subscribe(
+    userAddress: string,
+    callback: (data: PositionData) => void,
+  ): Promise<SubscriptionHandle> {
+    // 簡單委託給 Repository
+    return this.repository.subscribe(userAddress, callback);
+  }
+}
+```
+
+**4. Service（Domain Layer）**
+
+```typescript
+// core/contexts/position/application/positionService.ts
+export class PositionService {
+  constructor(
+    private readonly positionDataPort: PositionDataPort, // 依賴抽象
+    private readonly marketService: MarketPort,
+  ) {}
+
+  private async startSubscription(userAddress: string): Promise<void> {
+    // 通過 Port 訂閱，不關心實現細節
+    this.subscription = await this.positionDataPort.subscribe(userAddress, data =>
+      this.handlePositionDataUpdate(data),
+    );
+  }
+}
+```
+
+**5. Composition（組裝層）**
+
+```typescript
+// core/contexts/position/reactNative/positionComposition.tsx
 const positionService = useMemo(() => {
+  // Infrastructure
   const infoClient = getInfoClient();
-  const subscriptionAdapter = new SubscriptionAdapter(subscriptionManager);
-  const positionDataAdapter = new PositionDataAdapter(infoClient, subscriptionAdapter);
+  const webData2Repository = new WebData2Repository(infoClient, subscriptionManager);
+
+  // Adapter
+  const positionDataAdapter = new PositionDataAdapter(webData2Repository);
   const marketAdapter = new MarketAdapter();
 
+  // Domain
   return new PositionService(positionDataAdapter, marketAdapter);
 }, []);
 ```
+
+#### Repository Pattern 優勢總結
+
+✅ **職責清晰**:
+
+- Repository: 封裝數據訪問（HTTP + WS）
+- Adapter: 接口適配（Repository → Port）
+- Service: 業務邏輯（依賴 Port 抽象）
+
+✅ **可複用性**:
+
+- WebData2Repository 可被多個 Context 使用
+- HTTP + WS 混合策略只需實現一次
+
+✅ **易於測試**:
+
+- 可以 mock Repository 測試 Adapter
+- 可以 mock Port 測試 Service
+- 各層獨立測試
+
+✅ **符合 DDD**:
+
+- Repository Pattern 是標準模式
+- Domain Layer 完全不依賴基礎設施細節
+- 清晰的分層架構
 
 ---
 

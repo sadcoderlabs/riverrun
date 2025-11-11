@@ -3,23 +3,19 @@
  *
  * This service manages position data by:
  * 1. Monitoring active wallet changes and managing subscription lifecycle
- * 2. Subscribing to WebData2 updates via PositionDataAdapter (HTTP + WS hybrid)
+ * 2. Subscribing to position data via PositionDataPort (hides HTTP/WS details)
  * 3. Extracting non-zero positions from the data stream
  * 4. Enriching positions with market data (markPx, szDecimals)
  * 5. Updating the position store for UI consumption
+ *
+ * This service depends on abstractions (Ports), not concretions (Adapters/Repositories).
  */
 
 import type { MarketPort } from '../adapters/marketAdapter';
-import type { PositionDataAdapter } from '../adapters/positionDataAdapter';
 import { positionStore } from '../adapters/positionStore';
 import { activeWalletStore } from '../../wallet/adapters/activeWalletStore';
-import type {
-  EnrichedPosition,
-  Position,
-  PositionPort,
-  SubscriptionHandle,
-  WebData2Data,
-} from '../ports';
+import type { EnrichedPosition, Position, PositionPort } from '../ports';
+import type { PositionData, PositionDataPort, SubscriptionHandle } from '../ports/positionDataPort';
 
 /**
  * Position Service Implementation
@@ -31,7 +27,7 @@ export class PositionService implements PositionPort {
   private walletUnsubscribe: (() => void) | undefined;
 
   constructor(
-    private readonly positionDataAdapter: PositionDataAdapter,
+    private readonly positionDataPort: PositionDataPort,
     private readonly marketService: MarketPort,
   ) {}
 
@@ -80,9 +76,8 @@ export class PositionService implements PositionPort {
   /**
    * Start subscribing to position updates for a user (internal)
    *
-   * Uses HTTP + WebSocket hybrid strategy:
-   * - HTTP fetch provides immediate data (~100ms)
-   * - WebSocket subscription provides real-time updates
+   * Subscribes via PositionDataPort abstraction.
+   * The implementation (Adapter + Repository) handles data source details.
    */
   private async startSubscription(userAddress: string): Promise<void> {
     // If already subscribed, stop first
@@ -94,10 +89,10 @@ export class PositionService implements PositionPort {
     positionStore.getState().setLoading(true);
 
     try {
-      // Start subscription with HTTP + WS hybrid strategy
-      this.subscription = await this.positionDataAdapter.startSubscription(
-        userAddress,
-        (data: WebData2Data) => this.handleWebData2Update(data),
+      // Subscribe to position data
+      // The Port abstraction hides implementation details (HTTP + WS hybrid)
+      this.subscription = await this.positionDataPort.subscribe(userAddress, (data: PositionData) =>
+        this.handlePositionDataUpdate(data),
       );
     } catch (error) {
       positionStore.getState().setLoading(false);
@@ -126,9 +121,9 @@ export class PositionService implements PositionPort {
   }
 
   /**
-   * Handle WebData2 update from subscription
+   * Handle position data update from subscription
    */
-  private handleWebData2Update(data: WebData2Data): void {
+  private handlePositionDataUpdate(data: PositionData): void {
     try {
       // Extract non-zero positions
       const positions = this.extractPositions(data);
@@ -140,15 +135,15 @@ export class PositionService implements PositionPort {
       positionStore.getState().setPositions(enrichedPositions);
       positionStore.getState().setLoading(false);
     } catch (error) {
-      console.error('Failed to process WebData2 update:', error);
+      console.error('Failed to process position data update:', error);
       positionStore.getState().setLoading(false);
     }
   }
 
   /**
-   * Extract non-zero positions from WebData2
+   * Extract non-zero positions from position data
    */
-  private extractPositions(data: WebData2Data): Position[] {
+  private extractPositions(data: PositionData): Position[] {
     if (!data.clearinghouseState?.assetPositions) {
       return [];
     }
