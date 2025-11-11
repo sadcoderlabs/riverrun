@@ -12,17 +12,17 @@
  */
 
 import * as hl from '@nktkas/hyperliquid';
-import { getWalletAddress } from '@nktkas/hyperliquid/signing';
 
 import { DEFAULT_AGENT_NAME } from '@/lib/riverrun/agent/constants';
 
 import type { AgentPort } from '../ports/agentPort';
 import type { AgentApprovalStatus, AgentInfo, AgentWallet } from '../ports/types';
-import type { ActiveWallet } from '../../wallet/ports/types';
+import type { WalletPort } from '../../wallet/ports/walletPort';
 import { HyperliquidAgentAdapter } from '../adapters/hyperliquidAgentAdapter';
 import { AgentStorageAdapter } from '../adapters/agentStorageAdapter';
 import { AgentWalletManager } from './agentWalletManager';
 import { agentStateStore } from '../adapters/agentStateStore';
+import { getMasterExchangeClient as getMasterExchangeClientGetter } from '@/lib/hyperliquid/client/getter';
 
 /**
  * Context information needed for agent operations
@@ -30,7 +30,6 @@ import { agentStateStore } from '../adapters/agentStateStore';
 interface AgentOperationContext {
   masterAddress: string;
   masterExchangeClient: hl.ExchangeClient;
-  wallet: ActiveWallet;
   blockchainAdapter: HyperliquidAgentAdapter;
   storageAdapter: AgentStorageAdapter;
   walletManager: AgentWalletManager;
@@ -40,32 +39,31 @@ interface AgentOperationContext {
  * AgentService implementation
  */
 export class AgentService implements AgentPort {
-  constructor(
-    private getMasterExchangeClient: () => Promise<hl.ExchangeClient | undefined>,
-    private getActiveWallet: () => Promise<ActiveWallet | undefined>,
-  ) {}
+  constructor(private readonly walletService: WalletPort) {}
 
   /**
    * Get operation context with all necessary adapters
    * @private
    */
   private async getContext(): Promise<AgentOperationContext | undefined> {
-    const masterExchangeClient = await this.getMasterExchangeClient();
-    if (!masterExchangeClient) {
-      return undefined;
-    }
-
-    const wallet = await this.getActiveWallet();
+    // Get active wallet from wallet service
+    const wallet = await this.walletService.active();
     if (!wallet) {
       return undefined;
     }
 
+    // Get provider from wallet
     const provider = await wallet.getProvider();
     if (!provider) {
       return undefined;
     }
 
-    const masterAddress = await getWalletAddress(masterExchangeClient.wallet);
+    // Get signer from provider
+    const signer = await provider.getSigner();
+    const masterAddress = await signer.getAddress();
+
+    // Create master exchange client
+    const masterExchangeClient = getMasterExchangeClientGetter(masterAddress, signer);
 
     // Create adapters and managers
     const blockchainAdapter = new HyperliquidAgentAdapter(masterAddress, masterExchangeClient);
@@ -75,7 +73,6 @@ export class AgentService implements AgentPort {
     return {
       masterAddress,
       masterExchangeClient,
-      wallet,
       blockchainAdapter,
       storageAdapter,
       walletManager,

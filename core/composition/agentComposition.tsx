@@ -1,10 +1,7 @@
-import React, { createContext, useContext, useMemo, useCallback } from 'react';
-import * as hl from '@nktkas/hyperliquid';
+import React, { createContext, useContext, useMemo } from 'react';
 
 import { AgentService } from '../contexts/agent/application/agentService';
 import type { AgentPort } from '../contexts/agent/ports/agentPort';
-import type { ActiveWallet } from '../contexts/wallet/ports/types';
-import { getMasterExchangeClient as getMasterExchangeClientGetter } from '@/lib/hyperliquid/client/getter';
 import { useWalletComposition } from './walletComposition';
 
 interface AgentCompositionContextValue {
@@ -40,53 +37,13 @@ export function AgentCompositionProvider({ children }: { children: React.ReactNo
   const { walletService } = useWalletComposition();
 
   // ==========================
-  // Create dependency functions for AgentService
-  // ==========================
-
-  /**
-   * Get master exchange client for the current active wallet
-   */
-  const getMasterExchangeClient = useCallback(async (): Promise<hl.ExchangeClient | undefined> => {
-    try {
-      const wallet = await walletService.active();
-      if (!wallet) {
-        return undefined;
-      }
-
-      const provider = await wallet.getProvider();
-      if (!provider) {
-        return undefined;
-      }
-
-      const signer = await provider.getSigner();
-
-      // Use cached ExchangeClient - only creates new instance if wallet changed
-      return getMasterExchangeClientGetter(wallet.address, signer);
-    } catch (error) {
-      console.error('Failed to get master exchange client:', error);
-      return undefined;
-    }
-  }, [walletService]);
-
-  /**
-   * Get the currently active wallet
-   */
-  const getActiveWallet = useCallback(async (): Promise<ActiveWallet | undefined> => {
-    try {
-      return await walletService.active();
-    } catch (error) {
-      console.error('Failed to get active wallet:', error);
-      return undefined;
-    }
-  }, [walletService]);
-
-  // ==========================
   // Compose Agent Service
   // ==========================
 
   const agentService = useMemo(() => {
-    return new AgentService(getMasterExchangeClient, getActiveWallet);
-  }, [getMasterExchangeClient, getActiveWallet]);
+    // AgentService depends only on WalletPort interface
+    return new AgentService(walletService);
+  }, [walletService]);
 
   const value = {
     agentService,
