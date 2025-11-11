@@ -27,7 +27,6 @@ export default function AgentStatus() {
     checkStatus: checkAgentStatus,
     approve: approveAgent,
     revoke: revokeAgent,
-    getAllAgents,
   } = useAgentContext();
 
   // Loading and refresh states
@@ -36,10 +35,11 @@ export default function AgentStatus() {
 
   /**
    * Load all agent statuses
+   * Note: checkAgentStatus() now also updates allAgents internally
    */
   const loadAllStatuses = useCallback(async () => {
-    await Promise.all([checkAgentStatus(), getAllAgents()]);
-  }, [checkAgentStatus, getAllAgents]);
+    await checkAgentStatus();
+  }, [checkAgentStatus]);
 
   /**
    * Handle refresh
@@ -96,7 +96,6 @@ export default function AgentStatus() {
               if (success) {
                 Alert.alert('Success', `${DEFAULT_AGENT_NAME} approved successfully`);
                 await checkAgentStatus();
-                await getAllAgents();
               }
             } catch (error) {
               console.error('Failed to approve agent:', error);
@@ -109,7 +108,7 @@ export default function AgentStatus() {
         },
       ],
     );
-  }, [allAgents, isAgentApproved, approveAgent, checkAgentStatus, getAllAgents]);
+  }, [allAgents, isAgentApproved, approveAgent, checkAgentStatus]);
 
   /**
    * Handle revoke agent (Riverrun Agent or other named agents)
@@ -142,7 +141,6 @@ export default function AgentStatus() {
                       : `"${agentName}" has been revoked successfully.`,
                   );
                   await checkAgentStatus();
-                  await getAllAgents();
                 }
               } catch (error) {
                 console.error('Failed to revoke agent:', error);
@@ -156,7 +154,7 @@ export default function AgentStatus() {
         ],
       );
     },
-    [revokeAgent, checkAgentStatus, getAllAgents],
+    [revokeAgent, checkAgentStatus],
   );
 
   // Get other named agents (exclude Riverrun Agent)

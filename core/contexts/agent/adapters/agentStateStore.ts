@@ -15,11 +15,6 @@ interface AgentStateStore extends AgentState {
   setIsApproved: (isApproved: boolean) => void;
 
   /**
-   * Set loading state
-   */
-  setIsLoading: (isLoading: boolean) => void;
-
-  /**
    * Set all agents list
    */
   setAllAgents: (agents: AgentInfo[]) => void;
@@ -38,7 +33,6 @@ interface AgentStateStore extends AgentState {
 const initialState: AgentState = {
   agentAddress: undefined,
   isApproved: false,
-  isLoading: false,
   allAgents: [],
 };
 
@@ -60,7 +54,6 @@ export const agentStateStore = createStore<AgentStateStore>(set => ({
 
   setAgentAddress: address => set({ agentAddress: address }),
   setIsApproved: isApproved => set({ isApproved }),
-  setIsLoading: isLoading => set({ isLoading }),
   setAllAgents: agents => set({ allAgents: agents }),
   updateState: partial => set(partial),
   reset: () => set(initialState),

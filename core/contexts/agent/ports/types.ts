@@ -38,8 +38,6 @@ export interface AgentState {
   agentAddress: string | undefined;
   /** Whether agent is approved */
   isApproved: boolean;
-  /** Loading state */
-  isLoading: boolean;
   /** All agents for the current user */
   allAgents: AgentInfo[];
 }

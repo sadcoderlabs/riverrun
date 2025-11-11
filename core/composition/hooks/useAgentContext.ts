@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useStore } from 'zustand';
 import * as hl from '@nktkas/hyperliquid';
 
@@ -56,11 +56,6 @@ export interface UseAgentContextResult {
    * Throws error if revocation fails
    */
   revoke: (agentName: string) => Promise<boolean>;
-
-  /**
-   * Get all agents for the current user
-   */
-  getAllAgents: () => Promise<AgentInfo[]>;
 
   /**
    * Find agent by name (UI helper - searches in allAgents)
@@ -123,23 +118,44 @@ export interface UseAgentContextResult {
 export function useAgentContext(): UseAgentContextResult {
   const { agentService } = useAgentComposition();
 
-  // Subscribe to agentStateStore for reactive updates
+  // UI state management (presentation layer)
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Subscribe to agentStateStore for reactive updates (business data)
   const agentAddress = useStore(agentStateStore, state => state.agentAddress);
   const isApproved = useStore(agentStateStore, state => state.isApproved);
-  const isLoading = useStore(agentStateStore, state => state.isLoading);
   const allAgents = useStore(agentStateStore, state => state.allAgents);
 
-  // Wrap agentService methods with useCallback for stable references
-  const checkStatus = useCallback(() => agentService.checkApprovalStatus(), [agentService]);
+  // Wrap agentService methods with loading management
+  const checkStatus = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      return await agentService.checkApprovalStatus();
+    } finally {
+      setIsLoading(false);
+    }
+  }, [agentService]);
 
-  const approve = useCallback(() => agentService.approveAgent(), [agentService]);
+  const approve = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      return await agentService.approveAgent();
+    } finally {
+      setIsLoading(false);
+    }
+  }, [agentService]);
 
   const revoke = useCallback(
-    (agentName: string) => agentService.revokeAgent(agentName),
+    async (agentName: string) => {
+      setIsLoading(true);
+      try {
+        return await agentService.revokeAgent(agentName);
+      } finally {
+        setIsLoading(false);
+      }
+    },
     [agentService],
   );
-
-  const getAllAgents = useCallback(() => agentService.getAllAgents(), [agentService]);
 
   /**
    * Get agent exchange client
@@ -209,7 +225,6 @@ export function useAgentContext(): UseAgentContextResult {
     checkStatus,
     approve,
     revoke,
-    getAllAgents,
     findAgentByName,
     isAgentApproved,
     getAgentExchangeClient,

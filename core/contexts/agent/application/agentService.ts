@@ -156,11 +156,10 @@ export class AgentService implements AgentPort {
 
   /**
    * Check approval status for the current agent
+   * Also updates allAgents in the store
    */
   async checkApprovalStatus(): Promise<AgentApprovalStatus> {
     try {
-      agentStateStore.getState().setIsLoading(true);
-
       const ctx = await this.getContext();
       if (!ctx) {
         return { agentAddress: undefined, isApproved: false };
@@ -184,11 +183,14 @@ export class AgentService implements AgentPort {
         isApproved,
       });
 
-      // Update store
+      // Update store with status
       agentStateStore.getState().updateState({
         agentAddress: agentWallet.address,
         isApproved,
       });
+
+      // Also refresh all agents list
+      await this.getAllAgentsInternal(ctx.blockchainAdapter, ctx.masterAddress);
 
       return { agentAddress: agentWallet.address, isApproved };
     } catch (error) {
@@ -198,8 +200,6 @@ export class AgentService implements AgentPort {
         isApproved: false,
       });
       return { agentAddress: undefined, isApproved: false };
-    } finally {
-      agentStateStore.getState().setIsLoading(false);
     }
   }
 
@@ -208,8 +208,6 @@ export class AgentService implements AgentPort {
    */
   async approveAgent(): Promise<boolean> {
     try {
-      agentStateStore.getState().setIsLoading(true);
-
       const ctx = await this.getContext();
       if (!ctx) {
         throw new Error('Failed to get wallet context');
@@ -245,8 +243,6 @@ export class AgentService implements AgentPort {
     } catch (error) {
       console.error('Failed to approve agent:', error);
       throw error;
-    } finally {
-      agentStateStore.getState().setIsLoading(false);
     }
   }
 
@@ -255,8 +251,6 @@ export class AgentService implements AgentPort {
    */
   async revokeAgent(agentName: string): Promise<boolean> {
     try {
-      agentStateStore.getState().setIsLoading(true);
-
       const ctx = await this.getContext();
       if (!ctx) {
         throw new Error('Failed to get wallet context');
@@ -291,33 +285,28 @@ export class AgentService implements AgentPort {
       }
 
       // Refresh all agents list
-      await this.getAllAgents();
+      await this.getAllAgentsInternal(ctx.blockchainAdapter, ctx.masterAddress);
 
       return true;
     } catch (error) {
       console.error('Failed to revoke agent:', error);
       throw error;
-    } finally {
-      agentStateStore.getState().setIsLoading(false);
     }
   }
 
   /**
-   * Get all agents for the current user from blockchain
+   * Get all agents from blockchain and update store (private method)
+   * @private
    */
-  async getAllAgents(): Promise<AgentInfo[]> {
+  private async getAllAgentsInternal(
+    blockchainAdapter: HyperliquidAgentAdapter,
+    masterAddress: string,
+  ): Promise<void> {
     try {
-      const ctx = await this.getContext();
-      if (!ctx) {
-        return [];
-      }
-
-      const agents = await ctx.blockchainAdapter.getAgents(ctx.masterAddress);
+      const agents = await blockchainAdapter.getAgents(masterAddress);
       agentStateStore.getState().setAllAgents(agents);
-      return agents;
     } catch (error) {
       console.error('Failed to get all agents:', error);
-      return [];
     }
   }
 

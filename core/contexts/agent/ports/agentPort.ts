@@ -1,4 +1,4 @@
-import type { AgentApprovalStatus, AgentInfo, AgentWallet } from './types';
+import type { AgentApprovalStatus, AgentWallet } from './types';
 
 /**
  * Agent Port Interface
@@ -11,6 +11,7 @@ import type { AgentApprovalStatus, AgentInfo, AgentWallet } from './types';
 export interface AgentPort {
   /**
    * Check approval status for the current agent
+   * Also updates allAgents in the store
    * @returns Promise resolving to approval status
    */
   checkApprovalStatus(): Promise<AgentApprovalStatus>;
@@ -28,12 +29,6 @@ export interface AgentPort {
    * @returns Promise resolving to true if successful
    */
   revokeAgent(agentName: string): Promise<boolean>;
-
-  /**
-   * Get all agents for the current user from blockchain
-   * @returns Promise resolving to array of agent information
-   */
-  getAllAgents(): Promise<AgentInfo[]>;
 
   /**
    * Get or create agent wallet for the current user
