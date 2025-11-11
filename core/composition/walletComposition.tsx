@@ -6,6 +6,7 @@ import { useAccount, useWalletInfo, useProvider, useAppKit } from '@reown/appkit
 import { PrivyWalletAdapter } from '../contexts/wallet/adapters/privyWalletAdapter';
 import { ReownWalletAdapter } from '../contexts/wallet/adapters/reownWalletAdapter';
 import { WalletService } from '../contexts/wallet/application/walletService';
+import { activeWalletStore } from '../contexts/wallet/adapters/activeWalletStore';
 import type { WalletPort } from '../contexts/wallet/ports/walletPort';
 
 interface WalletCompositionContextValue {
@@ -104,8 +105,18 @@ export function WalletCompositionProvider({ children }: { children: React.ReactN
   ]);
 
   // ==========================
-  // Handle connection state changes (business logic in service)
+  // Initialize and handle state changes (business logic in service)
   // ==========================
+
+  // Initialize active wallet store when walletService is created/updated
+  useEffect(() => {
+    // Sync active wallet to store on mount and when walletService changes
+    walletService.active().then(wallet => {
+      activeWalletStore.getState().setWallet(wallet);
+    });
+  }, [walletService]);
+
+  // Handle connection state changes
   useEffect(() => {
     walletService.handleConnectionStateChange();
   }, [walletService, isConnected]);

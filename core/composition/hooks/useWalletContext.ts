@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useWalletComposition } from '../walletComposition';
 import { useStore } from 'zustand';
-import { walletSelectionStore } from '../../contexts/wallet/adapters/walletSelectionStore';
+import { activeWalletStore } from '../../contexts/wallet/adapters/activeWalletStore';
 import type {
   ActiveWallet,
   WalletSource,
@@ -85,33 +85,10 @@ export interface UseWalletContextResult {
  */
 export function useWalletContext(): UseWalletContextResult {
   const { walletService } = useWalletComposition();
-  const [wallet, setWallet] = useState<ActiveWallet | undefined>(undefined);
 
-  // Subscribe to walletSelectionStore changes
-  const selectedWalletSource = useStore(walletSelectionStore, state => state.selectedWalletSource);
-
-  // Fetch active wallet whenever walletService or selectedWalletSource changes
-  useEffect(() => {
-    let mounted = true;
-
-    walletService
-      .active()
-      .then(activeWallet => {
-        if (mounted) {
-          setWallet(activeWallet);
-        }
-      })
-      .catch(error => {
-        console.error('Failed to get active wallet:', error);
-        if (mounted) {
-          setWallet(undefined);
-        }
-      });
-
-    return () => {
-      mounted = false;
-    };
-  }, [walletService, selectedWalletSource]);
+  // Subscribe to activeWalletStore for reactive updates
+  // WalletService automatically updates this store whenever active wallet changes
+  const wallet = useStore(activeWalletStore, state => state.wallet);
 
   // Wrap walletService methods with useCallback for stable references
   const connect = useCallback(
