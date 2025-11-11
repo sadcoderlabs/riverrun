@@ -11,7 +11,7 @@ import { useCallback } from 'react';
 import { Alert } from 'react-native';
 
 import { useAgentContext } from '@/core/composition';
-import { DEFAULT_AGENT_NAME } from '@/lib/riverrun/agent/constants';
+import { DEFAULT_AGENT_NAME } from '@/core/contexts/agent/constants';
 
 export function useAgentExchangeClient() {
   const { getAgentExchangeClient: getAgentClient, checkStatus, approve } = useAgentContext();

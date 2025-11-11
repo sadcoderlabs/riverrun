@@ -14,7 +14,7 @@
 import * as hl from '@nktkas/hyperliquid';
 import { BaseWallet, BrowserProvider, Wallet } from 'ethers';
 
-import { DEFAULT_AGENT_NAME } from '@/lib/riverrun/agent/constants';
+import { DEFAULT_AGENT_NAME } from '../constants';
 
 import type { AgentPort } from '../ports/agentPort';
 import type { AgentApprovalStatus, AgentInfo, AgentWallet } from '../ports/types';

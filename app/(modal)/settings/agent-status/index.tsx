@@ -1,5 +1,5 @@
 import { Button } from '@/components/global/Button';
-import { DEFAULT_AGENT_NAME } from '@/lib/riverrun/agent/constants';
+import { DEFAULT_AGENT_NAME } from '@/core/contexts/agent/constants';
 import { useAgentContext } from '@/core/composition';
 import { ArrowLeft } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
