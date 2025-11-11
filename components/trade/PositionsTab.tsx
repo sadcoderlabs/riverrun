@@ -4,7 +4,7 @@ import { formatSize } from '@/lib/hyperliquid/format/formatSize';
 import { formatValue } from '@/lib/hyperliquid/format/formatValue';
 import { useWalletContext } from '@/core/composition';
 import { useMarketsStore } from '@/lib/riverrun/market';
-import { usePositionStore } from '@/core/contexts/position/reactNative/hooks';
+import { usePositionStore } from '@/core/contexts/position/reactNative/usePositionStore';
 import type { EnrichedPosition } from '@/core/contexts/position/ports/types';
 import { calculatePositionMetrics } from '@/core/contexts/position/ports/types';
 import { useState } from 'react';
