@@ -10,6 +10,7 @@ import type {
 } from '../ports/types';
 import type { PrivyWalletAdapter } from '../adapters/privyWalletAdapter';
 import type { ReownWalletAdapter } from '../adapters/reownWalletAdapter';
+import { walletSelectionStore } from './walletSelectionStore';
 
 /**
  * WalletService - Core business logic for wallet operations
@@ -21,7 +22,7 @@ import type { ReownWalletAdapter } from '../adapters/reownWalletAdapter';
  * - Manages multiple wallet adapters
  * - Implements wallet selection logic (Privy priority by default)
  * - Provides intelligent fallback when disconnecting active wallet
- * - Independent of React (can be tested without UI)
+ * - Uses vanilla Zustand store for state management (framework independent)
  */
 export class WalletService implements WalletPort {
   private previousReownConnected = false;
@@ -29,9 +30,6 @@ export class WalletService implements WalletPort {
   constructor(
     private privyAdapter: PrivyWalletAdapter,
     private reownAdapter: ReownWalletAdapter,
-    private getSelectedSource: () => WalletSource | undefined,
-    private setSelectedSource: (source: WalletSource) => void,
-    private clearSelectedSource: () => void,
   ) {}
 
   /**
@@ -46,7 +44,7 @@ export class WalletService implements WalletPort {
     // Check if Reown just connected (transition from false to true)
     if (!this.previousReownConnected && isReownConnected) {
       // Auto-switch to the newly connected Reown wallet
-      this.setSelectedSource('reown');
+      walletSelectionStore.getState().setSelectedWalletSource('reown');
     }
 
     // Update the previous state
@@ -82,7 +80,7 @@ export class WalletService implements WalletPort {
    * 4. Fallback to the other wallet if selected one is not available
    */
   async active(): Promise<ActiveWallet | undefined> {
-    let activeSource = this.getSelectedSource();
+    let activeSource = walletSelectionStore.getState().selectedWalletSource;
 
     const privyAvailable = this.privyAdapter.isAvailable();
     const reownAvailable = this.reownAdapter.isAvailable();
@@ -125,11 +123,10 @@ export class WalletService implements WalletPort {
     if (source === 'privy') {
       await this.privyAdapter.connect();
       // Auto-switch to Privy wallet after successful connection
-      this.setSelectedSource('privy');
+      walletSelectionStore.getState().setSelectedWalletSource('privy');
     } else if (source === 'reown') {
       await this.reownAdapter.connect();
-      // Note: Auto-switch will happen via the adapter's connection callback
-      // We'll handle this in the composition layer
+      // Note: Auto-switch will happen via handleConnectionStateChange
     }
   }
 
@@ -140,8 +137,9 @@ export class WalletService implements WalletPort {
    * the currently active wallet.
    */
   async disconnect(source: WalletSource): Promise<void> {
-    const selectedSource = this.getSelectedSource();
-    const needsSwitch = selectedSource === source;
+    const { selectedWalletSource, setSelectedWalletSource, clearSelection } =
+      walletSelectionStore.getState();
+    const needsSwitch = selectedWalletSource === source;
 
     let targetWallet: WalletSource | undefined;
 
@@ -155,10 +153,10 @@ export class WalletService implements WalletPort {
 
       // Switch before disconnecting to ensure smooth transition
       if (targetWallet) {
-        this.setSelectedSource(targetWallet);
+        setSelectedWalletSource(targetWallet);
       } else {
         // No other wallet available, will revert to login screen
-        this.clearSelectedSource();
+        clearSelection();
       }
     }
 
@@ -182,7 +180,7 @@ export class WalletService implements WalletPort {
       throw new Error('Reown wallet is not connected');
     }
 
-    this.setSelectedSource(source);
+    walletSelectionStore.getState().setSelectedWalletSource(source);
   }
 
   /**

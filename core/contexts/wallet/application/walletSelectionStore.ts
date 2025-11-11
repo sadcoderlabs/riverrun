@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { create } from 'zustand';
-import { createJSONStorage, persist } from 'zustand/middleware';
+import { createStore } from 'zustand/vanilla';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { useStore } from 'zustand';
 import type { WalletSource } from '../ports/types';
 
 interface WalletSelectionState {
@@ -25,12 +26,13 @@ interface WalletSelectionState {
 }
 
 /**
- * Wallet Selection Store
+ * Wallet Selection Store (Vanilla Zustand)
  *
  * Manages user's wallet selection preference with persistence.
+ * This is a vanilla store that can be used outside of React components.
  * This store is part of the application layer in hexagonal architecture.
  */
-export const useWalletSelectionStore = create<WalletSelectionState>()(
+export const walletSelectionStore = createStore<WalletSelectionState>()(
   persist(
     set => ({
       selectedWalletSource: undefined,
@@ -48,3 +50,11 @@ export const useWalletSelectionStore = create<WalletSelectionState>()(
     },
   ),
 );
+
+/**
+ * React hook for accessing wallet selection store
+ *
+ * This binds the vanilla store to React, allowing components to subscribe
+ * to state changes and trigger re-renders.
+ */
+export const useWalletSelectionStore = () => useStore(walletSelectionStore);

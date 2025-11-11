@@ -6,7 +6,6 @@ import { useAccount, useWalletInfo, useProvider, useAppKit } from '@reown/appkit
 import { PrivyWalletAdapter } from '../contexts/wallet/adapters/privyWalletAdapter';
 import { ReownWalletAdapter } from '../contexts/wallet/adapters/reownWalletAdapter';
 import { WalletService } from '../contexts/wallet/application/walletService';
-import { useWalletSelectionStore } from '../contexts/wallet/application/walletSelectionStore';
 import type { WalletPort } from '../contexts/wallet/ports/walletPort';
 
 interface WalletCompositionContextValue {
@@ -59,10 +58,6 @@ export function WalletCompositionProvider({ children }: { children: React.ReactN
   const { provider: reownProvider } = useProvider();
   const { open: openReownModal, disconnect: reownDisconnect } = useAppKit();
 
-  // Wallet selection store
-  const { selectedWalletSource, setSelectedWalletSource, clearSelection } =
-    useWalletSelectionStore();
-
   // ==========================
   // Compose Dependencies (Hexagonal Architecture)
   // ==========================
@@ -93,13 +88,8 @@ export function WalletCompositionProvider({ children }: { children: React.ReactN
     });
 
     // Create wallet service with both adapters
-    return new WalletService(
-      privyAdapter,
-      reownAdapter,
-      () => selectedWalletSource,
-      setSelectedWalletSource,
-      clearSelection,
-    );
+    // Note: WalletService uses vanilla Zustand store directly, no need to pass store functions
+    return new WalletService(privyAdapter, reownAdapter);
   }, [
     embeddedWallets,
     user,
@@ -111,9 +101,6 @@ export function WalletCompositionProvider({ children }: { children: React.ReactN
     reownProvider,
     openReownModal,
     reownDisconnect,
-    selectedWalletSource,
-    setSelectedWalletSource,
-    clearSelection,
   ]);
 
   // ==========================
