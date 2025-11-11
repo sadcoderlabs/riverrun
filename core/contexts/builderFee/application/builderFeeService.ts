@@ -11,7 +11,7 @@
  * - Depends on wallet context for wallet information and clients
  */
 
-import * as hl from '@nktkas/hyperliquid';
+import type { Signer } from 'ethers';
 
 import type { BuilderFeePort } from '../ports/builderFeePort';
 import type { BuilderFeeStatus } from '../ports/types';
@@ -28,6 +28,20 @@ export class BuilderFeeService implements BuilderFeePort {
     private readonly walletService: WalletPort,
     private readonly hyperliquidAdapter: HyperliquidAdapter,
   ) {}
+
+  /**
+   * Get signer from active wallet
+   * @private
+   */
+  private async getSigner(): Promise<Signer> {
+    const wallet = await this.walletService.active();
+    if (!wallet) {
+      throw new Error('No active wallet');
+    }
+
+    const provider = await wallet.getProvider();
+    return await provider.getSigner();
+  }
 
   /**
    * Check builder fee approval status
@@ -73,14 +87,7 @@ export class BuilderFeeService implements BuilderFeePort {
    */
   async approveBuilderFee(): Promise<boolean> {
     try {
-      const wallet = await this.walletService.active();
-      if (!wallet) {
-        throw new Error('No active wallet');
-      }
-
-      // Get signer for blockchain operation
-      const provider = await wallet.getProvider();
-      const signer = await provider.getSigner();
+      const signer = await this.getSigner();
 
       // Execute approval
       await this.hyperliquidAdapter.approveBuilderFee(
@@ -103,32 +110,17 @@ export class BuilderFeeService implements BuilderFeePort {
    */
   async revokeBuilderFee(): Promise<boolean> {
     try {
-      const wallet = await this.walletService.active();
-      if (!wallet) {
-        throw new Error('No active wallet');
-      }
-
-      // Get signer for blockchain operation
-      const provider = await wallet.getProvider();
-      const signer = await provider.getSigner();
+      const signer = await this.getSigner();
 
       // Execute revocation (set max fee to 0%)
       await this.hyperliquidAdapter.approveBuilderFee(signer, '0%', BUILDER_CONFIG.address);
 
       // Verify revocation succeeded
       const status = await this.checkApprovalStatus();
-      return status.maxApprovedFee === 0;
+      return !status.isApproved && status.maxApprovedFee === 0;
     } catch (error) {
       console.error('[BuilderFeeService] Failed to revoke builder fee:', error);
       throw error;
     }
-  }
-
-  /**
-   * Check if approval is sufficient for trading
-   */
-  async isApprovalSufficient(): Promise<boolean> {
-    const status = await this.checkApprovalStatus();
-    return status.isApproved;
   }
 }

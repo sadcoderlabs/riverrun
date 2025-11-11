@@ -175,7 +175,8 @@ export function useBuilderFeeContext(): UseBuilderFeeContextResult {
       setIsLoading(true);
 
       // Check if builder fee is already approved with sufficient amount
-      const isApproved = await builderFeeService.isApprovalSufficient();
+      const status = await builderFeeService.checkApprovalStatus();
+      const isApproved = status.isApproved;
 
       if (isApproved) {
         return true;

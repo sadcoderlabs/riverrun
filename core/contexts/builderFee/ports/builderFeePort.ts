@@ -39,15 +39,4 @@ export interface BuilderFeePort {
    * @returns true if revocation succeeded, false otherwise
    */
   revokeBuilderFee(): Promise<boolean>;
-
-  /**
-   * Ensure that builder fee is approved before proceeding
-   *
-   * This method checks if approval exists with sufficient fee rate.
-   * If not, it will NOT automatically prompt - that's the responsibility
-   * of the presentation layer (React hook).
-   *
-   * @returns true if already approved with sufficient fee, false if approval needed
-   */
-  isApprovalSufficient(): Promise<boolean>;
 }
