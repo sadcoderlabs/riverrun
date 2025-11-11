@@ -15,18 +15,8 @@
  */
 
 import type * as hl from '@nktkas/hyperliquid';
-
-/**
- * Subscription Manager interface (minimal required methods)
- */
-interface ISubscriptionManager {
-  subscribe<TData>(
-    type: string,
-    params: any,
-    callback: (data: TData) => void,
-  ): Promise<{ type: string; key: string }>;
-  unsubscribe(handle: { type: string; key: string }): Promise<void>;
-}
+import { getInfoClient } from '@/lib/hyperliquid/client/getter';
+import { subscriptionManager } from '../subscription';
 
 /**
  * Subscription handle for managing lifecycle
@@ -38,13 +28,16 @@ export interface SubscriptionHandle {
 /**
  * WebData2 Repository
  *
- * Manages WebData2 data access with hybrid HTTP + WebSocket strategy
+ * Manages WebData2 data access with hybrid HTTP + WebSocket strategy.
+ * Dependencies are obtained internally for simplicity.
  */
 export class WebData2Repository {
-  constructor(
-    private readonly httpClient: hl.InfoClient,
-    private readonly subscriptionManager: ISubscriptionManager,
-  ) {}
+  private readonly httpClient: hl.InfoClient;
+
+  constructor() {
+    // Obtain dependencies directly - easier to use and test
+    this.httpClient = getInfoClient();
+  }
 
   /**
    * Subscribe to WebData2 data stream
@@ -84,7 +77,7 @@ export class WebData2Repository {
 
     // Step 2: Establish WebSocket subscription for real-time updates
     // This provides continuous updates (~1s for initial connection)
-    const handle = await this.subscriptionManager.subscribe<hl.WebData2Response>(
+    const handle = await subscriptionManager.subscribe<hl.WebData2Response>(
       'webData2',
       { user: userAddress },
       callback,
@@ -92,7 +85,7 @@ export class WebData2Repository {
 
     return {
       unsubscribe: async () => {
-        await this.subscriptionManager.unsubscribe(handle);
+        await subscriptionManager.unsubscribe(handle);
       },
     };
   }
