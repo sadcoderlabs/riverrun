@@ -11,6 +11,7 @@
 
 import type { MarketPort } from '../adapters/marketAdapter';
 import { positionStore } from '../adapters/positionStore';
+import { activeWalletStore } from '../../wallet/adapters/activeWalletStore';
 import type {
   EnrichedPosition,
   Position,
@@ -28,11 +29,54 @@ import type {
  */
 export class PositionService implements PositionPort {
   private subscription: SubscriptionHandle | undefined;
+  private walletUnsubscribe: (() => void) | undefined;
 
   constructor(
     private readonly subscriptionPort: SubscriptionPort,
     private readonly marketService: MarketPort,
   ) {}
+
+  /**
+   * Start the position service
+   *
+   * Begins monitoring active wallet changes and automatically manages
+   * position subscriptions based on the active wallet.
+   */
+  start(): void {
+    // Subscribe to activeWalletStore to monitor wallet changes
+    this.walletUnsubscribe = activeWalletStore.subscribe((state, prevState) => {
+      // Only react to wallet changes
+      if (state.wallet?.address !== prevState.wallet?.address) {
+        if (state.wallet) {
+          // Wallet is connected, start subscription
+          this.startSubscription(state.wallet.address);
+        } else {
+          // Wallet disconnected, stop subscription
+          this.stopSubscription();
+        }
+      }
+    });
+
+    // Handle initial state
+    const currentWallet = activeWalletStore.getState().wallet;
+    if (currentWallet) {
+      this.startSubscription(currentWallet.address);
+    }
+  }
+
+  /**
+   * Stop the position service
+   *
+   * Stops monitoring wallet changes and cleans up all subscriptions.
+   */
+  stop(): void {
+    // Unsubscribe from wallet changes
+    this.walletUnsubscribe?.();
+    this.walletUnsubscribe = undefined;
+
+    // Stop position subscription
+    this.stopSubscription();
+  }
 
   /**
    * Start subscribing to position updates for a user

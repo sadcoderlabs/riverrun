@@ -14,6 +14,21 @@ import type { EnrichedPosition, PositionMetrics } from './types';
  */
 export interface PositionPort {
   /**
+   * Start the position service
+   *
+   * Begins monitoring active wallet changes and automatically manages
+   * position subscriptions based on the active wallet.
+   */
+  start(): void;
+
+  /**
+   * Stop the position service
+   *
+   * Stops monitoring wallet changes and cleans up all subscriptions.
+   */
+  stop(): void;
+
+  /**
    * Start subscribing to position updates for a user
    *
    * @param userAddress - User address to subscribe to
