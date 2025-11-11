@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useStore } from 'zustand';
 import * as hl from '@nktkas/hyperliquid';
 
@@ -29,6 +29,16 @@ export interface UseAgentContextResult {
   allAgents: AgentInfo[];
 
   /**
+   * Count of named agents (UI helper - computed from allAgents)
+   */
+  namedAgentsCount: number;
+
+  /**
+   * Whether agent exists in local storage (UI helper - computed from agentAddress)
+   */
+  hasAgentInStorage: boolean;
+
+  /**
    * Check approval status for the current agent
    * Updates the store with the result
    */
@@ -51,6 +61,18 @@ export interface UseAgentContextResult {
    * Get all agents for the current user
    */
   getAllAgents: () => Promise<AgentInfo[]>;
+
+  /**
+   * Find agent by name (UI helper - searches in allAgents)
+   * @param agentName - Name of the agent to find
+   */
+  findAgentByName: (agentName: string) => AgentInfo | undefined;
+
+  /**
+   * Verify if specific agent address is approved (UI helper - searches in allAgents)
+   * @param agentAddress - Agent address to verify
+   */
+  isAgentApproved: (agentAddress: string) => boolean;
 
   /**
    * Get agent exchange client
@@ -139,15 +161,57 @@ export function useAgentContext(): UseAgentContextResult {
     }
   }, [agentService]);
 
+  // ============================================================================
+  // UI Helper Functions (computed from reactive state)
+  // ============================================================================
+
+  /**
+   * Count of named agents (computed)
+   */
+  const namedAgentsCount = useMemo(() => {
+    return allAgents.filter(agent => agent.name).length;
+  }, [allAgents]);
+
+  /**
+   * Whether agent exists in local storage (computed)
+   */
+  const hasAgentInStorage = useMemo(() => {
+    return agentAddress !== undefined;
+  }, [agentAddress]);
+
+  /**
+   * Find agent by name (UI helper function)
+   */
+  const findAgentByName = useCallback(
+    (agentName: string): AgentInfo | undefined => {
+      return allAgents.find(agent => agent.name?.toLowerCase() === agentName.toLowerCase());
+    },
+    [allAgents],
+  );
+
+  /**
+   * Verify if specific agent address is approved (UI helper function)
+   */
+  const isAgentApproved = useCallback(
+    (agentAddress: string): boolean => {
+      return allAgents.some(agent => agent.address.toLowerCase() === agentAddress.toLowerCase());
+    },
+    [allAgents],
+  );
+
   return {
     agentAddress,
     isApproved,
     isLoading,
     allAgents,
+    namedAgentsCount,
+    hasAgentInStorage,
     checkStatus,
     approve,
     revoke,
     getAllAgents,
+    findAgentByName,
+    isAgentApproved,
     getAgentExchangeClient,
   };
 }
