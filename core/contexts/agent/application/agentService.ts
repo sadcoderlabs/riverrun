@@ -12,6 +12,7 @@
  */
 
 import * as hl from '@nktkas/hyperliquid';
+import { BaseWallet, BrowserProvider, Wallet } from 'ethers';
 
 import { DEFAULT_AGENT_NAME } from '@/lib/riverrun/agent/constants';
 
@@ -20,7 +21,6 @@ import type { AgentApprovalStatus, AgentInfo, AgentWallet } from '../ports/types
 import type { WalletPort } from '../../wallet/ports/walletPort';
 import { HyperliquidAgentAdapter } from '../adapters/hyperliquidAgentAdapter';
 import { AgentStorageAdapter } from '../adapters/agentStorageAdapter';
-import { AgentWalletManager } from './agentWalletManager';
 import { agentStateStore } from '../adapters/agentStateStore';
 import { getMasterExchangeClient as getMasterExchangeClientGetter } from '@/lib/hyperliquid/client/getter';
 
@@ -30,9 +30,9 @@ import { getMasterExchangeClient as getMasterExchangeClientGetter } from '@/lib/
 interface AgentOperationContext {
   masterAddress: string;
   masterExchangeClient: hl.ExchangeClient;
+  provider: BrowserProvider;
   blockchainAdapter: HyperliquidAgentAdapter;
   storageAdapter: AgentStorageAdapter;
-  walletManager: AgentWalletManager;
 }
 
 /**
@@ -65,18 +65,75 @@ export class AgentService implements AgentPort {
     // Create master exchange client
     const masterExchangeClient = getMasterExchangeClientGetter(masterAddress, signer);
 
-    // Create adapters and managers
+    // Create adapters
     const blockchainAdapter = new HyperliquidAgentAdapter(masterAddress, masterExchangeClient);
     const storageAdapter = new AgentStorageAdapter(masterAddress);
-    const walletManager = new AgentWalletManager(provider, storageAdapter);
 
     return {
       masterAddress,
       masterExchangeClient,
+      provider,
       blockchainAdapter,
       storageAdapter,
-      walletManager,
     };
+  }
+
+  /**
+   * Create a new random agent wallet
+   * @private
+   */
+  private async createAgentWallet(provider: BrowserProvider): Promise<BaseWallet> {
+    const generatedWallet = Wallet.createRandom();
+    return generatedWallet.connect(provider);
+  }
+
+  /**
+   * Get existing agent wallet from storage
+   * @private
+   */
+  private async getExistingAgentWallet(
+    provider: BrowserProvider,
+    storageAdapter: AgentStorageAdapter,
+  ): Promise<BaseWallet | undefined> {
+    const privateKey = await storageAdapter.getPrivateKey();
+    if (!privateKey) {
+      return undefined;
+    }
+
+    try {
+      return new Wallet(privateKey).connect(provider);
+    } catch (error) {
+      console.error('Failed to create wallet from stored private key:', error);
+      return undefined;
+    }
+  }
+
+  /**
+   * Get existing agent wallet or create new one if doesn't exist
+   * This is the main business logic for agent wallet management
+   * @private
+   */
+  private async getOrCreateAgentWalletInternal(
+    provider: BrowserProvider,
+    storageAdapter: AgentStorageAdapter,
+  ): Promise<AgentWallet> {
+    // Try to get existing wallet
+    const existingWallet = await this.getExistingAgentWallet(provider, storageAdapter);
+    if (existingWallet) {
+      const address = await existingWallet.getAddress();
+      return { address, signer: existingWallet };
+    }
+
+    // Create new wallet and persist it
+    const newWallet = await this.createAgentWallet(provider);
+    try {
+      await storageAdapter.setPrivateKey(newWallet.privateKey);
+    } catch (error) {
+      console.error('Failed to persist generated agent wallet:', error);
+    }
+
+    const address = await newWallet.getAddress();
+    return { address, signer: newWallet };
   }
 
   /**
@@ -109,7 +166,10 @@ export class AgentService implements AgentPort {
       }
 
       // Get or create agent wallet
-      const agentWallet = await ctx.walletManager.getOrCreateWallet();
+      const agentWallet = await this.getOrCreateAgentWalletInternal(
+        ctx.provider,
+        ctx.storageAdapter,
+      );
 
       // Check if agent is approved on blockchain
       const isApproved = await this.verifyAgentApprovalOnChain(
@@ -154,7 +214,10 @@ export class AgentService implements AgentPort {
       }
 
       // Get or create agent wallet
-      const agentWallet = await ctx.walletManager.getOrCreateWallet();
+      const agentWallet = await this.getOrCreateAgentWalletInternal(
+        ctx.provider,
+        ctx.storageAdapter,
+      );
 
       // Approve agent on blockchain
       await ctx.blockchainAdapter.approveAgent(agentWallet.address, DEFAULT_AGENT_NAME);
@@ -264,7 +327,7 @@ export class AgentService implements AgentPort {
       throw new Error('Failed to get wallet context');
     }
 
-    return ctx.walletManager.getOrCreateWallet();
+    return this.getOrCreateAgentWalletInternal(ctx.provider, ctx.storageAdapter);
   }
 
   /**
