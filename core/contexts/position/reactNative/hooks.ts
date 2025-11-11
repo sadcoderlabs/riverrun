@@ -2,11 +2,10 @@
  * Position React Hooks
  *
  * Convenience hooks for accessing position data in React components.
- * These hooks combine the position service with Zustand store for reactivity.
+ * These hooks provide direct access to position store and utility calculations.
  */
 
 import { useStore } from 'zustand';
-import { usePositionContext } from './usePositionContext';
 import { positionStore } from '../adapters/positionStore';
 import type { EnrichedPosition, PositionMetrics } from '../ports/types';
 
@@ -44,11 +43,9 @@ export function usePositionsLoading(): boolean {
  * @returns Position size (positive for long, negative for short, 0 if no position)
  */
 export function useCurrentPosition(coin: string): number {
-  const { positionService } = usePositionContext();
   const positions = usePositions();
-
-  // Re-calculate when positions change
-  return positionService.getCurrentPosition(coin);
+  const position = positions.find(p => p.coin === coin);
+  return position ? Number(position.szi) : 0;
 }
 
 /**
@@ -58,8 +55,22 @@ export function useCurrentPosition(coin: string): number {
  * @returns Position metrics
  */
 export function usePositionMetrics(position: EnrichedPosition): PositionMetrics {
-  const { positionService } = usePositionContext();
+  const szi = Number(position.szi);
+  const unrealizedPnl = Number(position.unrealizedPnl);
 
-  // Calculate metrics on each render (cheap calculation)
-  return positionService.calculateMetrics(position);
+  // Determine position side
+  const side: 'Long' | 'Short' = szi > 0 ? 'Long' : 'Short';
+
+  // Funding from API is from funding rate perspective
+  // For Long positions: we PAY funding (so invert the sign)
+  // For Short positions: we RECEIVE funding (keep the sign)
+  const fundingFromApi = Number(position.cumFunding.sinceOpen);
+  const funding = szi > 0 ? -fundingFromApi : fundingFromApi;
+
+  return {
+    funding,
+    isFundingPositive: funding > 0,
+    side,
+    isPnlPositive: unrealizedPnl > 0,
+  };
 }

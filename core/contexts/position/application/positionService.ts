@@ -2,10 +2,10 @@
  * Position Service - Core Business Logic
  *
  * This service manages position data by:
- * 1. Subscribing to WebData2 updates via SubscriptionPort
- * 2. Extracting non-zero positions from the data stream
- * 3. Enriching positions with market data (markPx, szDecimals)
- * 4. Calculating position metrics (funding, PnL, side)
+ * 1. Monitoring active wallet changes and managing subscription lifecycle
+ * 2. Subscribing to WebData2 updates via SubscriptionPort
+ * 3. Extracting non-zero positions from the data stream
+ * 4. Enriching positions with market data (markPx, szDecimals)
  * 5. Updating the position store for UI consumption
  */
 
@@ -15,7 +15,6 @@ import { activeWalletStore } from '../../wallet/adapters/activeWalletStore';
 import type {
   EnrichedPosition,
   Position,
-  PositionMetrics,
   PositionPort,
   SubscriptionHandle,
   SubscriptionPort,
@@ -79,9 +78,9 @@ export class PositionService implements PositionPort {
   }
 
   /**
-   * Start subscribing to position updates for a user
+   * Start subscribing to position updates for a user (internal)
    */
-  async startSubscription(userAddress: string): Promise<void> {
+  private async startSubscription(userAddress: string): Promise<void> {
     // If already subscribed, stop first
     if (this.subscription) {
       await this.stopSubscription();
@@ -102,9 +101,9 @@ export class PositionService implements PositionPort {
   }
 
   /**
-   * Stop the current subscription
+   * Stop the current subscription (internal)
    */
-  async stopSubscription(): Promise<void> {
+  private async stopSubscription(): Promise<void> {
     if (this.subscription) {
       await this.subscription.unsubscribe();
       this.subscription = undefined;
@@ -119,46 +118,6 @@ export class PositionService implements PositionPort {
    */
   getPositions(): EnrichedPosition[] {
     return positionStore.getState().positions;
-  }
-
-  /**
-   * Get current position for a specific coin
-   */
-  getCurrentPosition(coin: string): number {
-    const positions = this.getPositions();
-    const position = positions.find(p => p.coin === coin);
-    return position ? Number(position.szi) : 0;
-  }
-
-  /**
-   * Get count of open positions
-   */
-  getPositionCount(): number {
-    return positionStore.getState().positionCount;
-  }
-
-  /**
-   * Calculate position metrics for display
-   */
-  calculateMetrics(position: EnrichedPosition): PositionMetrics {
-    const szi = Number(position.szi);
-    const unrealizedPnl = Number(position.unrealizedPnl);
-
-    // Determine position side
-    const side: 'Long' | 'Short' = szi > 0 ? 'Long' : 'Short';
-
-    // Funding from API is from funding rate perspective
-    // For Long positions: we PAY funding (so invert the sign)
-    // For Short positions: we RECEIVE funding (keep the sign)
-    const fundingFromApi = Number(position.cumFunding.sinceOpen);
-    const funding = szi > 0 ? -fundingFromApi : fundingFromApi;
-
-    return {
-      funding,
-      isFundingPositive: funding > 0,
-      side,
-      isPnlPositive: unrealizedPnl > 0,
-    };
   }
 
   /**
