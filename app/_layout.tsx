@@ -11,12 +11,7 @@ import {
 } from '@expo-google-fonts/inter';
 
 import { useThemePreference } from '@/lib/riverrun/theme/useThemePreference';
-import {
-  useWalletContext,
-  WalletCompositionProvider,
-  AgentCompositionProvider,
-  BuilderFeeCompositionProvider,
-} from '@/core/composition';
+import { useWalletContext, AppCompositionProvider } from '@/core/composition';
 import { ActionSheetProvider } from '@expo/react-native-action-sheet';
 import { PrivyProvider } from '@privy-io/expo';
 import { PrivyElements } from '@privy-io/expo/ui';
@@ -176,24 +171,20 @@ export default function RootLayout() {
                 },
               }}
             >
-              <WalletCompositionProvider>
-                <AgentCompositionProvider>
-                  <BuilderFeeCompositionProvider>
-                    <TamaguiProvider config={tamaguiConfig} defaultTheme={effectiveTheme}>
-                      <GestureHandlerRootView>
-                        <ActionSheetProvider>
-                          <View style={{ flex: 1 }}>
-                            <WalletInfoDisplay />
-                          </View>
-                        </ActionSheetProvider>
-                        <Toaster />
-                      </GestureHandlerRootView>
-                      <PrivyElements />
-                    </TamaguiProvider>
-                    <AppKit />
-                  </BuilderFeeCompositionProvider>
-                </AgentCompositionProvider>
-              </WalletCompositionProvider>
+              <AppCompositionProvider>
+                <TamaguiProvider config={tamaguiConfig} defaultTheme={effectiveTheme}>
+                  <GestureHandlerRootView>
+                    <ActionSheetProvider>
+                      <View style={{ flex: 1 }}>
+                        <WalletInfoDisplay />
+                      </View>
+                    </ActionSheetProvider>
+                    <Toaster />
+                  </GestureHandlerRootView>
+                  <PrivyElements />
+                </TamaguiProvider>
+                <AppKit />
+              </AppCompositionProvider>
             </PrivyProvider>
           </AppKitProvider>
         </QueryClientProvider>

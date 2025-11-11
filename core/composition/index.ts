@@ -5,6 +5,10 @@
  * wiring together ports, adapters, and application logic.
  */
 
+// Unified composition provider (recommended)
+export { AppCompositionProvider } from './appComposition';
+
+// Individual context providers (for advanced use cases or testing)
 export {
   WalletCompositionProvider,
   useWalletComposition,
