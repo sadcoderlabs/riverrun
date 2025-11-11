@@ -1,76 +1,37 @@
 /**
  * Position React Hooks
  *
- * Convenience hooks for accessing position data in React components.
- * These hooks provide direct access to position store and utility calculations.
+ * Provides direct access to position store for React components.
+ * Users write their own selectors for optimal performance.
  */
 
 import { useStore } from 'zustand';
 import { positionStore } from '../adapters/positionStore';
-import type { EnrichedPosition, PositionMetrics } from '../ports/types';
 
 /**
- * Hook to get all positions (reactive)
+ * Hook to access position store
  *
- * @returns Array of enriched positions
- */
-export function usePositions(): EnrichedPosition[] {
-  return useStore(positionStore, state => state.positions);
-}
-
-/**
- * Hook to get position count (reactive)
+ * Use this with your own selectors for reactive updates.
  *
- * @returns Number of open positions
- */
-export function usePositionCount(): number {
-  return useStore(positionStore, state => state.positions.length);
-}
-
-/**
- * Hook to get loading state (reactive)
+ * @example
+ * ```typescript
+ * // Get all positions
+ * const positions = usePositionStore(state => state.positions);
  *
- * @returns Whether positions are being loaded
- */
-export function usePositionsLoading(): boolean {
-  return useStore(positionStore, state => state.isLoading);
-}
-
-/**
- * Hook to get current position for a specific coin (reactive)
+ * // Get loading state
+ * const isLoading = usePositionStore(state => state.isLoading);
  *
- * @param coin - Coin symbol (e.g., 'BTC', 'ETH')
- * @returns Position size (positive for long, negative for short, 0 if no position)
- */
-export function useCurrentPosition(coin: string): number {
-  const positions = usePositions();
-  const position = positions.find(p => p.coin === coin);
-  return position ? Number(position.szi) : 0;
-}
-
-/**
- * Hook to calculate position metrics
+ * // Get position count
+ * const count = usePositionStore(state => state.positions.length);
  *
- * @param position - Position to calculate metrics for
- * @returns Position metrics
+ * // Get specific position
+ * const btcPosition = usePositionStore(state =>
+ *   state.positions.find(p => p.coin === 'BTC')
+ * );
+ * ```
  */
-export function usePositionMetrics(position: EnrichedPosition): PositionMetrics {
-  const szi = Number(position.szi);
-  const unrealizedPnl = Number(position.unrealizedPnl);
-
-  // Determine position side
-  const side: 'Long' | 'Short' = szi > 0 ? 'Long' : 'Short';
-
-  // Funding from API is from funding rate perspective
-  // For Long positions: we PAY funding (so invert the sign)
-  // For Short positions: we RECEIVE funding (keep the sign)
-  const fundingFromApi = Number(position.cumFunding.sinceOpen);
-  const funding = szi > 0 ? -fundingFromApi : fundingFromApi;
-
-  return {
-    funding,
-    isFundingPositive: funding > 0,
-    side,
-    isPnlPositive: unrealizedPnl > 0,
-  };
+export function usePositionStore<T>(
+  selector: (state: ReturnType<typeof positionStore.getState>) => T,
+): T {
+  return useStore(positionStore, selector);
 }

@@ -4,12 +4,9 @@ import { formatSize } from '@/lib/hyperliquid/format/formatSize';
 import { formatValue } from '@/lib/hyperliquid/format/formatValue';
 import { useWalletContext } from '@/core/composition';
 import { useMarketsStore } from '@/lib/riverrun/market';
-import {
-  usePositions,
-  usePositionsLoading,
-  usePositionMetrics,
-} from '@/core/contexts/position/reactNative/hooks';
+import { usePositionStore } from '@/core/contexts/position/reactNative/hooks';
 import type { EnrichedPosition } from '@/core/contexts/position/ports/types';
+import { calculatePositionMetrics } from '@/core/contexts/position/ports/types';
 import { useState } from 'react';
 import { Button, Spinner, Text, View, XStack, YStack } from 'tamagui';
 import ClosePositionModal from './ClosePositionModal';
@@ -20,8 +17,8 @@ export default function PositionsTab() {
   const { setSelectedMarketByCoin } = useMarketsStore();
 
   // Get positions from position context (business logic handled by PositionService)
-  const positions = usePositions();
-  const isLoading = usePositionsLoading();
+  const positions = usePositionStore(state => state.positions);
+  const isLoading = usePositionStore(state => state.isLoading);
 
   const [closeModalOpen, setCloseModalOpen] = useState(false);
   const [tpSlModalOpen, setTpSlModalOpen] = useState(false);
@@ -98,8 +95,8 @@ interface PositionCardProps {
 }
 
 function PositionCard({ position, onPositionClick, onCloseClick, onTpSlClick }: PositionCardProps) {
-  // Calculate metrics using business logic from PositionService
-  const metrics = usePositionMetrics(position);
+  // Calculate metrics using business logic
+  const metrics = calculatePositionMetrics(position);
 
   const szi = Number(position.szi);
   const unrealizedPnl = Number(position.unrealizedPnl);
