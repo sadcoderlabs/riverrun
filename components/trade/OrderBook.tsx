@@ -2,17 +2,18 @@ import AdaptiveSelect from '@/components/global/AdaptiveSelect';
 import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
 import { formatSizeFixedDecimals } from '@/lib/hyperliquid/format/formatSizeFixedDecimals';
 import { useActiveAssetCtx, useTrades } from '@/lib/hyperliquid/hooks';
+import { useSubscription, type OrderBookData } from '@/lib/hyperliquid/subscription';
+import { useThrottle } from '@/lib/riverrun/common/useThrottle';
 import { useMarketsStore } from '@/lib/riverrun/market';
-import { useLatestPrice } from '@/lib/riverrun/orderbook/useLatestPrice';
 import {
   buildPrecisionMenu,
   type NSigFigs,
   type OrderBookLevel,
   type PrecisionMenuItem,
 } from '@/lib/riverrun/orderbook/orderbookPrecision';
-import { useSubscription, type OrderBookData } from '@/lib/hyperliquid/subscription';
+import { useLatestPrice } from '@/lib/riverrun/orderbook/useLatestPrice';
 import { ArrowDownRight, ArrowUpRight, ChevronDown, Info } from '@tamagui/lucide-icons';
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList } from 'react-native';
 import { Button, Popover, Text, XStack, YStack } from 'tamagui';
 import { OrderBookRow } from './OrderBookRow';
@@ -74,11 +75,30 @@ export function OrderBook({ onPriceClick }: OrderBookProps) {
   // Use null instead of undefined to prevent subscription from restarting when precisionMenuItems loads
   const effectiveNSigFigs = selectedPrecision ?? precisionMenuItems[0]?.nSigFigs ?? null;
 
-  // Subscribe to order book using unified subscription system
-  const { data, isLoading, error } = useSubscription<OrderBookData>('orderBook', {
+  // Subscribe to order book data
+  const {
+    data: rawData,
+    isLoading,
+    error,
+  } = useSubscription<OrderBookData>('orderBook', {
     coin,
     nSigFigs: effectiveNSigFigs,
   });
+
+  // Throttle UI updates to max 10 updates/sec to prevent mobile performance issues
+  const [data, setData] = useState<OrderBookData | undefined>(rawData);
+  const throttledSetData = useThrottle(setData, 100, { leading: true, trailing: true });
+
+  // Store in ref to avoid useEffect dependency issues
+  const throttledSetDataRef = useRef(throttledSetData);
+  useEffect(() => {
+    throttledSetDataRef.current = throttledSetData;
+  });
+
+  // Update throttled data when rawData changes
+  useEffect(() => {
+    throttledSetDataRef.current(rawData);
+  }, [rawData]);
 
   // Prepare asks data (reversed for top-down display, limited to 10)
   const reversedAsks = useMemo(() => {
@@ -133,34 +153,35 @@ export function OrderBook({ onPriceClick }: OrderBookProps) {
   }, [limitedBids, totalLiquidity]);
 
   // Render individual order book row
-  const renderOrderBookRow = (
-    item: OrderBookLevel & { cumulativePercentage: number },
-    type: 'bid' | 'ask',
-  ) => {
-    // Calculate display size based on unit
-    let displaySize: string;
-    if (sizeUnit === 'usd') {
-      // USD mode: calculate USD value and format as integer with thousand separators
-      const sizeInUsd = parseFloat(item.sz) * parseFloat(item.px);
-      displaySize = formatSizeFixedDecimals(sizeInUsd, 0, true);
-    } else {
-      // Asset mode: format with fixed decimals for alignment, no thousand separators
-      displaySize = formatSizeFixedDecimals(item.sz, szDecimals, false);
-    }
+  // Wrapped with useCallback to prevent unnecessary re-creation on each render
+  const renderOrderBookRow = useCallback(
+    (item: OrderBookLevel & { cumulativePercentage: number }, type: 'bid' | 'ask') => {
+      // Calculate display size based on unit
+      let displaySize: string;
+      if (sizeUnit === 'usd') {
+        // USD mode: calculate USD value and format as integer with thousand separators
+        const sizeInUsd = parseFloat(item.sz) * parseFloat(item.px);
+        displaySize = formatSizeFixedDecimals(sizeInUsd, 0, true);
+      } else {
+        // Asset mode: format with fixed decimals for alignment, no thousand separators
+        displaySize = formatSizeFixedDecimals(item.sz, szDecimals, false);
+      }
 
-    return (
-      <OrderBookRow
-        key={`${type}-${item.px}`}
-        price={item.px}
-        size={displaySize}
-        type={type}
-        depthPercentage={item.cumulativePercentage}
-        szDecimals={szDecimals}
-        sizeUnit={sizeUnit}
-        onPress={() => onPriceClick?.(item.px)}
-      />
-    );
-  };
+      return (
+        <OrderBookRow
+          key={`${type}-${item.px}`}
+          price={item.px}
+          size={displaySize}
+          type={type}
+          depthPercentage={item.cumulativePercentage}
+          szDecimals={szDecimals}
+          sizeUnit={sizeUnit}
+          onPress={() => onPriceClick?.(item.px)}
+        />
+      );
+    },
+    [sizeUnit, szDecimals, onPriceClick],
+  );
 
   // Loading state
   if (isLoading) {
