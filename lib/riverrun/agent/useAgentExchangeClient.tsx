@@ -7,7 +7,7 @@ import {
   getMasterExchangeClient,
   getAgentExchangeClient as getCachedAgentExchangeClient,
 } from '@/lib/hyperliquid/client/getter';
-import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
+import { useWalletContext } from '@/core/composition';
 
 import { DEFAULT_AGENT_NAME } from './constants';
 import { getOrCreateAgentSigner } from './getOrCreateAgentSigner';
@@ -101,7 +101,7 @@ async function approveAgent(
  * Handles agent creation, approval, and validation
  */
 export function useAgentExchangeClient() {
-  const { wallet } = useActiveWallet();
+  const { wallet } = useWalletContext();
   const router = useRouter();
 
   /**

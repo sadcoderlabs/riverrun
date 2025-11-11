@@ -7,7 +7,7 @@ import { Button, Input, Spinner, Text, XStack, YStack } from 'tamagui';
 import { toast } from 'sonner-native';
 import { DEPOSIT_TOKENS, ChainName } from '@/lib/riverrun/transfer/constants/depositTokens';
 import { useArbitrumUsdc, ARBITRUM_USDC_ADDRESS } from '@/lib/riverrun/transfer/useArbitrumUsdc';
-import { useActiveWallet } from '@/lib/riverrun/wallet';
+import { useWalletContext } from '@/core/composition';
 
 // Hyperliquid Bridge contract address on Arbitrum
 const HYPERLIQUID_BRIDGE_ADDRESS = '0x2Df1c51E09aECF9cacB7bc98cB1742757f163dF7';
@@ -33,7 +33,7 @@ export default function HyperliquidBridgePage() {
   const params = useLocalSearchParams<{ symbol: string; chain: string }>();
 
   // Wallet and balance hooks
-  const { wallet } = useActiveWallet();
+  const { wallet } = useWalletContext();
   const { balance, depositUsdc } = useArbitrumUsdc();
 
   // Find the token based on symbol from URL params

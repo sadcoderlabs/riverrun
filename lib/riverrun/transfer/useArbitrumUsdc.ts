@@ -1,6 +1,6 @@
 import { Contract, formatUnits, parseUnits, JsonRpcProvider } from 'ethers';
 import { useCallback, useEffect, useState } from 'react';
-import { useActiveWallet } from '../wallet/useActiveWallet';
+import { useWalletContext } from '@/core/composition';
 
 // Arbitrum USDC contract address
 export const ARBITRUM_USDC_ADDRESS = '0xaf88d065e77c8cC2239327C5EDb3A432268e5831';
@@ -65,7 +65,7 @@ export interface UseArbitrumUsdcResult {
  * ```
  */
 export function useArbitrumUsdc(): UseArbitrumUsdcResult {
-  const { wallet } = useActiveWallet();
+  const { wallet } = useWalletContext();
   const [balance, setBalance] = useState<string | null>(null);
 
   const fetchBalance = useCallback(async () => {
@@ -134,7 +134,7 @@ export function useArbitrumUsdc(): UseArbitrumUsdcResult {
         throw new Error('Wallet address not available');
       }
 
-      // Get Privy provider through useActiveWallet
+      // Get Privy provider through useWalletContext
       const provider = await wallet.getProvider();
       if (!provider) {
         throw new Error('Provider not available');

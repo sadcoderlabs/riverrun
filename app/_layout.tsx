@@ -11,7 +11,7 @@ import {
 } from '@expo-google-fonts/inter';
 
 import { useThemePreference } from '@/lib/riverrun/theme/useThemePreference';
-import { useActiveWallet } from '@/lib/riverrun/wallet';
+import { useWalletContext, WalletCompositionProvider } from '@/core/composition';
 import { ActionSheetProvider } from '@expo/react-native-action-sheet';
 import { PrivyProvider } from '@privy-io/expo';
 import { PrivyElements } from '@privy-io/expo/ui';
@@ -35,7 +35,7 @@ LogBox.ignoreLogs(['emitting session_request', 'without any listeners']);
 SplashScreen.preventAutoHideAsync();
 
 function WalletInfoDisplay() {
-  const { isReady, wallet } = useActiveWallet();
+  const { wallet } = useWalletContext();
   const appState = useAppLifecycle();
 
   // App Lifecycle management for unified subscription system
@@ -48,11 +48,6 @@ function WalletInfoDisplay() {
       void subscriptionManager.pauseAll();
     }
   }, [appState]);
-
-  // Wait for wallet providers to be ready before showing content
-  if (!isReady) {
-    return null;
-  }
 
   return (
     <>
@@ -176,18 +171,20 @@ export default function RootLayout() {
                 },
               }}
             >
-              <TamaguiProvider config={tamaguiConfig} defaultTheme={effectiveTheme}>
-                <GestureHandlerRootView>
-                  <ActionSheetProvider>
-                    <View style={{ flex: 1 }}>
-                      <WalletInfoDisplay />
-                    </View>
-                  </ActionSheetProvider>
-                  <Toaster />
-                </GestureHandlerRootView>
-                <PrivyElements />
-              </TamaguiProvider>
-              <AppKit />
+              <WalletCompositionProvider>
+                <TamaguiProvider config={tamaguiConfig} defaultTheme={effectiveTheme}>
+                  <GestureHandlerRootView>
+                    <ActionSheetProvider>
+                      <View style={{ flex: 1 }}>
+                        <WalletInfoDisplay />
+                      </View>
+                    </ActionSheetProvider>
+                    <Toaster />
+                  </GestureHandlerRootView>
+                  <PrivyElements />
+                </TamaguiProvider>
+                <AppKit />
+              </WalletCompositionProvider>
             </PrivyProvider>
           </AppKitProvider>
         </QueryClientProvider>

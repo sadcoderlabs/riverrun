@@ -5,7 +5,7 @@ import { Alert, Pressable, ScrollView } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { Button, Input, Spinner, Text, XStack, YStack } from 'tamagui';
 import { toast } from 'sonner-native';
-import { useActiveWallet } from '@/lib/riverrun/wallet';
+import { useWalletContext } from '@/core/composition';
 import { useHyperliquidWithdraw } from '@/lib/riverrun/withdrawal/useHyperliquidWithdraw';
 
 // Validate Ethereum address format
@@ -24,7 +24,7 @@ export default function HyperliquidBridgeWithdrawPage() {
   const router = useRouter();
 
   // Wallet hooks
-  const { wallet } = useActiveWallet();
+  const { wallet } = useWalletContext();
 
   // Hyperliquid withdraw hook
   const {

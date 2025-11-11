@@ -1,4 +1,4 @@
-import { useActiveWallet } from '@/lib/riverrun/wallet';
+import { useWalletContext } from '@/core/composition';
 import { Copy, Settings, Wallet } from '@tamagui/lucide-icons';
 import * as Clipboard from 'expo-clipboard';
 import { Link } from 'expo-router';
@@ -32,7 +32,7 @@ function shortenAddress(address: string): string {
 
 export function WalletInfo() {
   const theme = useTheme();
-  const { wallet } = useActiveWallet();
+  const { wallet } = useWalletContext();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Use the unified wallet address and name from useWallet

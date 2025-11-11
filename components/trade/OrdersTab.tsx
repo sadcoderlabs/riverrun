@@ -15,7 +15,7 @@ import {
   getOrderDirection,
   isMarketOrder,
 } from '@/lib/riverrun/order';
-import { useActiveWallet } from '@/lib/riverrun/wallet';
+import { useWalletContext } from '@/core/composition';
 import { useMarketsStore } from '@/lib/riverrun/market';
 import { useMemo, useState } from 'react';
 import { Button, Spinner, Text, View, XStack, YStack } from 'tamagui';
@@ -195,7 +195,7 @@ function OrderCard({ order, onCancel, onPress, canceling }: OrderCardProps) {
 type OrderFilter = 'all' | 'long' | 'short';
 
 export function OrdersTabContent() {
-  const { wallet } = useActiveWallet();
+  const { wallet } = useWalletContext();
   const { setSelectedMarketByCoin } = useMarketsStore();
 
   // Get orders from useOpenOrders (simplified flat structure)

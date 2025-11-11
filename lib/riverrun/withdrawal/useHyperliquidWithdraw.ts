@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { Alert } from 'react-native';
 import { useHyperliquidClient } from '@/lib/hyperliquid/client/useHyperliquidClient';
-import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
+import { useWalletContext } from '@/core/composition';
 import * as infoClient from '@/lib/hyperliquid/client/infoClient';
 
 // Minimum withdrawal amount in USDC
@@ -24,7 +24,7 @@ interface UseHyperliquidWithdrawResult {
  * - Execute USDC withdrawal to Arbitrum network
  */
 export function useHyperliquidWithdraw(): UseHyperliquidWithdrawResult {
-  const { wallet } = useActiveWallet();
+  const { wallet } = useWalletContext();
   const { getMasterExchangeClient } = useHyperliquidClient();
 
   const [withdrawableBalance, setWithdrawableBalance] = useState<string | null>(null);

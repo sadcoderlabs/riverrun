@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useWalletComposition } from '../walletComposition';
+import { useStore } from 'zustand';
+import { walletSelectionStore } from '../../contexts/wallet/adapters/walletSelectionStore';
 import type {
   ActiveWallet,
   WalletSource,
@@ -85,7 +87,10 @@ export function useWalletContext(): UseWalletContextResult {
   const { walletService } = useWalletComposition();
   const [wallet, setWallet] = useState<ActiveWallet | undefined>(undefined);
 
-  // Fetch active wallet whenever walletService changes
+  // Subscribe to walletSelectionStore changes
+  const selectedWalletSource = useStore(walletSelectionStore, state => state.selectedWalletSource);
+
+  // Fetch active wallet whenever walletService or selectedWalletSource changes
   useEffect(() => {
     let mounted = true;
 
@@ -106,7 +111,7 @@ export function useWalletContext(): UseWalletContextResult {
     return () => {
       mounted = false;
     };
-  }, [walletService]);
+  }, [walletService, selectedWalletSource]);
 
   // Wrap walletService methods with useCallback for stable references
   const connect = useCallback(

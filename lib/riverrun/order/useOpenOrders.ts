@@ -10,7 +10,7 @@
  * - Just fetch complete data for each order update
  */
 
-import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
+import { useWalletContext } from '@/core/composition';
 import type { Order } from '@/lib/riverrun/order/orders';
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -94,7 +94,7 @@ const FAILED_ORDER_STATUSES = new Set([
 // ============================================================================
 
 export function useOpenOrders(): UseOpenOrdersResult {
-  const { wallet } = useActiveWallet();
+  const { wallet } = useWalletContext();
   const [mergedOrders, setMergedOrders] = useState<Order[]>([]);
 
   // Step 1: HTTP fetch initial open orders using TanStack Query

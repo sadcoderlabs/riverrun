@@ -15,7 +15,7 @@
  * Returns fills in chronological order (most recent first)
  */
 
-import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
+import { useWalletContext } from '@/core/composition';
 import { useSubscription, type UserFillsData } from '@/lib/hyperliquid/subscription';
 import type { Fill } from '@/lib/riverrun/history/fills';
 import { useEffect, useState } from 'react';
@@ -40,7 +40,7 @@ export interface UseUserFillsResult {
 // ============================================================================
 
 export function useUserFills(): UseUserFillsResult {
-  const { wallet } = useActiveWallet();
+  const { wallet } = useWalletContext();
   const [mergedFills, setMergedFills] = useState<Fill[]>([]);
 
   // Step 1: HTTP fetch initial fills using TanStack Query

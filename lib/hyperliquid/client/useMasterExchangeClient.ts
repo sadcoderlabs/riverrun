@@ -3,10 +3,10 @@ import { useCallback } from 'react';
 import { Alert } from 'react-native';
 
 import { getMasterExchangeClient } from '@/lib/hyperliquid/client/getter';
-import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
+import { useWalletContext } from '@/core/composition';
 
 export function useMasterExchangeClient() {
-  const { wallet } = useActiveWallet();
+  const { wallet } = useWalletContext();
 
   const getMasterExchangeClientWrapper = useCallback(async (): Promise<
     hl.ExchangeClient | undefined

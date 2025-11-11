@@ -3,7 +3,7 @@ import { Alert } from 'react-native';
 
 import { BUILDER_CONFIG } from './config';
 import { useHyperliquidClient } from '@/lib/hyperliquid/client/useHyperliquidClient';
-import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
+import { useWalletContext } from '@/core/composition';
 import * as infoClient from '@/lib/hyperliquid/client/infoClient';
 
 /**
@@ -12,7 +12,7 @@ import * as infoClient from '@/lib/hyperliquid/client/infoClient';
  */
 export function useBuilderFee() {
   const { getMasterExchangeClient } = useHyperliquidClient();
-  const { wallet } = useActiveWallet();
+  const { wallet } = useWalletContext();
   const [isBuilderFeeLoading, setIsBuilderFeeLoading] = useState(false);
   const [maxApprovedFee, setMaxApprovedFee] = useState<number>(0);
 

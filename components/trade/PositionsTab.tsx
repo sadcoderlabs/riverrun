@@ -3,7 +3,7 @@ import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
 import { formatSize } from '@/lib/hyperliquid/format/formatSize';
 import { formatValue } from '@/lib/hyperliquid/format/formatValue';
 import { useWebData2, useMetaAndAssetCtxs } from '@/lib/hyperliquid/hooks';
-import { useActiveWallet } from '@/lib/riverrun/wallet';
+import { useWalletContext } from '@/core/composition';
 import { useMarketsStore } from '@/lib/riverrun/market';
 import * as hl from '@nktkas/hyperliquid';
 import { useMemo, useState } from 'react';
@@ -19,7 +19,7 @@ interface PositionWithMarkPrice extends Position {
 }
 
 export default function PositionsTab() {
-  const { wallet } = useActiveWallet();
+  const { wallet } = useWalletContext();
   const { setSelectedMarketByCoin } = useMarketsStore();
 
   // Get WebData2 using unified subscription system (automatically shared via RefCount)

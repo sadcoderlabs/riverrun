@@ -1,8 +1,8 @@
-import { useActiveWallet } from '@/lib/riverrun/wallet';
+import { useWalletContext } from '@/core/composition';
 import { Redirect } from 'expo-router';
 
 export default function Index() {
-  const { wallet } = useActiveWallet();
+  const { wallet } = useWalletContext();
 
   if (wallet) {
     return <Redirect href="/(tabs)/home" />;

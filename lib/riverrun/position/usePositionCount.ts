@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useWebData2 } from '@/lib/hyperliquid/hooks/useWebData2';
-import { useActiveWallet } from '@/lib/riverrun/wallet';
+import { useWalletContext } from '@/core/composition';
 
 /**
  * Hook to get real-time position count from WebSocket data
@@ -8,7 +8,7 @@ import { useActiveWallet } from '@/lib/riverrun/wallet';
  * to show position count badges in navigation tabs
  */
 export function usePositionCount(): number {
-  const { wallet } = useActiveWallet();
+  const { wallet } = useWalletContext();
   const { data: webData } = useWebData2();
 
   const count = useMemo(() => {

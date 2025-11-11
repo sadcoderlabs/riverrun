@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react';
 import { Alert } from 'react-native';
 
 import { useHyperliquidClient } from '@/lib/hyperliquid/client/useHyperliquidClient';
-import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
+import { useWalletContext } from '@/core/composition';
 
 import { DEFAULT_AGENT_NAME } from './constants';
 import { getOrCreateAgentSigner } from './getOrCreateAgentSigner';
@@ -22,7 +22,7 @@ import { clearAgentPrivateKey } from './agentPkStore';
  */
 export function useAgentApproval() {
   const { getMasterExchangeClient } = useHyperliquidClient();
-  const { wallet } = useActiveWallet();
+  const { wallet } = useWalletContext();
   const [isLoading, setIsLoading] = useState(false);
   const [agentAddress, setAgentAddress] = useState<string | undefined>(undefined);
   const [isApproved, setIsApproved] = useState(false);
@@ -43,7 +43,7 @@ export function useAgentApproval() {
 
       const masterAddress = await getWalletAddress(masterExchangeClient.wallet);
 
-      // Get provider from useActiveWallet
+      // Get provider from useWalletContext
       if (!wallet) {
         return { agentAddress: undefined, isApproved: false };
       }

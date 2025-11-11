@@ -1,4 +1,4 @@
-import { useActiveWallet } from '@/lib/riverrun/wallet/useActiveWallet';
+import { useWalletContext } from '@/core/composition';
 import { useSubscription, type ActiveAssetData } from '../subscription';
 import { useMemo, useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -32,7 +32,7 @@ interface UseActiveAssetDataResult {
  * @returns activeAssetData with loading and error states
  */
 export function useActiveAssetData({ coin }: UseActiveAssetDataParams): UseActiveAssetDataResult {
-  const { wallet } = useActiveWallet();
+  const { wallet } = useWalletContext();
   const [mergedData, setMergedData] = useState<ActiveAssetData | undefined>();
 
   // Step 1: HTTP fetch initial data using TanStack Query

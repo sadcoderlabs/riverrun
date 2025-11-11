@@ -1,7 +1,7 @@
 import { Button } from '@/components/global/Button';
 import { Heading } from '@/components/global/Heading';
 import { useThemePreference } from '@/lib/riverrun/theme/useThemePreference';
-import { useWalletManager } from '@/lib/riverrun/wallet';
+import { useWalletContext } from '@/core/composition';
 import { Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { toast } from 'sonner-native';
@@ -10,17 +10,15 @@ import { Text, View, YStack } from 'tamagui';
 export default function Login() {
   const insets = useSafeAreaInsets();
   const { effectiveTheme } = useThemePreference();
-  const { connectPrivy, connectReown } = useWalletManager();
+  const { connect } = useWalletContext();
 
   // Handle email login via Privy
   const handleEmailLogin = async () => {
     try {
-      const session = await connectPrivy();
-      if (session) {
-        toast.success('Welcome!', {
-          description: 'Login successful',
-        });
-      }
+      await connect('privy');
+      toast.success('Welcome!', {
+        description: 'Login successful',
+      });
     } catch (error: any) {
       console.error('Privy login error:', error);
       toast.error('Login failed', {
@@ -32,7 +30,7 @@ export default function Login() {
   // Handle external wallet connection
   const handleWalletConnect = () => {
     try {
-      connectReown();
+      connect('reown');
       // AppKit handles the connection flow
       // Once connected, the app will automatically navigate to main screen
       // via the authentication logic in _layout.tsx

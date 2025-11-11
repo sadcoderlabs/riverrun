@@ -48,6 +48,12 @@ export function useSubscription<TData = any>(type: string, params?: any): Subscr
 
     // Setup subscription
     const setupSubscription = async () => {
+      // Skip subscription if params is undefined (wallet not ready yet)
+      if (params === undefined) {
+        setIsLoading(false);
+        return;
+      }
+
       try {
         handle = await subscriptionManager.subscribe<TData>(type, params, (newData: TData) => {
           setData(newData);
