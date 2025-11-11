@@ -8,11 +8,8 @@
 // Register subscription configurations
 import './configs';
 
-// Main service export
-export {
-  HyperliquidSubscriptionService,
-  hyperliquidSubscriptionService,
-} from './hyperliquidSubscriptionService';
+// Main subscription manager
+export { subscriptionManager } from './subscriptionManager';
 
 // Registry for subscription configurations
 export { subscriptionRegistry } from './subscriptionRegistry';

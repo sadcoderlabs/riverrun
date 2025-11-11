@@ -1,15 +1,25 @@
 /**
  * Subscription Adapter
  *
- * This adapter wraps the HyperliquidSubscriptionService to implement SubscriptionPort.
+ * This adapter wraps the subscription manager to implement SubscriptionPort.
  * It leverages the RefCount mechanism to share WebSocket connections across components.
  */
 
-import type {
-  HyperliquidSubscriptionService,
-  SubscriptionHandle as InfraHandle,
-} from '@/core/infra/hyperliquid/subscription';
+import type { SubscriptionHandle as InfraHandle } from '@/core/infra/hyperliquid/subscription';
 import type { SubscriptionHandle, SubscriptionPort, WebData2Data } from '../ports/subscriptionPort';
+
+/**
+ * Subscription Manager Interface
+ * Minimal interface required by this adapter
+ */
+interface ISubscriptionManager {
+  subscribe<TData>(
+    type: string,
+    params: any,
+    callback: (data: TData) => void,
+  ): Promise<InfraHandle>;
+  unsubscribe(handle: InfraHandle): Promise<void>;
+}
 
 /**
  * Subscription Adapter Implementation
@@ -18,7 +28,7 @@ import type { SubscriptionHandle, SubscriptionPort, WebData2Data } from '../port
  * Allows Service layer to subscribe without depending on React hooks.
  */
 export class SubscriptionAdapter implements SubscriptionPort {
-  constructor(private readonly subscriptionService: HyperliquidSubscriptionService) {}
+  constructor(private readonly subscriptionManager: ISubscriptionManager) {}
 
   /**
    * Subscribe to WebData2 stream
@@ -27,8 +37,8 @@ export class SubscriptionAdapter implements SubscriptionPort {
     userAddress: string,
     callback: (data: WebData2Data) => void,
   ): Promise<SubscriptionHandle> {
-    // Use unified subscription service (with RefCount)
-    const handle: InfraHandle = await this.subscriptionService.subscribe<WebData2Data>(
+    // Use subscription manager (with RefCount)
+    const handle: InfraHandle = await this.subscriptionManager.subscribe<WebData2Data>(
       'webData2',
       { user: userAddress },
       callback,
@@ -37,7 +47,7 @@ export class SubscriptionAdapter implements SubscriptionPort {
     // Return wrapped handle
     return {
       unsubscribe: async () => {
-        await this.subscriptionService.unsubscribe(handle);
+        await this.subscriptionManager.unsubscribe(handle);
       },
     };
   }

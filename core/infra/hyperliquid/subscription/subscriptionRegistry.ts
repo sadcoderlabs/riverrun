@@ -38,20 +38,6 @@ class SubscriptionRegistry {
   ): SubscriptionConfig<TParams, TData> | undefined {
     return this.configs[type];
   }
-
-  /**
-   * Check if a subscription type is registered
-   */
-  hasConfig(type: string): boolean {
-    return type in this.configs;
-  }
-
-  /**
-   * Get all registered subscription types
-   */
-  getRegisteredTypes(): string[] {
-    return Object.keys(this.configs);
-  }
 }
 
 // Export singleton instance

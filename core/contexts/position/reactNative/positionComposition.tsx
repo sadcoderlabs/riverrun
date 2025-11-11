@@ -6,7 +6,7 @@
  */
 
 import React, { createContext, useMemo, useEffect } from 'react';
-import { hyperliquidSubscriptionService } from '@/core/infra/hyperliquid/subscription';
+import { subscriptionManager } from '@/core/infra/hyperliquid/subscription';
 import { PositionService } from '../application/positionService';
 import { SubscriptionAdapter } from '../adapters/subscriptionAdapter';
 import { MarketAdapter } from '../adapters/marketAdapter';
@@ -35,7 +35,7 @@ interface PositionCompositionProviderProps {
  * Position Composition Provider
  *
  * Sets up the dependency graph for the position context:
- * - SubscriptionAdapter (wraps HyperliquidSubscriptionService)
+ * - SubscriptionAdapter (wraps subscriptionManager)
  * - MarketAdapter (wraps market store)
  * - PositionService (core business logic)
  *
@@ -45,7 +45,7 @@ interface PositionCompositionProviderProps {
 export function PositionCompositionProvider({ children }: PositionCompositionProviderProps) {
   // Create service instances (stable across renders)
   const positionService = useMemo(() => {
-    const subscriptionAdapter = new SubscriptionAdapter(hyperliquidSubscriptionService);
+    const subscriptionAdapter = new SubscriptionAdapter(subscriptionManager);
     const marketAdapter = new MarketAdapter();
 
     return new PositionService(subscriptionAdapter, marketAdapter);
