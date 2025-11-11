@@ -7,14 +7,6 @@ let infoClient: hl.InfoClient | undefined;
 let wsTransport: hl.WebSocketTransport | undefined;
 let subscriptionClient: hl.SubscriptionClient | undefined;
 
-// ExchangeClient cache - keyed by wallet address
-interface ExchangeClientCache {
-  address: string;
-  wallet: Signer;
-  client: hl.ExchangeClient;
-}
-let masterExchangeClientCache: ExchangeClientCache | undefined;
-let agentExchangeClientCache: ExchangeClientCache | undefined;
 
 export function getTransport(): hl.HttpTransport {
   if (!transport) {
@@ -39,58 +31,29 @@ export function getSubscriptionClient(): hl.SubscriptionClient {
 }
 
 /**
- * Get or create a cached ExchangeClient for the master wallet.
- * Only creates a new instance if wallet address changes.
+ * Create an ExchangeClient for the master wallet.
  *
- * @param address - The wallet address
  * @param wallet - The Signer instance for the wallet
  * @returns ExchangeClient instance
  */
-export function getMasterExchangeClient(address: string, wallet: Signer): hl.ExchangeClient {
-  // Return cached client if wallet hasn't changed
-  if (masterExchangeClientCache && masterExchangeClientCache.address === address) {
-    return masterExchangeClientCache.client;
-  }
-
-  // Create new client and cache it
+export function getMasterExchangeClient(wallet: Signer): hl.ExchangeClient {
   const client = new hl.ExchangeClient({
     wallet,
     transport: getTransport(),
   });
-
-  masterExchangeClientCache = { address, wallet, client };
   return client;
 }
 
 /**
- * Get or create a cached ExchangeClient for an agent wallet.
- * Only creates a new instance if wallet address changes.
+ * Create an ExchangeClient for an agent wallet.
  *
- * @param address - The wallet address
  * @param wallet - The Signer instance for the agent wallet
  * @returns ExchangeClient instance
  */
-export function getAgentExchangeClient(address: string, wallet: Signer): hl.ExchangeClient {
-  // Return cached client if wallet hasn't changed
-  if (agentExchangeClientCache && agentExchangeClientCache.address === address) {
-    return agentExchangeClientCache.client;
-  }
-
-  // Create new client and cache it
+export function getAgentExchangeClient(wallet: Signer): hl.ExchangeClient {
   const client = new hl.ExchangeClient({
     wallet,
     transport: getTransport(),
   });
-
-  agentExchangeClientCache = { address, wallet, client };
   return client;
-}
-
-/**
- * Clear all cached ExchangeClient instances.
- * Call this when user disconnects wallet or switches accounts.
- */
-export function clearExchangeClientCache(): void {
-  masterExchangeClientCache = undefined;
-  agentExchangeClientCache = undefined;
 }

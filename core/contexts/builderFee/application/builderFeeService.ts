@@ -16,39 +16,18 @@ import * as hl from '@nktkas/hyperliquid';
 import type { BuilderFeePort } from '../ports/builderFeePort';
 import type { BuilderFeeStatus } from '../ports/types';
 import type { WalletPort } from '../../wallet/ports/walletPort';
-import { HyperliquidBuilderFeeAdapter } from '../adapters/hyperliquidBuilderFeeAdapter';
+import { HyperliquidAdapter } from '../../infra/hyperliquid/hyperliquidAdapter';
 import { builderFeeStateStore } from '../adapters/builderFeeStateStore';
 import { BUILDER_CONFIG } from '../config';
-import * as infoClient from '@/lib/hyperliquid/client/infoClient';
-import { getMasterExchangeClient as getMasterExchangeClientGetter } from '@/lib/hyperliquid/client/getter';
 
 /**
  * BuilderFeeService implementation
  */
 export class BuilderFeeService implements BuilderFeePort {
-  private readonly hyperliquidAdapter: HyperliquidBuilderFeeAdapter;
-
-  constructor(private readonly walletService: WalletPort) {
-    this.hyperliquidAdapter = new HyperliquidBuilderFeeAdapter();
-  }
-
-  /**
-   * Get the master exchange client for approval operations
-   */
-  private async getMasterExchangeClient(): Promise<hl.ExchangeClient | undefined> {
-    try {
-      const wallet = await this.walletService.active();
-      if (!wallet) {
-        return undefined;
-      }
-
-      const signer = await this.walletService.getSigner();
-      return getMasterExchangeClientGetter(wallet.address, signer);
-    } catch (error) {
-      console.error('[BuilderFeeService] Failed to get master exchange client:', error);
-      return undefined;
-    }
-  }
+  constructor(
+    private readonly walletService: WalletPort,
+    private readonly hyperliquidAdapter: HyperliquidAdapter,
+  ) {}
 
   /**
    * Check builder fee approval status
@@ -65,11 +44,11 @@ export class BuilderFeeService implements BuilderFeePort {
         return status;
       }
 
-      // Use the rate-limited infoClient wrapper directly
-      const maxFee = await infoClient.maxBuilderFee({
-        user: wallet.address,
-        builder: BUILDER_CONFIG.address,
-      });
+      // Use HyperliquidAdapter to check max builder fee
+      const maxFee = await this.hyperliquidAdapter.getMaxBuilderFee(
+        wallet.address,
+        BUILDER_CONFIG.address,
+      );
 
       const status: BuilderFeeStatus = {
         maxApprovedFee: maxFee,
@@ -94,17 +73,21 @@ export class BuilderFeeService implements BuilderFeePort {
    */
   async approveBuilderFee(): Promise<boolean> {
     try {
-      const exchangeClient = await this.getMasterExchangeClient();
-      if (!exchangeClient) {
-        throw new Error('Failed to get master wallet');
+      const wallet = await this.walletService.active();
+      if (!wallet) {
+        throw new Error('No active wallet');
       }
 
+      // Get signer for blockchain operation
+      const provider = await wallet.getProvider();
+      const signer = await provider.getSigner();
+
       // Execute approval
-      await this.hyperliquidAdapter.approveBuilderFee({
-        maxFeeRate: BUILDER_CONFIG.maxFeeRate,
-        builder: BUILDER_CONFIG.address,
-        exchangeClient,
-      });
+      await this.hyperliquidAdapter.approveBuilderFee(
+        signer,
+        BUILDER_CONFIG.maxFeeRate,
+        BUILDER_CONFIG.address,
+      );
 
       // Verify approval succeeded
       const status = await this.checkApprovalStatus();
@@ -120,17 +103,17 @@ export class BuilderFeeService implements BuilderFeePort {
    */
   async revokeBuilderFee(): Promise<boolean> {
     try {
-      const exchangeClient = await this.getMasterExchangeClient();
-      if (!exchangeClient) {
-        throw new Error('Failed to get master wallet');
+      const wallet = await this.walletService.active();
+      if (!wallet) {
+        throw new Error('No active wallet');
       }
 
+      // Get signer for blockchain operation
+      const provider = await wallet.getProvider();
+      const signer = await provider.getSigner();
+
       // Execute revocation (set max fee to 0%)
-      await this.hyperliquidAdapter.approveBuilderFee({
-        maxFeeRate: '0%',
-        builder: BUILDER_CONFIG.address,
-        exchangeClient,
-      });
+      await this.hyperliquidAdapter.approveBuilderFee(signer, '0%', BUILDER_CONFIG.address);
 
       // Verify revocation succeeded
       const status = await this.checkApprovalStatus();

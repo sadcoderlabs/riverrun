@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useMemo } from 'react';
 
+import { useWalletComposition } from '@/core/contexts/wallet/reactNative/walletComposition';
+import { HyperliquidAdapter } from '../../infra/hyperliquid/hyperliquidAdapter';
 import { BuilderFeeService } from '../application/builderFeeService';
 import type { BuilderFeePort } from '../ports/builderFeePort';
-import { useWalletComposition } from '@/core/contexts/wallet/reactNative/walletComposition';
 
 interface BuilderFeeCompositionContextValue {
   /**
@@ -12,9 +13,9 @@ interface BuilderFeeCompositionContextValue {
   builderFeeService: BuilderFeePort;
 }
 
-const BuilderFeeCompositionContext = createContext<
-  BuilderFeeCompositionContextValue | undefined
->(undefined);
+const BuilderFeeCompositionContext = createContext<BuilderFeeCompositionContextValue | undefined>(
+  undefined,
+);
 
 /**
  * BuilderFeeCompositionProvider - Dependency Injection Container for Builder Fee
@@ -43,8 +44,11 @@ export function BuilderFeeCompositionProvider({ children }: { children: React.Re
   // ==========================
 
   const builderFeeService = useMemo(() => {
-    // BuilderFeeService depends only on WalletPort interface
-    return new BuilderFeeService(walletService);
+    // Create Hyperliquid adapter (shared infrastructure adapter)
+    const hyperliquidAdapter = new HyperliquidAdapter();
+
+    // BuilderFeeService depends on WalletPort and HyperliquidAdapter
+    return new BuilderFeeService(walletService, hyperliquidAdapter);
   }, [walletService]);
 
   const value = {

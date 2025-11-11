@@ -147,8 +147,8 @@ export function useAgentContext(): UseAgentContextResult {
       // Get agent wallet
       const agentWallet = await agentService.getOrCreateAgentWallet();
 
-      // Return cached exchange client
-      return getAgentExchangeClientGetter(agentWallet.address, agentWallet.signer);
+      // Return exchange client
+      return getAgentExchangeClientGetter(agentWallet.signer);
     } catch (error) {
       console.error('Failed to get agent exchange client:', error);
       return undefined;

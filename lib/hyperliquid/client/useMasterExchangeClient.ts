@@ -25,8 +25,8 @@ export function useMasterExchangeClient() {
 
       const masterSigner = await ethersProvider.getSigner();
 
-      // Use cached ExchangeClient - only creates new instance if wallet changed
-      return getMasterExchangeClient(wallet.address, masterSigner);
+      // Create ExchangeClient (transport is singleton, so overhead is minimal)
+      return getMasterExchangeClient(masterSigner);
     } catch (error) {
       console.error('Failed to get master exchange client:', error);
       Alert.alert('Error', error instanceof Error ? error.message : 'Failed to initialize wallet');

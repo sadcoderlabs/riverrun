@@ -11,27 +11,23 @@
  * - Depends on wallet context for master wallet information
  */
 
-import * as hl from '@nktkas/hyperliquid';
 import { BaseWallet, BrowserProvider, Wallet } from 'ethers';
 
 import { DEFAULT_AGENT_NAME } from '../constants';
 
-import type { AgentPort } from '../ports/agentPort';
-import type { AgentApprovalStatus, AgentInfo, AgentWallet } from '../ports/types';
+import { HyperliquidAdapter } from '../../infra/hyperliquid/hyperliquidAdapter';
 import type { WalletPort } from '../../wallet/ports/walletPort';
-import { HyperliquidAgentAdapter } from '../adapters/hyperliquidAgentAdapter';
 import { AgentPkStore } from '../adapters/agentPkStore';
 import { agentStateStore } from '../adapters/agentStateStore';
-import { getMasterExchangeClient as getMasterExchangeClientGetter } from '@/lib/hyperliquid/client/getter';
+import type { AgentPort } from '../ports/agentPort';
+import type { AgentApprovalStatus, AgentWallet } from '../ports/types';
 
 /**
  * Context information needed for agent operations
  */
 interface AgentOperationContext {
   masterAddress: string;
-  masterExchangeClient: hl.ExchangeClient;
   provider: BrowserProvider;
-  blockchainAdapter: HyperliquidAgentAdapter;
   storageAdapter: AgentPkStore;
 }
 
@@ -39,7 +35,10 @@ interface AgentOperationContext {
  * AgentService implementation
  */
 export class AgentService implements AgentPort {
-  constructor(private readonly walletService: WalletPort) {}
+  constructor(
+    private readonly walletService: WalletPort,
+    private readonly hyperliquidAdapter: HyperliquidAdapter,
+  ) {}
 
   /**
    * Get operation context with all necessary adapters
@@ -62,18 +61,12 @@ export class AgentService implements AgentPort {
     const signer = await provider.getSigner();
     const masterAddress = await signer.getAddress();
 
-    // Create master exchange client
-    const masterExchangeClient = getMasterExchangeClientGetter(masterAddress, signer);
-
-    // Create adapters
-    const blockchainAdapter = new HyperliquidAgentAdapter(masterExchangeClient);
+    // Create storage adapter
     const storageAdapter = new AgentPkStore(masterAddress);
 
     return {
       masterAddress,
-      masterExchangeClient,
       provider,
-      blockchainAdapter,
       storageAdapter,
     };
   }
@@ -141,12 +134,11 @@ export class AgentService implements AgentPort {
    * @private
    */
   private async verifyAgentApprovalOnChain(
-    blockchainAdapter: HyperliquidAgentAdapter,
     masterAddress: string,
     agentAddress: string,
   ): Promise<boolean> {
     try {
-      const agents = await blockchainAdapter.getAgents(masterAddress);
+      const agents = await this.hyperliquidAdapter.getAgents(masterAddress);
       return agents.some(agent => agent.address.toLowerCase() === agentAddress.toLowerCase());
     } catch (error) {
       console.error('Failed to verify agent approval:', error);
@@ -173,7 +165,6 @@ export class AgentService implements AgentPort {
 
       // Check if agent is approved on blockchain
       const isApproved = await this.verifyAgentApprovalOnChain(
-        ctx.blockchainAdapter,
         ctx.masterAddress,
         agentWallet.address,
       );
@@ -190,7 +181,7 @@ export class AgentService implements AgentPort {
       });
 
       // Also refresh all agents list
-      await this.getAllAgentsInternal(ctx.blockchainAdapter, ctx.masterAddress);
+      await this.getAllAgentsInternal(ctx.masterAddress);
 
       return { agentAddress: agentWallet.address, isApproved };
     } catch (error) {
@@ -219,12 +210,14 @@ export class AgentService implements AgentPort {
         ctx.storageAdapter,
       );
 
+      // Get signer for blockchain operation
+      const signer = await ctx.provider.getSigner();
+
       // Approve agent on blockchain
-      await ctx.blockchainAdapter.approveAgent(agentWallet.address, DEFAULT_AGENT_NAME);
+      await this.hyperliquidAdapter.approveAgent(signer, agentWallet.address, DEFAULT_AGENT_NAME);
 
       // Verify approval
       const isApproved = await this.verifyAgentApprovalOnChain(
-        ctx.blockchainAdapter,
         ctx.masterAddress,
         agentWallet.address,
       );
@@ -258,8 +251,11 @@ export class AgentService implements AgentPort {
 
       const isRiverrunAgent = agentName === DEFAULT_AGENT_NAME;
 
+      // Get signer for blockchain operation
+      const signer = await ctx.provider.getSigner();
+
       // Revoke agent on blockchain
-      await ctx.blockchainAdapter.revokeAgent(agentName);
+      await this.hyperliquidAdapter.revokeAgent(signer, agentName);
 
       // Clear local storage for Riverrun Agent
       if (isRiverrunAgent) {
@@ -267,7 +263,7 @@ export class AgentService implements AgentPort {
       }
 
       // Verify revocation
-      const agents = await ctx.blockchainAdapter.getAgents(ctx.masterAddress);
+      const agents = await this.hyperliquidAdapter.getAgents(ctx.masterAddress);
       const stillExists = agents.some(
         agent => agent.name?.toLowerCase() === agentName.toLowerCase(),
       );
@@ -285,7 +281,7 @@ export class AgentService implements AgentPort {
       }
 
       // Refresh all agents list
-      await this.getAllAgentsInternal(ctx.blockchainAdapter, ctx.masterAddress);
+      await this.getAllAgentsInternal(ctx.masterAddress);
 
       return true;
     } catch (error) {
@@ -298,12 +294,9 @@ export class AgentService implements AgentPort {
    * Get all agents from blockchain and update store (private method)
    * @private
    */
-  private async getAllAgentsInternal(
-    blockchainAdapter: HyperliquidAgentAdapter,
-    masterAddress: string,
-  ): Promise<void> {
+  private async getAllAgentsInternal(masterAddress: string): Promise<void> {
     try {
-      const agents = await blockchainAdapter.getAgents(masterAddress);
+      const agents = await this.hyperliquidAdapter.getAgents(masterAddress);
       agentStateStore.getState().setAllAgents(agents);
     } catch (error) {
       console.error('Failed to get all agents:', error);
