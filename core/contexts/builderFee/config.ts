@@ -7,6 +7,8 @@
  * @see https://hyperliquid.gitbook.io/hyperliquid-docs/trading/builder-codes
  */
 
+import type { BuilderConfig, BuilderParam } from './ports/types';
+
 /**
  * Builder address that will receive the fees
  * This address must have at least 100 USDC in perps account value
@@ -37,7 +39,7 @@ export const MAX_FEE_RATE_PERCENT = '0.1%' as const;
 /**
  * Builder configuration object
  */
-export const BUILDER_CONFIG = {
+export const BUILDER_CONFIG: BuilderConfig = {
   address: BUILDER_ADDRESS,
   feeRate: BUILDER_FEE_RATE,
   maxFeeRate: MAX_FEE_RATE_PERCENT,
@@ -47,7 +49,7 @@ export const BUILDER_CONFIG = {
  * Get builder parameter for order requests
  * @returns Builder parameter object with address and fee rate
  */
-export function getBuilderParam() {
+export function getBuilderParam(): BuilderParam {
   return {
     b: BUILDER_ADDRESS,
     f: BUILDER_FEE_RATE,

@@ -18,3 +18,11 @@ export {
 } from '../contexts/agent/reactNative/agentComposition';
 export { useAgentContext } from '../contexts/agent/reactNative/useAgentContext';
 export type { UseAgentContextResult } from '../contexts/agent/reactNative/useAgentContext';
+
+export {
+  BuilderFeeCompositionProvider,
+  useBuilderFeeComposition,
+} from '../contexts/builderFee/reactNative/builderFeeComposition';
+export { useBuilderFeeContext } from '../contexts/builderFee/reactNative/useBuilderFeeContext';
+export type { UseBuilderFeeContextResult } from '../contexts/builderFee/reactNative/useBuilderFeeContext';
+export { getBuilderParam } from '../contexts/builderFee/config';

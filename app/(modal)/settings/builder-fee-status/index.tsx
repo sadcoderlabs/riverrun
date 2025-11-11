@@ -1,7 +1,7 @@
 import { ListButton, ListItem } from '@/components/global/ListItem';
 import { ListSection } from '@/components/global/ListSection';
-import { BUILDER_CONFIG } from '@/lib/riverrun/builderFee/config';
-import { useBuilderFee } from '@/lib/riverrun/builderFee/useBuilderFee';
+import { BUILDER_CONFIG } from '@/core/contexts/builderFee/config';
+import { useBuilderFeeContext } from '@/core/composition';
 import { ArrowLeft } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
@@ -19,7 +19,7 @@ export default function BuilderFeeStatus() {
     checkBuilderFeeStatus,
     approveBuilderFee,
     revokeBuilderFee,
-  } = useBuilderFee();
+  } = useBuilderFeeContext();
 
   // Loading and refresh states
   const [isRefreshing, setIsRefreshing] = useState(false);

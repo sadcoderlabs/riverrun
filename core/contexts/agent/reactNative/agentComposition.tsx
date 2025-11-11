@@ -2,7 +2,7 @@ import React, { createContext, useContext, useMemo } from 'react';
 
 import { AgentService } from '../application/agentService';
 import type { AgentPort } from '../ports/agentPort';
-import { useWalletComposition } from '@/core/composition/walletComposition';
+import { useWalletComposition } from '@/core/contexts/wallet/reactNative/walletComposition';
 
 interface AgentCompositionContextValue {
   /**

@@ -2,8 +2,7 @@ import * as hl from '@nktkas/hyperliquid';
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner-native';
 import { roundPrice } from '@/components/trade/priceUtils';
-import { getBuilderParam } from '@/lib/riverrun/builderFee/config';
-import { useBuilderFee } from '@/lib/riverrun/builderFee/useBuilderFee';
+import { getBuilderParam, useBuilderFeeContext } from '@/core/composition';
 import { useHyperliquidClient } from '@/lib/hyperliquid/client/useHyperliquidClient';
 import { useMarketsStore } from '@/lib/riverrun/market';
 
@@ -348,7 +347,7 @@ function buildSuccessMessage(params: PlaceOrderParams): { title: string; descrip
 
 export function useOrder(): UseOrderResult {
   const { getAgentExchangeClient } = useHyperliquidClient();
-  const { ensureBuilderFeeApproval } = useBuilderFee();
+  const { ensureBuilderFeeApproval } = useBuilderFeeContext();
   const { markets } = useMarketsStore();
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [isCanceling, setIsCanceling] = useState(false);

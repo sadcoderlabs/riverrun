@@ -15,6 +15,7 @@ import {
   useWalletContext,
   WalletCompositionProvider,
   AgentCompositionProvider,
+  BuilderFeeCompositionProvider,
 } from '@/core/composition';
 import { ActionSheetProvider } from '@expo/react-native-action-sheet';
 import { PrivyProvider } from '@privy-io/expo';
@@ -177,18 +178,20 @@ export default function RootLayout() {
             >
               <WalletCompositionProvider>
                 <AgentCompositionProvider>
-                  <TamaguiProvider config={tamaguiConfig} defaultTheme={effectiveTheme}>
-                    <GestureHandlerRootView>
-                      <ActionSheetProvider>
-                        <View style={{ flex: 1 }}>
-                          <WalletInfoDisplay />
-                        </View>
-                      </ActionSheetProvider>
-                      <Toaster />
-                    </GestureHandlerRootView>
-                    <PrivyElements />
-                  </TamaguiProvider>
-                  <AppKit />
+                  <BuilderFeeCompositionProvider>
+                    <TamaguiProvider config={tamaguiConfig} defaultTheme={effectiveTheme}>
+                      <GestureHandlerRootView>
+                        <ActionSheetProvider>
+                          <View style={{ flex: 1 }}>
+                            <WalletInfoDisplay />
+                          </View>
+                        </ActionSheetProvider>
+                        <Toaster />
+                      </GestureHandlerRootView>
+                      <PrivyElements />
+                    </TamaguiProvider>
+                    <AppKit />
+                  </BuilderFeeCompositionProvider>
                 </AgentCompositionProvider>
               </WalletCompositionProvider>
             </PrivyProvider>
