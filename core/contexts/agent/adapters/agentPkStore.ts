@@ -1,5 +1,5 @@
 /**
- * Agent Storage Adapter
+ * Agent Private Key Storage Adapter
  * Wraps SecureStore for agent private key persistence
  */
 

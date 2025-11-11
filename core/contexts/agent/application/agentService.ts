@@ -20,7 +20,7 @@ import type { AgentPort } from '../ports/agentPort';
 import type { AgentApprovalStatus, AgentInfo, AgentWallet } from '../ports/types';
 import type { WalletPort } from '../../wallet/ports/walletPort';
 import { HyperliquidAgentAdapter } from '../adapters/hyperliquidAgentAdapter';
-import { AgentStorageAdapter } from '../adapters/agentStorageAdapter';
+import { AgentStorageAdapter } from '../adapters/agentPkStore';
 import { agentStateStore } from '../adapters/agentStateStore';
 import { getMasterExchangeClient as getMasterExchangeClientGetter } from '@/lib/hyperliquid/client/getter';
 
