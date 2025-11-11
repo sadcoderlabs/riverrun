@@ -113,13 +113,6 @@ export class PositionService implements PositionPort {
   }
 
   /**
-   * Get all current positions
-   */
-  getPositions(): EnrichedPosition[] {
-    return positionStore.getState().positions;
-  }
-
-  /**
    * Handle position data update from subscription
    */
   private handlePositionDataUpdate(data: hl.WebData2Response): void {

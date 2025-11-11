@@ -5,12 +5,11 @@
  * It abstracts the core business logic from implementation details.
  */
 
-import type { EnrichedPosition } from './types';
-
 /**
  * Position Port Interface
  *
- * Provides operations for managing and querying positions.
+ * Provides operations for managing position subscriptions.
+ * Position data is accessed directly via positionStore.
  */
 export interface PositionPort {
   /**
@@ -27,11 +26,4 @@ export interface PositionPort {
    * Stops monitoring wallet changes and cleans up all subscriptions.
    */
   stop(): void;
-
-  /**
-   * Get all current positions
-   *
-   * @returns Array of enriched positions
-   */
-  getPositions(): EnrichedPosition[];
 }
