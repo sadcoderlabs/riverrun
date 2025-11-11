@@ -12,12 +12,11 @@ import type { AgentInfo } from '../ports/types';
 /**
  * Hyperliquid Agent Adapter
  * Handles agent operations on Hyperliquid blockchain
+ *
+ * This adapter is stateless - all required data is passed as method parameters.
  */
 export class HyperliquidAgentAdapter {
-  constructor(
-    private readonly masterAddress: string,
-    private readonly masterExchangeClient: hl.ExchangeClient,
-  ) {}
+  constructor(private readonly masterExchangeClient: hl.ExchangeClient) {}
 
   /**
    * Approve agent on blockchain
@@ -44,11 +43,12 @@ export class HyperliquidAgentAdapter {
 
   /**
    * Get all agents from blockchain
+   * @param masterAddress - Master wallet address to query agents for
    * @returns Array of agent information
    */
-  async getAgents(): Promise<AgentInfo[]> {
+  async getAgents(masterAddress: string): Promise<AgentInfo[]> {
     try {
-      const agents = await infoClient.extraAgents({ user: this.masterAddress });
+      const agents = await infoClient.extraAgents({ user: masterAddress });
       return agents.map((agent: { address: string; name?: string }) => ({
         address: agent.address,
         name: agent.name,

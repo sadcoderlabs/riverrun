@@ -66,7 +66,7 @@ export class AgentService implements AgentPort {
     const masterExchangeClient = getMasterExchangeClientGetter(masterAddress, signer);
 
     // Create adapters
-    const blockchainAdapter = new HyperliquidAgentAdapter(masterAddress, masterExchangeClient);
+    const blockchainAdapter = new HyperliquidAgentAdapter(masterExchangeClient);
     const storageAdapter = new AgentStorageAdapter(masterAddress);
 
     return {
@@ -142,10 +142,11 @@ export class AgentService implements AgentPort {
    */
   private async verifyAgentApprovalOnChain(
     blockchainAdapter: HyperliquidAgentAdapter,
+    masterAddress: string,
     agentAddress: string,
   ): Promise<boolean> {
     try {
-      const agents = await blockchainAdapter.getAgents();
+      const agents = await blockchainAdapter.getAgents(masterAddress);
       return agents.some(agent => agent.address.toLowerCase() === agentAddress.toLowerCase());
     } catch (error) {
       console.error('Failed to verify agent approval:', error);
@@ -174,6 +175,7 @@ export class AgentService implements AgentPort {
       // Check if agent is approved on blockchain
       const isApproved = await this.verifyAgentApprovalOnChain(
         ctx.blockchainAdapter,
+        ctx.masterAddress,
         agentWallet.address,
       );
 
@@ -225,6 +227,7 @@ export class AgentService implements AgentPort {
       // Verify approval
       const isApproved = await this.verifyAgentApprovalOnChain(
         ctx.blockchainAdapter,
+        ctx.masterAddress,
         agentWallet.address,
       );
 
@@ -270,7 +273,7 @@ export class AgentService implements AgentPort {
       }
 
       // Verify revocation
-      const agents = await ctx.blockchainAdapter.getAgents();
+      const agents = await ctx.blockchainAdapter.getAgents(ctx.masterAddress);
       const stillExists = agents.some(
         agent => agent.name?.toLowerCase() === agentName.toLowerCase(),
       );
@@ -309,7 +312,7 @@ export class AgentService implements AgentPort {
         return [];
       }
 
-      const agents = await ctx.blockchainAdapter.getAgents();
+      const agents = await ctx.blockchainAdapter.getAgents(ctx.masterAddress);
       agentStateStore.getState().setAllAgents(agents);
       return agents;
     } catch (error) {
