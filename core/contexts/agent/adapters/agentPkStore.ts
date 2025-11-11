@@ -9,10 +9,10 @@ import * as SecureStore from 'expo-secure-store';
 const AGENT_STORAGE_PREFIX = 'riverrun-agent-pk-';
 
 /**
- * Agent Storage Adapter
+ * Agent Private Key Store
  * Manages persistence of agent private keys in SecureStore
  */
-export class AgentStorageAdapter {
+export class AgentPkStore {
   constructor(private readonly masterAddress: string) {}
 
   /**

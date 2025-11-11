@@ -20,7 +20,7 @@ import type { AgentPort } from '../ports/agentPort';
 import type { AgentApprovalStatus, AgentInfo, AgentWallet } from '../ports/types';
 import type { WalletPort } from '../../wallet/ports/walletPort';
 import { HyperliquidAgentAdapter } from '../adapters/hyperliquidAgentAdapter';
-import { AgentStorageAdapter } from '../adapters/agentPkStore';
+import { AgentPkStore } from '../adapters/agentPkStore';
 import { agentStateStore } from '../adapters/agentStateStore';
 import { getMasterExchangeClient as getMasterExchangeClientGetter } from '@/lib/hyperliquid/client/getter';
 
@@ -32,7 +32,7 @@ interface AgentOperationContext {
   masterExchangeClient: hl.ExchangeClient;
   provider: BrowserProvider;
   blockchainAdapter: HyperliquidAgentAdapter;
-  storageAdapter: AgentStorageAdapter;
+  storageAdapter: AgentPkStore;
 }
 
 /**
@@ -67,7 +67,7 @@ export class AgentService implements AgentPort {
 
     // Create adapters
     const blockchainAdapter = new HyperliquidAgentAdapter(masterExchangeClient);
-    const storageAdapter = new AgentStorageAdapter(masterAddress);
+    const storageAdapter = new AgentPkStore(masterAddress);
 
     return {
       masterAddress,
@@ -93,7 +93,7 @@ export class AgentService implements AgentPort {
    */
   private async getExistingAgentWallet(
     provider: BrowserProvider,
-    storageAdapter: AgentStorageAdapter,
+    storageAdapter: AgentPkStore,
   ): Promise<BaseWallet | undefined> {
     const privateKey = await storageAdapter.getPrivateKey();
     if (!privateKey) {
@@ -115,7 +115,7 @@ export class AgentService implements AgentPort {
    */
   private async getOrCreateAgentWalletInternal(
     provider: BrowserProvider,
-    storageAdapter: AgentStorageAdapter,
+    storageAdapter: AgentPkStore,
   ): Promise<AgentWallet> {
     // Try to get existing wallet
     const existingWallet = await this.getExistingAgentWallet(provider, storageAdapter);
