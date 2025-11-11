@@ -9,3 +9,5 @@ See @naming-conventions.md for the file naming strategy used in this project.
 ## Coding Style
 
 See @coding-style.md for TypeScript and coding style conventions used in this project.
+
+- when finish editing, prettier all changed files
