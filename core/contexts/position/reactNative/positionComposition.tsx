@@ -7,8 +7,10 @@
 
 import React, { createContext, useMemo, useEffect } from 'react';
 import { subscriptionManager } from '@/core/infra/hyperliquid/subscription';
+import { getInfoClient } from '@/lib/hyperliquid/client/getter';
 import { PositionService } from '../application/positionService';
 import { SubscriptionAdapter } from '../adapters/subscriptionAdapter';
+import { PositionDataAdapter } from '../adapters/positionDataAdapter';
 import { MarketAdapter } from '../adapters/marketAdapter';
 import type { PositionPort } from '../ports/positionPort';
 
@@ -35,7 +37,9 @@ interface PositionCompositionProviderProps {
  * Position Composition Provider
  *
  * Sets up the dependency graph for the position context:
- * - SubscriptionAdapter (wraps subscriptionManager)
+ * - PositionDataAdapter (HTTP + WS hybrid strategy)
+ *   - InfoClient (HTTP fetch)
+ *   - SubscriptionAdapter (WebSocket subscription)
  * - MarketAdapter (wraps market store)
  * - PositionService (core business logic)
  *
@@ -45,10 +49,12 @@ interface PositionCompositionProviderProps {
 export function PositionCompositionProvider({ children }: PositionCompositionProviderProps) {
   // Create service instances (stable across renders)
   const positionService = useMemo(() => {
+    const infoClient = getInfoClient();
     const subscriptionAdapter = new SubscriptionAdapter(subscriptionManager);
+    const positionDataAdapter = new PositionDataAdapter(infoClient, subscriptionAdapter);
     const marketAdapter = new MarketAdapter();
 
-    return new PositionService(subscriptionAdapter, marketAdapter);
+    return new PositionService(positionDataAdapter, marketAdapter);
   }, []);
 
   // Manage service lifecycle

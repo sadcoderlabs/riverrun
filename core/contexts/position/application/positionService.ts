@@ -3,13 +3,14 @@
  *
  * This service manages position data by:
  * 1. Monitoring active wallet changes and managing subscription lifecycle
- * 2. Subscribing to WebData2 updates via SubscriptionPort
+ * 2. Subscribing to WebData2 updates via PositionDataAdapter (HTTP + WS hybrid)
  * 3. Extracting non-zero positions from the data stream
  * 4. Enriching positions with market data (markPx, szDecimals)
  * 5. Updating the position store for UI consumption
  */
 
 import type { MarketPort } from '../adapters/marketAdapter';
+import type { PositionDataAdapter } from '../adapters/positionDataAdapter';
 import { positionStore } from '../adapters/positionStore';
 import { activeWalletStore } from '../../wallet/adapters/activeWalletStore';
 import type {
@@ -17,7 +18,6 @@ import type {
   Position,
   PositionPort,
   SubscriptionHandle,
-  SubscriptionPort,
   WebData2Data,
 } from '../ports';
 
@@ -31,7 +31,7 @@ export class PositionService implements PositionPort {
   private walletUnsubscribe: (() => void) | undefined;
 
   constructor(
-    private readonly subscriptionPort: SubscriptionPort,
+    private readonly positionDataAdapter: PositionDataAdapter,
     private readonly marketService: MarketPort,
   ) {}
 
@@ -79,6 +79,10 @@ export class PositionService implements PositionPort {
 
   /**
    * Start subscribing to position updates for a user (internal)
+   *
+   * Uses HTTP + WebSocket hybrid strategy:
+   * - HTTP fetch provides immediate data (~100ms)
+   * - WebSocket subscription provides real-time updates
    */
   private async startSubscription(userAddress: string): Promise<void> {
     // If already subscribed, stop first
@@ -90,9 +94,10 @@ export class PositionService implements PositionPort {
     positionStore.getState().setLoading(true);
 
     try {
-      // Subscribe to WebData2 stream
-      this.subscription = await this.subscriptionPort.subscribeWebData2(userAddress, data =>
-        this.handleWebData2Update(data),
+      // Start subscription with HTTP + WS hybrid strategy
+      this.subscription = await this.positionDataAdapter.startSubscription(
+        userAddress,
+        (data: WebData2Data) => this.handleWebData2Update(data),
       );
     } catch (error) {
       positionStore.getState().setLoading(false);
