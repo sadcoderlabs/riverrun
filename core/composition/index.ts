@@ -5,10 +5,16 @@
  * wiring together ports, adapters, and application logic.
  */
 
-export { WalletCompositionProvider, useWalletComposition } from './walletComposition';
-export { useWalletContext } from './hooks/useWalletContext';
-export type { UseWalletContextResult } from './hooks/useWalletContext';
+export {
+  WalletCompositionProvider,
+  useWalletComposition,
+} from '../contexts/wallet/reactNative/walletComposition';
+export { useWalletContext } from '../contexts/wallet/reactNative/useWalletContext';
+export type { UseWalletContextResult } from '../contexts/wallet/reactNative/useWalletContext';
 
-export { AgentCompositionProvider, useAgentComposition } from './agentComposition';
-export { useAgentContext } from './hooks/useAgentContext';
-export type { UseAgentContextResult } from './hooks/useAgentContext';
+export {
+  AgentCompositionProvider,
+  useAgentComposition,
+} from '../contexts/agent/reactNative/agentComposition';
+export { useAgentContext } from '../contexts/agent/reactNative/useAgentContext';
+export type { UseAgentContextResult } from '../contexts/agent/reactNative/useAgentContext';

@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
-import { useWalletComposition } from '../walletComposition';
+import { useWalletComposition } from './walletComposition';
 import { useStore } from 'zustand';
-import { activeWalletStore } from '../../contexts/wallet/adapters/activeWalletStore';
+import { activeWalletStore } from '../adapters/activeWalletStore';
 import type {
   ActiveWallet,
   WalletSource,
@@ -9,7 +9,7 @@ import type {
   SignMessageInput,
   SignTxInput,
   TxResult,
-} from '../../contexts/wallet/ports/types';
+} from '../ports/types';
 import type { Signer } from 'ethers';
 
 export interface UseWalletContextResult {
