@@ -14,7 +14,7 @@ import {
   type TpSlValidationResult,
 } from '@/components/trade/TpSlInput';
 import { useAvailableToTrade } from '@/lib/riverrun/order/useAvailableToTrade';
-import { useCurrentPosition } from '@/lib/riverrun/position/useCurrentPosition';
+import { usePositionStore } from '@/core/contexts/position/reactNative/usePositionStore';
 import { useMarginLeverage } from '@/lib/riverrun/margin/useMarginLeverage';
 import { useOrder } from '@/lib/riverrun/order/useOrder';
 import { useOrderValue } from '@/lib/riverrun/order/useOrderValue';
@@ -50,7 +50,10 @@ export function PerpTradePanel() {
   const { longAvailableToTrade, shortAvailableToTrade } = useAvailableToTrade({ coin });
 
   // Get current position size for this coin (positive = long, negative = short)
-  const currentPositionSize = useCurrentPosition({ coin });
+  const currentPositionSize = usePositionStore(state => {
+    const position = state.positions.find(p => p.coin === coin);
+    return position ? Number(position.szi) : 0;
+  });
 
   // Initialize React Hook Form (only manages order-specific fields)
   const { form } = useOrderForm({});

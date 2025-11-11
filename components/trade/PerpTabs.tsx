@@ -4,7 +4,7 @@ import HistoryTab from '@/components/trade/HistoryTab';
 import { useState, useEffect } from 'react';
 import { Text, XStack, YStack } from 'tamagui';
 import { useOrderCount } from '@/lib/riverrun/order/useOrderCount';
-import { usePositionCount } from '@/lib/riverrun/position/usePositionCount';
+import { usePositionStore } from '@/core/contexts/position/reactNative/usePositionStore';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 export function PerpTabs() {
@@ -12,7 +12,7 @@ export function PerpTabs() {
   const params = useLocalSearchParams<{ tab?: string }>();
   const [activeTab, setActiveTab] = useState<'orders' | 'positions' | 'history'>('orders');
   const orderCount = useOrderCount();
-  const positionCount = usePositionCount();
+  const positionCount = usePositionStore(state => state.positions.length);
 
   // Sync activeTab with URL params
   useEffect(() => {
