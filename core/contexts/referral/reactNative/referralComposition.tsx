@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useMemo } from 'react';
 
 import { ReferralService } from '../application/referralService';
-import { HyperliquidAdapter } from '../../infra/hyperliquid/hyperliquidAdapter';
+import { HyperliquidAdapter } from '../../../infra/hyperliquid/hyperliquidAdapter';
 import type { ReferralPort } from '../ports/referralPort';
 import { useWalletComposition } from '@/core/contexts/wallet/reactNative/walletComposition';
 

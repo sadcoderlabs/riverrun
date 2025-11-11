@@ -16,7 +16,7 @@ import type { Signer } from 'ethers';
 import type { ReferralPort } from '../ports/referralPort';
 import type { ReferralInfo } from '../ports/types';
 import type { WalletPort } from '../../wallet/ports/walletPort';
-import { HyperliquidAdapter } from '../../infra/hyperliquid/hyperliquidAdapter';
+import { HyperliquidAdapter } from '../../../infra/hyperliquid/hyperliquidAdapter';
 import { referralStateStore } from '../adapters/referralStateStore';
 import { REFERRAL_CONFIG } from '../config';
 

@@ -15,7 +15,7 @@ import { BaseWallet, BrowserProvider, Wallet } from 'ethers';
 
 import { DEFAULT_AGENT_NAME } from '../constants';
 
-import { HyperliquidAdapter } from '../../infra/hyperliquid/hyperliquidAdapter';
+import { HyperliquidAdapter } from '../../../infra/hyperliquid/hyperliquidAdapter';
 import type { WalletPort } from '../../wallet/ports/walletPort';
 import { AgentPkStore } from '../adapters/agentPkStore';
 import { agentStateStore } from '../adapters/agentStateStore';

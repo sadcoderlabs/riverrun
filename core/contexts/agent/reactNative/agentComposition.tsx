@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useMemo } from 'react';
 
 import { AgentService } from '../application/agentService';
-import { HyperliquidAdapter } from '../../infra/hyperliquid/hyperliquidAdapter';
+import { HyperliquidAdapter } from '../../../infra/hyperliquid/hyperliquidAdapter';
 import type { AgentPort } from '../ports/agentPort';
 import { useWalletComposition } from '@/core/contexts/wallet/reactNative/walletComposition';
 

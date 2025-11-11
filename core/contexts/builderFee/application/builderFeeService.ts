@@ -16,7 +16,7 @@ import type { Signer } from 'ethers';
 import type { BuilderFeePort } from '../ports/builderFeePort';
 import type { BuilderFeeStatus } from '../ports/types';
 import type { WalletPort } from '../../wallet/ports/walletPort';
-import { HyperliquidAdapter } from '../../infra/hyperliquid/hyperliquidAdapter';
+import { HyperliquidAdapter } from '../../../infra/hyperliquid/hyperliquidAdapter';
 import { builderFeeStateStore } from '../adapters/builderFeeStateStore';
 import { BUILDER_CONFIG } from '../config';
 
