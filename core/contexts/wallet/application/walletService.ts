@@ -10,7 +10,7 @@ import type {
 } from '../ports/types';
 import type { PrivyWalletAdapter } from '../adapters/privyWalletAdapter';
 import type { ReownWalletAdapter } from '../adapters/reownWalletAdapter';
-import { walletSelectionStore } from './walletSelectionStore';
+import { walletSelectionStore } from '../infrastructure/walletSelectionStore';
 
 /**
  * WalletService - Core business logic for wallet operations

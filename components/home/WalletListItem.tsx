@@ -1,4 +1,4 @@
-import { type AvailableWallet } from '@/lib/riverrun/wallet';
+import type { WalletInfo } from '@/core/contexts/wallet/ports/types';
 import { Check, Wallet } from '@tamagui/lucide-icons';
 import Jazzicon from 'react-native-jazzicon';
 import { styled, Text, useTheme, XStack, YStack } from 'tamagui';
@@ -22,7 +22,7 @@ const WalletIcon = styled(XStack, {
 });
 
 interface WalletListItemProps {
-  wallet: AvailableWallet;
+  wallet: WalletInfo;
   isSelected: boolean;
   onPress: () => void;
 }
