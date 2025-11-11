@@ -1,12 +1,12 @@
 /**
  * Agent private key store
- * Manages persistence of agent private keys in AsyncStorage
+ * Manages persistence of agent private keys in SecureStore
  */
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 
-/** Storage key prefix for agent private keys in AsyncStorage */
-const AGENT_STORAGE_PREFIX = 'hl-agent:private-key:';
+/** Storage key prefix for agent private keys in SecureStore */
+const AGENT_STORAGE_PREFIX = 'riverrun-agent-pk-';
 
 /**
  * Generate storage key for a master address
@@ -23,7 +23,7 @@ function getStorageKey(masterAddress: string): string {
 export async function getAgentPrivateKey(masterAddress: string): Promise<string | null> {
   try {
     const storageKey = getStorageKey(masterAddress);
-    const privateKey = await AsyncStorage.getItem(storageKey);
+    const privateKey = await SecureStore.getItemAsync(storageKey);
     return privateKey;
   } catch (error) {
     console.error('Failed to get agent private key from storage:', error);
@@ -39,7 +39,7 @@ export async function getAgentPrivateKey(masterAddress: string): Promise<string 
 export async function setAgentPrivateKey(masterAddress: string, privateKey: string): Promise<void> {
   try {
     const storageKey = getStorageKey(masterAddress);
-    await AsyncStorage.setItem(storageKey, privateKey);
+    await SecureStore.setItemAsync(storageKey, privateKey);
   } catch (error) {
     console.error('Failed to save agent private key to storage:', error);
     throw error;
@@ -53,7 +53,7 @@ export async function setAgentPrivateKey(masterAddress: string, privateKey: stri
 export async function clearAgentPrivateKey(masterAddress: string): Promise<void> {
   try {
     const storageKey = getStorageKey(masterAddress);
-    await AsyncStorage.removeItem(storageKey);
+    await SecureStore.deleteItemAsync(storageKey);
   } catch (error) {
     console.error('Failed to clear agent private key from storage:', error);
     throw error;
