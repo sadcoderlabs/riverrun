@@ -1,21 +1,25 @@
 /**
  * Subscription Adapter
  *
- * This adapter wraps the existing SubscriptionManager to implement SubscriptionPort.
+ * This adapter wraps the HyperliquidSubscriptionService to implement SubscriptionPort.
  * It leverages the RefCount mechanism to share WebSocket connections across components.
  */
 
-import { subscriptionManager } from '@/lib/hyperliquid/subscription';
-import type { SubscriptionHandle as ManagerHandle } from '@/lib/hyperliquid/subscription/core/types';
+import type {
+  HyperliquidSubscriptionService,
+  SubscriptionHandle as InfraHandle,
+} from '@/core/infra/hyperliquid/subscription';
 import type { SubscriptionHandle, SubscriptionPort, WebData2Data } from '../ports/subscriptionPort';
 
 /**
  * Subscription Adapter Implementation
  *
- * Bridges the position context with the existing subscription system.
+ * Bridges the position context with the unified subscription infrastructure.
  * Allows Service layer to subscribe without depending on React hooks.
  */
 export class SubscriptionAdapter implements SubscriptionPort {
+  constructor(private readonly subscriptionService: HyperliquidSubscriptionService) {}
+
   /**
    * Subscribe to WebData2 stream
    */
@@ -23,8 +27,8 @@ export class SubscriptionAdapter implements SubscriptionPort {
     userAddress: string,
     callback: (data: WebData2Data) => void,
   ): Promise<SubscriptionHandle> {
-    // Use existing subscriptionManager (with RefCount)
-    const handle: ManagerHandle = await subscriptionManager.subscribe<WebData2Data>(
+    // Use unified subscription service (with RefCount)
+    const handle: InfraHandle = await this.subscriptionService.subscribe<WebData2Data>(
       'webData2',
       { user: userAddress },
       callback,
@@ -33,7 +37,7 @@ export class SubscriptionAdapter implements SubscriptionPort {
     // Return wrapped handle
     return {
       unsubscribe: async () => {
-        await subscriptionManager.unsubscribe(handle);
+        await this.subscriptionService.unsubscribe(handle);
       },
     };
   }
