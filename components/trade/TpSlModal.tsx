@@ -5,7 +5,6 @@ import { Check } from '@tamagui/lucide-icons';
 import { Checkbox } from '@tamagui/checkbox';
 import * as hl from '@nktkas/hyperliquid';
 import { Input } from '@/components/global/Input';
-import { useHyperliquidClient } from '@/core/infra/hyperliquid/hooks';
 import { useOrder, useOrderStore } from '@/core/composition';
 import { formatSize } from '@/core/infra/hyperliquid/format/formatSize';
 import { formatPrice } from '@/core/infra/hyperliquid/format/formatPrice';

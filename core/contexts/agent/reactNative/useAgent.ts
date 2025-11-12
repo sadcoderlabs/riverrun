@@ -1,8 +1,6 @@
 import { useCallback, useState } from 'react';
-import * as hl from '@nktkas/hyperliquid';
 
 import { useAgentComposition } from './agentComposition';
-import { getAgentExchangeClient as getAgentExchangeClientGetter } from '@/core/infra/hyperliquid/client/getter';
 
 export interface UseAgentResult {
   /**
@@ -39,15 +37,6 @@ export interface UseAgentResult {
    * Throws error if revocation fails
    */
   revoke: (agentName: string) => Promise<boolean>;
-
-  /**
-   * Get agent exchange client
-   * Returns undefined if agent is not ready or user cancels
-   *
-   * Note: This method does NOT show approval dialogs or handle navigation.
-   * UI components should call loadAllAgents(), approve() explicitly and handle alerts.
-   */
-  getAgentExchangeClient: () => Promise<hl.ExchangeClient | undefined>;
 }
 
 /**
@@ -135,34 +124,10 @@ export function useAgent(): UseAgentResult {
     [agentService],
   );
 
-  /**
-   * Get agent exchange client
-   *
-   * This method gets the agent wallet and creates an ExchangeClient for it.
-   * It does NOT handle approval logic or show dialogs - that should be done
-   * by the calling component.
-   */
-  const getAgentExchangeClient = useCallback(async (): Promise<hl.ExchangeClient | undefined> => {
-    try {
-      // Get agent wallet
-      const { agentWallet } = await agentService.tryGetAgentWallet();
-      if (!agentWallet) {
-        return undefined;
-      }
-
-      // Return exchange client
-      return getAgentExchangeClientGetter(agentWallet.signer);
-    } catch (error) {
-      console.error('Failed to get agent exchange client:', error);
-      return undefined;
-    }
-  }, [agentService]);
-
   return {
     isLoading,
     loadAllAgents,
     approve,
     revoke,
-    getAgentExchangeClient,
   };
 }
