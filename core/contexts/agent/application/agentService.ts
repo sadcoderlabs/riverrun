@@ -11,6 +11,7 @@
  * - Uses adapters for external operations (blockchain, storage)
  * - Updates agentStateStore for reactive UI
  * - Depends on wallet context for master wallet information
+ * - Auto-syncs agent state when wallet changes (subscribes to activeWalletStore in constructor)
  */
 
 import { BrowserProvider, Wallet } from 'ethers';
@@ -21,6 +22,7 @@ import { HyperliquidGateway } from '../../../infra/hyperliquid/hyperliquidGatewa
 import type { WalletPort } from '../../wallet/ports/walletPort';
 import { AgentPkStore } from '../adapters/agentPkStore';
 import { agentStateStore } from '../adapters/agentStateStore';
+import { activeWalletStore } from '../../wallet/adapters/activeWalletStore';
 import type { AgentPort } from '../ports/agentPort';
 import type { AgentWallet, TryGetAgentResult } from '../ports/types';
 
@@ -36,6 +38,13 @@ export class AgentService implements AgentPort {
   ) {
     // Create stateless storage adapter
     this.agentPkStore = new AgentPkStore();
+
+    // Auto-sync: subscribe to wallet changes and reload agents
+    activeWalletStore.subscribe((state, prevState) => {
+      if (state.wallet?.address !== prevState.wallet?.address) {
+        void this.loadAllAgents();
+      }
+    });
   }
 
   /**
