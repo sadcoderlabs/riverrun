@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useMemo } from 'react';
+import React, { createContext, useContext, useMemo, useEffect } from 'react';
 
 import { HistoryService } from '../application/historyService';
 import { HyperliquidGateway } from '../../../infra/hyperliquid/hyperliquidGateway';
@@ -44,9 +44,23 @@ export function HistoryCompositionProvider({ children }: { children: React.React
     return new HistoryService(hyperliquidGateway);
   }, []);
 
-  const value = {
-    historyService,
-  };
+  // Manage service lifecycle
+  useEffect(() => {
+    // Start the service (begins monitoring wallet changes)
+    historyService.start();
+
+    return () => {
+      // Stop the service (cleanup subscriptions)
+      historyService.stop();
+    };
+  }, [historyService]);
+
+  const value = useMemo(
+    () => ({
+      historyService,
+    }),
+    [historyService],
+  );
 
   return (
     <HistoryCompositionContext.Provider value={value}>

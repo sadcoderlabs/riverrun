@@ -3,6 +3,7 @@
  *
  * This service implements the HistoryPort interface and coordinates
  * fill history operations including:
+ * - Monitoring active wallet changes
  * - Fetching historical fills via HTTP
  * - Real-time fill updates via WebSocket
  * - Merging and deduplicating fill data
@@ -14,9 +15,10 @@
  * - Autonomous lifecycle (start/stop)
  *
  * Data flow:
- * 1. HTTP fetch → initial fills → store
- * 2. WebSocket → incremental updates → merge with store
- * 3. Store → reactive UI updates
+ * 1. Monitor activeWalletStore changes
+ * 2. HTTP fetch → initial fills → store
+ * 3. WebSocket → incremental updates → merge with store
+ * 4. Store → reactive UI updates
  */
 
 import type {
@@ -24,6 +26,7 @@ import type {
   SubscriptionHandle,
 } from '../../../infra/hyperliquid/hyperliquidGateway';
 import { historyStore } from '../adapters/historyStore';
+import { activeWalletStore } from '../../wallet/adapters/activeWalletStore';
 import type { HistoryPort } from '../ports/historyPort';
 import type { Fill } from '../ports/types';
 
@@ -38,46 +41,69 @@ interface WsFillUpdate {
 
 /**
  * HistoryService implementation
+ *
+ * Manages the fill history lifecycle and business logic.
  */
 export class HistoryService implements HistoryPort {
   /** WebSocket subscription handle */
   private subscription: SubscriptionHandle | undefined;
 
-  /** Current monitored user address */
-  private currentUserAddress: string | undefined;
-
-  /** Loading state flag */
-  private loading = false;
-
-  /** Error state */
-  private error: Error | undefined;
+  /** Wallet store unsubscribe function */
+  private walletUnsubscribe: (() => void) | undefined;
 
   constructor(private readonly hyperliquidGateway: HyperliquidGateway) {}
 
   /**
-   * Start monitoring fills for a specific user
+   * Start the history service
    *
-   * This will:
-   * 1. Fetch historical fills via HTTP
-   * 2. Subscribe to real-time fill updates via WebSocket
-   * 3. Update the history store with merged data
-   *
-   * @param userAddress - User's wallet address
+   * Begins monitoring active wallet changes and automatically manages
+   * fill subscriptions based on the active wallet.
    */
-  async start(userAddress: string): Promise<void> {
-    // If already monitoring the same address, do nothing
-    if (this.currentUserAddress === userAddress && this.subscription) {
-      return;
-    }
+  start(): void {
+    // Subscribe to activeWalletStore to monitor wallet changes
+    this.walletUnsubscribe = activeWalletStore.subscribe((state, prevState) => {
+      // Only react to wallet changes
+      if (state.wallet?.address !== prevState.wallet?.address) {
+        if (state.wallet) {
+          // Wallet is connected, start subscription
+          this.startSubscription(state.wallet.address);
+        } else {
+          // Wallet disconnected, stop subscription
+          this.stopSubscription();
+        }
+      }
+    });
 
-    // Stop previous subscription if monitoring a different address
-    if (this.subscription) {
-      await this.stop();
+    // Handle initial state
+    const currentWallet = activeWalletStore.getState().wallet;
+    if (currentWallet) {
+      this.startSubscription(currentWallet.address);
     }
+  }
 
-    this.currentUserAddress = userAddress;
-    this.loading = true;
-    this.error = undefined;
+  /**
+   * Stop the history service
+   *
+   * Stops monitoring wallet changes and cleans up all subscriptions.
+   */
+  stop(): void {
+    // Unsubscribe from wallet changes
+    this.walletUnsubscribe?.();
+    this.walletUnsubscribe = undefined;
+
+    // Stop fill subscription
+    this.stopSubscription();
+  }
+
+  /**
+   * Start subscribing to fill updates for a user (internal)
+   *
+   * @private
+   */
+  private async startSubscription(userAddress: string): Promise<void> {
+    // Stop previous subscription if exists
+    await this.stopSubscription();
+
     historyStore.getState().setLoading(true);
     historyStore.getState().setError(undefined);
 
@@ -85,7 +111,7 @@ export class HistoryService implements HistoryPort {
       // Step 1: Fetch historical fills via HTTP
       const fills = (await this.hyperliquidGateway.fetchUserFills(userAddress)) as Fill[];
 
-      // Sort by time (most recent first)
+      // Sort by time (most recent first) - business logic here
       const sortedFills = fills.sort((a, b) => b.time - a.time);
 
       // Update store with initial data
@@ -97,72 +123,35 @@ export class HistoryService implements HistoryPort {
         (data: unknown) => this.handleFillUpdate(data as WsFillUpdate),
       );
 
-      this.loading = false;
       historyStore.getState().setLoading(false);
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err));
-      this.error = error;
-      this.loading = false;
       historyStore.getState().setLoading(false);
       historyStore.getState().setError(error);
 
-      console.error('[HistoryService] Failed to start:', error);
-      throw error;
+      console.error('[HistoryService] Failed to start subscription:', error);
     }
   }
 
   /**
-   * Stop monitoring fills
+   * Stop fill subscription (internal)
    *
-   * Unsubscribes from WebSocket and clears data
+   * @private
    */
-  async stop(): Promise<void> {
+  private async stopSubscription(): Promise<void> {
     if (this.subscription) {
       await this.subscription.unsubscribe();
       this.subscription = undefined;
     }
-
-    this.currentUserAddress = undefined;
-    this.loading = false;
-    this.error = undefined;
 
     // Clear store
     historyStore.getState().clear();
   }
 
   /**
-   * Get current fills from store
-   *
-   * Returns fills in chronological order (most recent first)
-   *
-   * @returns Array of fills
-   */
-  getFills(): Fill[] {
-    return historyStore.getState().fills;
-  }
-
-  /**
-   * Check if service is currently loading data
-   *
-   * @returns true if fetching initial data
-   */
-  isLoading(): boolean {
-    return this.loading;
-  }
-
-  /**
-   * Get current error if any
-   *
-   * @returns Error or undefined
-   */
-  getError(): Error | undefined {
-    return this.error;
-  }
-
-  /**
    * Handle WebSocket fill update
    *
-   * Merges new fills with existing fills in the store
+   * Merges new fills with existing fills (business logic)
    *
    * @private
    */
@@ -171,7 +160,22 @@ export class HistoryService implements HistoryPort {
       return;
     }
 
-    // Merge new fills with existing fills (deduplication by tid)
-    historyStore.getState().mergeFills(data.fills);
+    // Get current fills from store
+    const currentFills = historyStore.getState().fills;
+
+    // Merge new fills with existing fills (deduplication by tid) - business logic here
+    const fillMap = new Map<number, Fill>();
+
+    // Add existing fills
+    currentFills.forEach(fill => fillMap.set(fill.tid, fill));
+
+    // Add/update with new fills from WebSocket
+    data.fills.forEach(fill => fillMap.set(fill.tid, fill));
+
+    // Convert back to array and sort by time (most recent first)
+    const mergedFills = Array.from(fillMap.values()).sort((a, b) => b.time - a.time);
+
+    // Update store with merged fills
+    historyStore.getState().setFills(mergedFills);
   }
 }

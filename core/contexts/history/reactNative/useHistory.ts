@@ -2,10 +2,10 @@
  * useHistory - Public hook for accessing trading history
  *
  * This hook provides access to user's trading history (fills).
- * It automatically starts/stops the history service based on wallet connection.
+ * The lifecycle is managed automatically by HistoryCompositionProvider.
  *
  * Features:
- * - Automatic lifecycle management (starts when wallet connected, stops when disconnected)
+ * - Reactive state from historyStore
  * - HTTP fetch for initial data
  * - WebSocket subscription for real-time updates
  * - Automatic data merging and deduplication
@@ -28,9 +28,6 @@
  * ```
  */
 
-import { useEffect } from 'react';
-import { useWalletContext } from '@/core/composition';
-import { useHistoryComposition } from './historyComposition';
 import { useHistoryStore } from './useHistoryStore';
 import type { Fill } from '../ports/types';
 
@@ -46,37 +43,12 @@ export interface UseHistoryResult {
 /**
  * Hook to access trading history
  *
- * Automatically manages lifecycle based on wallet connection:
- * - Starts monitoring when wallet is connected
- * - Stops monitoring when wallet is disconnected
+ * Returns reactive state from the history store.
+ * Lifecycle is managed by HistoryCompositionProvider.
  *
  * @returns Trading history data and state
  */
 export function useHistory(): UseHistoryResult {
-  const { wallet } = useWalletContext();
-  const { historyService } = useHistoryComposition();
-
-  // Automatic lifecycle management
-  useEffect(() => {
-    if (!wallet?.address) {
-      // No wallet, nothing to monitor
-      return;
-    }
-
-    // Wallet connected, start monitoring
-    historyService.start(wallet.address).catch(err => {
-      console.error('[useHistory] Failed to start:', err);
-    });
-
-    // Cleanup on unmount or wallet change
-    return () => {
-      historyService.stop().catch(err => {
-        console.error('[useHistory] Failed to stop on cleanup:', err);
-      });
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [wallet?.address]);
-
   // Get reactive state from store
   const { fills, isLoading, error } = useHistoryStore();
 

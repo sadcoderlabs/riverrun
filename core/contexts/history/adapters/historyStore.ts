@@ -32,20 +32,9 @@ export interface HistoryActions {
   /**
    * Set fills (replaces all existing fills)
    *
-   * Fills will be automatically sorted by time (most recent first)
-   *
-   * @param fills - Array of fills
+   * @param fills - Array of fills (should be pre-sorted by caller)
    */
   setFills: (fills: Fill[]) => void;
-
-  /**
-   * Merge new fills with existing fills
-   *
-   * Deduplicates by trade ID (tid) and sorts by time
-   *
-   * @param newFills - Array of new fills to merge
-   */
-  mergeFills: (newFills: Fill[]) => void;
 
   /**
    * Set loading state
@@ -86,31 +75,11 @@ const initialState: HistoryState = {
  *
  * This is a singleton vanilla Zustand store
  */
-export const historyStore = createStore<HistoryStore>((set, get) => ({
+export const historyStore = createStore<HistoryStore>(set => ({
   ...initialState,
 
   setFills: (fills: Fill[]) => {
-    set({
-      fills: [...fills].sort((a, b) => b.time - a.time),
-    });
-  },
-
-  mergeFills: (newFills: Fill[]) => {
-    const currentFills = get().fills;
-
-    // Use Map for efficient deduplication by tid
-    const fillMap = new Map<number, Fill>();
-
-    // Add existing fills
-    currentFills.forEach(fill => fillMap.set(fill.tid, fill));
-
-    // Add/update with new fills
-    newFills.forEach(fill => fillMap.set(fill.tid, fill));
-
-    // Convert back to array and sort by time (most recent first)
-    const mergedFills = Array.from(fillMap.values()).sort((a, b) => b.time - a.time);
-
-    set({ fills: mergedFills });
+    set({ fills });
   },
 
   setLoading: (isLoading: boolean) => {

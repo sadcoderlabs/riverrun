@@ -10,56 +10,28 @@
  * - Read-only: History is immutable, only retrieval operations
  */
 
-import type { Fill } from './types';
-
 /**
  * HistoryPort interface
  *
  * Manages user's trading history including:
+ * - Monitoring active wallet changes
  * - Fetching historical fills via HTTP
  * - Real-time fill updates via WebSocket
  * - Merging and deduplicating fill data
  */
 export interface HistoryPort {
   /**
-   * Start monitoring fills for a specific user
+   * Start the history service
    *
-   * This will:
-   * 1. Fetch historical fills via HTTP
-   * 2. Subscribe to real-time fill updates via WebSocket
-   * 3. Update the history store with merged data
-   *
-   * @param userAddress - User's wallet address
+   * Begins monitoring active wallet changes and automatically manages
+   * fill subscriptions based on the active wallet.
    */
-  start(userAddress: string): Promise<void>;
+  start(): void;
 
   /**
-   * Stop monitoring fills
+   * Stop the history service
    *
-   * Unsubscribes from WebSocket and clears data
+   * Stops monitoring wallet changes and cleans up all subscriptions.
    */
-  stop(): Promise<void>;
-
-  /**
-   * Get current fills from store
-   *
-   * Returns fills in chronological order (most recent first)
-   *
-   * @returns Array of fills
-   */
-  getFills(): Fill[];
-
-  /**
-   * Check if service is currently loading data
-   *
-   * @returns true if fetching initial data
-   */
-  isLoading(): boolean;
-
-  /**
-   * Get current error if any
-   *
-   * @returns Error or undefined
-   */
-  getError(): Error | undefined;
+  stop(): void;
 }
