@@ -1,7 +1,7 @@
 /**
  * Order Composition Provider
  *
- * Sets up the dependency graph for the Order context:
+ * Sets up the dependency graph for the Order context using CQRS pattern:
  *
  * Dependencies:
  * - AgentPort: Get agent exchange client for order operations
@@ -10,14 +10,17 @@
  * - HyperliquidGateway: Subscribe to order updates and fetch order data
  *
  * Domain Layer:
- * - OrderService: Core business logic for order operations and subscription management
+ * - OrderCommandService: Command operations (place, cancel orders)
+ * - OrderQueryService: Query operations (subscriptions, real-time updates)
  *
- * OrderService automatically monitors active wallet changes and manages subscriptions.
+ * Both services work autonomously to provide complete order functionality.
  */
 
 import { createContext, useContext, useEffect, useMemo, type ReactNode } from 'react';
-import { OrderService } from '../application/orderService';
-import type { OrderPort } from '../ports/orderPort';
+import { OrderCommandService } from '../application/orderCommandService';
+import { OrderQueryService } from '../application/orderQueryService';
+import type { OrderCommandPort } from '../ports/orderCommandPort';
+import type { OrderQueryPort } from '../ports/orderQueryPort';
 import { AgentCompositionContext } from '../../agent/reactNative/agentComposition';
 import { BuilderFeeCompositionContext } from '../../builderFee/reactNative/builderFeeComposition';
 import { MarketContext } from '../../market/reactNative/marketComposition';
@@ -28,7 +31,8 @@ import { HyperliquidGateway } from '@/core/infra/hyperliquid/hyperliquidGateway'
 // ============================================================================
 
 interface OrderContextValue {
-  orderService: OrderPort;
+  orderCommandService: OrderCommandPort;
+  orderQueryService: OrderQueryPort;
 }
 
 const OrderContext = createContext<OrderContextValue | undefined>(undefined);
@@ -62,31 +66,40 @@ export function OrderCompositionProvider({ children }: OrderCompositionProviderP
   const { builderFeeService } = builderFeeContext;
   const { marketService } = marketContext;
 
-  // Create stable OrderService instance
-  const orderService = useMemo(() => {
+  // Create stable service instances (CQRS pattern)
+  const { orderCommandService, orderQueryService } = useMemo(() => {
     // Infrastructure: HyperliquidGateway for data access
     const hyperliquidGateway = new HyperliquidGateway();
 
-    // Domain: OrderService with injected dependencies
-    return new OrderService(agentService, builderFeeService, marketService, hyperliquidGateway);
+    // Create query service (manages real-time data subscriptions)
+    const queryService = new OrderQueryService(hyperliquidGateway);
+
+    // Create command service (executes order operations)
+    const commandService = new OrderCommandService(agentService, builderFeeService, marketService);
+
+    return {
+      orderCommandService: commandService,
+      orderQueryService: queryService,
+    };
   }, [agentService, builderFeeService, marketService]);
 
-  // Manage service lifecycle
+  // Manage query service lifecycle (subscriptions)
   useEffect(() => {
-    // Start service (begins monitoring wallet changes)
-    orderService.start();
+    // Start query service (begins monitoring wallet changes and subscriptions)
+    orderQueryService.start();
 
     return () => {
-      // Stop service (cleanup subscriptions)
-      orderService.stop();
+      // Stop query service (cleanup subscriptions)
+      orderQueryService.stop();
     };
-  }, [orderService]);
+  }, [orderQueryService]);
 
   const value = useMemo(
     () => ({
-      orderService,
+      orderCommandService,
+      orderQueryService,
     }),
-    [orderService],
+    [orderCommandService, orderQueryService],
   );
 
   return <OrderContext.Provider value={value}>{children}</OrderContext.Provider>;

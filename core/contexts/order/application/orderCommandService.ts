@@ -1,17 +1,18 @@
 /**
- * Order Service - Business logic for order operations
+ * Order Command Service - Executes trading commands
  *
- * This service implements the OrderPort interface and provides:
- * - Autonomous lifecycle management (monitors wallet changes)
- * - Open orders subscription (HTTP + WebSocket hybrid)
- * - Order placement operations (Market, Limit, TP/SL)
- * - Order cancellation operations
+ * This service implements OrderCommandPort and is responsible for:
+ * - Placing orders (Market, Limit, with optional TP/SL)
+ * - Closing positions (Market or Limit)
+ * - Managing TP/SL orders
+ * - Canceling orders
+ * - Parameter validation and order building
+ * - Builder fee approval coordination
  *
- * Design: Autonomous Service Pattern
- * - Automatically monitors active wallet changes
- * - Manages subscription lifecycle internally
+ * Design: Command Service Pattern (CQRS)
+ * - Stateless operations
  * - Returns Result objects instead of throwing errors
- * - No margin validation (UI layer responsibility)
+ * - Coordinates with other services for dependencies
  */
 
 import { roundPrice } from '@/components/trade/priceUtils';
@@ -19,66 +20,17 @@ import type { AgentPort } from '@/core/contexts/agent/ports/agentPort';
 import { getBuilderParam } from '@/core/contexts/builderFee/config';
 import type { BuilderFeePort } from '@/core/contexts/builderFee/ports/builderFeePort';
 import type { MarketPort } from '@/core/contexts/market/ports/marketPort';
-import { activeWalletStore } from '@/core/contexts/wallet/adapters/activeWalletStore';
-import type {
-  HyperliquidGateway,
-  SubscriptionHandle,
-} from '@/core/infra/hyperliquid/hyperliquidGateway';
 import * as hl from '@nktkas/hyperliquid';
-import { orderStore } from '../adapters/orderStore';
+import type { OrderCommandPort } from '../ports/orderCommandPort';
 import type {
   CancelOrderParams,
   CancelOrdersParams,
   CloseLimitOrderParams,
   CloseMarketOrderParams,
-  Order,
-  OrderPort,
   OrderResult,
   PlaceOrderParams,
   TpSlOrderParams,
-} from '../ports';
-
-// ============================================================================
-// Failed Order Status Detection
-// ============================================================================
-
-/**
- * All possible rejected/canceled status values from Hyperliquid API
- * Source: https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint#query-order-status-by-oid-or-cloid
- */
-const FAILED_ORDER_STATUSES = new Set([
-  // User canceled
-  'canceled',
-  // System rejected at placement
-  'rejected',
-  'tickRejected',
-  'minTradeNtlRejected',
-  'perpMarginRejected',
-  'reduceOnlyRejected',
-  'badAloPxRejected',
-  'iocCancelRejected',
-  'badTriggerPxRejected',
-  'marketOrderNoLiquidityRejected',
-  'positionIncreaseAtOpenInterestCapRejected',
-  'positionFlipAtOpenInterestCapRejected',
-  'tooAggressiveAtOpenInterestCapRejected',
-  'openInterestIncreaseRejected',
-  'insufficientSpotBalanceRejected',
-  'oracleRejected',
-  'perpMaxPositionRejected',
-  // System canceled after placement
-  'marginCanceled',
-  'vaultWithdrawalCanceled',
-  'openInterestCapCanceled',
-  'selfTradeCanceled',
-  'reduceOnlyCanceled',
-  'siblingFilledCanceled',
-  'delistedCanceled',
-  'liquidatedCanceled',
-  'scheduledCancel',
-  // Filled (not an error but removes the order)
-  'filled',
-]);
+} from '../ports/types';
 
 // ============================================================================
 // Helper Functions
@@ -112,178 +64,15 @@ interface OrderContext {
 }
 
 // ============================================================================
-// Order Service Implementation
+// Order Command Service Implementation
 // ============================================================================
 
-export class OrderService implements OrderPort {
-  // Subscription management
-  private ordersSubscription: SubscriptionHandle | undefined;
-  private walletUnsubscribe: (() => void) | undefined;
-  private currentUserAddress: string | undefined;
-
+export class OrderCommandService implements OrderCommandPort {
   constructor(
     private readonly agentPort: AgentPort,
     private readonly builderFeePort: BuilderFeePort,
     private readonly marketPort: MarketPort,
-    private readonly hyperliquidGateway: HyperliquidGateway,
   ) {}
-
-  // ==========================================================================
-  // Lifecycle Management
-  // ==========================================================================
-
-  /**
-   * Start the Order Service
-   * Begins monitoring wallet changes and automatically manages subscriptions
-   */
-  start(): void {
-    // Subscribe to wallet changes
-    this.walletUnsubscribe = activeWalletStore.subscribe((state, prevState) => {
-      const newAddress = state.wallet?.address;
-      const prevAddress = prevState.wallet?.address;
-
-      if (newAddress !== prevAddress) {
-        if (newAddress) {
-          this.startSubscription(newAddress);
-        } else {
-          this.stopSubscription();
-        }
-      }
-    });
-
-    // Handle initial wallet state
-    const currentWallet = activeWalletStore.getState().wallet;
-    if (currentWallet) {
-      this.startSubscription(currentWallet.address);
-    }
-  }
-
-  /**
-   * Stop the Order Service
-   * Stops monitoring and cleans up all subscriptions
-   */
-  stop(): void {
-    this.walletUnsubscribe?.();
-    this.walletUnsubscribe = undefined;
-    this.stopSubscription();
-  }
-
-  // ==========================================================================
-  // Subscription Management (Private)
-  // ==========================================================================
-
-  /**
-   * Start order subscription for a user
-   */
-  private async startSubscription(userAddress: string): Promise<void> {
-    // Stop existing subscription if any
-    await this.stopSubscription();
-
-    this.currentUserAddress = userAddress;
-    orderStore.getState().setLoading(true);
-
-    try {
-      // Step 1: HTTP fetch initial open orders
-      const initialOrders = await this.hyperliquidGateway.getFrontendOpenOrders(userAddress);
-      orderStore.getState().setOrders(initialOrders as Order[]);
-      orderStore.getState().setLoading(false);
-
-      // Step 2: Subscribe to orderUpdates WebSocket
-      this.ordersSubscription = await this.hyperliquidGateway.subscribeOrderUpdates(
-        userAddress,
-        (updates: unknown) => {
-          // Cast updates to the expected array type
-          const typedUpdates = updates as {
-            order: {
-              coin: string;
-              side: 'B' | 'A';
-              limitPx: string;
-              sz: string;
-              oid: number;
-              timestamp: number;
-              origSz: string;
-            };
-            status?: string;
-          }[];
-          this.handleOrderUpdates(typedUpdates, userAddress);
-        },
-      );
-    } catch (error) {
-      console.error('[OrderService] Failed to start subscription:', error);
-      orderStore.getState().setLoading(false);
-    }
-  }
-
-  /**
-   * Stop order subscription
-   */
-  private async stopSubscription(): Promise<void> {
-    if (this.ordersSubscription) {
-      await this.ordersSubscription.unsubscribe();
-      this.ordersSubscription = undefined;
-    }
-
-    this.currentUserAddress = undefined;
-    orderStore.getState().clear();
-  }
-
-  /**
-   * Handle WebSocket order updates
-   */
-  private async handleOrderUpdates(
-    updates: {
-      order: {
-        coin: string;
-        side: 'B' | 'A';
-        limitPx: string;
-        sz: string;
-        oid: number;
-        timestamp: number;
-        origSz: string;
-      };
-      status?: string;
-    }[],
-    userAddress: string,
-  ): Promise<void> {
-    if (!updates || updates.length === 0) return;
-
-    for (const update of updates) {
-      const oid = update.order.oid;
-      const status = update.status;
-
-      // If order was canceled or filled, remove it
-      if (status && FAILED_ORDER_STATUSES.has(status)) {
-        orderStore.getState().removeOrder(oid);
-        continue;
-      }
-
-      // Fetch complete order data using orderStatus
-      try {
-        const orderDataRaw = await this.hyperliquidGateway.getOrderStatus(userAddress, oid);
-        // Cast to the expected type structure
-        const orderData = orderDataRaw as { status: string; order?: Order };
-
-        // orderStatus returns { status: string, order?: Order }
-        if (orderData.status === 'order' && orderData.order) {
-          // Update or add the order
-          const currentOrders = orderStore.getState().orders;
-          const existingOrder = currentOrders.find(o => o.oid === oid);
-
-          if (existingOrder) {
-            orderStore.getState().updateOrder(oid, orderData.order);
-          } else {
-            orderStore.getState().setOrders([...currentOrders, orderData.order]);
-          }
-        } else if (orderData.status && FAILED_ORDER_STATUSES.has(orderData.status)) {
-          // Order is no longer open (canceled/filled)
-          orderStore.getState().removeOrder(oid);
-        }
-      } catch (error) {
-        console.error(`[OrderService] Failed to fetch order ${oid}:`, error);
-        // Keep existing order data if fetch fails
-      }
-    }
-  }
 
   // ==========================================================================
   // Helper Methods (Private)
@@ -476,7 +265,7 @@ export class OrderService implements OrderPort {
       // 9. Success
       return { success: true };
     } catch (err) {
-      console.error('[OrderService.placeOrder] Error:', err);
+      console.error('[OrderCommandService.placeOrder] Error:', err);
       return {
         success: false,
         error: err instanceof Error ? err.message : 'Failed to place order',
@@ -540,7 +329,7 @@ export class OrderService implements OrderPort {
       // 8. Success
       return { success: true };
     } catch (err) {
-      console.error('[OrderService.placeCloseMarketOrder] Error:', err);
+      console.error('[OrderCommandService.placeCloseMarketOrder] Error:', err);
       return {
         success: false,
         error: err instanceof Error ? err.message : 'Failed to place market close order',
@@ -597,7 +386,7 @@ export class OrderService implements OrderPort {
       // 7. Success
       return { success: true };
     } catch (err) {
-      console.error('[OrderService.placeCloseLimitOrder] Error:', err);
+      console.error('[OrderCommandService.placeCloseLimitOrder] Error:', err);
       return {
         success: false,
         error: err instanceof Error ? err.message : 'Failed to place limit close order',
@@ -700,7 +489,7 @@ export class OrderService implements OrderPort {
       // 8. Success
       return { success: true };
     } catch (err) {
-      console.error('[OrderService.placeTpSlOrders] Error:', err);
+      console.error('[OrderCommandService.placeTpSlOrders] Error:', err);
       return {
         success: false,
         error: err instanceof Error ? err.message : 'Failed to place TP/SL orders',
@@ -742,7 +531,7 @@ export class OrderService implements OrderPort {
       // 4. Success
       return { success: true };
     } catch (err) {
-      console.error('[OrderService.cancelOrder] Error:', err);
+      console.error('[OrderCommandService.cancelOrder] Error:', err);
       return {
         success: false,
         error: err instanceof Error ? err.message : 'Failed to cancel order',
@@ -787,7 +576,7 @@ export class OrderService implements OrderPort {
       // 4. Success
       return { success: true };
     } catch (err) {
-      console.error('[OrderService.cancelOrders] Error:', err);
+      console.error('[OrderCommandService.cancelOrders] Error:', err);
       return {
         success: false,
         error: err instanceof Error ? err.message : 'Failed to cancel orders',

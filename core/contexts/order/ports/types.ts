@@ -496,3 +496,97 @@ export function validateTpSl(
 
   return { valid: true };
 }
+
+// ============================================================================
+// Order Operation Parameters
+// ============================================================================
+
+/**
+ * Unified order placement parameters
+ * Supports all order types through optional fields with clear semantics
+ */
+export interface PlaceOrderParams {
+  // Required fields
+  coin: string;
+  side: 'Long' | 'Short';
+  size: string;
+
+  // Order type configuration
+  orderType: 'Market' | 'Limit';
+  limitPrice?: string; // Required if orderType === 'Limit'
+  marketPrice?: number; // Required if orderType === 'Market'
+
+  // Order behavior
+  reduceOnly?: boolean;
+
+  // TP/SL configuration (optional)
+  tpSl?: {
+    tpTriggerPrice?: string;
+    tpLimitPrice?: string; // If omitted, TP executes as market order
+    slTriggerPrice?: string;
+    slLimitPrice?: string; // If omitted, SL executes as market order
+  };
+}
+
+/**
+ * Parameters for closing a position with market order
+ */
+export interface CloseMarketOrderParams {
+  coin: string; // Asset symbol (e.g., 'BTC', 'ETH')
+  side: 'Long' | 'Short'; // Order side: Long = buy (close short), Short = sell (close long)
+  size: string; // Size to close (must match asset's decimal precision)
+  marketPrice: string; // Current market price for extreme price calculation
+}
+
+/**
+ * Parameters for closing a position with limit order
+ */
+export interface CloseLimitOrderParams {
+  coin: string; // Asset symbol (e.g., 'BTC', 'ETH')
+  side: 'Long' | 'Short'; // Order side: Long = buy (close short), Short = sell (close long)
+  size: string; // Size to close
+  price: string; // Limit price
+}
+
+/**
+ * Parameters for placing TP/SL orders on a position
+ */
+export interface TpSlOrderParams {
+  coin: string; // Asset symbol
+  isLong: boolean; // Position direction
+  size: string; // Order size (entire position or configured amount)
+  // Take Profit parameters (optional)
+  tpTriggerPrice?: string; // Trigger price for TP
+  tpLimitPrice?: string; // Limit price for TP (if not provided, market order with 10% slippage)
+  // Stop Loss parameters (optional)
+  slTriggerPrice?: string; // Trigger price for SL
+  slLimitPrice?: string; // Limit price for SL (if not provided, market order with 10% slippage)
+}
+
+/**
+ * Parameters for canceling an order
+ */
+export interface CancelOrderParams {
+  coin: string;
+  orderId: number;
+}
+
+/**
+ * Parameters for canceling multiple orders
+ */
+export interface CancelOrdersParams {
+  orders: { coin: string; orderId: number }[];
+}
+
+// ============================================================================
+// Result Types
+// ============================================================================
+
+/**
+ * Result type for order operations
+ * Used instead of throwing exceptions for clearer error handling
+ */
+export interface OrderResult {
+  success: boolean;
+  error?: string;
+}

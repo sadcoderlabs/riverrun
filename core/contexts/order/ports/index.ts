@@ -1,5 +1,6 @@
 // Export all domain types and pure functions
 export * from './types';
 
-// Export business interface
-export * from './orderPort';
+// Export business interfaces (CQRS)
+export * from './orderCommandPort';
+export * from './orderQueryPort';
