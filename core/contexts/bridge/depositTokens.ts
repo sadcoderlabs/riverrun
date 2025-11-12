@@ -1,4 +1,11 @@
 /**
+ * Deposit Tokens Configuration
+ *
+ * UI configuration for supported deposit tokens and chains.
+ * This is presentation-layer configuration, not domain logic.
+ */
+
+/**
  * Deposit method type
  * - hyperliquid-bridge: Direct bridge from Arbitrum (USDC only)
  */

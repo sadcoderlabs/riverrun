@@ -367,4 +367,41 @@ export class HyperliquidGateway {
       };
     }
   }
+
+  // ============================================================================
+  // Bridge Operations (Write + Read)
+  // ============================================================================
+
+  /**
+   * Get clearinghouse state for a user
+   *
+   * Includes withdrawable balance, account value, margin information, etc.
+   *
+   * @param userAddress - User address
+   * @returns Clearinghouse state including withdrawable balance
+   */
+  async getClearinghouseState(userAddress: string): Promise<hl.ClearinghouseStateResponse> {
+    return await infoClient.clearinghouseState({ user: userAddress });
+  }
+
+  /**
+   * Withdraw USDC from Hyperliquid to Arbitrum
+   *
+   * Uses the withdraw3 API to transfer USDC to an Arbitrum address.
+   * A $1 USDC fee is automatically deducted from the amount.
+   *
+   * @param signer - Signer for the master wallet
+   * @param destination - Arbitrum address to receive USDC
+   * @param amount - Amount to withdraw (human-readable, e.g., "10.5")
+   * @returns Withdrawal response with status
+   */
+  async withdraw(signer: Signer, destination: string, amount: string): Promise<{ status: string }> {
+    const client = getMasterExchangeClient(signer);
+    const response = await client.withdraw3({
+      destination: destination as `0x${string}`,
+      amount: amount,
+    });
+
+    return { status: response.status };
+  }
 }

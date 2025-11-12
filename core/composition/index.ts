@@ -69,3 +69,12 @@ export type { UseReferralResult } from '../contexts/referral/reactNative/useRefe
 export { useReferralStore } from '../contexts/referral/reactNative/useReferralStore';
 export { useReferralHintsStore } from '../contexts/referral/adapters/referralHintsStore';
 export { REFERRAL_CONFIG } from '../contexts/referral/config';
+
+export {
+  BridgeCompositionProvider,
+  useBridgeComposition,
+} from '../contexts/bridge/reactNative/bridgeComposition';
+export { useBridge } from '../contexts/bridge/reactNative/useBridge';
+export type { UseBridgeResult } from '../contexts/bridge/reactNative/useBridge';
+export { useBridgeStore } from '../contexts/bridge/reactNative/useBridgeStore';
+export { ARBITRUM_CONFIG, BRIDGE_LIMITS, BRIDGE_FEES } from '../contexts/bridge/config';

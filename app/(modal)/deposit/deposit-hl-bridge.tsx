@@ -1,19 +1,18 @@
 import { AlertTriangle, ArrowLeft, Copy, Loader } from '@tamagui/lucide-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Alert, Pressable, ScrollView } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { Button, Input, Spinner, Text, XStack, YStack } from 'tamagui';
 import { toast } from 'sonner-native';
-import { DEPOSIT_TOKENS, ChainName } from '@/lib/riverrun/transfer/constants/depositTokens';
-import { useArbitrumUsdc, ARBITRUM_USDC_ADDRESS } from '@/lib/riverrun/transfer/useArbitrumUsdc';
-import { useWalletContext } from '@/core/composition';
-
-// Hyperliquid Bridge contract address on Arbitrum
-const HYPERLIQUID_BRIDGE_ADDRESS = '0x2Df1c51E09aECF9cacB7bc98cB1742757f163dF7';
-
-// Minimum deposit amount
-const MIN_DEPOSIT_AMOUNT = 5;
+import {
+  useWalletContext,
+  useBridge,
+  useBridgeStore,
+  ARBITRUM_CONFIG,
+  BRIDGE_LIMITS,
+} from '@/core/composition';
+import { DEPOSIT_TOKENS, type ChainName } from '@/core/contexts/bridge/depositTokens';
 
 // Helper function to shorten address (first 5 and last 5 characters)
 function shortenAddress(address: string, chars: number = 5): string {
@@ -32,9 +31,10 @@ export default function HyperliquidBridgePage() {
   const router = useRouter();
   const params = useLocalSearchParams<{ symbol: string; chain: string }>();
 
-  // Wallet and balance hooks
+  // Wallet and bridge hooks
   const { wallet } = useWalletContext();
-  const { balance, depositUsdc } = useArbitrumUsdc();
+  const balance = useBridgeStore(state => state.arbitrumBalance);
+  const { deposit, refreshBalances, isDepositing } = useBridge();
 
   // Find the token based on symbol from URL params
   const token = DEPOSIT_TOKENS.find(t => t.symbol === params.symbol);
@@ -44,7 +44,11 @@ export default function HyperliquidBridgePage() {
 
   // State
   const [amount, setAmount] = useState('');
-  const [isDepositing, setIsDepositing] = useState(false);
+
+  // Refresh balance on mount
+  useEffect(() => {
+    refreshBalances();
+  }, [refreshBalances]);
 
   if (!token || !selectedChain || selectedChain.depositMethod !== 'hyperliquid-bridge') {
     return (
@@ -64,7 +68,7 @@ export default function HyperliquidBridgePage() {
 
   const numAmount = parseFloat(amount) || 0;
   const numBalance = parseFloat(balance || '0') || 0;
-  const isValidAmount = numAmount >= MIN_DEPOSIT_AMOUNT && numAmount <= numBalance;
+  const isValidAmount = numAmount >= BRIDGE_LIMITS.minimumDeposit && numAmount <= numBalance;
 
   const handleMaxPress = () => {
     if (balance) {
@@ -88,19 +92,17 @@ export default function HyperliquidBridgePage() {
     if (!isValidAmount) {
       Alert.alert(
         'Invalid Amount',
-        `Please enter an amount between ${MIN_DEPOSIT_AMOUNT} and ${balance || '0'} USDC`,
+        `Please enter an amount between ${BRIDGE_LIMITS.minimumDeposit} and ${balance || '0'} USDC`,
       );
       return;
     }
 
     try {
-      setIsDepositing(true);
-
       // Deposit USDC to Hyperliquid Bridge
-      const txHash = await depositUsdc(HYPERLIQUID_BRIDGE_ADDRESS, amount);
+      const result = await deposit(amount);
 
       toast.success('Deposit Successful!', {
-        description: `Transaction: ${shortenAddress(txHash)}`,
+        description: `Transaction: ${shortenAddress(result.txHash)}`,
       });
 
       // Clear amount after successful deposit
@@ -111,8 +113,6 @@ export default function HyperliquidBridgePage() {
         'Deposit Failed',
         error instanceof Error ? error.message : 'Unknown error occurred',
       );
-    } finally {
-      setIsDepositing(false);
     }
   };
 
@@ -175,7 +175,7 @@ export default function HyperliquidBridgePage() {
 
             {/* USDC Contract Address */}
             <Text fontSize="$2" color="$gray10" textAlign="center">
-              USDC Contract: {shortenAddress(ARBITRUM_USDC_ADDRESS, 3)}
+              USDC Contract: {shortenAddress(ARBITRUM_CONFIG.usdcAddress, 3)}
             </Text>
 
             {/* Monitoring Status */}
@@ -255,9 +255,9 @@ export default function HyperliquidBridgePage() {
             </XStack>
 
             {/* Validation Message */}
-            {amount && numAmount < MIN_DEPOSIT_AMOUNT && (
+            {amount && numAmount < BRIDGE_LIMITS.minimumDeposit && (
               <Text fontSize="$2" color="#F97316" fontFamily="$interMedium">
-                Amount must be at least {MIN_DEPOSIT_AMOUNT} USDC
+                Amount must be at least {BRIDGE_LIMITS.minimumDeposit} USDC
               </Text>
             )}
             {amount && numAmount > numBalance && (
@@ -298,7 +298,7 @@ export default function HyperliquidBridgePage() {
         >
           <AlertTriangle size={20} color="#3B82F6" />
           <Text fontSize="$3" color="#3B82F6" flex={1}>
-            Minimum deposit amount: {MIN_DEPOSIT_AMOUNT} USDC
+            Minimum deposit amount: {BRIDGE_LIMITS.minimumDeposit} USDC
           </Text>
         </XStack>
 
@@ -315,7 +315,7 @@ export default function HyperliquidBridgePage() {
           <YStack flex={1}>
             <Text fontSize="$2" color="#F59E0B" lineHeight="$1">
               Important: This will transfer USDC from your Arbitrum wallet to the Hyperliquid bridge
-              contract at {shortenAddress(HYPERLIQUID_BRIDGE_ADDRESS, 3)}. Depositing any amount
+              contract at {shortenAddress(ARBITRUM_CONFIG.bridgeAddress, 3)}. Depositing any amount
               less than minimum deposit amount will result in loss of funds.
             </Text>
           </YStack>

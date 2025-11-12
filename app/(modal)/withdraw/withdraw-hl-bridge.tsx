@@ -5,8 +5,13 @@ import { Alert, Pressable, ScrollView } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { Button, Input, Spinner, Text, XStack, YStack } from 'tamagui';
 import { toast } from 'sonner-native';
-import { useWalletContext } from '@/core/composition';
-import { useHyperliquidWithdraw } from '@/lib/riverrun/withdrawal/useHyperliquidWithdraw';
+import {
+  useWalletContext,
+  useBridge,
+  useBridgeStore,
+  BRIDGE_LIMITS,
+  BRIDGE_FEES,
+} from '@/core/composition';
 
 // Validate Ethereum address format
 function isValidAddress(address: string): boolean {
@@ -26,15 +31,10 @@ export default function HyperliquidBridgeWithdrawPage() {
   // Wallet hooks
   const { wallet } = useWalletContext();
 
-  // Hyperliquid withdraw hook
-  const {
-    withdrawableBalance,
-    isLoadingBalance,
-    isWithdrawing,
-    refreshBalance,
-    withdraw,
-    minWithdrawAmount,
-  } = useHyperliquidWithdraw();
+  // Bridge hooks
+  const withdrawableBalance = useBridgeStore(state => state.withdrawableBalance);
+  const isLoadingBalance = useBridgeStore(state => state.isLoadingBalances);
+  const { withdraw, refreshBalances, isWithdrawing } = useBridge();
 
   // State
   const [recipientAddress, setRecipientAddress] = useState('');
@@ -43,9 +43,9 @@ export default function HyperliquidBridgeWithdrawPage() {
   // Load withdrawable balance on mount
   useEffect(() => {
     if (wallet) {
-      refreshBalance();
+      refreshBalances();
     }
-  }, [wallet, refreshBalance]);
+  }, [wallet, refreshBalances]);
 
   if (!wallet) {
     return (
@@ -57,7 +57,7 @@ export default function HyperliquidBridgeWithdrawPage() {
 
   const numAmount = parseFloat(amount) || 0;
   const numBalance = parseFloat(withdrawableBalance || '0') || 0;
-  const isValidAmount = numAmount >= minWithdrawAmount && numAmount <= numBalance;
+  const isValidAmount = numAmount >= BRIDGE_LIMITS.minimumWithdrawal && numAmount <= numBalance;
   const isValidRecipient = isValidAddress(recipientAddress);
 
   const handleMaxPress = () => {
@@ -93,13 +93,18 @@ export default function HyperliquidBridgeWithdrawPage() {
       return;
     }
 
-    // Execute withdrawal
-    const success = await withdraw(recipientAddress, amount);
+    try {
+      // Execute withdrawal
+      const result = await withdraw(recipientAddress, amount);
 
-    if (success) {
-      // Clear form after successful withdrawal
-      setAmount('');
-      setRecipientAddress('');
+      if (result.success) {
+        // Clear form after successful withdrawal
+        setAmount('');
+        setRecipientAddress('');
+      }
+    } catch (error) {
+      // Error handling is already done in the bridge service/hook
+      console.error('Withdrawal failed:', error);
     }
   };
 
@@ -247,9 +252,9 @@ export default function HyperliquidBridgeWithdrawPage() {
             </XStack>
 
             {/* Validation Message */}
-            {amount && numAmount > 0 && numAmount < minWithdrawAmount && (
+            {amount && numAmount > 0 && numAmount < BRIDGE_LIMITS.minimumWithdrawal && (
               <Text fontSize="$2" color="#F97316" fontFamily="$interMedium">
-                Minimum withdrawal amount: {minWithdrawAmount} USDC
+                Minimum withdrawal amount: {BRIDGE_LIMITS.minimumWithdrawal} USDC
               </Text>
             )}
             {amount && numAmount > numBalance && (
@@ -291,10 +296,10 @@ export default function HyperliquidBridgeWithdrawPage() {
           <AlertTriangle size={20} color="#3B82F6" />
           <YStack flex={1} gap="$1">
             <Text fontSize="$3" color="#3B82F6" fontFamily="$interMedium">
-              Minimum withdrawal: {minWithdrawAmount} USDC
+              Minimum withdrawal: {BRIDGE_LIMITS.minimumWithdrawal} USDC
             </Text>
             <Text fontSize="$3" color="#3B82F6" fontFamily="$interMedium">
-              Withdrawal fee: $1 USDC (deducted from amount)
+              Withdrawal fee: ${BRIDGE_FEES.withdrawalFee} USDC (deducted from amount)
             </Text>
             <Text fontSize="$2" color="#3B82F6">
               Withdrawals should arrive within 5 minutes.
