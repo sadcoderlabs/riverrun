@@ -25,7 +25,7 @@
 import type * as hl from '@nktkas/hyperliquid';
 import type { Signer } from 'ethers';
 import * as infoClient from './client/infoClient';
-import { getMasterExchangeClient } from './client/getter';
+import { getMasterExchangeClient, getAgentExchangeClient } from './client/getter';
 import { subscriptionManager } from './subscription';
 
 /**
@@ -348,6 +348,16 @@ export class HyperliquidGateway {
   // ============================================================================
   // Agent Operations (Write + Read)
   // ============================================================================
+
+  /**
+   * Get agent exchange client for trading operations
+   *
+   * @param agentSigner - Signer for the agent wallet
+   * @returns ExchangeClient instance for agent trading
+   */
+  getAgentExchangeClient(agentSigner: Signer): hl.ExchangeClient {
+    return getAgentExchangeClient(agentSigner);
+  }
 
   /**
    * Approve agent on blockchain

@@ -75,7 +75,12 @@ export function OrderCompositionProvider({ children }: OrderCompositionProviderP
     const queryService = new OrderQueryService(hyperliquidGateway);
 
     // Create command service (executes order operations)
-    const commandService = new OrderCommandService(agentService, builderFeeService, marketService);
+    const commandService = new OrderCommandService(
+      agentService,
+      builderFeeService,
+      marketService,
+      hyperliquidGateway,
+    );
 
     return {
       orderCommandService: commandService,

@@ -20,6 +20,7 @@ import type { AgentPort } from '@/core/contexts/agent/ports/agentPort';
 import { getBuilderParam } from '@/core/contexts/builderFee/config';
 import type { BuilderFeePort } from '@/core/contexts/builderFee/ports/builderFeePort';
 import type { MarketPort } from '@/core/contexts/market/ports/marketPort';
+import type { HyperliquidGateway } from '@/core/infra/hyperliquid/hyperliquidGateway';
 import * as hl from '@nktkas/hyperliquid';
 import type { OrderCommandPort } from '../ports/orderCommandPort';
 import type {
@@ -72,6 +73,7 @@ export class OrderCommandService implements OrderCommandPort {
     private readonly agentPort: AgentPort,
     private readonly builderFeePort: BuilderFeePort,
     private readonly marketPort: MarketPort,
+    private readonly hyperliquidGateway: HyperliquidGateway,
   ) {}
 
   // ==========================================================================
@@ -88,9 +90,8 @@ export class OrderCommandService implements OrderCommandPort {
       return undefined;
     }
 
-    // Create exchange client from agent wallet
-    const { getAgentExchangeClient } = await import('@/core/infra/hyperliquid/client/getter');
-    const exchangeClient = getAgentExchangeClient(agentWallet.signer);
+    // Create exchange client from agent wallet via gateway
+    const exchangeClient = this.hyperliquidGateway.getAgentExchangeClient(agentWallet.signer);
 
     // Get asset metadata from market service
     const market = this.marketPort.getMarketByCoin(coin);
@@ -519,9 +520,8 @@ export class OrderCommandService implements OrderCommandPort {
         };
       }
 
-      // Create exchange client from agent wallet
-      const { getAgentExchangeClient } = await import('@/core/infra/hyperliquid/client/getter');
-      const exchangeClient = getAgentExchangeClient(agentWallet.signer);
+      // Create exchange client from agent wallet via gateway
+      const exchangeClient = this.hyperliquidGateway.getAgentExchangeClient(agentWallet.signer);
 
       // 2. Get asset metadata
       const market = this.marketPort.getMarketByCoin(params.coin);
@@ -564,9 +564,8 @@ export class OrderCommandService implements OrderCommandPort {
         };
       }
 
-      // Create exchange client from agent wallet
-      const { getAgentExchangeClient } = await import('@/core/infra/hyperliquid/client/getter');
-      const exchangeClient = getAgentExchangeClient(agentWallet.signer);
+      // Create exchange client from agent wallet via gateway
+      const exchangeClient = this.hyperliquidGateway.getAgentExchangeClient(agentWallet.signer);
 
       // 2. Build cancels array
       const cancels = params.orders
