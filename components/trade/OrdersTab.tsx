@@ -15,8 +15,7 @@ import {
   getOrderDirection,
   isMarketOrder,
 } from '@/lib/riverrun/order';
-import { useWalletContext } from '@/core/composition';
-import { useMarketsStore } from '@/lib/riverrun/market';
+import { useWalletContext, useMarketStore, useMarket } from '@/core/composition';
 import { useMemo, useState } from 'react';
 import { Button, Spinner, Text, View, XStack, YStack } from 'tamagui';
 
@@ -32,7 +31,7 @@ interface OrderCardProps {
 }
 
 function OrderCard({ order, onCancel, onPress, canceling }: OrderCardProps) {
-  const { markets } = useMarketsStore();
+  const markets = useMarketStore(state => state.markets);
 
   // Get szDecimals from markets data (from metaAndAssetCtxs subscription)
   const szDecimals = useMemo(() => {
@@ -196,7 +195,7 @@ type OrderFilter = 'all' | 'long' | 'short';
 
 export function OrdersTabContent() {
   const { wallet } = useWalletContext();
-  const { setSelectedMarketByCoin } = useMarketsStore();
+  const { setSelectedMarketByCoin } = useMarket();
 
   // Get orders from useOpenOrders (simplified flat structure)
   const { orders, isLoading, error } = useOpenOrders();

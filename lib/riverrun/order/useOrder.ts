@@ -2,9 +2,8 @@ import * as hl from '@nktkas/hyperliquid';
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner-native';
 import { roundPrice } from '@/components/trade/priceUtils';
-import { getBuilderParam, useBuilderFee } from '@/core/composition';
+import { getBuilderParam, useBuilderFee, useMarketStore } from '@/core/composition';
 import { useHyperliquidClient } from '@/lib/hyperliquid/client/useHyperliquidClient';
-import { useMarketsStore } from '@/lib/riverrun/market';
 
 /**
  * Validate that a size string has the correct number of decimal places
@@ -348,7 +347,7 @@ function buildSuccessMessage(params: PlaceOrderParams): { title: string; descrip
 export function useOrder(): UseOrderResult {
   const { getAgentExchangeClient } = useHyperliquidClient();
   const { ensureBuilderFeeApproval } = useBuilderFee();
-  const { markets } = useMarketsStore();
+  const markets = useMarketStore(state => state.markets);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [isCanceling, setIsCanceling] = useState(false);
   const [error, setError] = useState<string | null>(null);

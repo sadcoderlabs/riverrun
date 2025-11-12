@@ -1,10 +1,16 @@
 import { MarketListItem } from '@/components/trade/MarketListItem';
-import { useMarketSelector, useMarketsStore, type SortOption } from '@/lib/riverrun/market';
+import { useMarketStore, useMarket } from '@/core/composition';
+import type { Market } from '@/core/contexts/market/ports/types';
+import { useSubscription } from '@/lib/hyperliquid/subscription';
+import { useThrottle } from '@/lib/riverrun/common/useThrottle';
 import { ArrowDown, ArrowUp, Search } from '@tamagui/lucide-icons';
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useMemo } from 'react';
 import { FlatList, RefreshControl, StyleSheet } from 'react-native';
 import Modal from 'react-native-modal';
 import { Button, Input, Text, XStack, YStack } from 'tamagui';
+
+export type SortOption = 'name' | 'volume' | 'price' | 'change';
+export type SortDirection = 'asc' | 'desc';
 
 interface MarketSelectorModalProps {
   open: boolean;
@@ -12,23 +18,99 @@ interface MarketSelectorModalProps {
 }
 
 export function MarketSelectorModal({ open, onOpenChange }: MarketSelectorModalProps) {
-  const { setSelectedMarketByCoin, refresh } = useMarketsStore();
+  // State access
+  const markets = useMarketStore(state => state.markets);
+  const favorites = useMarketStore(state => state.favorites);
 
-  // Market selector business logic
-  // Enable real-time prices only when modal is open (saves battery)
-  // Hybrid strategy: HTTP fetch provides fast initial data, WebSocket keeps it updated
-  const {
-    searchQuery,
-    setSearchQuery,
-    markets,
-    favorites,
-    filteredMarkets,
-    toggleFavorite,
-    sortBy,
-    sortDirection,
-    setSortBy,
-    toggleSortDirection,
-  } = useMarketSelector({ enableRealtimePrices: open });
+  // Business operations
+  const { setSelectedMarketByCoin, toggleFavorite, refresh } = useMarket();
+
+  // Local state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<SortOption>('volume');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+
+  // Real-time prices (only when modal is open)
+  const { data: rawAllMidsData } = useSubscription('allMids');
+  const allMidsData = useThrottle(rawAllMidsData, 100);
+
+  // Filtered and sorted markets with real-time prices
+  const filteredMarkets = useMemo(() => {
+    if (markets.length === 0) return [];
+
+    // Merge real-time prices if available
+    const marketsWithRealtimePrices = open
+      ? markets.map(market => {
+          const realtimeMidPriceStr = allMidsData?.mids[market.coin];
+          if (!realtimeMidPriceStr) return market;
+
+          const realtimePrice = parseFloat(realtimeMidPriceStr);
+          const PRICE_EPSILON = 0.0001;
+          if (Math.abs(realtimePrice - market.price) < PRICE_EPSILON) {
+            return market;
+          }
+
+          const prevDayPrice = market.price / (1 + market.change / 100);
+          const priceChange =
+            prevDayPrice > 0
+              ? ((realtimePrice - prevDayPrice) / prevDayPrice) * 100
+              : market.change;
+
+          return {
+            ...market,
+            price: realtimePrice,
+            change: priceChange,
+          };
+        })
+      : markets;
+
+    // Sort markets
+    const sorted = [...marketsWithRealtimePrices].sort((a, b) => {
+      const aIsFavorite = favorites.includes(a.marketPair);
+      const bIsFavorite = favorites.includes(b.marketPair);
+      if (aIsFavorite && !bIsFavorite) return -1;
+      if (!aIsFavorite && bIsFavorite) return 1;
+
+      let comparison = 0;
+      switch (sortBy) {
+        case 'name':
+          comparison = a.coin.localeCompare(b.coin);
+          break;
+        case 'volume':
+          comparison = a.volume - b.volume;
+          break;
+        case 'price':
+          comparison = a.price - b.price;
+          break;
+        case 'change':
+          comparison = a.change - b.change;
+          break;
+      }
+
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+
+    // Filter by search query
+    if (!searchQuery) return sorted;
+
+    const query = searchQuery.toLowerCase();
+    const startsWithMatches = sorted.filter(
+      m => m.marketPair.toLowerCase().startsWith(query) || m.coin.toLowerCase().startsWith(query),
+    );
+    const includesMatches = sorted.filter(
+      m =>
+        !m.marketPair.toLowerCase().startsWith(query) &&
+        !m.coin.toLowerCase().startsWith(query) &&
+        (m.marketPair.toLowerCase().includes(query) || m.coin.toLowerCase().includes(query)),
+    );
+
+    return [...startsWithMatches, ...includesMatches];
+  }, [markets, favorites, searchQuery, allMidsData, open, sortBy, sortDirection]);
+
+  // Toggle sort direction
+  const toggleSortDirection = useCallback(() => {
+    setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'));
+  }, []);
 
   const [refreshing, setRefreshing] = useState(false);
 

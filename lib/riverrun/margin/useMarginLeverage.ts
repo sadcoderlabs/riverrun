@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner-native';
 import { useHyperliquidClient } from '@/lib/hyperliquid/client/useHyperliquidClient';
-import { useMarketsStore } from '@/lib/riverrun/market';
+import { useMarketStore } from '@/core/composition';
 import { useActiveAssetData } from '@/lib/hyperliquid/hooks/useActiveAssetData';
 
 export interface MarginLeverage {
@@ -63,7 +63,8 @@ export interface SetMarginLeverageParams {
  */
 export function useMarginLeverage(): UseMarginLeverageResult {
   const { getAgentExchangeClient } = useHyperliquidClient();
-  const { selectedMarket, markets } = useMarketsStore();
+  const selectedMarket = useMarketStore(state => state.selectedMarket);
+  const markets = useMarketStore(state => state.markets);
 
   // Fail fast if no market is selected
   if (!selectedMarket) {

@@ -9,8 +9,7 @@ import { formatValue } from '@/lib/hyperliquid/format/formatValue';
 import { useUserFills } from '@/lib/riverrun/history/useUserFills';
 import type { Fill } from '@/lib/riverrun/history/fills';
 import { formatTimestamp } from '@/lib/riverrun/order';
-import { useWalletContext } from '@/core/composition';
-import { useMarketsStore } from '@/lib/riverrun/market';
+import { useWalletContext, useMarketStore, useMarket } from '@/core/composition';
 import { useMemo, useState } from 'react';
 import { Button, Spinner, Text, View, XStack, YStack } from 'tamagui';
 
@@ -24,7 +23,7 @@ interface FillCardProps {
 }
 
 function FillCard({ fill, onPress }: FillCardProps) {
-  const { markets } = useMarketsStore();
+  const markets = useMarketStore(state => state.markets);
 
   // Get szDecimals from markets data (from metaAndAssetCtxs subscription)
   const szDecimals = useMemo(() => {
@@ -150,7 +149,7 @@ type FillFilter = 'all' | 'long' | 'short';
 
 export function HistoryTabContent() {
   const { wallet } = useWalletContext();
-  const { setSelectedMarketByCoin } = useMarketsStore();
+  const { setSelectedMarketByCoin } = useMarket();
 
   // Get fills from useUserFills hook
   const { fills, isLoading, error } = useUserFills();

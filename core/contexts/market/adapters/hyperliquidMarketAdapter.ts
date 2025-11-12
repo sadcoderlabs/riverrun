@@ -7,7 +7,8 @@
 
 import * as infoClient from '@/lib/hyperliquid/client/infoClient';
 import { subscriptionManager } from '@/lib/hyperliquid/subscription';
-import type { Market, RawMarketMeta, RawAssetContext, convertRawMarket } from '../ports/types';
+import type { Market, RawMarketMeta, RawAssetContext } from '../ports/types';
+import { convertRawMarket } from '../ports/types';
 
 /**
  * Subscription handle for cleanup
@@ -50,8 +51,6 @@ export class HyperliquidMarketAdapter {
       };
 
       // Use pure function from ports/types.ts
-      // Import it dynamically to avoid circular dependency
-      const { convertRawMarket } = require('../ports/types');
       return convertRawMarket(rawMeta, rawCtx, index);
     });
 

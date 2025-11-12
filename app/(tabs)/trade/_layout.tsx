@@ -1,6 +1,6 @@
 import { CoinInfo } from '@/components/trade/CoinInfo';
 import { PerpTabs } from '@/components/trade/PerpTabs';
-import { useMarketsStore } from '@/lib/riverrun/market';
+import { useMarketStore, useMarket } from '@/core/composition';
 import { Slot, usePathname } from 'expo-router';
 import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
@@ -23,8 +23,10 @@ import { View, StyleSheet, ScrollView } from 'react-native';
 export default function TradeLayout() {
   const pathname = usePathname();
 
-  // Zustand store
-  const { selectedMarket, setSelectedMarketByCoin } = useMarketsStore();
+  // State access
+  const selectedMarket = useMarketStore(state => state.selectedMarket);
+  // Business operations
+  const { setSelectedMarketByCoin } = useMarket();
 
   // Deep link support: read URL query params once to initialize store
   // Example: /trade/perp?coin=BTC

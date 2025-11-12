@@ -2,8 +2,7 @@ import { formatPercent } from '@/lib/hyperliquid/format/formatPercent';
 import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
 import { formatSize } from '@/lib/hyperliquid/format/formatSize';
 import { formatValue } from '@/lib/hyperliquid/format/formatValue';
-import { useWalletContext } from '@/core/composition';
-import { useMarketsStore } from '@/lib/riverrun/market';
+import { useWalletContext, useMarket } from '@/core/composition';
 import { usePositionStore } from '@/core/contexts/position/reactNative/usePositionStore';
 import type { EnrichedPosition } from '@/core/contexts/position/ports/types';
 import { calculatePositionMetrics } from '@/core/contexts/position/ports/types';
@@ -14,7 +13,7 @@ import TpSlModal from './TpSlModal';
 
 export default function PositionsTab() {
   const { wallet } = useWalletContext();
-  const { setSelectedMarketByCoin } = useMarketsStore();
+  const { setSelectedMarketByCoin } = useMarket();
 
   // Get positions from position context (business logic handled by PositionService)
   const positions = usePositionStore(state => state.positions);
