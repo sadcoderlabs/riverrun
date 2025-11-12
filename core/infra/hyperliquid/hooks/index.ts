@@ -5,3 +5,4 @@ export * from './useMetaAndAssetCtxs';
 export * from './useTrades';
 export * from './useWebData2';
 export * from './useCandleSnapshot';
+export * from './useLatestPrice';

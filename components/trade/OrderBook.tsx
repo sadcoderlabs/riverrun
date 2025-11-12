@@ -1,17 +1,17 @@
 import AdaptiveSelect from '@/components/global/AdaptiveSelect';
 import { formatPrice } from '@/core/infra/hyperliquid/format/formatPrice';
 import { formatSizeFixedDecimals } from '@/core/infra/hyperliquid/format/formatSizeFixedDecimals';
-import { useActiveAssetCtx, useTrades } from '@/core/infra/hyperliquid/hooks';
-import { useSubscription, type OrderBookData } from '@/core/infra/hyperliquid/subscription';
-import { useThrottle } from '@/components/shared/hooks/useThrottle';
-import { useMarketStore } from '@/core/composition';
+import { buildPrecisionMenu } from '@/core/infra/hyperliquid/format/orderbookPrecision';
+import { useActiveAssetCtx, useTrades, useLatestPrice } from '@/core/infra/hyperliquid/hooks';
 import {
-  buildPrecisionMenu,
+  useSubscription,
+  type OrderBookData,
   type NSigFigs,
   type OrderBookLevel,
   type PrecisionMenuItem,
-} from '@/core/infra/hyperliquid/orderbook/orderbookPrecision';
-import { useLatestPrice } from '@/core/infra/hyperliquid/orderbook/useLatestPrice';
+} from '@/core/infra/hyperliquid/subscription';
+import { useThrottle } from '@/components/shared/hooks/useThrottle';
+import { useMarketStore } from '@/core/composition';
 import { ArrowDownRight, ArrowUpRight, ChevronDown, Info } from '@tamagui/lucide-icons';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList } from 'react-native';

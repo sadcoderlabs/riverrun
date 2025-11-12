@@ -7,11 +7,9 @@
 import type * as hl from '@nktkas/hyperliquid';
 import { getSubscriptionClient } from '../client/getter';
 import { subscriptionRegistry } from './subscriptionRegistry';
-import type { NSigFigs } from '../orderbook/orderbookPrecision';
 import type {
-  AllMidsData,
+  NSigFigs,
   OrderBookData,
-  UserFillsData,
   ActiveAssetData,
   ActiveAssetCtxData,
   TradesData,

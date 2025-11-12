@@ -23,6 +23,9 @@ export type { SubscriptionHandle, SubscriptionConfig, SubscriptionEntry } from '
 
 // Subscription data types
 export type {
+  NSigFigs,
+  OrderBookLevel,
+  PrecisionMenuItem,
   AllMidsData,
   OrderBookData,
   UserFillsData,

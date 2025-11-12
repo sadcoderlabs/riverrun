@@ -4,9 +4,33 @@
  * These types define the shape of data returned by each subscription type.
  */
 
-import type { OrderBookLevel } from '../../orderbook/orderbookPrecision';
 import type { Fill } from '@/core/contexts/history/ports/types';
 import type * as hl from '@nktkas/hyperliquid';
+
+/**
+ * nSigFigs parameter for Hyperliquid API
+ * - null: Full precision (finest possible under exchange rules)
+ * - 2-5: Number of significant figures to round to
+ */
+export type NSigFigs = 2 | 3 | 4 | 5 | null;
+
+/**
+ * Order book price level
+ */
+export interface OrderBookLevel {
+  px: string; // Price
+  sz: string; // Size
+  n: number; // Number of orders
+}
+
+/**
+ * Menu item representing a precision level
+ */
+export interface PrecisionMenuItem {
+  step: number; // Price increment between adjacent rows
+  label: string; // Human-readable label for UI (e.g., "0.01", "10")
+  nSigFigs: NSigFigs; // Parameter to send to Hyperliquid API
+}
 
 /**
  * AllMids subscription data
