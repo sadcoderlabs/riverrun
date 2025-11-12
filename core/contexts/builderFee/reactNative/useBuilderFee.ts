@@ -6,7 +6,7 @@ import { useBuilderFeeComposition } from './builderFeeComposition';
 import { builderFeeStateStore } from '../adapters/builderFeeStateStore';
 import { BUILDER_CONFIG } from '../config';
 
-export interface UseBuilderFeeContextResult {
+export interface UseBuilderFeeResult {
   /**
    * Maximum approved builder fee in 0.1bps units
    */
@@ -52,7 +52,7 @@ export interface UseBuilderFeeContextResult {
 }
 
 /**
- * useBuilderFeeContext - Builder fee management hook
+ * useBuilderFee - Builder fee management hook
  *
  * This is the main hook for builder fee operations. It provides:
  * - Reactive access to builder fee state (approval status, max fee, loading)
@@ -64,7 +64,7 @@ export interface UseBuilderFeeContextResult {
  *
  * @example
  * ```tsx
- * const { isBuilderFeeApproved, approveBuilderFee, checkBuilderFeeStatus } = useBuilderFeeContext();
+ * const { isBuilderFeeApproved, approveBuilderFee, checkBuilderFeeStatus } = useBuilderFee();
  *
  * useEffect(() => {
  *   checkBuilderFeeStatus();
@@ -85,7 +85,7 @@ export interface UseBuilderFeeContextResult {
  * }
  * ```
  */
-export function useBuilderFeeContext(): UseBuilderFeeContextResult {
+export function useBuilderFee(): UseBuilderFeeResult {
   const { builderFeeService } = useBuilderFeeComposition();
 
   // UI state management (presentation layer)

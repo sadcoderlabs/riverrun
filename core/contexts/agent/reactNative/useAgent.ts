@@ -7,7 +7,7 @@ import { agentStateStore } from '../adapters/agentStateStore';
 import { getAgentExchangeClient as getAgentExchangeClientGetter } from '@/lib/hyperliquid/client/getter';
 import type { AgentApprovalStatus, AgentInfo } from '../ports/types';
 
-export interface UseAgentContextResult {
+export interface UseAgentResult {
   /**
    * Current agent address (undefined if not created yet)
    */
@@ -58,7 +58,7 @@ export interface UseAgentContextResult {
 }
 
 /**
- * useAgentContext - Agent management hook
+ * useAgent - Agent management hook
  *
  * This is the main hook for agent operations. It provides:
  * - Reactive access to agent state (address, approval status, loading)
@@ -70,7 +70,7 @@ export interface UseAgentContextResult {
  *
  * @example
  * ```tsx
- * const { agentAddress, isApproved, approve, checkStatus } = useAgentContext();
+ * const { agentAddress, isApproved, approve, checkStatus } = useAgent();
  *
  * useEffect(() => {
  *   checkStatus();
@@ -93,7 +93,7 @@ export interface UseAgentContextResult {
  * }
  * ```
  */
-export function useAgentContext(): UseAgentContextResult {
+export function useAgent(): UseAgentResult {
   const { agentService } = useAgentComposition();
 
   // UI state management (presentation layer)

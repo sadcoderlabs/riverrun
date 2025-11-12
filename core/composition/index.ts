@@ -20,21 +20,21 @@ export {
   AgentCompositionProvider,
   useAgentComposition,
 } from '../contexts/agent/reactNative/agentComposition';
-export { useAgentContext } from '../contexts/agent/reactNative/useAgentContext';
-export type { UseAgentContextResult } from '../contexts/agent/reactNative/useAgentContext';
+export { useAgent } from '../contexts/agent/reactNative/useAgent';
+export type { UseAgentResult } from '../contexts/agent/reactNative/useAgent';
 
 export {
   BuilderFeeCompositionProvider,
   useBuilderFeeComposition,
 } from '../contexts/builderFee/reactNative/builderFeeComposition';
-export { useBuilderFeeContext } from '../contexts/builderFee/reactNative/useBuilderFeeContext';
-export type { UseBuilderFeeContextResult } from '../contexts/builderFee/reactNative/useBuilderFeeContext';
+export { useBuilderFee } from '../contexts/builderFee/reactNative/useBuilderFee';
+export type { UseBuilderFeeResult } from '../contexts/builderFee/reactNative/useBuilderFee';
 export { getBuilderParam } from '../contexts/builderFee/config';
 
 export {
   ReferralCompositionProvider,
   useReferralComposition,
 } from '../contexts/referral/reactNative/referralComposition';
-export { useReferralContext } from '../contexts/referral/reactNative/useReferralContext';
-export type { UseReferralContextResult } from '../contexts/referral/reactNative/useReferralContext';
+export { useReferral } from '../contexts/referral/reactNative/useReferral';
+export type { UseReferralResult } from '../contexts/referral/reactNative/useReferral';
 export { REFERRAL_CONFIG } from '../contexts/referral/config';

@@ -1,5 +1,5 @@
 /**
- * useReferralContext - React Hook for Referral Operations
+ * useReferral - React Hook for Referral Operations
  *
  * This hook provides referral operations with UI integration (Alert dialogs).
  * It wraps the pure business logic from ReferralService with presentation layer concerns.
@@ -15,9 +15,9 @@ import { REFERRAL_CONFIG } from '../config';
 import type { ReferralInfo } from '../ports/types';
 
 /**
- * Result type for useReferralContext hook
+ * Result type for useReferral hook
  */
-export interface UseReferralContextResult {
+export interface UseReferralResult {
   /** Current referral information */
   referralInfo: ReferralInfo;
   /** Whether user has a referrer */
@@ -37,7 +37,7 @@ export interface UseReferralContextResult {
 /**
  * Hook for managing referral operations with UI integration
  */
-export function useReferralContext(): UseReferralContextResult {
+export function useReferral(): UseReferralResult {
   const { referralService } = useReferralComposition();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -52,7 +52,7 @@ export function useReferralContext(): UseReferralContextResult {
       setIsLoading(true);
       return await referralService.checkStatus();
     } catch (error) {
-      console.error('[useReferralContext] Failed to check status:', error);
+      console.error('[useReferral] Failed to check status:', error);
       return { referrer: undefined, code: undefined, cumVlm: '0' };
     } finally {
       setIsLoading(false);
@@ -93,7 +93,7 @@ export function useReferralContext(): UseReferralContextResult {
                     resolve(false);
                   }
                 } catch (error) {
-                  console.error('[useReferralContext] Failed to set referrer:', error);
+                  console.error('[useReferral] Failed to set referrer:', error);
                   Alert.alert(
                     'Error',
                     error instanceof Error ? error.message : 'Failed to set referrer',

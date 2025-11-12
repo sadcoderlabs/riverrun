@@ -1,6 +1,6 @@
 import { Button } from '@/components/global/Button';
 import { DEFAULT_AGENT_NAME } from '@/core/contexts/agent/constants';
-import { useAgentContext } from '@/core/composition';
+import { useAgent } from '@/core/composition';
 import { ArrowLeft } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
@@ -27,7 +27,7 @@ export default function AgentStatus() {
     checkStatus: checkAgentStatus,
     approve: approveAgent,
     revoke: revokeAgent,
-  } = useAgentContext();
+  } = useAgent();
 
   // Loading and refresh states
   const [isRefreshing, setIsRefreshing] = useState(false);

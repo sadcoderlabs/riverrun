@@ -10,11 +10,11 @@ import { useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import { Alert } from 'react-native';
 
-import { useAgentContext } from '@/core/composition';
+import { useAgent } from '@/core/composition';
 import { DEFAULT_AGENT_NAME } from '@/core/contexts/agent/constants';
 
 export function useAgentExchangeClient() {
-  const { getAgentExchangeClient: getAgentClient, checkStatus, approve } = useAgentContext();
+  const { getAgentExchangeClient: getAgentClient, checkStatus, approve } = useAgent();
   const router = useRouter();
 
   /**

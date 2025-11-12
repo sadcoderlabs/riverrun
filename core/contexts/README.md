@@ -104,7 +104,6 @@ context-name/
 │
 ├── reactNative/                 # React Native Layer - DI 組裝
 │   ├── xxxComposition.tsx      # 依賴注入和組裝
-│   ├── useXxxContext.ts        # Context hook
 │   └── useXxxStore.ts          # Store hook（可選）
 │
 └── config.ts (可選)             # 配置管理
@@ -517,35 +516,7 @@ export function PositionCompositionProvider({ children }: PositionCompositionPro
 }
 ```
 
-#### 4.2 Context Hook
-
-**命名規範**：
-
-- 文件名：`useXxxContext.ts`（camelCase）
-- Hook 名：`useXxxContext`（camelCase）
-
-**設計原則**：
-
-- ✅ 提供 Service 訪問
-- ✅ 錯誤處理（Context 未提供）
-
-**範例**：
-
-```typescript
-// core/contexts/position/reactNative/usePositionContext.ts
-
-export function usePositionContext() {
-  const context = useContext(PositionContext);
-
-  if (!context) {
-    throw new Error('usePositionContext must be used within PositionCompositionProvider');
-  }
-
-  return context;
-}
-```
-
-#### 4.3 Store Hook（可選）
+#### 4.2 Store Hook（可選）
 
 **命名規範**：
 
@@ -892,12 +863,9 @@ export function NewContextCompositionProvider({ children }) {
 }
 ```
 
-**Step 6: 導出 Hooks**
+**Step 6: 導出 Store Hook（如需要）**
 
 ```typescript
-// reactNative/useNewContextContext.ts
-export function useNewContextContext() { ... }
-
 // reactNative/useNewContextStore.ts (如需要)
 export function useNewContextStore<T>(selector) { ... }
 ```
@@ -1082,7 +1050,6 @@ core/contexts/position/
 │   └── index.ts
 └── reactNative/
     ├── positionComposition.tsx  # DI 組裝（詳細文檔）
-    ├── usePositionContext.ts    # Context hook
     └── usePositionStore.ts      # Store hook
 ```
 
