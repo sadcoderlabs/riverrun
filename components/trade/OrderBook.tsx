@@ -3,7 +3,7 @@ import { formatPrice } from '@/core/infra/hyperliquid/format/formatPrice';
 import { formatSizeFixedDecimals } from '@/core/infra/hyperliquid/format/formatSizeFixedDecimals';
 import { useActiveAssetCtx, useTrades } from '@/core/infra/hyperliquid/hooks';
 import { useSubscription, type OrderBookData } from '@/core/infra/hyperliquid/subscription';
-import { useThrottle } from '@/lib/riverrun/common/useThrottle';
+import { useThrottle } from '@/components/shared/hooks/useThrottle';
 import { useMarketStore } from '@/core/composition';
 import {
   buildPrecisionMenu,

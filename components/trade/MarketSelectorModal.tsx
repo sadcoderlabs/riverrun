@@ -1,7 +1,7 @@
 import { MarketListItem } from '@/components/trade/MarketListItem';
 import { useMarketStore, useMarket } from '@/core/composition';
 import { useSubscription } from '@/core/infra/hyperliquid/subscription';
-import { useThrottle } from '@/lib/riverrun/common/useThrottle';
+import { useThrottle } from '@/components/shared/hooks/useThrottle';
 import { ArrowDown, ArrowUp, Search } from '@tamagui/lucide-icons';
 import { useCallback, useState, useMemo } from 'react';
 import { FlatList, RefreshControl, StyleSheet } from 'react-native';

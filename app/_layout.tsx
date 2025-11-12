@@ -23,7 +23,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Toaster } from 'sonner-native';
 import { TamaguiProvider, View } from 'tamagui';
 import { arbitrum } from 'viem/chains';
-import { useAppLifecycle } from '@/lib/riverrun/common/useAppLifecycle';
+import { useAppLifecycle } from '@/components/shared/hooks/useAppLifecycle';
 import { subscriptionManager as libSubscriptionManager } from '@/lib/hyperliquid/subscription';
 import { subscriptionManager as coreSubscriptionManager } from '@/core/infra/hyperliquid/subscription';
 import { QueryClientProvider } from '@tanstack/react-query';
