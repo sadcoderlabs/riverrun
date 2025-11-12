@@ -7,7 +7,7 @@
 
 import React, { createContext, useMemo, useEffect } from 'react';
 import { MarketService } from '../application/marketService';
-import { HyperliquidMarketAdapter } from '../adapters/hyperliquidMarketAdapter';
+import { HyperliquidGateway } from '@/core/infra/hyperliquid/hyperliquidGateway';
 import type { MarketPort } from '../ports/marketPort';
 
 /**
@@ -34,15 +34,17 @@ interface MarketCompositionProviderProps {
  *
  * Sets up the dependency graph:
  *
- * Adapter Layer:
- * - HyperliquidMarketAdapter: Hyperliquid API and WebSocket access
- *   - Fetches market metadata (meta, assetCtxs)
- *   - Subscribes to realtime prices (allMids)
+ * Infrastructure Layer:
+ * - HyperliquidGateway: Unified data access with HTTP+WS hybrid strategy
+ *   - HTTP fetch for immediate data (~100ms)
+ *   - WebSocket subscription for realtime updates
+ *   - Corresponds to Hyperliquid API: fetchMetaAndAssetCtxs, subscribeAllMids
  *
  * Domain Layer:
  * - MarketService: Core business logic
  *   - Auto-loads market data on start
  *   - Auto-subscribes to realtime price updates
+ *   - Handles business logic (convertRawMarket)
  *   - Manages selected market and favorites
  *   - Updates marketStore (persisted to AsyncStorage)
  *
@@ -56,11 +58,11 @@ interface MarketCompositionProviderProps {
 export function MarketCompositionProvider({ children }: MarketCompositionProviderProps) {
   // Create service instances (stable across renders)
   const marketService = useMemo(() => {
-    // Adapter: Hyperliquid API and WebSocket access
-    const hyperliquidAdapter = new HyperliquidMarketAdapter();
+    // Infrastructure: Gateway for unified Hyperliquid data access
+    const hyperliquidGateway = new HyperliquidGateway();
 
-    // Domain: Service with direct dependencies
-    return new MarketService(hyperliquidAdapter);
+    // Domain: Service with gateway dependency
+    return new MarketService(hyperliquidGateway);
   }, []);
 
   // Manage service lifecycle

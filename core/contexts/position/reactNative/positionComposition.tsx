@@ -6,7 +6,7 @@
  */
 
 import React, { createContext, useMemo, useEffect, useContext } from 'react';
-import { WebData2Repository } from '@/core/infra/hyperliquid/repositories';
+import { HyperliquidGateway } from '@/core/infra/hyperliquid/hyperliquidGateway';
 import { PositionService } from '../application/positionService';
 import type { PositionPort } from '../ports/positionPort';
 import { MarketContext } from '../../market/reactNative/marketComposition';
@@ -36,7 +36,7 @@ interface PositionCompositionProviderProps {
  * Sets up the dependency graph:
  *
  * Infrastructure Layer:
- * - WebData2Repository: HTTP + WS hybrid strategy (self-contained)
+ * - HyperliquidGateway: Unified data access with HTTP + WS hybrid strategy (self-contained)
  *
  * Domain Dependencies:
  * - MarketService: Accessed via MarketContext (injected dependency)
@@ -59,11 +59,11 @@ export function PositionCompositionProvider({ children }: PositionCompositionPro
 
   // Create service instances (stable across renders)
   const positionService = useMemo(() => {
-    // Infrastructure: Repository handles data access (self-contained)
-    const webData2Repository = new WebData2Repository();
+    // Infrastructure: Gateway handles data access (self-contained)
+    const hyperliquidGateway = new HyperliquidGateway();
 
     // Domain: Service with injected market service dependency
-    return new PositionService(webData2Repository, marketService);
+    return new PositionService(hyperliquidGateway, marketService);
   }, [marketService]);
 
   // Manage service lifecycle

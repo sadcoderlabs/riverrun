@@ -12,17 +12,18 @@
  */
 
 import type { MarketPort } from '../ports/marketPort';
-import type { Market, SelectedMarket } from '../ports/types';
+import type { Market, SelectedMarket, RawMarketMeta, RawAssetContext } from '../ports/types';
 import {
   getMarketByCoin,
   formatMarketForSelection,
   getDefaultSelectedMarket,
+  convertRawMarket,
 } from '../ports/types';
 import { marketStore } from '../adapters/marketStore';
 import type {
-  HyperliquidMarketAdapter,
+  HyperliquidGateway,
   SubscriptionHandle,
-} from '../adapters/hyperliquidMarketAdapter';
+} from '@/core/infra/hyperliquid/hyperliquidGateway';
 
 /**
  * Market Service Implementation
@@ -32,7 +33,7 @@ import type {
 export class MarketService implements MarketPort {
   private priceSubscription: SubscriptionHandle | undefined;
 
-  constructor(private readonly hyperliquidAdapter: HyperliquidMarketAdapter) {}
+  constructor(private readonly hyperliquidGateway: HyperliquidGateway) {}
 
   /**
    * Start the market service
@@ -126,14 +127,35 @@ export class MarketService implements MarketPort {
    * Load markets from Hyperliquid API (internal)
    *
    * Fetches market metadata and updates the store.
+   * Business logic (convertRawMarket) is handled here in Service layer.
    * Auto-selects BTC as default if no market is currently selected.
    */
   private async loadMarkets(): Promise<void> {
     marketStore.getState().setLoading(true);
 
     try {
-      // Fetch markets from Hyperliquid
-      const markets = await this.hyperliquidAdapter.fetchMarkets();
+      // Fetch raw market data from Hyperliquid via Gateway
+      const [meta, assetCtxs] = await this.hyperliquidGateway.fetchMetaAndAssetCtxs();
+
+      // Business logic: Convert raw data to domain Market type
+      const markets: Market[] = meta.universe.map((asset: any, index: number) => {
+        const rawMeta: RawMarketMeta = {
+          name: asset.name,
+          szDecimals: asset.szDecimals || 0,
+          maxLeverage: asset.maxLeverage || 1,
+        };
+
+        const ctx = assetCtxs[index];
+        const rawCtx: RawAssetContext = {
+          markPx: ctx.markPx,
+          prevDayPx: ctx.prevDayPx,
+          funding: ctx.funding,
+          dayNtlVlm: ctx.dayNtlVlm,
+        };
+
+        // Use pure function from ports to convert
+        return convertRawMarket(rawMeta, rawCtx, index);
+      });
 
       // Update store
       marketStore.getState().setMarkets(markets);
@@ -158,7 +180,8 @@ export class MarketService implements MarketPort {
   /**
    * Start subscribing to realtime price updates (internal)
    *
-   * Subscribes to WebSocket allMids and updates market prices in realtime.
+   * Subscribes to allMids stream and updates market prices in realtime.
+   * Gateway handles HTTP+WS hybrid strategy internally.
    */
   private async startPriceSubscription(): Promise<void> {
     // If already subscribed, stop first
@@ -167,8 +190,8 @@ export class MarketService implements MarketPort {
     }
 
     try {
-      // Subscribe to realtime prices
-      this.priceSubscription = await this.hyperliquidAdapter.subscribeToRealtimePrices(
+      // Subscribe to realtime prices via Gateway (HTTP+WS hybrid)
+      this.priceSubscription = await this.hyperliquidGateway.subscribeAllMids(
         (prices: Record<string, string>) => {
           // Update prices in store
           marketStore.getState().updatePrices(prices);

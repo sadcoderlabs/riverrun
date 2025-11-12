@@ -5,4 +5,3 @@
  */
 
 export * from './marketStore';
-export * from './hyperliquidMarketAdapter';

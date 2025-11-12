@@ -3,14 +3,17 @@
  *
  * This service manages position data by:
  * 1. Monitoring active wallet changes and managing subscription lifecycle
- * 2. Subscribing to position data via WebData2Repository (HTTP + WS hybrid)
+ * 2. Subscribing to position data via HyperliquidGateway (HTTP + WS hybrid)
  * 3. Extracting non-zero positions from the data stream
  * 4. Enriching positions with market data (markPx, szDecimals)
  * 5. Updating the position store for UI consumption
  */
 
 import type * as hl from '@nktkas/hyperliquid';
-import type { WebData2Repository, SubscriptionHandle } from '@/core/infra/hyperliquid/repositories';
+import type {
+  HyperliquidGateway,
+  SubscriptionHandle,
+} from '@/core/infra/hyperliquid/hyperliquidGateway';
 import type { MarketPort } from '../../market/ports/marketPort';
 import { positionStore } from '../adapters/positionStore';
 import { activeWalletStore } from '../../wallet/adapters/activeWalletStore';
@@ -26,7 +29,7 @@ export class PositionService implements PositionPort {
   private walletUnsubscribe: (() => void) | undefined;
 
   constructor(
-    private readonly webData2Repository: WebData2Repository,
+    private readonly hyperliquidGateway: HyperliquidGateway,
     private readonly marketAdapter: MarketPort,
   ) {}
 
@@ -75,7 +78,7 @@ export class PositionService implements PositionPort {
   /**
    * Start subscribing to position updates for a user (internal)
    *
-   * Uses WebData2Repository which handles HTTP + WebSocket hybrid strategy.
+   * Uses HyperliquidGateway which handles HTTP + WebSocket hybrid strategy.
    */
   private async startSubscription(userAddress: string): Promise<void> {
     // If already subscribed, stop first
@@ -87,9 +90,9 @@ export class PositionService implements PositionPort {
     positionStore.getState().setLoading(true);
 
     try {
-      // Subscribe to position data via Repository
-      // Repository handles HTTP + WS hybrid strategy internally
-      this.subscription = await this.webData2Repository.subscribe(
+      // Subscribe to position data via Gateway
+      // Gateway handles HTTP + WS hybrid strategy internally
+      this.subscription = await this.hyperliquidGateway.subscribeWebData2(
         userAddress,
         (data: hl.WebData2Response) => this.handlePositionDataUpdate(data),
       );
