@@ -82,11 +82,15 @@ export class OrderCommandService implements OrderCommandPort {
    * Get order context (exchange client + asset metadata)
    */
   private async getOrderContext(coin: string): Promise<OrderContext | undefined> {
-    // Get agent exchange client
-    const exchangeClient = await this.agentPort.getExchangeClient();
-    if (!exchangeClient) {
+    // Get approved agent wallet
+    const { agentWallet } = await this.agentPort.tryGetAgentWallet();
+    if (!agentWallet) {
       return undefined;
     }
+
+    // Create exchange client from agent wallet
+    const { getAgentExchangeClient } = await import('@/core/infra/hyperliquid/client/getter');
+    const exchangeClient = getAgentExchangeClient(agentWallet.signer);
 
     // Get asset metadata from market service
     const market = this.marketPort.getMarketByCoin(coin);
@@ -506,11 +510,18 @@ export class OrderCommandService implements OrderCommandPort {
    */
   async cancelOrder(params: CancelOrderParams): Promise<OrderResult> {
     try {
-      // 1. Get agent exchange client
-      const exchangeClient = await this.agentPort.getExchangeClient();
-      if (!exchangeClient) {
-        return { success: false, error: 'Order cancellation was cancelled' };
+      // 1. Get approved agent wallet
+      const { agentWallet, errorReason } = await this.agentPort.tryGetAgentWallet();
+      if (!agentWallet) {
+        return {
+          success: false,
+          error: errorReason || 'Unable to get agent wallet for cancellation',
+        };
       }
+
+      // Create exchange client from agent wallet
+      const { getAgentExchangeClient } = await import('@/core/infra/hyperliquid/client/getter');
+      const exchangeClient = getAgentExchangeClient(agentWallet.signer);
 
       // 2. Get asset metadata
       const market = this.marketPort.getMarketByCoin(params.coin);
@@ -544,11 +555,18 @@ export class OrderCommandService implements OrderCommandPort {
    */
   async cancelOrders(params: CancelOrdersParams): Promise<OrderResult> {
     try {
-      // 1. Get agent exchange client
-      const exchangeClient = await this.agentPort.getExchangeClient();
-      if (!exchangeClient) {
-        return { success: false, error: 'Order cancellation was cancelled' };
+      // 1. Get approved agent wallet
+      const { agentWallet, errorReason } = await this.agentPort.tryGetAgentWallet();
+      if (!agentWallet) {
+        return {
+          success: false,
+          error: errorReason || 'Unable to get agent wallet for batch cancellation',
+        };
       }
+
+      // Create exchange client from agent wallet
+      const { getAgentExchangeClient } = await import('@/core/infra/hyperliquid/client/getter');
+      const exchangeClient = getAgentExchangeClient(agentWallet.signer);
 
       // 2. Build cancels array
       const cancels = params.orders

@@ -1,18 +1,19 @@
 /**
  * AgentService - Core business logic for agent operations
  *
- * This service implements the AgentPort interface and coordinates
- * agent-related operations including approval, revocation, and wallet management.
+ * This service implements the AgentPort interface with 3 essential methods:
+ * 1. tryGetAgentWallet() - Get or create agent wallet (for trading)
+ * 2. loadAllAgents() - Load all agents from blockchain (for initialization)
+ * 3. revoke() - Revoke an agent (for management)
  *
  * Design principles:
  * - Pure business logic (no React dependencies)
- * - Uses adapters for external operations (blockchain, storage, wallet creation)
+ * - Uses adapters for external operations (blockchain, storage)
  * - Updates agentStateStore for reactive UI
  * - Depends on wallet context for master wallet information
  */
 
-import type * as hl from '@nktkas/hyperliquid';
-import { BaseWallet, BrowserProvider, Wallet } from 'ethers';
+import { BrowserProvider, Wallet } from 'ethers';
 
 import { DEFAULT_AGENT_NAME } from '../constants';
 
@@ -21,107 +22,49 @@ import type { WalletPort } from '../../wallet/ports/walletPort';
 import { AgentPkStore } from '../adapters/agentPkStore';
 import { agentStateStore } from '../adapters/agentStateStore';
 import type { AgentPort } from '../ports/agentPort';
-import type { AgentApprovalStatus, AgentWallet } from '../ports/types';
-
-/**
- * Context information needed for agent operations
- */
-interface AgentOperationContext {
-  masterAddress: string;
-  provider: BrowserProvider;
-  storageAdapter: AgentPkStore;
-}
+import type { AgentWallet, TryGetAgentResult } from '../ports/types';
 
 /**
  * AgentService implementation
  */
 export class AgentService implements AgentPort {
+  private readonly agentPkStore: AgentPkStore;
+
   constructor(
     private readonly walletService: WalletPort,
     private readonly hyperliquidGateway: HyperliquidGateway,
-  ) {}
-
-  /**
-   * Get operation context with all necessary adapters
-   * @private
-   */
-  private async getContext(): Promise<AgentOperationContext | undefined> {
-    // Get active wallet from wallet service
-    const wallet = await this.walletService.active();
-    if (!wallet) {
-      return undefined;
-    }
-
-    // Get provider from wallet
-    const provider = await wallet.getProvider();
-    if (!provider) {
-      return undefined;
-    }
-
-    // Get signer from provider
-    const signer = await provider.getSigner();
-    const masterAddress = await signer.getAddress();
-
-    // Create storage adapter
-    const storageAdapter = new AgentPkStore(masterAddress);
-
-    return {
-      masterAddress,
-      provider,
-      storageAdapter,
-    };
-  }
-
-  /**
-   * Create a new random agent wallet
-   * @private
-   */
-  private async createAgentWallet(provider: BrowserProvider): Promise<BaseWallet> {
-    const generatedWallet = Wallet.createRandom();
-    return generatedWallet.connect(provider);
-  }
-
-  /**
-   * Get existing agent wallet from storage
-   * @private
-   */
-  private async getExistingAgentWallet(
-    provider: BrowserProvider,
-    storageAdapter: AgentPkStore,
-  ): Promise<BaseWallet | undefined> {
-    const privateKey = await storageAdapter.getPrivateKey();
-    if (!privateKey) {
-      return undefined;
-    }
-
-    try {
-      return new Wallet(privateKey).connect(provider);
-    } catch (error) {
-      console.error('Failed to create wallet from stored private key:', error);
-      return undefined;
-    }
+  ) {
+    // Create stateless storage adapter
+    this.agentPkStore = new AgentPkStore();
   }
 
   /**
    * Get existing agent wallet or create new one if doesn't exist
-   * This is the main business logic for agent wallet management
    * @private
    */
-  private async getOrCreateAgentWalletInternal(
+  private async getOrCreateAgentWallet(
+    masterAddress: string,
     provider: BrowserProvider,
-    storageAdapter: AgentPkStore,
   ): Promise<AgentWallet> {
-    // Try to get existing wallet
-    const existingWallet = await this.getExistingAgentWallet(provider, storageAdapter);
-    if (existingWallet) {
-      const address = await existingWallet.getAddress();
-      return { address, signer: existingWallet };
+    // Try to get existing wallet from storage
+    const privateKey = await this.agentPkStore.getPrivateKey(masterAddress);
+    if (privateKey) {
+      try {
+        const existingWallet = new Wallet(privateKey).connect(provider);
+        const address = await existingWallet.getAddress();
+        return { address, signer: existingWallet };
+      } catch (error) {
+        console.error('Failed to create wallet from stored private key:', error);
+        // Fall through to create new wallet
+      }
     }
 
     // Create new wallet and persist it
-    const newWallet = await this.createAgentWallet(provider);
+    const generatedWallet = Wallet.createRandom();
+    const newWallet = generatedWallet.connect(provider);
+
     try {
-      await storageAdapter.setPrivateKey(newWallet.privateKey);
+      await this.agentPkStore.setPrivateKey(masterAddress, newWallet.privateKey);
     } catch (error) {
       console.error('Failed to persist generated agent wallet:', error);
     }
@@ -131,140 +74,152 @@ export class AgentService implements AgentPort {
   }
 
   /**
-   * Verify if agent is approved on blockchain (business logic)
-   * @private
+   * Load all agents from blockchain
+   *
+   * This method fetches all agents and updates the store with both
+   * agentAddress (from storage) and allAgents (from blockchain).
    */
-  private async verifyAgentApprovalOnChain(
-    masterAddress: string,
-    agentAddress: string,
-  ): Promise<boolean> {
+  async loadAllAgents(): Promise<void> {
     try {
-      const agents = await this.hyperliquidGateway.getAgents(masterAddress);
-      return agents.some(agent => agent.address.toLowerCase() === agentAddress.toLowerCase());
-    } catch (error) {
-      console.error('Failed to verify agent approval:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Check approval status for the current agent
-   * Also updates allAgents in the store
-   */
-  async checkApprovalStatus(): Promise<AgentApprovalStatus> {
-    try {
-      const ctx = await this.getContext();
-      if (!ctx) {
-        return { agentAddress: undefined, isApproved: false };
+      // Get active wallet
+      const wallet = await this.walletService.active();
+      if (!wallet) {
+        // No wallet connected - clear state
+        agentStateStore.getState().updateState({
+          agentAddress: undefined,
+          allAgents: [],
+        });
+        return;
       }
 
-      // Get or create agent wallet
-      const agentWallet = await this.getOrCreateAgentWalletInternal(
-        ctx.provider,
-        ctx.storageAdapter,
-      );
+      // Get provider and master address
+      const provider = await wallet.getProvider();
+      const signer = await provider.getSigner();
+      const masterAddress = await signer.getAddress();
 
-      // Check if agent is approved on blockchain
-      const isApproved = await this.verifyAgentApprovalOnChain(
-        ctx.masterAddress,
-        agentWallet.address,
-      );
+      // Get or create agent wallet (to populate agentAddress)
+      const agentWallet = await this.getOrCreateAgentWallet(masterAddress, provider);
 
-      console.log('checkApprovalStatus:', {
-        agentAddress: agentWallet.address,
-        isApproved,
-      });
+      // Fetch all agents from blockchain
+      const agents = await this.hyperliquidGateway.getAgents(masterAddress);
 
-      // Update store with status
+      // Update store with both agentAddress and allAgents
       agentStateStore.getState().updateState({
         agentAddress: agentWallet.address,
-        isApproved,
+        allAgents: agents,
       });
 
-      // Also refresh all agents list
-      await this.getAllAgentsInternal(ctx.masterAddress);
-
-      return { agentAddress: agentWallet.address, isApproved };
+      console.log('loadAllAgents:', {
+        agentAddress: agentWallet.address,
+        allAgentsCount: agents.length,
+      });
     } catch (error) {
-      console.error('Failed to check agent approval status:', error);
+      console.error('Failed to load agents:', error);
       agentStateStore.getState().updateState({
         agentAddress: undefined,
-        isApproved: false,
+        allAgents: [],
       });
-      return { agentAddress: undefined, isApproved: false };
     }
   }
 
   /**
-   * Approve the Riverrun Agent on blockchain
+   * Try to get agent wallet for trading
+   *
+   * Simplified flow:
+   * 1. Get or create agent wallet from storage
+   * 2. Check if approved in allAgents
+   * 3. If not approved, approve it on blockchain
+   * 4. Return agent wallet
    */
-  async approveAgent(): Promise<boolean> {
+  async tryGetAgentWallet(): Promise<TryGetAgentResult> {
     try {
-      const ctx = await this.getContext();
-      if (!ctx) {
-        throw new Error('Failed to get wallet context');
+      // Get active wallet
+      const wallet = await this.walletService.active();
+      if (!wallet) {
+        return {
+          agentWallet: undefined,
+          errorReason: 'No active wallet connected',
+        };
       }
 
-      // Get or create agent wallet
-      const agentWallet = await this.getOrCreateAgentWalletInternal(
-        ctx.provider,
-        ctx.storageAdapter,
+      // Get provider and master address
+      const provider = await wallet.getProvider();
+      const signer = await provider.getSigner();
+      const masterAddress = await signer.getAddress();
+
+      // 1. Get or create agent wallet
+      const agentWallet = await this.getOrCreateAgentWallet(masterAddress, provider);
+
+      // 2. Ensure allAgents is loaded
+      const currentAgents = agentStateStore.getState().allAgents;
+      if (currentAgents.length === 0) {
+        await this.loadAllAgents();
+      }
+
+      // 3. Check if approved
+      const updatedAgents = agentStateStore.getState().allAgents;
+      const isApproved = updatedAgents.some(
+        agent => agent.address.toLowerCase() === agentWallet.address.toLowerCase(),
       );
 
-      // Get signer for blockchain operation
-      const signer = await ctx.provider.getSigner();
+      if (isApproved) {
+        // Already approved, return it
+        return {
+          agentWallet,
+          errorReason: undefined,
+        };
+      }
 
-      // Approve agent on blockchain
+      // 4. Not approved - approve it on blockchain
       await this.hyperliquidGateway.approveAgent(signer, agentWallet.address, DEFAULT_AGENT_NAME);
 
-      // Verify approval
-      const isApproved = await this.verifyAgentApprovalOnChain(
-        ctx.masterAddress,
-        agentWallet.address,
-      );
-
-      if (!isApproved) {
-        throw new Error('Agent approval was not confirmed on blockchain');
-      }
-
-      // Update store
+      // 5. Update store and reload
       agentStateStore.getState().updateState({
         agentAddress: agentWallet.address,
-        isApproved: true,
       });
+      await this.loadAllAgents();
 
-      return true;
+      return {
+        agentWallet,
+        errorReason: undefined,
+      };
     } catch (error) {
-      console.error('Failed to approve agent:', error);
-      throw error;
+      console.error('Failed to get agent wallet:', error);
+      return {
+        agentWallet: undefined,
+        errorReason: error instanceof Error ? error.message : 'Unknown error occurred',
+      };
     }
   }
 
   /**
    * Revoke a named agent from blockchain
    */
-  async revokeAgent(agentName: string): Promise<boolean> {
+  async revoke(agentName: string): Promise<boolean> {
     try {
-      const ctx = await this.getContext();
-      if (!ctx) {
-        throw new Error('Failed to get wallet context');
+      // Get active wallet
+      const wallet = await this.walletService.active();
+      if (!wallet) {
+        throw new Error('No active wallet connected');
       }
 
-      const isRiverrunAgent = agentName === DEFAULT_AGENT_NAME;
+      // Get provider and master address
+      const provider = await wallet.getProvider();
+      const signer = await provider.getSigner();
+      const masterAddress = await signer.getAddress();
 
-      // Get signer for blockchain operation
-      const signer = await ctx.provider.getSigner();
+      const isRiverrunAgent = agentName === DEFAULT_AGENT_NAME;
 
       // Revoke agent on blockchain
       await this.hyperliquidGateway.revokeAgent(signer, agentName);
 
       // Clear local storage for Riverrun Agent
       if (isRiverrunAgent) {
-        await ctx.storageAdapter.clearPrivateKey();
+        await this.agentPkStore.clearPrivateKey(masterAddress);
       }
 
       // Verify revocation
-      const agents = await this.hyperliquidGateway.getAgents(ctx.masterAddress);
+      const agents = await this.hyperliquidGateway.getAgents(masterAddress);
       const stillExists = agents.some(
         agent => agent.name?.toLowerCase() === agentName.toLowerCase(),
       );
@@ -277,62 +232,16 @@ export class AgentService implements AgentPort {
       if (isRiverrunAgent) {
         agentStateStore.getState().updateState({
           agentAddress: undefined,
-          isApproved: false,
         });
       }
 
       // Refresh all agents list
-      await this.getAllAgentsInternal(ctx.masterAddress);
+      await this.loadAllAgents();
 
       return true;
     } catch (error) {
       console.error('Failed to revoke agent:', error);
       throw error;
-    }
-  }
-
-  /**
-   * Get all agents from blockchain and update store (private method)
-   * @private
-   */
-  private async getAllAgentsInternal(masterAddress: string): Promise<void> {
-    try {
-      const agents = await this.hyperliquidGateway.getAgents(masterAddress);
-      agentStateStore.getState().setAllAgents(agents);
-    } catch (error) {
-      console.error('Failed to get all agents:', error);
-    }
-  }
-
-  /**
-   * Get or create agent wallet for the current user
-   */
-  async getOrCreateAgentWallet(): Promise<AgentWallet> {
-    const ctx = await this.getContext();
-    if (!ctx) {
-      throw new Error('Failed to get wallet context');
-    }
-
-    return this.getOrCreateAgentWalletInternal(ctx.provider, ctx.storageAdapter);
-  }
-
-  /**
-   * Get agent exchange client for placing orders
-   * Returns undefined if agent is not ready
-   */
-  async getExchangeClient(): Promise<hl.ExchangeClient | undefined> {
-    try {
-      // Get agent wallet
-      const agentWallet = await this.getOrCreateAgentWallet();
-
-      // Import the getter function dynamically to avoid circular dependencies
-      const { getAgentExchangeClient } = await import('../../../infra/hyperliquid/client/getter');
-
-      // Return exchange client
-      return getAgentExchangeClient(agentWallet.signer);
-    } catch (error) {
-      console.error('Failed to get agent exchange client:', error);
-      return undefined;
     }
   }
 }

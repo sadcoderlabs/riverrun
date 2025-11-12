@@ -1,9 +1,12 @@
-import React, { createContext, useContext, useMemo } from 'react';
+import React, { createContext, useContext, useEffect, useMemo } from 'react';
+import { useStore } from 'zustand';
 
 import { AgentService } from '../application/agentService';
 import { HyperliquidGateway } from '../../../infra/hyperliquid/hyperliquidGateway';
 import type { AgentPort } from '../ports/agentPort';
 import { useWalletComposition } from '@/core/contexts/wallet/reactNative/walletComposition';
+import { activeWalletStore } from '@/core/contexts/wallet/adapters/activeWalletStore';
+import { agentStateStore } from '../adapters/agentStateStore';
 
 interface AgentCompositionContextValue {
   /**
@@ -39,6 +42,9 @@ export const AgentCompositionContext = createContext<AgentCompositionContextValu
 export function AgentCompositionProvider({ children }: { children: React.ReactNode }) {
   const { walletService } = useWalletComposition();
 
+  // Subscribe to active wallet changes
+  const activeWallet = useStore(activeWalletStore, state => state.wallet);
+
   // ==========================
   // Compose Agent Service
   // ==========================
@@ -50,6 +56,23 @@ export function AgentCompositionProvider({ children }: { children: React.ReactNo
     // AgentService depends on WalletPort and HyperliquidGateway
     return new AgentService(walletService, hyperliquidGateway);
   }, [walletService]);
+
+  // ==========================
+  // Auto-sync agent state on wallet change
+  // ==========================
+
+  useEffect(() => {
+    if (activeWallet) {
+      // Load all agents when wallet is connected
+      void agentService.loadAllAgents();
+    } else {
+      // Clear agent state when wallet is disconnected
+      agentStateStore.getState().updateState({
+        agentAddress: undefined,
+        allAgents: [],
+      });
+    }
+  }, [activeWallet?.address, agentService]);
 
   const value = {
     agentService,

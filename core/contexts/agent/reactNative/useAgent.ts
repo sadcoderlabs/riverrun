@@ -3,7 +3,6 @@ import * as hl from '@nktkas/hyperliquid';
 
 import { useAgentComposition } from './agentComposition';
 import { getAgentExchangeClient as getAgentExchangeClientGetter } from '@/core/infra/hyperliquid/client/getter';
-import type { AgentApprovalStatus } from '../ports/types';
 
 export interface UseAgentResult {
   /**
@@ -12,27 +11,27 @@ export interface UseAgentResult {
   isLoading: boolean;
 
   /**
-   * Load agent approval status from blockchain
+   * Load all agents from blockchain
    *
-   * Updates the agentStateStore with the current approval status.
+   * Updates the agentStateStore with agentAddress and allAgents.
    * This method must be called manually to initialize or refresh agent state.
-   *
-   * @returns Promise resolving to the current agent approval status
    *
    * @example
    * ```tsx
    * useEffect(() => {
-   *   loadStatus();
-   * }, [loadStatus]);
+   *   loadAllAgents();
+   * }, [loadAllAgents]);
    * ```
    */
-  loadStatus: () => Promise<AgentApprovalStatus>;
+  loadAllAgents: () => Promise<void>;
 
   /**
    * Approve the Riverrun Agent on blockchain
-   * Throws error if approval fails
+   *
+   * This calls tryGetAgentWallet internally to create and approve a new agent.
+   * Throws error if approval fails or user cancels.
    */
-  approve: () => Promise<boolean>;
+  approve: () => Promise<void>;
 
   /**
    * Revoke a named agent from blockchain
@@ -46,7 +45,7 @@ export interface UseAgentResult {
    * Returns undefined if agent is not ready or user cancels
    *
    * Note: This method does NOT show approval dialogs or handle navigation.
-   * UI components should call checkStatus(), approve() explicitly and handle alerts.
+   * UI components should call loadAllAgents(), approve() explicitly and handle alerts.
    */
   getAgentExchangeClient: () => Promise<hl.ExchangeClient | undefined>;
 }
@@ -57,10 +56,10 @@ export interface UseAgentResult {
  * This hook provides agent-related business operations.
  * For state access, use useAgentStore instead for better performance.
  *
- * IMPORTANT: This hook does NOT auto-load data. Call loadStatus() to initialize.
+ * IMPORTANT: This hook does NOT auto-load data. Call loadAllAgents() to initialize.
  *
  * Provides:
- * - Agent operations (approve, revoke, load status)
+ * - Agent operations (approve, revoke, load all agents)
  * - Access to agent exchange client
  * - UI loading state
  *
@@ -70,15 +69,20 @@ export interface UseAgentResult {
  *
  * // State access - precise subscriptions
  * const agentAddress = useAgentStore(state => state.agentAddress);
- * const isApproved = useAgentStore(state => state.isApproved);
+ * const allAgents = useAgentStore(state => state.allAgents);
+ *
+ * // Calculate isApproved from state
+ * const isApproved = allAgents.some(
+ *   a => a.address.toLowerCase() === agentAddress?.toLowerCase()
+ * );
  *
  * // Business operations
- * const { approve, loadStatus, isLoading } = useAgent();
+ * const { approve, loadAllAgents, isLoading } = useAgent();
  *
  * // Load data on mount
  * useEffect(() => {
- *   loadStatus();
- * }, [loadStatus]);
+ *   loadAllAgents();
+ * }, [loadAllAgents]);
  *
  * if (!isApproved) {
  *   return (
@@ -96,10 +100,10 @@ export function useAgent(): UseAgentResult {
   const [isLoading, setIsLoading] = useState(false);
 
   // Wrap agentService methods with loading management
-  const loadStatus = useCallback(async () => {
+  const loadAllAgents = useCallback(async () => {
     setIsLoading(true);
     try {
-      return await agentService.checkApprovalStatus();
+      await agentService.loadAllAgents();
     } finally {
       setIsLoading(false);
     }
@@ -108,7 +112,12 @@ export function useAgent(): UseAgentResult {
   const approve = useCallback(async () => {
     setIsLoading(true);
     try {
-      return await agentService.approveAgent();
+      // Call tryGetAgentWallet to create and approve new agent
+      // We don't use the returned wallet, just trigger the approval flow
+      const result = await agentService.tryGetAgentWallet();
+      if (result.errorReason) {
+        throw new Error(result.errorReason);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -118,7 +127,7 @@ export function useAgent(): UseAgentResult {
     async (agentName: string) => {
       setIsLoading(true);
       try {
-        return await agentService.revokeAgent(agentName);
+        return await agentService.revoke(agentName);
       } finally {
         setIsLoading(false);
       }
@@ -136,7 +145,10 @@ export function useAgent(): UseAgentResult {
   const getAgentExchangeClient = useCallback(async (): Promise<hl.ExchangeClient | undefined> => {
     try {
       // Get agent wallet
-      const agentWallet = await agentService.getOrCreateAgentWallet();
+      const { agentWallet } = await agentService.tryGetAgentWallet();
+      if (!agentWallet) {
+        return undefined;
+      }
 
       // Return exchange client
       return getAgentExchangeClientGetter(agentWallet.signer);
@@ -148,7 +160,7 @@ export function useAgent(): UseAgentResult {
 
   return {
     isLoading,
-    loadStatus,
+    loadAllAgents,
     approve,
     revoke,
     getAgentExchangeClient,

@@ -20,13 +20,17 @@ export default function AgentStatus() {
 
   // Agent state - precise subscriptions
   const agentAddress = useAgentStore(state => state.agentAddress);
-  const isAgentApproved = useAgentStore(state => state.isApproved);
   const allAgents = useAgentStore(state => state.allAgents);
+
+  // Calculate isApproved from state
+  const isAgentApproved = allAgents.some(
+    agent => agent.address.toLowerCase() === agentAddress?.toLowerCase(),
+  );
 
   // Agent operations
   const {
     isLoading: isAgentLoading,
-    loadStatus: loadAgentStatus,
+    loadAllAgents: loadAgentStatus,
     approve: approveAgent,
     revoke: revokeAgent,
   } = useAgent();

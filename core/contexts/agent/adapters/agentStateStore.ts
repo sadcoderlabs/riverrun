@@ -16,7 +16,6 @@ interface AgentStateStore extends AgentState {
 
 const initialState: AgentState = {
   agentAddress: undefined,
-  isApproved: false,
   allAgents: [],
 };
 

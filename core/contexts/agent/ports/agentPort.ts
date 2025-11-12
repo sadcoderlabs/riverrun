@@ -1,45 +1,51 @@
-import type * as hl from '@nktkas/hyperliquid';
-import type { AgentApprovalStatus, AgentWallet } from './types';
+import type { TryGetAgentResult } from './types';
 
 /**
  * Agent Port Interface
  * Defines the contract for core agent business operations
  *
- * This interface contains only essential business logic.
- * UI helper methods (filtering, counting, etc.) should be implemented
- * in the presentation layer (hooks/components).
+ * This interface contains only 3 essential methods:
+ * 1. tryGetAgentWallet - Get or create agent wallet (for trading)
+ * 2. loadAllAgents - Load all agents from blockchain (for initialization)
+ * 3. revoke - Revoke an agent (for management)
  */
 export interface AgentPort {
   /**
-   * Check approval status for the current agent
-   * Also updates allAgents in the store
-   * @returns Promise resolving to approval status
+   * Try to get agent wallet for trading
+   *
+   * This method:
+   * 1. Gets existing agent from storage
+   * 2. Validates against allAgents (loaded optimistically)
+   * 3. If valid, returns the agent wallet
+   * 4. If invalid or missing, creates new agent and approves it
+   * 5. If user cancels approval, returns error reason
+   *
+   * @returns Promise resolving to result containing agentWallet or error reason
    */
-  checkApprovalStatus(): Promise<AgentApprovalStatus>;
+  tryGetAgentWallet(): Promise<TryGetAgentResult>;
 
   /**
-   * Approve the Riverrun Agent on blockchain
-   * Generates new agent if doesn't exist and approves it
-   * @returns Promise resolving to true if successful
+   * Load all agents from blockchain
+   *
+   * This method:
+   * 1. Fetches all agents from blockchain (via extraAgents API)
+   * 2. Gets or creates agent wallet from storage
+   * 3. Updates agentStateStore with agentAddress and allAgents
+   *
+   * Used for: app initialization, wallet switch, manual refresh
    */
-  approveAgent(): Promise<boolean>;
+  loadAllAgents(): Promise<void>;
 
   /**
    * Revoke a named agent from blockchain
+   *
+   * This method:
+   * 1. Revokes agent on blockchain
+   * 2. If Riverrun Agent, clears local storage
+   * 3. Updates agentStateStore
+   *
    * @param agentName - Name of the agent to revoke
    * @returns Promise resolving to true if successful
    */
-  revokeAgent(agentName: string): Promise<boolean>;
-
-  /**
-   * Get or create agent wallet for the current user
-   * @returns Promise resolving to agent wallet
-   */
-  getOrCreateAgentWallet(): Promise<AgentWallet>;
-
-  /**
-   * Get agent exchange client for placing orders
-   * @returns Promise resolving to exchange client, or undefined if agent not ready
-   */
-  getExchangeClient(): Promise<hl.ExchangeClient | undefined>;
+  revoke(agentName: string): Promise<boolean>;
 }
