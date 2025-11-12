@@ -1,9 +1,9 @@
 import AdaptiveSelect from '@/components/global/AdaptiveSelect';
 import { ListItem } from '@/components/global/ListItem';
 import { ListSection } from '@/components/global/ListSection';
-import { useThemePreference } from '@/lib/riverrun/theme/useThemePreference';
+import { useThemePreference } from '@/components/shared/theme/useThemePreference';
 import { useWalletContext } from '@/core/composition';
-import { type ThemePreference } from '@/lib/riverrun/theme/theme.store';
+import { type ThemePreference } from '@/components/shared/theme/theme.store';
 import { ArrowLeft, ArrowUpRight } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 import { Pressable } from 'react-native';

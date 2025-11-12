@@ -10,7 +10,7 @@ import {
   useFonts,
 } from '@expo-google-fonts/inter';
 
-import { useThemePreference } from '@/lib/riverrun/theme/useThemePreference';
+import { useThemePreference } from '@/components/shared/theme/useThemePreference';
 import { useWalletContext, AppCompositionProvider } from '@/core/composition';
 import { ActionSheetProvider } from '@expo/react-native-action-sheet';
 import { PrivyProvider } from '@privy-io/expo';

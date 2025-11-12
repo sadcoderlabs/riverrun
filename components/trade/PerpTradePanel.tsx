@@ -21,7 +21,7 @@ import { useOrderValue } from '@/lib/riverrun/order/useOrderValue';
 import { useMarginRequired } from '@/lib/riverrun/order/useMarginRequired';
 import { useOrderValidation } from '@/lib/riverrun/order/useOrderValidation';
 import { useMarketStore } from '@/core/composition';
-import { useMarkPrice, useMidPrice, useExecutionPrice } from '@/lib/riverrun/price';
+import { useMarkPrice, useMidPrice, useExecutionPrice } from './hooks';
 
 import { Checkbox } from '@tamagui/checkbox';
 import { Check } from '@tamagui/lucide-icons';

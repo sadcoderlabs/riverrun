@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Spinner, Text, XStack, YStack, Popover, Button } from 'tamagui';
 import { Info } from '@tamagui/lucide-icons';
 import { CardContainer } from '../global/CardContainer';
-import { useAccountMetrics } from '@/lib/riverrun/account/useAccountMetrics';
+import { useAccountMetrics } from './hooks/useAccountMetrics';
 
 interface MetricRowProps {
   label: string;
