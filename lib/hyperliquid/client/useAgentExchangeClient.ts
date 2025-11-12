@@ -14,7 +14,7 @@ import { useAgent } from '@/core/composition';
 import { DEFAULT_AGENT_NAME } from '@/core/contexts/agent/constants';
 
 export function useAgentExchangeClient() {
-  const { getAgentExchangeClient: getAgentClient, checkStatus, approve } = useAgent();
+  const { getAgentExchangeClient: getAgentClient, loadStatus, approve } = useAgent();
   const router = useRouter();
 
   /**
@@ -23,8 +23,8 @@ export function useAgentExchangeClient() {
    */
   const getAgentExchangeClient = useCallback(async (): Promise<hl.ExchangeClient | undefined> => {
     try {
-      // Check current approval status
-      const status = await checkStatus();
+      // Load current approval status
+      const status = await loadStatus();
 
       // Check if agent exists in storage
       const hasLocal = status.agentAddress !== undefined;
@@ -86,7 +86,7 @@ export function useAgentExchangeClient() {
       Alert.alert('Error', error instanceof Error ? error.message : 'Failed to initialize agent');
       return undefined;
     }
-  }, [getAgentClient, checkStatus, approve, router]);
+  }, [getAgentClient, loadStatus, approve, router]);
 
   return { getAgentExchangeClient };
 }

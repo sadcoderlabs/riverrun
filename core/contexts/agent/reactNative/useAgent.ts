@@ -12,10 +12,21 @@ export interface UseAgentResult {
   isLoading: boolean;
 
   /**
-   * Check approval status for the current agent
-   * Updates the store with the result
+   * Load agent approval status from blockchain
+   *
+   * Updates the agentStateStore with the current approval status.
+   * This method must be called manually to initialize or refresh agent state.
+   *
+   * @returns Promise resolving to the current agent approval status
+   *
+   * @example
+   * ```tsx
+   * useEffect(() => {
+   *   loadStatus();
+   * }, [loadStatus]);
+   * ```
    */
-  checkStatus: () => Promise<AgentApprovalStatus>;
+  loadStatus: () => Promise<AgentApprovalStatus>;
 
   /**
    * Approve the Riverrun Agent on blockchain
@@ -46,8 +57,10 @@ export interface UseAgentResult {
  * This hook provides agent-related business operations.
  * For state access, use useAgentStore instead for better performance.
  *
+ * IMPORTANT: This hook does NOT auto-load data. Call loadStatus() to initialize.
+ *
  * Provides:
- * - Agent operations (approve, revoke, check status)
+ * - Agent operations (approve, revoke, load status)
  * - Access to agent exchange client
  * - UI loading state
  *
@@ -60,11 +73,12 @@ export interface UseAgentResult {
  * const isApproved = useAgentStore(state => state.isApproved);
  *
  * // Business operations
- * const { approve, checkStatus, isLoading } = useAgent();
+ * const { approve, loadStatus, isLoading } = useAgent();
  *
+ * // Load data on mount
  * useEffect(() => {
- *   checkStatus();
- * }, [checkStatus]);
+ *   loadStatus();
+ * }, [loadStatus]);
  *
  * if (!isApproved) {
  *   return (
@@ -82,7 +96,7 @@ export function useAgent(): UseAgentResult {
   const [isLoading, setIsLoading] = useState(false);
 
   // Wrap agentService methods with loading management
-  const checkStatus = useCallback(async () => {
+  const loadStatus = useCallback(async () => {
     setIsLoading(true);
     try {
       return await agentService.checkApprovalStatus();
@@ -134,7 +148,7 @@ export function useAgent(): UseAgentResult {
 
   return {
     isLoading,
-    checkStatus,
+    loadStatus,
     approve,
     revoke,
     getAgentExchangeClient,

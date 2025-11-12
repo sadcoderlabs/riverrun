@@ -11,10 +11,21 @@ export interface UseBuilderFeeResult {
   isLoading: boolean;
 
   /**
-   * Check builder fee approval status
-   * Updates the store with the result
+   * Load builder fee approval status from blockchain
+   *
+   * Updates the builderFeeStateStore with the current approval status.
+   * This method must be called manually to initialize or refresh builder fee state.
+   *
+   * @returns Promise resolving to the max approved fee amount
+   *
+   * @example
+   * ```tsx
+   * useEffect(() => {
+   *   loadBuilderFeeStatus();
+   * }, [loadBuilderFeeStatus]);
+   * ```
    */
-  checkBuilderFeeStatus: () => Promise<number>;
+  loadBuilderFeeStatus: () => Promise<number>;
 
   /**
    * Approve builder fee
@@ -45,8 +56,10 @@ export interface UseBuilderFeeResult {
  * This hook provides builder fee-related business operations.
  * For state access, use useBuilderFeeStore instead for better performance.
  *
+ * IMPORTANT: This hook does NOT auto-load data. Call loadBuilderFeeStatus() to initialize.
+ *
  * Provides:
- * - Builder fee operations (approve, revoke, check status, ensure approval)
+ * - Builder fee operations (approve, revoke, load status, ensure approval)
  * - UI interactions (confirmation dialogs)
  * - UI loading state
  *
@@ -59,11 +72,12 @@ export interface UseBuilderFeeResult {
  * const maxApprovedFee = useBuilderFeeStore(state => state.maxApprovedFee);
  *
  * // Business operations
- * const { approveBuilderFee, checkBuilderFeeStatus, isLoading } = useBuilderFee();
+ * const { approveBuilderFee, loadBuilderFeeStatus, isLoading } = useBuilderFee();
  *
+ * // Load data on mount
  * useEffect(() => {
- *   checkBuilderFeeStatus();
- * }, [checkBuilderFeeStatus]);
+ *   loadBuilderFeeStatus();
+ * }, [loadBuilderFeeStatus]);
  *
  * if (!isApproved) {
  *   return (
@@ -81,9 +95,9 @@ export function useBuilderFee(): UseBuilderFeeResult {
   const [isLoading, setIsLoading] = useState(false);
 
   /**
-   * Check builder fee status
+   * Load builder fee status from blockchain
    */
-  const checkBuilderFeeStatus = useCallback(async () => {
+  const loadBuilderFeeStatus = useCallback(async () => {
     setIsLoading(true);
     try {
       const status = await builderFeeService.checkApprovalStatus();
@@ -251,7 +265,7 @@ export function useBuilderFee(): UseBuilderFeeResult {
 
   return {
     isLoading,
-    checkBuilderFeeStatus,
+    loadBuilderFeeStatus,
     approveBuilderFee,
     ensureBuilderFeeApproval,
     revokeBuilderFee,

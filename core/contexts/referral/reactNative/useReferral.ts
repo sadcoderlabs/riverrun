@@ -18,8 +18,22 @@ import type { ReferralInfo } from '../ports/types';
 export interface UseReferralResult {
   /** Whether operations are in progress (UI state only) */
   isLoading: boolean;
-  /** Check referral status */
-  checkStatus: () => Promise<ReferralInfo>;
+  /**
+   * Load referral status from blockchain
+   *
+   * Updates the referralStateStore with the current referral status.
+   * This method must be called manually to initialize or refresh referral state.
+   *
+   * @returns Promise resolving to the current referral info
+   *
+   * @example
+   * ```tsx
+   * useEffect(() => {
+   *   loadStatus();
+   * }, [loadStatus]);
+   * ```
+   */
+  loadStatus: () => Promise<ReferralInfo>;
   /** Set referrer code (shows confirmation dialog) */
   setReferrer: (code?: string) => Promise<boolean>;
   /** Show referral hint dialog */
@@ -31,6 +45,8 @@ export interface UseReferralResult {
 /**
  * Hook for managing referral operations with UI integration
  *
+ * IMPORTANT: This hook does NOT auto-load data. Call loadStatus() to initialize.
+ *
  * @example
  * ```tsx
  * import { useReferralStore, useReferral } from '@/core/composition';
@@ -40,7 +56,12 @@ export interface UseReferralResult {
  * const referralInfo = useReferralStore(state => state.referralInfo);
  *
  * // Business operations
- * const { setReferrer, showReferralHint, isLoading } = useReferral();
+ * const { setReferrer, showReferralHint, loadStatus, isLoading } = useReferral();
+ *
+ * // Load data on mount
+ * useEffect(() => {
+ *   loadStatus();
+ * }, [loadStatus]);
  *
  * if (!hasReferrer) {
  *   return (
@@ -58,14 +79,14 @@ export function useReferral(): UseReferralResult {
   const [isLoading, setIsLoading] = useState(false);
 
   /**
-   * Check referral status for current user
+   * Load referral status from blockchain
    */
-  const checkStatus = useCallback(async (): Promise<ReferralInfo> => {
+  const loadStatus = useCallback(async (): Promise<ReferralInfo> => {
     try {
       setIsLoading(true);
       return await referralService.checkStatus();
     } catch (error) {
-      console.error('[useReferral] Failed to check status:', error);
+      console.error('[useReferral] Failed to load status:', error);
       return { referrer: undefined, code: undefined, cumVlm: '0' };
     } finally {
       setIsLoading(false);
@@ -174,7 +195,7 @@ export function useReferral(): UseReferralResult {
 
   return {
     isLoading,
-    checkStatus,
+    loadStatus,
     setReferrer,
     showReferralHint,
   };

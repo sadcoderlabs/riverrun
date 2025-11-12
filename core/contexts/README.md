@@ -626,7 +626,7 @@ export interface UseAgentResult {
   isLoading: boolean;
 
   /** Business operations */
-  checkStatus: () => Promise<AgentApprovalStatus>;
+  loadStatus: () => Promise<AgentApprovalStatus>;
   approve: () => Promise<boolean>;
   revoke: (agentName: string) => Promise<boolean>;
   getAgentExchangeClient: () => Promise<hl.ExchangeClient | undefined>;
@@ -644,7 +644,7 @@ export function useAgent(): UseAgentResult {
   const [isLoading, setIsLoading] = useState(false);
 
   // Business operations with loading management
-  const checkStatus = useCallback(async () => {
+  const loadStatus = useCallback(async () => {
     setIsLoading(true);
     try {
       return await agentService.checkApprovalStatus();
@@ -657,7 +657,7 @@ export function useAgent(): UseAgentResult {
 
   return {
     isLoading,
-    checkStatus,
+    loadStatus,
     approve,
     revoke,
     getAgentExchangeClient,
@@ -678,11 +678,12 @@ function AgentStatusScreen() {
   const allAgents = useAgentStore(state => state.allAgents);
 
   // Business operations
-  const { approve, checkStatus, isLoading } = useAgent();
+  const { approve, loadStatus, isLoading } = useAgent();
 
+  // Load data on mount
   useEffect(() => {
-    checkStatus();
-  }, [checkStatus]);
+    loadStatus();
+  }, [loadStatus]);
 
   return (
     <View>
@@ -1318,7 +1319,7 @@ const agentAddress = useAgentStore(state => state.agentAddress);
 const isApproved = useAgentStore(state => state.isApproved);
 
 // Business operations
-const { approve, checkStatus, isLoading } = useAgent();
+const { approve, loadStatus, isLoading } = useAgent();
 ```
 
 ---

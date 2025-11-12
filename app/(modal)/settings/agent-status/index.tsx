@@ -26,7 +26,7 @@ export default function AgentStatus() {
   // Agent operations
   const {
     isLoading: isAgentLoading,
-    checkStatus: checkAgentStatus,
+    loadStatus: loadAgentStatus,
     approve: approveAgent,
     revoke: revokeAgent,
   } = useAgent();
@@ -37,11 +37,11 @@ export default function AgentStatus() {
 
   /**
    * Load all agent statuses
-   * Note: checkAgentStatus() now also updates allAgents internally
+   * Note: loadAgentStatus() now also updates allAgents internally
    */
   const loadAllStatuses = useCallback(async () => {
-    await checkAgentStatus();
-  }, [checkAgentStatus]);
+    await loadAgentStatus();
+  }, [loadAgentStatus]);
 
   /**
    * Handle refresh
@@ -97,7 +97,7 @@ export default function AgentStatus() {
               const success = await approveAgent();
               if (success) {
                 Alert.alert('Success', `${DEFAULT_AGENT_NAME} approved successfully`);
-                await checkAgentStatus();
+                await loadAgentStatus();
               }
             } catch (error) {
               console.error('Failed to approve agent:', error);
@@ -142,7 +142,7 @@ export default function AgentStatus() {
                       ? `${DEFAULT_AGENT_NAME} revoked successfully`
                       : `"${agentName}" has been revoked successfully.`,
                   );
-                  await checkAgentStatus();
+                  await loadAgentStatus();
                 }
               } catch (error) {
                 console.error('Failed to revoke agent:', error);

@@ -18,7 +18,7 @@ export default function BuilderFeeStatus() {
   // Builder fee operations
   const {
     isLoading: isBuilderFeeLoading,
-    checkBuilderFeeStatus,
+    loadBuilderFeeStatus,
     approveBuilderFee,
     revokeBuilderFee,
   } = useBuilderFee();
@@ -32,20 +32,20 @@ export default function BuilderFeeStatus() {
    */
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    await checkBuilderFeeStatus();
+    await loadBuilderFeeStatus();
     setIsRefreshing(false);
-  }, [checkBuilderFeeStatus]);
+  }, [loadBuilderFeeStatus]);
 
   /**
    * Initial load
    */
   useEffect(() => {
     const init = async () => {
-      await checkBuilderFeeStatus();
+      await loadBuilderFeeStatus();
       setIsInitialLoading(false);
     };
     void init();
-  }, [checkBuilderFeeStatus]);
+  }, [loadBuilderFeeStatus]);
 
   /**
    * Handle builder fee approve
@@ -53,9 +53,9 @@ export default function BuilderFeeStatus() {
   const handleApproveBuilderFee = useCallback(async () => {
     const success = await approveBuilderFee();
     if (success) {
-      await checkBuilderFeeStatus();
+      await loadBuilderFeeStatus();
     }
-  }, [approveBuilderFee, checkBuilderFeeStatus]);
+  }, [approveBuilderFee, loadBuilderFeeStatus]);
 
   /**
    * Handle builder fee revoke
@@ -63,9 +63,9 @@ export default function BuilderFeeStatus() {
   const handleRevokeBuilderFee = useCallback(async () => {
     const success = await revokeBuilderFee();
     if (success) {
-      await checkBuilderFeeStatus();
+      await loadBuilderFeeStatus();
     }
-  }, [revokeBuilderFee, checkBuilderFeeStatus]);
+  }, [revokeBuilderFee, loadBuilderFeeStatus]);
 
   return (
     <PortalProvider>
