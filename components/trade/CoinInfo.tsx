@@ -1,5 +1,6 @@
 import { MarketSelectorModal } from '@/components/trade/MarketSelectorModal';
-import { useMarketsStore, type SelectedMarket } from '@/lib/riverrun/market';
+import { useMarketStore } from '@/core/composition';
+import type { SelectedMarket } from '@/core/contexts/market/ports/types';
 import { CandlestickChart, Menu } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
@@ -56,7 +57,7 @@ function CoinInfoContent({ selectedMarket }: { selectedMarket: SelectedMarket })
  * Prevents rendering CoinInfoContent in invalid state
  */
 export function CoinInfo() {
-  const { selectedMarket } = useMarketsStore();
+  const selectedMarket = useMarketStore(state => state.selectedMarket);
 
   // Don't render if no market is selected
   if (!selectedMarket) {

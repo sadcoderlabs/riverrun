@@ -38,6 +38,11 @@ export {
 export { useWalletContext } from '../contexts/wallet/reactNative/useWalletContext';
 export type { UseWalletContextResult } from '../contexts/wallet/reactNative/useWalletContext';
 
+export { MarketCompositionProvider } from '../contexts/market/reactNative/marketComposition';
+export { useMarket } from '../contexts/market/reactNative/useMarket';
+export type { UseMarketResult } from '../contexts/market/reactNative/useMarket';
+export { useMarketStore } from '../contexts/market/reactNative/useMarketStore';
+
 export {
   AgentCompositionProvider,
   useAgentComposition,

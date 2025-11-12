@@ -20,7 +20,7 @@ import { useOrder } from '@/lib/riverrun/order/useOrder';
 import { useOrderValue } from '@/lib/riverrun/order/useOrderValue';
 import { useMarginRequired } from '@/lib/riverrun/order/useMarginRequired';
 import { useOrderValidation } from '@/lib/riverrun/order/useOrderValidation';
-import { useMarketsStore } from '@/lib/riverrun/market';
+import { useMarketStore } from '@/core/composition';
 import { useMarkPrice, useMidPrice, useExecutionPrice } from '@/lib/riverrun/price';
 
 import { Checkbox } from '@tamagui/checkbox';
@@ -34,7 +34,7 @@ export function PerpTradePanel() {
   const { placeOrder, isPlacingOrder } = useOrder();
 
   // Get selected market from store (single source of truth)
-  const { selectedMarket } = useMarketsStore();
+  const selectedMarket = useMarketStore(state => state.selectedMarket);
   const coin = selectedMarket?.coin || 'BTC'; // Fallback to BTC if no market selected
   const szDecimals = selectedMarket?.szDecimals || 4; // Fallback to 4 decimals
 

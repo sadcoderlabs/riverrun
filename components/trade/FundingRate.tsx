@@ -1,5 +1,5 @@
 import { useActiveAssetCtx } from '@/lib/hyperliquid/hooks/useActiveAssetCtx';
-import { useMarketsStore } from '@/lib/riverrun/market';
+import { useMarketStore } from '@/core/composition';
 import { Info } from '@tamagui/lucide-icons';
 import { useEffect, useMemo, useState } from 'react';
 import { Button, Popover, Text, XStack, YStack } from 'tamagui';
@@ -11,7 +11,7 @@ import { Button, Popover, Text, XStack, YStack } from 'tamagui';
  * Shows hourly funding rate with countdown to next payment
  */
 export function FundingRate() {
-  const { selectedMarket } = useMarketsStore();
+  const selectedMarket = useMarketStore(state => state.selectedMarket);
   const coin = selectedMarket?.coin || 'BTC';
 
   // Popover state

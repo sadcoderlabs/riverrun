@@ -6,16 +6,18 @@
  *
  * Dependency Order:
  * 1. WalletCompositionProvider (no dependencies)
- * 2. AgentCompositionProvider (depends on Wallet)
- * 3. BuilderFeeCompositionProvider (depends on Wallet)
- * 4. ReferralCompositionProvider (depends on Wallet)
- * 5. PositionCompositionProvider (depends on Wallet)
+ * 2. MarketCompositionProvider (no dependencies)
+ * 3. AgentCompositionProvider (depends on Wallet)
+ * 4. BuilderFeeCompositionProvider (depends on Wallet)
+ * 5. ReferralCompositionProvider (depends on Wallet)
+ * 6. PositionCompositionProvider (depends on Wallet + Market)
  * ... (future contexts)
  */
 
 import React from 'react';
 
 import { WalletCompositionProvider } from '../contexts/wallet/reactNative/walletComposition';
+import { MarketCompositionProvider } from '../contexts/market/reactNative/marketComposition';
 import { AgentCompositionProvider } from '../contexts/agent/reactNative/agentComposition';
 import { BuilderFeeCompositionProvider } from '../contexts/builderFee/reactNative/builderFeeComposition';
 import { ReferralCompositionProvider } from '../contexts/referral/reactNative/referralComposition';
@@ -43,13 +45,15 @@ interface AppCompositionProviderProps {
 export function AppCompositionProvider({ children }: AppCompositionProviderProps) {
   return (
     <WalletCompositionProvider>
-      <AgentCompositionProvider>
-        <BuilderFeeCompositionProvider>
-          <ReferralCompositionProvider>
-            <PositionCompositionProvider>{children}</PositionCompositionProvider>
-          </ReferralCompositionProvider>
-        </BuilderFeeCompositionProvider>
-      </AgentCompositionProvider>
+      <MarketCompositionProvider>
+        <AgentCompositionProvider>
+          <BuilderFeeCompositionProvider>
+            <ReferralCompositionProvider>
+              <PositionCompositionProvider>{children}</PositionCompositionProvider>
+            </ReferralCompositionProvider>
+          </BuilderFeeCompositionProvider>
+        </AgentCompositionProvider>
+      </MarketCompositionProvider>
     </WalletCompositionProvider>
   );
 }

@@ -4,7 +4,7 @@ import { formatSizeFixedDecimals } from '@/lib/hyperliquid/format/formatSizeFixe
 import { useActiveAssetCtx, useTrades } from '@/lib/hyperliquid/hooks';
 import { useSubscription, type OrderBookData } from '@/lib/hyperliquid/subscription';
 import { useThrottle } from '@/lib/riverrun/common/useThrottle';
-import { useMarketsStore } from '@/lib/riverrun/market';
+import { useMarketStore } from '@/core/composition';
 import {
   buildPrecisionMenu,
   type NSigFigs,
@@ -43,7 +43,7 @@ export function OrderBook({ onPriceClick }: OrderBookProps) {
   const [markPricePopoverOpen, setMarkPricePopoverOpen] = useState(false);
 
   // Get selected market from store
-  const { selectedMarket } = useMarketsStore();
+  const selectedMarket = useMarketStore(state => state.selectedMarket);
   const coin = selectedMarket?.coin || 'BTC';
   const szDecimals = selectedMarket?.szDecimals || 2;
 

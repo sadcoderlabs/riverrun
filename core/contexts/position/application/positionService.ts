@@ -11,7 +11,7 @@
 
 import type * as hl from '@nktkas/hyperliquid';
 import type { WebData2Repository, SubscriptionHandle } from '@/core/infra/hyperliquid/repositories';
-import type { MarketPort } from '../adapters/marketAdapter';
+import type { MarketPort } from '../../market/ports/marketPort';
 import { positionStore } from '../adapters/positionStore';
 import { activeWalletStore } from '../../wallet/adapters/activeWalletStore';
 import type { EnrichedPosition, Position, PositionPort } from '../ports';
@@ -153,7 +153,7 @@ export class PositionService implements PositionPort {
    */
   private enrichPositions(positions: Position[]): EnrichedPosition[] {
     return positions.map(position => {
-      // Get market data for this coin
+      // Get market data for this coin from MarketPort
       const market = this.marketAdapter.getMarketByCoin(position.coin);
 
       return {
