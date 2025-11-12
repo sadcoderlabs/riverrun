@@ -1,27 +1,16 @@
 /**
- * Position Composition - React Dependency Injection
+ * Position Composition - Manages position data subscriptions
  *
- * This file wires up the position context dependencies and provides them via React Context.
- * It follows the Composition Root pattern for dependency injection.
+ * This provider automatically manages position data subscriptions based on wallet lifecycle.
+ * It uses the usePositionSubscription hook to handle all subscription logic.
+ *
+ * Dependencies:
+ * - MarketService: For enriching position data with market information (markPx, szDecimals)
  */
 
-import React, { createContext, useMemo, useEffect, useContext } from 'react';
-import { HyperliquidGateway } from '@/core/infra/hyperliquid/hyperliquidGateway';
-import { PositionService } from '../application/positionService';
-import type { PositionPort } from '../ports/positionPort';
+import React, { useContext } from 'react';
 import { MarketContext } from '../../market/reactNative/marketComposition';
-
-/**
- * Position Context Type
- */
-interface PositionContextType {
-  positionService: PositionPort;
-}
-
-/**
- * Position Context
- */
-export const PositionContext = createContext<PositionContextType | undefined>(undefined);
+import { usePositionSubscription } from './usePositionSubscription';
 
 /**
  * Position Composition Provider Props
@@ -34,18 +23,11 @@ interface PositionCompositionProviderProps {
  * Position Composition Provider
  *
  * Sets up the dependency graph:
+ * - MarketService: Accessed via MarketContext (needed for position enrichment)
+ * - usePositionSubscription: Manages position data subscriptions automatically
  *
- * Infrastructure Layer:
- * - HyperliquidGateway: Unified data access with HTTP + WS hybrid strategy (self-contained)
- *
- * Domain Dependencies:
- * - MarketService: Accessed via MarketContext (injected dependency)
- *
- * Domain Layer:
- * - PositionService: Core business logic
- *
- * The PositionService autonomously monitors active wallet changes
- * and manages position subscriptions internally.
+ * The subscription hook autonomously monitors wallet changes and manages
+ * position subscriptions internally.
  */
 export function PositionCompositionProvider({ children }: PositionCompositionProviderProps) {
   // Get MarketService from MarketContext (dependency injection)
@@ -57,32 +39,8 @@ export function PositionCompositionProvider({ children }: PositionCompositionPro
 
   const { marketService } = marketContext;
 
-  // Create service instances (stable across renders)
-  const positionService = useMemo(() => {
-    // Infrastructure: Gateway handles data access (self-contained)
-    const hyperliquidGateway = new HyperliquidGateway();
+  // Manage position subscriptions automatically (pass MarketService dependency)
+  usePositionSubscription(marketService);
 
-    // Domain: Service with injected market service dependency
-    return new PositionService(hyperliquidGateway, marketService);
-  }, [marketService]);
-
-  // Manage service lifecycle
-  useEffect(() => {
-    // Start the service (begins monitoring wallet changes)
-    positionService.start();
-
-    return () => {
-      // Stop the service (cleanup subscriptions)
-      positionService.stop();
-    };
-  }, [positionService]);
-
-  const value = useMemo(
-    () => ({
-      positionService,
-    }),
-    [positionService],
-  );
-
-  return <PositionContext.Provider value={value}>{children}</PositionContext.Provider>;
+  return <>{children}</>;
 }
