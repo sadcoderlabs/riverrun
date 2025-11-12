@@ -6,8 +6,7 @@
 import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
 import { formatSize } from '@/lib/hyperliquid/format/formatSize';
 import { formatValue } from '@/lib/hyperliquid/format/formatValue';
-import { useUserFills } from '@/lib/riverrun/history/useUserFills';
-import type { Fill } from '@/lib/riverrun/history/fills';
+import { useHistory, type Fill } from '@/core/contexts/history/reactNative/useHistory';
 import { formatTimestamp } from '@/lib/riverrun/order';
 import { useWalletContext, useMarketStore, useMarket } from '@/core/composition';
 import { useMemo, useState } from 'react';
@@ -151,8 +150,8 @@ export function HistoryTabContent() {
   const { wallet } = useWalletContext();
   const { setSelectedMarketByCoin } = useMarket();
 
-  // Get fills from useUserFills hook
-  const { fills, isLoading, error } = useUserFills();
+  // Get fills from useHistory hook
+  const { fills, isLoading, error } = useHistory();
 
   const [filter, setFilter] = useState<FillFilter>('all');
 

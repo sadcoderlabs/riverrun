@@ -28,6 +28,14 @@ interface AllMidsParams {
 // AllMids data contains price information for all markets
 type AllMidsData = hl.WsAllMidsEvent;
 
+// UserFills subscription params
+interface UserFillsParams {
+  user: string;
+}
+
+// UserFills data contains fill updates
+type UserFillsData = hl.WsUserFillsEvent;
+
 // ============================================================================
 // Configuration: webData2
 // ============================================================================
@@ -64,5 +72,27 @@ subscriptionRegistry.register<AllMidsParams, AllMidsData>('allMids', {
     return await subscriptionClient.allMids((event: hl.WsAllMidsEvent) => {
       callback(event);
     });
+  },
+});
+
+// ============================================================================
+// Configuration: userFills
+// ============================================================================
+
+subscriptionRegistry.register<UserFillsParams, UserFillsData>('userFills', {
+  // Key by user address
+  getKey: params => params.user,
+
+  // WebSocket subscription for real-time fill updates
+  subscribe: async (params, callback) => {
+    const subscriptionClient = getSubscriptionClient();
+    return await subscriptionClient.userFills(
+      {
+        user: params.user,
+      },
+      (event: hl.WsUserFillsEvent) => {
+        callback(event);
+      },
+    );
   },
 });

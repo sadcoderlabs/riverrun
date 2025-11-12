@@ -182,6 +182,50 @@ export class HyperliquidGateway {
   }
 
   // ============================================================================
+  // History Operations (Read)
+  // ============================================================================
+
+  /**
+   * Fetch user fills (trading history) from Hyperliquid API (HTTP only)
+   *
+   * Returns all historical fills for the specified user.
+   * Sorted by most recent first in the response.
+   *
+   * @param userAddress - User wallet address
+   * @returns Array of fills
+   */
+  async fetchUserFills(userAddress: string): Promise<unknown[]> {
+    return await infoClient.userFills({ user: userAddress });
+  }
+
+  /**
+   * Subscribe to real-time fill updates via WebSocket
+   *
+   * Receives incremental fill updates as they occur.
+   * Callback will be invoked with new fills data.
+   *
+   * @param userAddress - User wallet address
+   * @param callback - Callback function to receive fill updates
+   * @returns Subscription handle with unsubscribe method
+   */
+  async subscribeUserFills(
+    userAddress: string,
+    callback: (data: unknown) => void,
+  ): Promise<SubscriptionHandle> {
+    const handle = await subscriptionManager.subscribe(
+      'userFills',
+      { user: userAddress },
+      callback,
+    );
+
+    return {
+      unsubscribe: async () => {
+        await subscriptionManager.unsubscribe(handle);
+      },
+    };
+  }
+
+  // ============================================================================
   // Agent Operations (Write + Read)
   // ============================================================================
 
