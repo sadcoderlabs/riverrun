@@ -220,7 +220,9 @@ export default function HyperliquidBridgePage() {
               backgroundColor="$background02"
               borderRadius="$3"
               borderWidth={1}
-              borderColor={amount && numAmount < MIN_DEPOSIT_AMOUNT ? '#F97316' : '$borderColor'}
+              borderColor={
+                amount && numAmount < BRIDGE_LIMITS.minimumDeposit ? '#F97316' : '$borderColor'
+              }
               alignItems="center"
               paddingRight="$3"
             >

@@ -14,7 +14,7 @@
  */
 
 import { Contract, formatUnits, parseUnits, JsonRpcProvider } from 'ethers';
-import type { Wallet } from '../../wallet/ports/types';
+import type { ActiveWallet } from '../../wallet/ports/types';
 import { ARBITRUM_CONFIG, ERC20_ABI, GAS_SETTINGS } from '../config';
 
 /**
@@ -23,7 +23,7 @@ import { ARBITRUM_CONFIG, ERC20_ABI, GAS_SETTINGS } from '../config';
  * @param wallet - User's wallet
  * @returns Formatted USDC balance (e.g., "10.5") or undefined if unavailable
  */
-export async function getArbitrumUsdcBalance(wallet: Wallet): Promise<string | undefined> {
+export async function getArbitrumUsdcBalance(wallet: ActiveWallet): Promise<string | undefined> {
   try {
     const provider = await wallet.getProvider();
     if (!provider) {
@@ -70,7 +70,7 @@ export async function getArbitrumUsdcBalance(wallet: Wallet): Promise<string | u
  * @throws Error if transaction fails
  */
 export async function depositUsdcWithPrivy(
-  wallet: Wallet,
+  wallet: ActiveWallet,
   to: string,
   amount: string,
 ): Promise<string> {
@@ -141,7 +141,7 @@ export async function depositUsdcWithPrivy(
  * @throws Error if transaction fails
  */
 export async function depositUsdcWithExternalWallet(
-  wallet: Wallet,
+  wallet: ActiveWallet,
   to: string,
   amount: string,
 ): Promise<string> {

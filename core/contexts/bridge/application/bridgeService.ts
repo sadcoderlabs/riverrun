@@ -25,7 +25,6 @@ import type { WalletPort } from '../../wallet/ports/walletPort';
 import type { HyperliquidGateway } from '../../../infra/hyperliquid/hyperliquidGateway';
 import { bridgeStore } from '../adapters/bridgeStore';
 import * as arbitrumAdapter from '../adapters/arbitrumAdapter';
-import * as hyperliquidBridgeAdapter from '../adapters/hyperliquidBridgeAdapter';
 import { ARBITRUM_CONFIG, BRIDGE_LIMITS } from '../config';
 
 /**
@@ -67,11 +66,8 @@ export class BridgeService implements BridgePort {
         return undefined;
       }
 
-      const balance = await hyperliquidBridgeAdapter.getWithdrawableBalance(
-        this.hyperliquidGateway,
-        wallet.address,
-      );
-      return balance;
+      const state = await this.hyperliquidGateway.getClearinghouseState(wallet.address);
+      return state.withdrawable;
     } catch (error) {
       console.error('[BridgeService] Failed to get withdrawable balance:', error);
       return undefined;
@@ -168,15 +164,10 @@ export class BridgeService implements BridgePort {
       }
       const signer = await provider.getSigner();
 
-      // Execute withdrawal
-      const success = await hyperliquidBridgeAdapter.executeWithdrawal(
-        this.hyperliquidGateway,
-        signer,
-        destinationAddress,
-        amount,
-      );
+      // Execute withdrawal via HyperliquidGateway
+      const response = await this.hyperliquidGateway.withdraw(signer, destinationAddress, amount);
 
-      if (!success) {
+      if (response.status !== 'ok') {
         throw new Error('Withdrawal request was not successful');
       }
 
