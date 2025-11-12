@@ -25,7 +25,7 @@ import {
 } from '@/core/infra/hyperliquid/hyperliquidGateway';
 import type { MarketPort } from '../../market/ports/marketPort';
 import { positionStore } from '../adapters/positionStore';
-import type { EnrichedPosition, Position } from '../ports';
+import type { EnrichedPosition, Position } from '../types';
 
 // ============================================================================
 // Data Processing Functions (Testable)

@@ -7,7 +7,7 @@
 
 import { createStore } from 'zustand/vanilla';
 
-import type { EnrichedPosition, PositionState } from '../ports/types';
+import type { EnrichedPosition, PositionState } from '../types';
 
 /**
  * Actions for updating position state
