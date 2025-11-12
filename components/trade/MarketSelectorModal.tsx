@@ -1,6 +1,5 @@
 import { MarketListItem } from '@/components/trade/MarketListItem';
 import { useMarketStore, useMarket } from '@/core/composition';
-import type { Market } from '@/core/contexts/market/ports/types';
 import { useSubscription } from '@/lib/hyperliquid/subscription';
 import { useThrottle } from '@/lib/riverrun/common/useThrottle';
 import { ArrowDown, ArrowUp, Search } from '@tamagui/lucide-icons';
@@ -41,7 +40,7 @@ export function MarketSelectorModal({ open, onOpenChange }: MarketSelectorModalP
     // Merge real-time prices if available
     const marketsWithRealtimePrices = open
       ? markets.map(market => {
-          const realtimeMidPriceStr = allMidsData?.mids[market.coin];
+          const realtimeMidPriceStr = allMidsData?.mids?.[market.coin];
           if (!realtimeMidPriceStr) return market;
 
           const realtimePrice = parseFloat(realtimeMidPriceStr);
