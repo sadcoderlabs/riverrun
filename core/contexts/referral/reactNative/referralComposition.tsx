@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useMemo } from 'react';
 
 import { ReferralService } from '../application/referralService';
-import { HyperliquidAdapter } from '../../../infra/hyperliquid/hyperliquidAdapter';
+import { HyperliquidGateway } from '../../../infra/hyperliquid/hyperliquidGateway';
 import type { ReferralPort } from '../ports/referralPort';
 import { useWalletComposition } from '@/core/contexts/wallet/reactNative/walletComposition';
 
@@ -44,11 +44,11 @@ export function ReferralCompositionProvider({ children }: { children: React.Reac
   // ==========================
 
   const referralService = useMemo(() => {
-    // Create Hyperliquid adapter (shared infrastructure adapter)
-    const hyperliquidAdapter = new HyperliquidAdapter();
+    // Create Hyperliquid gateway (unified infrastructure gateway)
+    const hyperliquidGateway = new HyperliquidGateway();
 
-    // ReferralService depends on WalletPort and HyperliquidAdapter
-    return new ReferralService(walletService, hyperliquidAdapter);
+    // ReferralService depends on WalletPort and HyperliquidGateway
+    return new ReferralService(walletService, hyperliquidGateway);
   }, [walletService]);
 
   const value = {

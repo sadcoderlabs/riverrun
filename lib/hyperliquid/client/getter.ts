@@ -7,7 +7,6 @@ let infoClient: hl.InfoClient | undefined;
 let wsTransport: hl.WebSocketTransport | undefined;
 let subscriptionClient: hl.SubscriptionClient | undefined;
 
-
 export function getTransport(): hl.HttpTransport {
   if (!transport) {
     transport = new hl.HttpTransport();

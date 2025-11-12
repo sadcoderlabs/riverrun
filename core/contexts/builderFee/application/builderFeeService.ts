@@ -16,7 +16,7 @@ import type { Signer } from 'ethers';
 import type { BuilderFeePort } from '../ports/builderFeePort';
 import type { BuilderFeeStatus } from '../ports/types';
 import type { WalletPort } from '../../wallet/ports/walletPort';
-import { HyperliquidAdapter } from '../../../infra/hyperliquid/hyperliquidAdapter';
+import { HyperliquidGateway } from '../../../infra/hyperliquid/hyperliquidGateway';
 import { builderFeeStateStore } from '../adapters/builderFeeStateStore';
 import { BUILDER_CONFIG } from '../config';
 
@@ -26,7 +26,7 @@ import { BUILDER_CONFIG } from '../config';
 export class BuilderFeeService implements BuilderFeePort {
   constructor(
     private readonly walletService: WalletPort,
-    private readonly hyperliquidAdapter: HyperliquidAdapter,
+    private readonly hyperliquidGateway: HyperliquidGateway,
   ) {}
 
   /**
@@ -59,7 +59,7 @@ export class BuilderFeeService implements BuilderFeePort {
       }
 
       // Use HyperliquidAdapter to check max builder fee
-      const maxFee = await this.hyperliquidAdapter.getMaxBuilderFee(
+      const maxFee = await this.hyperliquidGateway.getMaxBuilderFee(
         wallet.address,
         BUILDER_CONFIG.address,
       );
@@ -90,7 +90,7 @@ export class BuilderFeeService implements BuilderFeePort {
       const signer = await this.getSigner();
 
       // Execute approval
-      await this.hyperliquidAdapter.approveBuilderFee(
+      await this.hyperliquidGateway.approveBuilderFee(
         signer,
         BUILDER_CONFIG.maxFeeRate,
         BUILDER_CONFIG.address,
@@ -113,7 +113,7 @@ export class BuilderFeeService implements BuilderFeePort {
       const signer = await this.getSigner();
 
       // Execute revocation (set max fee to 0%)
-      await this.hyperliquidAdapter.approveBuilderFee(signer, '0%', BUILDER_CONFIG.address);
+      await this.hyperliquidGateway.approveBuilderFee(signer, '0%', BUILDER_CONFIG.address);
 
       // Verify revocation succeeded
       const status = await this.checkApprovalStatus();

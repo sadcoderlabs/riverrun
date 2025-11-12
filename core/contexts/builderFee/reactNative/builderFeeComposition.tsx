@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useMemo } from 'react';
 
 import { useWalletComposition } from '@/core/contexts/wallet/reactNative/walletComposition';
-import { HyperliquidAdapter } from '../../../infra/hyperliquid/hyperliquidAdapter';
+import { HyperliquidGateway } from '../../../infra/hyperliquid/hyperliquidGateway';
 import { BuilderFeeService } from '../application/builderFeeService';
 import type { BuilderFeePort } from '../ports/builderFeePort';
 
@@ -44,11 +44,11 @@ export function BuilderFeeCompositionProvider({ children }: { children: React.Re
   // ==========================
 
   const builderFeeService = useMemo(() => {
-    // Create Hyperliquid adapter (shared infrastructure adapter)
-    const hyperliquidAdapter = new HyperliquidAdapter();
+    // Create Hyperliquid gateway (unified infrastructure gateway)
+    const hyperliquidGateway = new HyperliquidGateway();
 
-    // BuilderFeeService depends on WalletPort and HyperliquidAdapter
-    return new BuilderFeeService(walletService, hyperliquidAdapter);
+    // BuilderFeeService depends on WalletPort and HyperliquidGateway
+    return new BuilderFeeService(walletService, hyperliquidGateway);
   }, [walletService]);
 
   const value = {

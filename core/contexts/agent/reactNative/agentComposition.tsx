@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useMemo } from 'react';
 
 import { AgentService } from '../application/agentService';
-import { HyperliquidAdapter } from '../../../infra/hyperliquid/hyperliquidAdapter';
+import { HyperliquidGateway } from '../../../infra/hyperliquid/hyperliquidGateway';
 import type { AgentPort } from '../ports/agentPort';
 import { useWalletComposition } from '@/core/contexts/wallet/reactNative/walletComposition';
 
@@ -42,11 +42,11 @@ export function AgentCompositionProvider({ children }: { children: React.ReactNo
   // ==========================
 
   const agentService = useMemo(() => {
-    // Create Hyperliquid adapter (shared infrastructure adapter)
-    const hyperliquidAdapter = new HyperliquidAdapter();
+    // Create Hyperliquid gateway (unified infrastructure gateway)
+    const hyperliquidGateway = new HyperliquidGateway();
 
-    // AgentService depends on WalletPort and HyperliquidAdapter
-    return new AgentService(walletService, hyperliquidAdapter);
+    // AgentService depends on WalletPort and HyperliquidGateway
+    return new AgentService(walletService, hyperliquidGateway);
   }, [walletService]);
 
   const value = {

@@ -23,7 +23,9 @@
  */
 
 import type * as hl from '@nktkas/hyperliquid';
+import type { Signer } from 'ethers';
 import * as infoClient from '@/lib/hyperliquid/client/infoClient';
+import { getMasterExchangeClient } from '@/lib/hyperliquid/client/getter';
 import { subscriptionManager } from './subscription';
 
 /**
@@ -177,5 +179,148 @@ export class HyperliquidGateway {
    */
   async fetchMetaAndAssetCtxs(): Promise<hl.MetaAndAssetCtxsResponse> {
     return await infoClient.metaAndAssetCtxs();
+  }
+
+  // ============================================================================
+  // Agent Operations (Write + Read)
+  // ============================================================================
+
+  /**
+   * Approve agent on blockchain
+   *
+   * @param signer - Signer for the master wallet
+   * @param agentAddress - Agent address to approve
+   * @param agentName - Name for the agent
+   */
+  async approveAgent(signer: Signer, agentAddress: string, agentName: string): Promise<void> {
+    const client = getMasterExchangeClient(signer);
+    await client.approveAgent({
+      agentAddress,
+      agentName,
+    });
+  }
+
+  /**
+   * Revoke agent from blockchain
+   *
+   * @param signer - Signer for the master wallet
+   * @param agentName - Name of the agent to revoke
+   */
+  async revokeAgent(signer: Signer, agentName: string): Promise<void> {
+    const client = getMasterExchangeClient(signer);
+    // Revoke by setting agent address to 0x0
+    await client.approveAgent({
+      agentAddress: '0x0000000000000000000000000000000000000000',
+      agentName,
+    });
+  }
+
+  /**
+   * Get all agents for a master address from blockchain
+   *
+   * @param masterAddress - Master wallet address
+   * @returns Array of agent information
+   */
+  async getAgents(masterAddress: string): Promise<
+    {
+      address: string;
+      name: string | undefined;
+    }[]
+  > {
+    try {
+      const agents = await infoClient.extraAgents({ user: masterAddress });
+      return agents.map((agent: { address: string; name?: string }) => ({
+        address: agent.address,
+        name: agent.name,
+      }));
+    } catch (error) {
+      console.error('[HyperliquidGateway] Failed to get agents:', error);
+      return [];
+    }
+  }
+
+  // ============================================================================
+  // Builder Fee Operations (Write + Read)
+  // ============================================================================
+
+  /**
+   * Approve builder fee on blockchain
+   *
+   * @param signer - Signer for the master wallet
+   * @param maxFeeRate - Maximum fee rate as percentage string (e.g., '0.1%')
+   * @param builderAddress - Builder address to approve
+   */
+  async approveBuilderFee(
+    signer: Signer,
+    maxFeeRate: string,
+    builderAddress: string,
+  ): Promise<void> {
+    const client = getMasterExchangeClient(signer);
+    await client.approveBuilderFee({
+      maxFeeRate,
+      builder: builderAddress,
+    });
+  }
+
+  /**
+   * Get maximum approved builder fee for a user-builder pair
+   *
+   * @param userAddress - User address
+   * @param builderAddress - Builder address
+   * @returns Maximum approved fee in 0.1bps units
+   */
+  async getMaxBuilderFee(userAddress: string, builderAddress: string): Promise<number> {
+    try {
+      return await infoClient.maxBuilderFee({
+        user: userAddress,
+        builder: builderAddress,
+      });
+    } catch (error) {
+      console.error('[HyperliquidGateway] Failed to get max builder fee:', error);
+      return 0;
+    }
+  }
+
+  // ============================================================================
+  // Referral Operations (Write + Read)
+  // ============================================================================
+
+  /**
+   * Set referrer code for the user
+   *
+   * @param signer - Signer for the master wallet
+   * @param code - Referral code to set
+   */
+  async setReferrer(signer: Signer, code: string): Promise<void> {
+    const client = getMasterExchangeClient(signer);
+    await client.setReferrer({ code });
+  }
+
+  /**
+   * Get referral information for a user
+   *
+   * @param userAddress - User address
+   * @returns Referral information including referrer, code, and cumulative volume
+   */
+  async getReferralInfo(userAddress: string): Promise<{
+    referrer: string | undefined;
+    code: string | undefined;
+    cumVlm: string;
+  }> {
+    try {
+      const referral = await infoClient.referralInfo({ user: userAddress });
+      return {
+        referrer: referral.referredBy?.referrer,
+        code: referral.referredBy?.code,
+        cumVlm: referral.cumVlm,
+      };
+    } catch (error) {
+      console.error('[HyperliquidGateway] Failed to get referral info:', error);
+      return {
+        referrer: undefined,
+        code: undefined,
+        cumVlm: '0',
+      };
+    }
   }
 }

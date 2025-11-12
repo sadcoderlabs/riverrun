@@ -16,7 +16,7 @@ import type { Signer } from 'ethers';
 import type { ReferralPort } from '../ports/referralPort';
 import type { ReferralInfo } from '../ports/types';
 import type { WalletPort } from '../../wallet/ports/walletPort';
-import { HyperliquidAdapter } from '../../../infra/hyperliquid/hyperliquidAdapter';
+import { HyperliquidGateway } from '../../../infra/hyperliquid/hyperliquidGateway';
 import { referralStateStore } from '../adapters/referralStateStore';
 import { REFERRAL_CONFIG } from '../config';
 
@@ -26,7 +26,7 @@ import { REFERRAL_CONFIG } from '../config';
 export class ReferralService implements ReferralPort {
   constructor(
     private readonly walletService: WalletPort,
-    private readonly hyperliquidAdapter: HyperliquidAdapter,
+    private readonly hyperliquidGateway: HyperliquidGateway,
   ) {}
 
   /**
@@ -60,7 +60,7 @@ export class ReferralService implements ReferralPort {
       }
 
       // Query referral info from blockchain
-      const info = await this.hyperliquidAdapter.getReferralInfo(wallet.address);
+      const info = await this.hyperliquidGateway.getReferralInfo(wallet.address);
 
       // Update store
       referralStateStore.getState().updateReferralInfo(info);
@@ -86,7 +86,7 @@ export class ReferralService implements ReferralPort {
       const signer = await this.getSigner();
 
       // Set referrer on blockchain
-      await this.hyperliquidAdapter.setReferrer(signer, referralCode);
+      await this.hyperliquidGateway.setReferrer(signer, referralCode);
 
       // Verify by checking status
       const info = await this.checkStatus();

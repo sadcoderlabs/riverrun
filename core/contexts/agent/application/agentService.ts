@@ -15,7 +15,7 @@ import { BaseWallet, BrowserProvider, Wallet } from 'ethers';
 
 import { DEFAULT_AGENT_NAME } from '../constants';
 
-import { HyperliquidAdapter } from '../../../infra/hyperliquid/hyperliquidAdapter';
+import { HyperliquidGateway } from '../../../infra/hyperliquid/hyperliquidGateway';
 import type { WalletPort } from '../../wallet/ports/walletPort';
 import { AgentPkStore } from '../adapters/agentPkStore';
 import { agentStateStore } from '../adapters/agentStateStore';
@@ -37,7 +37,7 @@ interface AgentOperationContext {
 export class AgentService implements AgentPort {
   constructor(
     private readonly walletService: WalletPort,
-    private readonly hyperliquidAdapter: HyperliquidAdapter,
+    private readonly hyperliquidGateway: HyperliquidGateway,
   ) {}
 
   /**
@@ -138,7 +138,7 @@ export class AgentService implements AgentPort {
     agentAddress: string,
   ): Promise<boolean> {
     try {
-      const agents = await this.hyperliquidAdapter.getAgents(masterAddress);
+      const agents = await this.hyperliquidGateway.getAgents(masterAddress);
       return agents.some(agent => agent.address.toLowerCase() === agentAddress.toLowerCase());
     } catch (error) {
       console.error('Failed to verify agent approval:', error);
@@ -214,7 +214,7 @@ export class AgentService implements AgentPort {
       const signer = await ctx.provider.getSigner();
 
       // Approve agent on blockchain
-      await this.hyperliquidAdapter.approveAgent(signer, agentWallet.address, DEFAULT_AGENT_NAME);
+      await this.hyperliquidGateway.approveAgent(signer, agentWallet.address, DEFAULT_AGENT_NAME);
 
       // Verify approval
       const isApproved = await this.verifyAgentApprovalOnChain(
@@ -255,7 +255,7 @@ export class AgentService implements AgentPort {
       const signer = await ctx.provider.getSigner();
 
       // Revoke agent on blockchain
-      await this.hyperliquidAdapter.revokeAgent(signer, agentName);
+      await this.hyperliquidGateway.revokeAgent(signer, agentName);
 
       // Clear local storage for Riverrun Agent
       if (isRiverrunAgent) {
@@ -263,7 +263,7 @@ export class AgentService implements AgentPort {
       }
 
       // Verify revocation
-      const agents = await this.hyperliquidAdapter.getAgents(ctx.masterAddress);
+      const agents = await this.hyperliquidGateway.getAgents(ctx.masterAddress);
       const stillExists = agents.some(
         agent => agent.name?.toLowerCase() === agentName.toLowerCase(),
       );
@@ -296,7 +296,7 @@ export class AgentService implements AgentPort {
    */
   private async getAllAgentsInternal(masterAddress: string): Promise<void> {
     try {
-      const agents = await this.hyperliquidAdapter.getAgents(masterAddress);
+      const agents = await this.hyperliquidGateway.getAgents(masterAddress);
       agentStateStore.getState().setAllAgents(agents);
     } catch (error) {
       console.error('Failed to get all agents:', error);
