@@ -1,7 +1,6 @@
 import { ListButton, ListItem } from '@/components/global/ListItem';
 import { ListSection } from '@/components/global/ListSection';
-import { useReferralStatus } from '@/lib/riverrun/referral/hooks/useReferralStatus';
-import { useReferralHintsStore } from '@/lib/riverrun/referral/store/hints.store';
+import { useReferral, useReferralStore, useReferralHintsStore } from '@/core/composition';
 import { ArrowLeft } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
@@ -19,14 +18,12 @@ function shortenAddress(address: string | undefined): string {
 export default function ApprovalStatus() {
   const router = useRouter();
 
-  // Referral status
-  const {
-    referralInfo,
-    hasReferrer,
-    isLoading: isReferralLoading,
-    checkStatus: checkReferralStatus,
-    setReferrer,
-  } = useReferralStatus();
+  // Referral state
+  const referralInfo = useReferralStore(state => state.referralInfo);
+  const hasReferrer = useReferralStore(state => state.hasReferrer);
+
+  // Referral operations
+  const { loadStatus, setReferrer, isLoading: isReferralLoading } = useReferral();
 
   // Referral hints store
   const { dontHintReferral, setDontHintReferral } = useReferralHintsStore();
@@ -40,20 +37,20 @@ export default function ApprovalStatus() {
    */
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    await checkReferralStatus();
+    await loadStatus();
     setIsRefreshing(false);
-  }, [checkReferralStatus]);
+  }, [loadStatus]);
 
   /**
    * Initial load
    */
   useEffect(() => {
     const init = async () => {
-      await checkReferralStatus();
+      await loadStatus();
       setIsInitialLoading(false);
     };
     void init();
-  }, [checkReferralStatus]);
+  }, [loadStatus]);
 
   /**
    * Handle set referrer
@@ -61,18 +58,13 @@ export default function ApprovalStatus() {
   const handleSetReferrer = useCallback(async () => {
     const success = await setReferrer();
     if (success) {
-      await checkReferralStatus();
+      await loadStatus();
     }
-  }, [setReferrer, checkReferralStatus]);
+  }, [setReferrer, loadStatus]);
 
   return (
     <PortalProvider>
-      <YStack
-        flex={1}
-        backgroundColor="$background"
-        
-        
-      >
+      <YStack flex={1} backgroundColor="$background">
         {/* Header */}
         <XStack
           alignItems="center"

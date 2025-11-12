@@ -67,4 +67,5 @@ export {
 export { useReferral } from '../contexts/referral/reactNative/useReferral';
 export type { UseReferralResult } from '../contexts/referral/reactNative/useReferral';
 export { useReferralStore } from '../contexts/referral/reactNative/useReferralStore';
+export { useReferralHintsStore } from '../contexts/referral/adapters/referralHintsStore';
 export { REFERRAL_CONFIG } from '../contexts/referral/config';
