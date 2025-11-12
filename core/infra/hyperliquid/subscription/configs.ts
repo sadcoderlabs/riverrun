@@ -19,6 +19,15 @@ interface WebData2Params {
 // Use the SDK's WebData2Response type directly
 type WebData2Data = hl.WebData2Response;
 
+// AllMids has no parameters (subscribes to all markets)
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+interface AllMidsParams {
+  // No parameters needed
+}
+
+// AllMids data contains price information for all markets
+type AllMidsData = hl.WsAllMidsEvent;
+
 // ============================================================================
 // Configuration: webData2
 // ============================================================================
@@ -38,5 +47,22 @@ subscriptionRegistry.register<WebData2Params, WebData2Data>('webData2', {
         callback(event);
       },
     );
+  },
+});
+
+// ============================================================================
+// Configuration: allMids
+// ============================================================================
+
+subscriptionRegistry.register<AllMidsParams, AllMidsData>('allMids', {
+  // Single shared subscription for all markets (no user-specific key)
+  getKey: () => 'global',
+
+  // WebSocket subscription for real-time price updates across all markets
+  subscribe: async (_params, callback) => {
+    const subscriptionClient = getSubscriptionClient();
+    return await subscriptionClient.allMids((event: hl.WsAllMidsEvent) => {
+      callback(event);
+    });
   },
 });
