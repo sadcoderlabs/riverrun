@@ -14,8 +14,8 @@ import { useWalletContext } from '@/core/composition';
 import type { Order } from '@/lib/riverrun/order/orders';
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import * as infoClient from '@/lib/hyperliquid/client/infoClient';
-import { useSubscription } from '@/lib/hyperliquid/subscription';
+import * as infoClient from '@/core/infra/hyperliquid/client/infoClient';
+import { useSubscription } from '@/core/infra/hyperliquid/subscription';
 
 // ============================================================================
 // Hook Interface

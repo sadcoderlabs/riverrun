@@ -88,12 +88,7 @@ export function useCandleSnapshot({
   startTime,
   endTime,
 }: UseCandleSnapshotParams): UseCandleSnapshotResult {
-  const {
-    data,
-    isLoading,
-    error,
-    refetch,
-  } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['candleSnapshot', coin, interval, startTime, endTime],
     queryFn: async () => {
       // Default to 24 hours ago if startTime not provided

@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useCandleSnapshot, type CandleData, type CandleInterval } from '@/lib/hyperliquid/hooks/useCandleSnapshot';
+import {
+  useCandleSnapshot,
+  type CandleData,
+  type CandleInterval,
+} from '@/core/infra/hyperliquid/hooks/useCandleSnapshot';
 
 /**
  * Formatted candle data for lightweight-charts

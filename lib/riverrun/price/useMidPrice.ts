@@ -1,4 +1,4 @@
-import { useActiveAssetCtx } from '@/lib/hyperliquid/hooks';
+import { useActiveAssetCtx } from '@/core/infra/hyperliquid/hooks';
 import { useMemo } from 'react';
 
 interface UseMidPriceParams {

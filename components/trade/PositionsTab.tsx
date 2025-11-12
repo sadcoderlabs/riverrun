@@ -1,7 +1,7 @@
-import { formatPercent } from '@/lib/hyperliquid/format/formatPercent';
-import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
-import { formatSize } from '@/lib/hyperliquid/format/formatSize';
-import { formatValue } from '@/lib/hyperliquid/format/formatValue';
+import { formatPercent } from '@/core/infra/hyperliquid/format/formatPercent';
+import { formatPrice } from '@/core/infra/hyperliquid/format/formatPrice';
+import { formatSize } from '@/core/infra/hyperliquid/format/formatSize';
+import { formatValue } from '@/core/infra/hyperliquid/format/formatValue';
 import { useWalletContext, useMarket } from '@/core/composition';
 import { usePositionStore } from '@/core/contexts/position/reactNative/usePositionStore';
 import type { EnrichedPosition } from '@/core/contexts/position/ports/types';

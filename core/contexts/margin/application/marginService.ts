@@ -19,7 +19,7 @@ import type {
   HyperliquidGateway,
   SubscriptionHandle,
 } from '@/core/infra/hyperliquid/hyperliquidGateway';
-import { getMasterExchangeClient } from '@/lib/hyperliquid/client/getter';
+import { getMasterExchangeClient } from '@/core/infra/hyperliquid/client/getter';
 
 /**
  * Margin Service Implementation

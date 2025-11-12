@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react';
-import { useWebData2 } from '@/lib/hyperliquid/hooks/useWebData2';
-import type { WebData2Data } from '@/lib/hyperliquid/subscription/types';
+import { useWebData2 } from '@/core/infra/hyperliquid/hooks/useWebData2';
+import type { WebData2Data } from '@/core/infra/hyperliquid/subscription';
 
 export interface UseAccountMetricsResult {
   // Raw data

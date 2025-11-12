@@ -1,8 +1,8 @@
 import * as hl from '@nktkas/hyperliquid';
 import { useMemo } from 'react';
 
-import { useAgentExchangeClient } from '@/lib/hyperliquid/client/useAgentExchangeClient';
-import { useMasterExchangeClient } from '@/lib/hyperliquid/client/useMasterExchangeClient';
+import { useAgentExchangeClient } from './useAgentExchangeClient';
+import { useMasterExchangeClient } from './useMasterExchangeClient';
 
 interface UseHyperliquidClientResult {
   getAgentExchangeClient: () => Promise<hl.ExchangeClient | undefined>;

@@ -1,5 +1,4 @@
-import { useSubscription } from '../subscription';
-import type { ActiveAssetCtxData } from '../subscription/types';
+import { useSubscription, type ActiveAssetCtxData } from '../subscription';
 
 export interface ActiveAssetCtx {
   coin: string;

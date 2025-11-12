@@ -3,9 +3,9 @@
  * Displays user's open orders in a flat list with ability to cancel
  */
 
-import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
-import { formatSize } from '@/lib/hyperliquid/format/formatSize';
-import { formatValue } from '@/lib/hyperliquid/format/formatValue';
+import { formatPrice } from '@/core/infra/hyperliquid/format/formatPrice';
+import { formatSize } from '@/core/infra/hyperliquid/format/formatSize';
+import { formatValue } from '@/core/infra/hyperliquid/format/formatValue';
 import { useOrder } from '@/lib/riverrun/order/useOrder';
 import { useOpenOrders } from '@/lib/riverrun/order/useOpenOrders';
 import type { Order } from '@/lib/riverrun/order/orders';

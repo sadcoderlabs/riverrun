@@ -1,6 +1,6 @@
 import { MarketListItem } from '@/components/trade/MarketListItem';
 import { useMarketStore, useMarket } from '@/core/composition';
-import { useSubscription } from '@/lib/hyperliquid/subscription';
+import { useSubscription } from '@/core/infra/hyperliquid/subscription';
 import { useThrottle } from '@/lib/riverrun/common/useThrottle';
 import { ArrowDown, ArrowUp, Search } from '@tamagui/lucide-icons';
 import { useCallback, useState, useMemo } from 'react';

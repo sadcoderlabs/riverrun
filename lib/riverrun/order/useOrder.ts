@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react';
 import { toast } from 'sonner-native';
 import { roundPrice } from '@/components/trade/priceUtils';
 import { getBuilderParam, useBuilderFee, useMarketStore } from '@/core/composition';
-import { useHyperliquidClient } from '@/lib/hyperliquid/client/useHyperliquidClient';
+import { useHyperliquidClient } from '@/core/infra/hyperliquid/client/useHyperliquidClient';
 
 /**
  * Validate that a size string has the correct number of decimal places

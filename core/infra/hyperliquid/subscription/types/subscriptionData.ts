@@ -4,7 +4,7 @@
  * These types define the shape of data returned by each subscription type.
  */
 
-import type { OrderBookLevel } from '@/lib/riverrun/orderbook/orderbookPrecision';
+import type { OrderBookLevel } from '../../orderbook/orderbookPrecision';
 import type { Fill } from '@/core/contexts/history/ports/types';
 import type * as hl from '@nktkas/hyperliquid';
 
@@ -99,4 +99,28 @@ export interface Trade {
  */
 export interface TradesData {
   trades: Trade[];
+}
+
+/**
+ * Order update information
+ */
+export interface OrderUpdate {
+  order: {
+    coin: string;
+    side: 'B' | 'A';
+    limitPx: string;
+    sz: string;
+    oid: number;
+    timestamp: number;
+    origSz: string;
+  };
+  status?: string;
+}
+
+/**
+ * OrderUpdates subscription data
+ * Contains real-time order status changes
+ */
+export interface OrderUpdatesData {
+  updates: OrderUpdate[];
 }

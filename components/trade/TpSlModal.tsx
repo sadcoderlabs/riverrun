@@ -5,12 +5,12 @@ import { Check } from '@tamagui/lucide-icons';
 import { Checkbox } from '@tamagui/checkbox';
 import * as hl from '@nktkas/hyperliquid';
 import { Input } from '@/components/global/Input';
-import { useHyperliquidClient } from '@/lib/hyperliquid/hooks';
+import { useHyperliquidClient } from '@/core/infra/hyperliquid/hooks';
 import { useOrder } from '@/lib/riverrun/order/useOrder';
 import { useOpenOrders } from '@/lib/riverrun/order/useOpenOrders';
-import { formatSize } from '@/lib/hyperliquid/format/formatSize';
-import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
-import { formatValue } from '@/lib/hyperliquid/format/formatValue';
+import { formatSize } from '@/core/infra/hyperliquid/format/formatSize';
+import { formatPrice } from '@/core/infra/hyperliquid/format/formatPrice';
+import { formatValue } from '@/core/infra/hyperliquid/format/formatValue';
 
 type Position = hl.ClearinghouseStateResponse['assetPositions'][number]['position'];
 

@@ -1,4 +1,4 @@
-import { useActiveAssetCtx } from '@/lib/hyperliquid/hooks/useActiveAssetCtx';
+import { useActiveAssetCtx } from '@/core/infra/hyperliquid/hooks/useActiveAssetCtx';
 import { useMarketStore } from '@/core/composition';
 import { Info } from '@tamagui/lucide-icons';
 import { useEffect, useMemo, useState } from 'react';

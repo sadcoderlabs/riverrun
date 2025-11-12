@@ -1,4 +1,4 @@
-import { formatValue } from '@/lib/hyperliquid/format/formatValue';
+import { formatValue } from '@/core/infra/hyperliquid/format/formatValue';
 import { Text, XStack, YStack } from 'tamagui';
 
 interface OrderPreviewProps {

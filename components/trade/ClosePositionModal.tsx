@@ -4,10 +4,10 @@ import { Button, Slider, Text, XStack, YStack } from 'tamagui';
 import * as hl from '@nktkas/hyperliquid';
 import { Input } from '@/components/global/Input';
 import { useOrder } from '@/lib/riverrun/order/useOrder';
-import { formatSize } from '@/lib/hyperliquid/format/formatSize';
-import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
-import { formatValue } from '@/lib/hyperliquid/format/formatValue';
-import * as infoClient from '@/lib/hyperliquid/client/infoClient';
+import { formatSize } from '@/core/infra/hyperliquid/format/formatSize';
+import { formatPrice } from '@/core/infra/hyperliquid/format/formatPrice';
+import { formatValue } from '@/core/infra/hyperliquid/format/formatValue';
+import * as infoClient from '@/core/infra/hyperliquid/client/infoClient';
 
 type Position = hl.ClearinghouseStateResponse['assetPositions'][number]['position'];
 

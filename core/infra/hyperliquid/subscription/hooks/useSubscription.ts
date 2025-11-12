@@ -1,6 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
-import { subscriptionManager } from '../core/SubscriptionManager';
-import type { SubscriptionState } from '../core/types';
+import { subscriptionManager } from '../subscriptionManager';
+import type { SubscriptionHandle } from '../types';
+
+/**
+ * Subscription state returned by useSubscription hook
+ */
+export interface SubscriptionState<TData> {
+  data: TData | undefined;
+  isLoading: boolean;
+  error: Error | undefined;
+}
 
 /**
  * Unified subscription hook
@@ -44,7 +53,7 @@ export function useSubscription<TData = any>(type: string, params?: any): Subscr
   const serializedParams = useMemo(() => JSON.stringify(params), [params]);
 
   useEffect(() => {
-    let handle: { type: string; key: string } | null = null;
+    let handle: SubscriptionHandle | null = null;
 
     // Setup subscription
     const setupSubscription = async () => {

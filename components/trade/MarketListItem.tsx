@@ -1,4 +1,4 @@
-import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
+import { formatPrice } from '@/core/infra/hyperliquid/format/formatPrice';
 import { Star } from '@tamagui/lucide-icons';
 import { memo } from 'react';
 import { Text, XStack, YStack } from 'tamagui';

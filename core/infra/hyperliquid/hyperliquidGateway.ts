@@ -24,8 +24,8 @@
 
 import type * as hl from '@nktkas/hyperliquid';
 import type { Signer } from 'ethers';
-import * as infoClient from '@/lib/hyperliquid/client/infoClient';
-import { getMasterExchangeClient } from '@/lib/hyperliquid/client/getter';
+import * as infoClient from './client/infoClient';
+import { getMasterExchangeClient } from './client/getter';
 import { subscriptionManager } from './subscription';
 
 /**

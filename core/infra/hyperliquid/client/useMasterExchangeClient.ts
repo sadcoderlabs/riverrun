@@ -2,7 +2,7 @@ import * as hl from '@nktkas/hyperliquid';
 import { useCallback } from 'react';
 import { Alert } from 'react-native';
 
-import { getMasterExchangeClient } from '@/lib/hyperliquid/client/getter';
+import { getMasterExchangeClient } from './getter';
 import { useWalletContext } from '@/core/composition';
 
 export function useMasterExchangeClient() {

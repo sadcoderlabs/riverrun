@@ -1,4 +1,4 @@
-import { useActiveAssetData } from '@/lib/hyperliquid/hooks';
+import { useActiveAssetData } from '@/core/infra/hyperliquid/hooks';
 import { useMemo } from 'react';
 
 interface UseMarkPriceParams {

@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import * as hl from '@nktkas/hyperliquid';
 
 import { useAgentComposition } from './agentComposition';
-import { getAgentExchangeClient as getAgentExchangeClientGetter } from '@/lib/hyperliquid/client/getter';
+import { getAgentExchangeClient as getAgentExchangeClientGetter } from '@/core/infra/hyperliquid/client/getter';
 import type { AgentApprovalStatus } from '../ports/types';
 
 export interface UseAgentResult {

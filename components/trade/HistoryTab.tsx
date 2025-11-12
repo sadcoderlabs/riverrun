@@ -3,9 +3,9 @@
  * Displays user's fill history (executed trades)
  */
 
-import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
-import { formatSize } from '@/lib/hyperliquid/format/formatSize';
-import { formatValue } from '@/lib/hyperliquid/format/formatValue';
+import { formatPrice } from '@/core/infra/hyperliquid/format/formatPrice';
+import { formatSize } from '@/core/infra/hyperliquid/format/formatSize';
+import { formatValue } from '@/core/infra/hyperliquid/format/formatValue';
 import { useHistory, type Fill } from '@/core/contexts/history/reactNative/useHistory';
 import { formatTimestamp } from '@/lib/riverrun/order';
 import { useWalletContext, useMarketStore, useMarket } from '@/core/composition';

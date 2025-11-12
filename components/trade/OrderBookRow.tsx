@@ -1,4 +1,4 @@
-import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
+import { formatPrice } from '@/core/infra/hyperliquid/format/formatPrice';
 import { memo } from 'react';
 import { Platform } from 'react-native';
 import { Text, XStack, YStack } from 'tamagui';

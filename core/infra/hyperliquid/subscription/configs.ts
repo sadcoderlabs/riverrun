@@ -5,8 +5,20 @@
  */
 
 import type * as hl from '@nktkas/hyperliquid';
-import { getSubscriptionClient } from '@/lib/hyperliquid/client/getter';
+import { getSubscriptionClient } from '../client/getter';
 import { subscriptionRegistry } from './subscriptionRegistry';
+import type { NSigFigs } from '../orderbook/orderbookPrecision';
+import type {
+  AllMidsData,
+  OrderBookData,
+  UserFillsData,
+  ActiveAssetData,
+  ActiveAssetCtxData,
+  TradesData,
+  Trade,
+  OrderUpdatesData,
+  OrderUpdate,
+} from './types/subscriptionData';
 
 // ============================================================================
 // Subscription Parameter Types
@@ -42,18 +54,21 @@ interface ActiveAssetDataParams {
   coin: string;
 }
 
-// ActiveAssetData contains leverage and position info for a specific asset
-interface ActiveAssetData {
-  user: string;
+interface ActiveAssetCtxParams {
   coin: string;
-  leverage: {
-    type: 'isolated' | 'cross';
-    value: number;
-    rawUsd?: string;
-  };
-  maxTradeSzs: [string, string];
-  availableToTrade: [string, string];
-  markPx: string;
+}
+
+interface OrderBookParams {
+  coin: string;
+  nSigFigs?: NSigFigs;
+}
+
+interface TradesParams {
+  coin: string;
+}
+
+interface OrderUpdatesParams {
+  user: string;
 }
 
 // ============================================================================
@@ -133,8 +148,106 @@ subscriptionRegistry.register<ActiveAssetDataParams, ActiveAssetData>('activeAss
         coin: params.coin.toUpperCase(),
         user: params.user,
       },
-      (assetData: ActiveAssetData) => {
+      (assetData: any) => {
         callback(assetData);
+      },
+    );
+  },
+});
+
+// ============================================================================
+// Configuration: activeAssetCtx
+// ============================================================================
+
+subscriptionRegistry.register<ActiveAssetCtxParams, ActiveAssetCtxData>('activeAssetCtx', {
+  // Key by coin
+  getKey: params => params.coin.toUpperCase(),
+
+  // WebSocket subscription for real-time market data
+  subscribe: async (params, callback) => {
+    const subscriptionClient = getSubscriptionClient();
+    return await subscriptionClient.activeAssetCtx(
+      {
+        coin: params.coin.toUpperCase(),
+      },
+      (assetCtx: any) => {
+        callback(assetCtx);
+      },
+    );
+  },
+});
+
+// ============================================================================
+// Configuration: orderBook
+// ============================================================================
+
+subscriptionRegistry.register<OrderBookParams, OrderBookData>('orderBook', {
+  // Key includes both coin and precision level
+  getKey: params => `${params.coin}-${params.nSigFigs ?? 'full'}`,
+
+  // WebSocket subscription
+  subscribe: async (params, callback) => {
+    const subscriptionClient = getSubscriptionClient();
+    return await subscriptionClient.l2Book(
+      {
+        coin: params.coin.toUpperCase(),
+        nSigFigs: params.nSigFigs ?? undefined,
+      },
+      (orderBookEvent: any) => {
+        // Transform the event data to our interface
+        const transformedData: OrderBookData = {
+          coin: orderBookEvent.coin,
+          time: orderBookEvent.time,
+          bids: orderBookEvent.levels[0], // Index 0 = bids
+          asks: orderBookEvent.levels[1], // Index 1 = asks
+        };
+        callback(transformedData);
+      },
+    );
+  },
+});
+
+// ============================================================================
+// Configuration: trades
+// ============================================================================
+
+subscriptionRegistry.register<TradesParams, TradesData>('trades', {
+  // Key by coin
+  getKey: params => params.coin.toUpperCase(),
+
+  // WebSocket subscription for real-time trades
+  subscribe: async (params, callback) => {
+    const subscriptionClient = getSubscriptionClient();
+    return await subscriptionClient.trades(
+      {
+        coin: params.coin.toUpperCase(),
+      },
+      (trades: Trade[]) => {
+        // Forward trades array to callback
+        callback({ trades });
+      },
+    );
+  },
+});
+
+// ============================================================================
+// Configuration: orderUpdates
+// ============================================================================
+
+subscriptionRegistry.register<OrderUpdatesParams, OrderUpdatesData>('orderUpdates', {
+  // Key by user address
+  getKey: params => params.user,
+
+  // WebSocket subscription for real-time order updates
+  subscribe: async (params, callback) => {
+    const subscriptionClient = getSubscriptionClient();
+    return await subscriptionClient.orderUpdates(
+      {
+        user: params.user,
+      },
+      (updates: OrderUpdate[]) => {
+        // Forward updates array to callback
+        callback({ updates });
       },
     );
   },

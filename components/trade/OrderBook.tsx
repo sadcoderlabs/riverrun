@@ -1,8 +1,8 @@
 import AdaptiveSelect from '@/components/global/AdaptiveSelect';
-import { formatPrice } from '@/lib/hyperliquid/format/formatPrice';
-import { formatSizeFixedDecimals } from '@/lib/hyperliquid/format/formatSizeFixedDecimals';
-import { useActiveAssetCtx, useTrades } from '@/lib/hyperliquid/hooks';
-import { useSubscription, type OrderBookData } from '@/lib/hyperliquid/subscription';
+import { formatPrice } from '@/core/infra/hyperliquid/format/formatPrice';
+import { formatSizeFixedDecimals } from '@/core/infra/hyperliquid/format/formatSizeFixedDecimals';
+import { useActiveAssetCtx, useTrades } from '@/core/infra/hyperliquid/hooks';
+import { useSubscription, type OrderBookData } from '@/core/infra/hyperliquid/subscription';
 import { useThrottle } from '@/lib/riverrun/common/useThrottle';
 import { useMarketStore } from '@/core/composition';
 import {
@@ -10,8 +10,8 @@ import {
   type NSigFigs,
   type OrderBookLevel,
   type PrecisionMenuItem,
-} from '@/lib/riverrun/orderbook/orderbookPrecision';
-import { useLatestPrice } from '@/lib/riverrun/orderbook/useLatestPrice';
+} from '@/core/infra/hyperliquid/orderbook/orderbookPrecision';
+import { useLatestPrice } from '@/core/infra/hyperliquid/orderbook/useLatestPrice';
 import { ArrowDownRight, ArrowUpRight, ChevronDown, Info } from '@tamagui/lucide-icons';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList } from 'react-native';

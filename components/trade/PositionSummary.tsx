@@ -1,5 +1,5 @@
-import { formatSize } from '@/lib/hyperliquid/format/formatSize';
-import { formatValue } from '@/lib/hyperliquid/format/formatValue';
+import { formatSize } from '@/core/infra/hyperliquid/format/formatSize';
+import { formatValue } from '@/core/infra/hyperliquid/format/formatValue';
 import { Text, XStack, YStack } from 'tamagui';
 
 interface PositionSummaryProps {
