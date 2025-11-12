@@ -2,15 +2,13 @@
  * useReferral - React Hook for Referral Operations
  *
  * This hook provides referral operations with UI integration (Alert dialogs).
- * It wraps the pure business logic from ReferralService with presentation layer concerns.
+ * For state access, use useReferralStore instead for better performance.
  */
 
 import { useCallback, useState } from 'react';
 import { Alert } from 'react-native';
-import { useStore } from 'zustand';
 
 import { useReferralComposition } from './referralComposition';
-import { referralStateStore } from '../adapters/referralStateStore';
 import { REFERRAL_CONFIG } from '../config';
 import type { ReferralInfo } from '../ports/types';
 
@@ -18,11 +16,7 @@ import type { ReferralInfo } from '../ports/types';
  * Result type for useReferral hook
  */
 export interface UseReferralResult {
-  /** Current referral information */
-  referralInfo: ReferralInfo;
-  /** Whether user has a referrer */
-  hasReferrer: boolean;
-  /** Whether operations are in progress */
+  /** Whether operations are in progress (UI state only) */
   isLoading: boolean;
   /** Check referral status */
   checkStatus: () => Promise<ReferralInfo>;
@@ -36,13 +30,32 @@ export interface UseReferralResult {
 
 /**
  * Hook for managing referral operations with UI integration
+ *
+ * @example
+ * ```tsx
+ * import { useReferralStore, useReferral } from '@/core/composition';
+ *
+ * // State access - precise subscriptions
+ * const hasReferrer = useReferralStore(state => state.hasReferrer);
+ * const referralInfo = useReferralStore(state => state.referralInfo);
+ *
+ * // Business operations
+ * const { setReferrer, showReferralHint, isLoading } = useReferral();
+ *
+ * if (!hasReferrer) {
+ *   return (
+ *     <Button onPress={() => setReferrer()} loading={isLoading}>
+ *       Set Referrer
+ *     </Button>
+ *   );
+ * }
+ * ```
  */
 export function useReferral(): UseReferralResult {
   const { referralService } = useReferralComposition();
-  const [isLoading, setIsLoading] = useState(false);
 
-  // Subscribe to referral state store
-  const { referralInfo, hasReferrer } = useStore(referralStateStore);
+  // UI state management (presentation layer only)
+  const [isLoading, setIsLoading] = useState(false);
 
   /**
    * Check referral status for current user
@@ -160,8 +173,6 @@ export function useReferral(): UseReferralResult {
   );
 
   return {
-    referralInfo,
-    hasReferrer,
     isLoading,
     checkStatus,
     setReferrer,

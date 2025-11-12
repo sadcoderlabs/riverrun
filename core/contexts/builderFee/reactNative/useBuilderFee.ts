@@ -1,26 +1,14 @@
 import { useCallback, useState } from 'react';
 import { Alert } from 'react-native';
-import { useStore } from 'zustand';
 
 import { useBuilderFeeComposition } from './builderFeeComposition';
-import { builderFeeStateStore } from '../adapters/builderFeeStateStore';
 import { BUILDER_CONFIG } from '../config';
 
 export interface UseBuilderFeeResult {
   /**
-   * Maximum approved builder fee in 0.1bps units
+   * Loading state for builder fee operations (UI state only)
    */
-  maxApprovedFee: number;
-
-  /**
-   * Whether the approved fee meets the required fee rate
-   */
-  isBuilderFeeApproved: boolean;
-
-  /**
-   * Loading state for builder fee operations
-   */
-  isBuilderFeeLoading: boolean;
+  isLoading: boolean;
 
   /**
    * Check builder fee approval status
@@ -52,33 +40,34 @@ export interface UseBuilderFeeResult {
 }
 
 /**
- * useBuilderFee - Builder fee management hook
+ * useBuilderFee - Builder fee business operations hook
  *
- * This is the main hook for builder fee operations. It provides:
- * - Reactive access to builder fee state (approval status, max fee, loading)
- * - All builder fee operations (approve, revoke, check status)
+ * This hook provides builder fee-related business operations.
+ * For state access, use useBuilderFeeStore instead for better performance.
+ *
+ * Provides:
+ * - Builder fee operations (approve, revoke, check status, ensure approval)
  * - UI interactions (confirmation dialogs)
- *
- * The hook automatically tracks builder fee state changes and provides
- * stable callback references for all operations.
+ * - UI loading state
  *
  * @example
  * ```tsx
- * const { isBuilderFeeApproved, approveBuilderFee, checkBuilderFeeStatus } = useBuilderFee();
+ * import { useBuilderFeeStore, useBuilderFee } from '@/core/composition';
+ *
+ * // State access - precise subscriptions
+ * const isApproved = useBuilderFeeStore(state => state.isApproved);
+ * const maxApprovedFee = useBuilderFeeStore(state => state.maxApprovedFee);
+ *
+ * // Business operations
+ * const { approveBuilderFee, checkBuilderFeeStatus, isLoading } = useBuilderFee();
  *
  * useEffect(() => {
  *   checkBuilderFeeStatus();
  * }, [checkBuilderFeeStatus]);
  *
- * // Check if builder fee is approved
- * if (!isBuilderFeeApproved) {
+ * if (!isApproved) {
  *   return (
- *     <Button onPress={async () => {
- *       const success = await approveBuilderFee();
- *       if (success) {
- *         Alert.alert('Success', 'Builder fee approved!');
- *       }
- *     }}>
+ *     <Button onPress={approveBuilderFee} loading={isLoading}>
  *       Approve Builder Fee
  *     </Button>
  *   );
@@ -88,12 +77,8 @@ export interface UseBuilderFeeResult {
 export function useBuilderFee(): UseBuilderFeeResult {
   const { builderFeeService } = useBuilderFeeComposition();
 
-  // UI state management (presentation layer)
+  // UI state management (presentation layer only)
   const [isLoading, setIsLoading] = useState(false);
-
-  // Subscribe to builderFeeStateStore for reactive updates (business data)
-  const maxApprovedFee = useStore(builderFeeStateStore, state => state.maxApprovedFee);
-  const isBuilderFeeApproved = useStore(builderFeeStateStore, state => state.isApproved);
 
   /**
    * Check builder fee status
@@ -265,9 +250,7 @@ export function useBuilderFee(): UseBuilderFeeResult {
   }, [builderFeeService]);
 
   return {
-    maxApprovedFee,
-    isBuilderFeeApproved,
-    isBuilderFeeLoading: isLoading,
+    isLoading,
     checkBuilderFeeStatus,
     approveBuilderFee,
     ensureBuilderFeeApproval,

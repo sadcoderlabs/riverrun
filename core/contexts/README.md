@@ -104,7 +104,8 @@ context-name/
 │
 ├── reactNative/                 # React Native Layer - DI 組裝
 │   ├── xxxComposition.tsx      # 依賴注入和組裝
-│   └── useXxxStore.ts          # Store hook（可選）
+│   ├── useXxx.ts               # Business hook（業務操作 + UI state）
+│   └── useXxxStore.ts          # Store hook（狀態訪問）
 │
 └── config.ts (可選)             # 配置管理
 ```
@@ -446,6 +447,19 @@ export class MarketAdapter implements MarketPort { ... }
 
 **職責**：將業務邏輯注入到 React Native 環境
 
+**關鍵設計**：**分離關注點 - Store Hook vs Business Hook**
+
+ReactNative 層提供兩種 hook：
+
+1. **Store Hook** (`useXxxStore`) - 狀態訪問，性能優化
+2. **Business Hook** (`useXxx`) - 業務操作，UI 整合
+
+這種分離解決了性能問題：
+
+- ✅ Component 只訂閱需要的 state，避免不必要的重渲染
+- ✅ 業務操作和狀態訪問解耦，職責清晰
+- ✅ 符合 Clean Architecture 的分層原則
+
 #### 4.1 Composition（依賴注入組裝）
 
 **命名規範**：
@@ -516,49 +530,171 @@ export function PositionCompositionProvider({ children }: PositionCompositionPro
 }
 ```
 
-#### 4.2 Store Hook（可選）
+#### 4.2 Store Hook（狀態訪問）
 
 **命名規範**：
 
 - 文件名：`useXxxStore.ts`（camelCase）
 - Hook 名：`useXxxStore`（camelCase）
 
+**職責**：
+
+- 提供狀態訪問接口
+- 通過 selector 實現精確訂閱
+- **不包含**業務操作
+
 **設計原則**：
 
 - ✅ 提供通用的 selector hook
 - ✅ 讓用戶自由組合 selector
+- ✅ 只訂閱需要的字段，避免不必要的重渲染
 - ❌ 不要為每個常見用例創建專門的 hook
+- ❌ 不要在這裡放業務操作
+
+**性能優勢**：
+
+```typescript
+// ❌ 錯誤方式：展開所有 state（任何 state 變化都會重渲染）
+const { agentAddress, isApproved, allAgents } = useAgent();
+
+// ✅ 正確方式：精確訂閱（只在 agentAddress 變化時重渲染）
+const agentAddress = useAgentStore(state => state.agentAddress);
+```
 
 **範例**：
 
 ````typescript
-// core/contexts/position/reactNative/usePositionStore.ts
+// core/contexts/agent/reactNative/useAgentStore.ts
 
 /**
- * Hook to access position store
+ * Hook to access agent store
  *
- * 使用自定義 selector 進行響應式更新。
+ * Use custom selectors for optimal performance.
+ * Only subscribes to the fields you actually use.
  *
  * @example
  * ```typescript
- * // 獲取所有持倉
- * const positions = usePositionStore(state => state.positions);
+ * // Only re-render when agentAddress changes
+ * const agentAddress = useAgentStore(state => state.agentAddress);
  *
- * // 獲取加載狀態
- * const isLoading = usePositionStore(state => state.isLoading);
+ * // Only re-render when isApproved changes
+ * const isApproved = useAgentStore(state => state.isApproved);
  *
- * // 獲取特定持倉
- * const btcPosition = usePositionStore(state =>
- *   state.positions.find(p => p.coin === 'BTC')
- * );
+ * // Combine multiple fields (re-render when any changes)
+ * const { agentAddress, isApproved } = useAgentStore(state => ({
+ *   agentAddress: state.agentAddress,
+ *   isApproved: state.isApproved,
+ * }));
  * ```
  */
-export function usePositionStore<T>(
-  selector: (state: ReturnType<typeof positionStore.getState>) => T,
+export function useAgentStore<T>(
+  selector: (state: ReturnType<typeof agentStateStore.getState>) => T,
 ): T {
-  return useStore(positionStore, selector);
+  return useStore(agentStateStore, selector);
 }
 ````
+
+#### 4.3 Business Hook（業務操作）
+
+**命名規範**：
+
+- 文件名：`useXxx.ts`（camelCase）
+- Hook 名：`useXxx`（camelCase）
+- 返回類型：`UseXxxResult`
+
+**職責**：
+
+- 提供業務操作方法
+- UI 整合（Alert 對話框、導航等）
+- UI loading 狀態管理
+- **不包含** store state（用 Store Hook 替代）
+
+**設計原則**：
+
+- ✅ 只暴露業務操作和 UI state
+- ✅ Store state 應該通過 Store Hook 訪問
+- ✅ 使用 useCallback 確保方法引用穩定
+- ❌ 不要暴露 store state（性能問題）
+
+**範例**：
+
+```typescript
+// core/contexts/agent/reactNative/useAgent.ts
+
+export interface UseAgentResult {
+  /** UI loading state only */
+  isLoading: boolean;
+
+  /** Business operations */
+  checkStatus: () => Promise<AgentApprovalStatus>;
+  approve: () => Promise<boolean>;
+  revoke: (agentName: string) => Promise<boolean>;
+  getAgentExchangeClient: () => Promise<hl.ExchangeClient | undefined>;
+}
+
+/**
+ * useAgent - Agent business operations hook
+ *
+ * For state access, use useAgentStore instead for better performance.
+ */
+export function useAgent(): UseAgentResult {
+  const { agentService } = useAgentComposition();
+
+  // UI state only
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Business operations with loading management
+  const checkStatus = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      return await agentService.checkApprovalStatus();
+    } finally {
+      setIsLoading(false);
+    }
+  }, [agentService]);
+
+  // ... other operations
+
+  return {
+    isLoading,
+    checkStatus,
+    approve,
+    revoke,
+    getAgentExchangeClient,
+  };
+}
+```
+
+#### 4.4 使用範例：混合方案
+
+```typescript
+// Component 使用方式
+import { useAgentStore, useAgent } from '@/core/composition';
+
+function AgentStatusScreen() {
+  // State access - 精確訂閱
+  const agentAddress = useAgentStore(state => state.agentAddress);
+  const isApproved = useAgentStore(state => state.isApproved);
+  const allAgents = useAgentStore(state => state.allAgents);
+
+  // Business operations
+  const { approve, checkStatus, isLoading } = useAgent();
+
+  useEffect(() => {
+    checkStatus();
+  }, [checkStatus]);
+
+  return (
+    <View>
+      <Text>Address: {agentAddress}</Text>
+      <Text>Approved: {isApproved ? 'Yes' : 'No'}</Text>
+      <Button onPress={approve} loading={isLoading}>
+        Approve
+      </Button>
+    </View>
+  );
+}
+```
 
 ### 5. Config 層（可選）
 
@@ -914,7 +1050,7 @@ export function useNewContextStore<T>(selector) { ... }
 
 **Step 6: 更新使用點**
 
-- UI 層使用 `useXxxStore` 或 `useXxxContext`
+- UI 層：狀態使用 `useXxxStore`，操作使用 `useXxx`
 - 移除舊的直接依賴
 
 **Step 7: 刪除舊代碼**
@@ -950,7 +1086,50 @@ export function useNewContextStore<T>(selector) { ... }
 - 頻繁的外部調用
 - 範例：Wallet Service
 
-### Q3: Out Port 應該放在 ports/ 還是 adapters/？
+### Q3: Store Hook vs Business Hook 該如何選擇？
+
+**A**: 根據使用場景選擇：
+
+**使用 Store Hook (`useXxxStore`)** - 訪問狀態時：
+
+- ✅ 需要訂閱 state 變化
+- ✅ 想要精確控制重渲染
+- ✅ 只需要讀取數據
+- 範例：顯示 agent address、approval 狀態
+
+**使用 Business Hook (`useXxx`)** - 執行操作時：
+
+- ✅ 需要執行業務操作
+- ✅ 需要 UI loading 狀態
+- ✅ 需要 UI 整合（Alert、導航等）
+- 範例：approve agent、check status
+
+**同時使用** - 大多數情況：
+
+```typescript
+// State access
+const isApproved = useAgentStore(state => state.isApproved);
+const agentAddress = useAgentStore(state => state.agentAddress);
+
+// Business operations
+const { approve, isLoading } = useAgent();
+```
+
+**為什麼不能在 Business Hook 中暴露 state？**
+
+性能問題：Business Hook 會在**任何一個** state 變化時重新執行，導致不必要的重渲染。
+
+```typescript
+// ❌ 錯誤：useAgent 暴露所有 state
+const { agentAddress, isApproved, allAgents, approve } = useAgent();
+// 任何一個 state 變化，useAgent 都會重新執行，component 重渲染
+
+// ✅ 正確：分離訪問
+const agentAddress = useAgentStore(state => state.agentAddress);
+// 只在 agentAddress 變化時重渲染
+```
+
+### Q4: Out Port 應該放在 ports/ 還是 adapters/？
 
 **兩種做法都可接受**：
 
@@ -966,7 +1145,44 @@ export function useNewContextStore<T>(selector) { ... }
 - 複雜的業務抽象
 - 需要多個實現
 
-### Q4: 何時創建 config.ts？
+### Q5: Store 應該暴露到 Port 嗎？
+
+**A**: **不應該**。
+
+Store 是 Adapter 層的實現細節，不應該出現在 Port 接口中：
+
+```typescript
+// ❌ 錯誤：Port 暴露 Store
+export interface AgentPort {
+  store: AgentStateStore; // 違反分層原則
+  approve(): Promise<void>;
+}
+
+// ✅ 正確：Port 只暴露業務方法
+export interface AgentPort {
+  checkApprovalStatus(): Promise<AgentApprovalStatus>;
+  approveAgent(): Promise<boolean>;
+}
+```
+
+**原因**：
+
+- Port 應該是純粹的業務接口
+- 不應該依賴具體的狀態管理方案（Zustand/Redux/MobX）
+- 保持 Domain Layer 的框架獨立性
+- Store 通過 Store Hook 訪問即可，不需要在 Port 中暴露
+
+**React Native 層的訪問方式**：
+
+```typescript
+// ✅ 正確：直接通過 Store Hook 訪問
+const agentAddress = useAgentStore(state => state.agentAddress);
+
+// ✅ 正確：業務操作通過 Service
+const { approve } = useAgent();
+```
+
+### Q6: 何時創建 config.ts？
 
 **需要 config.ts 的場景**：
 
@@ -979,7 +1195,7 @@ export function useNewContextStore<T>(selector) { ... }
 - 所有配置都是動態的
 - 沒有硬編碼值
 
-### Q5: 是否可以跨 Context 直接依賴 Service？
+### Q7: 是否可以跨 Context 直接依賴 Service？
 
 **可以，但有限制**：
 
@@ -998,7 +1214,7 @@ export function useNewContextStore<T>(selector) { ... }
 - 優先通過 Store 通訊（解耦）
 - 只在必要時跨 Service 依賴
 
-### Q6: 如何測試 Service？
+### Q8: 如何測試 Service？
 
 **單元測試模式**：
 
@@ -1034,12 +1250,14 @@ describe('PositionService', () => {
 
 ## 範例：完整的 Context 實現
 
-參考 **Position Context** 作為最佳實踐範例：
+### 範例 1：Position Context（自治 Service）
+
+**最佳實踐**：只需要狀態訪問，不需要業務操作 hook
 
 ```
 core/contexts/position/
 ├── ports/
-│   ├── positionPort.ts          # In Port（2 個方法）
+│   ├── positionPort.ts          # In Port（2 個方法：start/stop）
 │   ├── types.ts                 # Domain types + Pure functions
 │   └── index.ts
 ├── application/
@@ -1050,7 +1268,7 @@ core/contexts/position/
 │   └── index.ts
 └── reactNative/
     ├── positionComposition.tsx  # DI 組裝（詳細文檔）
-    └── usePositionStore.ts      # Store hook
+    └── usePositionStore.ts      # Store hook（只需要狀態訪問）
 ```
 
 **特點**：
@@ -1060,6 +1278,48 @@ core/contexts/position/
 - ✅ Pure Functions（calculatePositionMetrics）
 - ✅ 清晰的依賴圖文檔
 - ✅ 完全的框架獨立性
+- ✅ 只需要 Store Hook（Service 自動運行，UI 只需訂閱狀態）
+
+### 範例 2：Agent Context（協調 Service + UI 操作）
+
+**混合方案**：需要狀態訪問 + 業務操作
+
+```
+core/contexts/agent/
+├── ports/
+│   ├── agentPort.ts             # In Port（業務方法）
+│   ├── types.ts                 # Domain types
+│   └── index.ts
+├── application/
+│   └── agentService.ts          # 協調 Service
+├── adapters/
+│   ├── agentStateStore.ts       # Zustand vanilla store
+│   ├── agentWalletManager.ts    # Agent wallet 管理
+│   ├── hyperliquidAgentAdapter.ts # Hyperliquid API 適配
+│   └── index.ts
+└── reactNative/
+    ├── agentComposition.tsx     # DI 組裝
+    ├── useAgent.ts              # Business hook（操作 + UI state）
+    └── useAgentStore.ts         # Store hook（狀態訪問）
+```
+
+**特點**：
+
+- ✅ 分離關注點（狀態訪問 vs 業務操作）
+- ✅ 性能優化（精確訂閱，避免不必要重渲染）
+- ✅ UI 整合（Alert 對話框、loading 狀態）
+- ✅ 清晰的職責劃分
+
+**使用方式**：
+
+```typescript
+// State access - 精確訂閱
+const agentAddress = useAgentStore(state => state.agentAddress);
+const isApproved = useAgentStore(state => state.isApproved);
+
+// Business operations
+const { approve, checkStatus, isLoading } = useAgent();
+```
 
 ---
 
@@ -1072,9 +1332,32 @@ core/contexts/position/
 3. **易於測試** - 通過依賴注入實現可測試性
 4. **可擴展** - 通過 Port 和 Adapter 實現靈活性
 5. **會尖叫的架構** - 文件名直接表達用途
+6. **性能優化** - Store Hook vs Business Hook 分離，精確訂閱
+
+### ReactNative 層的設計模式
+
+**混合方案 - Store Hook + Business Hook**：
+
+- ✅ **Store Hook** (`useXxxStore`) - 狀態訪問，性能優化
+  - 精確訂閱，只在需要的 state 變化時重渲染
+  - 開發者自由組合 selector
+  - 適用於數據展示
+
+- ✅ **Business Hook** (`useXxx`) - 業務操作，UI 整合
+  - 提供業務方法和 UI loading 狀態
+  - UI 整合（Alert、導航等）
+  - 不暴露 store state（避免性能問題）
+
+**兩種模式的使用場景**：
+
+1. **只需要狀態訪問** - 僅提供 Store Hook
+   - 範例：Position Context（自治 Service 自動運行）
+
+2. **需要狀態 + 操作** - 提供 Store Hook + Business Hook
+   - 範例：Agent/BuilderFee/Referral Context（需要手動觸發操作）
 
 **下一步行動**：
 
-- 參考 Position Context 創建新的 Context
+- 參考 Position Context（自治模式）或 Agent Context（混合模式）創建新的 Context
 - 使用檢查清單確保遵循最佳實踐
 - 遇到問題查閱本文檔的 FAQ 部分

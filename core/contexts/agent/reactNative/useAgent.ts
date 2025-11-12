@@ -1,32 +1,15 @@
 import { useCallback, useState } from 'react';
-import { useStore } from 'zustand';
 import * as hl from '@nktkas/hyperliquid';
 
 import { useAgentComposition } from './agentComposition';
-import { agentStateStore } from '../adapters/agentStateStore';
 import { getAgentExchangeClient as getAgentExchangeClientGetter } from '@/lib/hyperliquid/client/getter';
-import type { AgentApprovalStatus, AgentInfo } from '../ports/types';
+import type { AgentApprovalStatus } from '../ports/types';
 
 export interface UseAgentResult {
   /**
-   * Current agent address (undefined if not created yet)
-   */
-  agentAddress: string | undefined;
-
-  /**
-   * Whether the agent is approved on blockchain
-   */
-  isApproved: boolean;
-
-  /**
-   * Loading state for agent operations
+   * Loading state for agent operations (UI state only)
    */
   isLoading: boolean;
-
-  /**
-   * All agents for the current user
-   */
-  allAgents: AgentInfo[];
 
   /**
    * Check approval status for the current agent
@@ -58,35 +41,34 @@ export interface UseAgentResult {
 }
 
 /**
- * useAgent - Agent management hook
+ * useAgent - Agent business operations hook
  *
- * This is the main hook for agent operations. It provides:
- * - Reactive access to agent state (address, approval status, loading)
- * - All agent operations (approve, revoke, check status)
+ * This hook provides agent-related business operations.
+ * For state access, use useAgentStore instead for better performance.
+ *
+ * Provides:
+ * - Agent operations (approve, revoke, check status)
  * - Access to agent exchange client
- *
- * The hook automatically tracks agent state changes and provides
- * stable callback references for all operations.
+ * - UI loading state
  *
  * @example
  * ```tsx
- * const { agentAddress, isApproved, approve, checkStatus } = useAgent();
+ * import { useAgentStore, useAgent } from '@/core/composition';
+ *
+ * // State access - precise subscriptions
+ * const agentAddress = useAgentStore(state => state.agentAddress);
+ * const isApproved = useAgentStore(state => state.isApproved);
+ *
+ * // Business operations
+ * const { approve, checkStatus, isLoading } = useAgent();
  *
  * useEffect(() => {
  *   checkStatus();
  * }, [checkStatus]);
  *
- * // Check if agent is approved
  * if (!isApproved) {
  *   return (
- *     <Button onPress={async () => {
- *       try {
- *         await approve();
- *         Alert.alert('Success', 'Agent approved!');
- *       } catch (error) {
- *         Alert.alert('Error', error.message);
- *       }
- *     }}>
+ *     <Button onPress={approve} loading={isLoading}>
  *       Approve Agent
  *     </Button>
  *   );
@@ -96,13 +78,8 @@ export interface UseAgentResult {
 export function useAgent(): UseAgentResult {
   const { agentService } = useAgentComposition();
 
-  // UI state management (presentation layer)
+  // UI state management (presentation layer only)
   const [isLoading, setIsLoading] = useState(false);
-
-  // Subscribe to agentStateStore for reactive updates (business data)
-  const agentAddress = useStore(agentStateStore, state => state.agentAddress);
-  const isApproved = useStore(agentStateStore, state => state.isApproved);
-  const allAgents = useStore(agentStateStore, state => state.allAgents);
 
   // Wrap agentService methods with loading management
   const checkStatus = useCallback(async () => {
@@ -156,10 +133,7 @@ export function useAgent(): UseAgentResult {
   }, [agentService]);
 
   return {
-    agentAddress,
-    isApproved,
     isLoading,
-    allAgents,
     checkStatus,
     approve,
     revoke,
