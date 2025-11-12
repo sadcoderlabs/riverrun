@@ -15,7 +15,7 @@ import {
 } from '@/components/trade/TpSlInput';
 import { useAvailableToTrade } from '@/lib/riverrun/order/useAvailableToTrade';
 import { usePositionStore } from '@/core/contexts/position/reactNative/usePositionStore';
-import { useMarginLeverage } from '@/lib/riverrun/margin/useMarginLeverage';
+import { useMarginStore } from '@/core/composition';
 import { useOrder } from '@/lib/riverrun/order/useOrder';
 import { useOrderValue } from '@/lib/riverrun/order/useOrderValue';
 import { useMarginRequired } from '@/lib/riverrun/order/useMarginRequired';
@@ -42,8 +42,8 @@ export function PerpTradePanel() {
   const { markPrice, isLoading: isLoadingMarkPrice } = useMarkPrice({ coin });
   const { midPrice } = useMidPrice({ coin });
 
-  // Subscribe to real-time margin and leverage data (for margin calculation and order forms)
-  const { marginLeverage } = useMarginLeverage();
+  // Get real-time margin and leverage data from margin context
+  const marginLeverage = useMarginStore(state => state.marginLeverage);
   const leverage = marginLeverage?.leverage ?? 1;
 
   // Subscribe to real-time available margin data

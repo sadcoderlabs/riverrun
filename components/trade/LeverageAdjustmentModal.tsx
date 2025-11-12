@@ -1,4 +1,5 @@
-import { useMarginLeverage } from '@/lib/riverrun/margin/useMarginLeverage';
+import { useMargin, useMarginStore } from '@/core/composition';
+import { toast } from 'sonner-native';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Modal, Pressable, StyleSheet } from 'react-native';
 import { Button, Slider, Spinner, Text, XStack, YStack } from 'tamagui';
@@ -11,8 +12,10 @@ interface LeverageAdjustmentModalProps {
 }
 
 export function LeverageAdjustmentModal({ open, onOpenChange }: LeverageAdjustmentModalProps) {
-  // Get real-time margin and leverage data, and update function (hybrid strategy)
-  const { marginLeverage, setMarginLeverage, isUpdating, isLoading } = useMarginLeverage();
+  // Get real-time margin and leverage data from margin context
+  const marginLeverage = useMarginStore(state => state.marginLeverage);
+  const isLoading = useMarginStore(state => state.isLoading);
+  const { setMarginLeverage, isUpdating } = useMargin();
 
   // Extract min/max leverage from marginLeverage (safe defaults for initialization)
   const leverageMin = marginLeverage?.minLeverage ?? 1;
@@ -44,14 +47,23 @@ export function LeverageAdjustmentModal({ open, onOpenChange }: LeverageAdjustme
 
       const marginMode: 'isolated' | 'cross' = newMode === 'Cross' ? 'cross' : 'isolated';
 
-      // Update via hook (handles all API logic, error handling, and toasts)
-      await setMarginLeverage({
-        leverage: selectedLeverage,
-        marginMode,
-      });
+      try {
+        await setMarginLeverage({
+          leverage: selectedLeverage,
+          marginMode,
+        });
 
-      // Update local state (WebSocket will update the hook's data)
-      setSelectedMarginMode(marginMode);
+        // Update local state (WebSocket will update the hook's data)
+        setSelectedMarginMode(marginMode);
+
+        toast.success('Margin Mode Updated', {
+          description: `Successfully set to ${marginMode}`,
+        });
+      } catch (error) {
+        toast.error('Failed to Update Margin Mode', {
+          description: error instanceof Error ? error.message : 'An error occurred',
+        });
+      }
     },
     [isUpdating, selectedLeverage, setMarginLeverage],
   );
@@ -60,14 +72,23 @@ export function LeverageAdjustmentModal({ open, onOpenChange }: LeverageAdjustme
   const handleConfirm = useCallback(async () => {
     if (isUpdating) return;
 
-    // Update via hook (handles all API logic, error handling, and toasts)
-    await setMarginLeverage({
-      leverage: selectedLeverage,
-      marginMode: selectedMarginMode,
-    });
+    try {
+      await setMarginLeverage({
+        leverage: selectedLeverage,
+        marginMode: selectedMarginMode,
+      });
 
-    // Close modal on success
-    onOpenChange(false);
+      toast.success('Margin and Leverage Updated', {
+        description: `Successfully set to ${selectedLeverage}x ${selectedMarginMode}`,
+      });
+
+      // Close modal on success
+      onOpenChange(false);
+    } catch (error) {
+      toast.error('Failed to Update Margin/Leverage', {
+        description: error instanceof Error ? error.message : 'An error occurred',
+      });
+    }
   }, [isUpdating, onOpenChange, selectedLeverage, selectedMarginMode, setMarginLeverage]);
 
   return (

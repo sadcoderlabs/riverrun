@@ -7,12 +7,13 @@
  * Dependency Order:
  * 1. WalletCompositionProvider (no dependencies)
  * 2. MarketCompositionProvider (no dependencies)
- * 3. HistoryCompositionProvider (depends on Wallet)
- * 4. AgentCompositionProvider (depends on Wallet)
- * 5. BuilderFeeCompositionProvider (depends on Wallet)
- * 6. ReferralCompositionProvider (depends on Wallet)
- * 7. BridgeCompositionProvider (depends on Wallet)
- * 8. PositionCompositionProvider (depends on Wallet + Market)
+ * 3. MarginCompositionProvider (depends on Wallet + Market store)
+ * 4. HistoryCompositionProvider (depends on Wallet)
+ * 5. AgentCompositionProvider (depends on Wallet)
+ * 6. BuilderFeeCompositionProvider (depends on Wallet)
+ * 7. ReferralCompositionProvider (depends on Wallet)
+ * 8. BridgeCompositionProvider (depends on Wallet)
+ * 9. PositionCompositionProvider (depends on Wallet + Market)
  * ... (future contexts)
  */
 
@@ -20,6 +21,7 @@ import React from 'react';
 
 import { WalletCompositionProvider } from '../contexts/wallet/reactNative/walletComposition';
 import { MarketCompositionProvider } from '../contexts/market/reactNative/marketComposition';
+import { MarginCompositionProvider } from '../contexts/margin/reactNative/marginComposition';
 import { HistoryCompositionProvider } from '../contexts/history/reactNative/historyComposition';
 import { AgentCompositionProvider } from '../contexts/agent/reactNative/agentComposition';
 import { BuilderFeeCompositionProvider } from '../contexts/builderFee/reactNative/builderFeeComposition';
@@ -50,17 +52,19 @@ export function AppCompositionProvider({ children }: AppCompositionProviderProps
   return (
     <WalletCompositionProvider>
       <MarketCompositionProvider>
-        <HistoryCompositionProvider>
-          <AgentCompositionProvider>
-            <BuilderFeeCompositionProvider>
-              <ReferralCompositionProvider>
-                <BridgeCompositionProvider>
-                  <PositionCompositionProvider>{children}</PositionCompositionProvider>
-                </BridgeCompositionProvider>
-              </ReferralCompositionProvider>
-            </BuilderFeeCompositionProvider>
-          </AgentCompositionProvider>
-        </HistoryCompositionProvider>
+        <MarginCompositionProvider>
+          <HistoryCompositionProvider>
+            <AgentCompositionProvider>
+              <BuilderFeeCompositionProvider>
+                <ReferralCompositionProvider>
+                  <BridgeCompositionProvider>
+                    <PositionCompositionProvider>{children}</PositionCompositionProvider>
+                  </BridgeCompositionProvider>
+                </ReferralCompositionProvider>
+              </BuilderFeeCompositionProvider>
+            </AgentCompositionProvider>
+          </HistoryCompositionProvider>
+        </MarginCompositionProvider>
       </MarketCompositionProvider>
     </WalletCompositionProvider>
   );

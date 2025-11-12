@@ -156,6 +156,71 @@ export class HyperliquidGateway {
   }
 
   /**
+   * Subscribe to activeAssetData stream with HTTP+WS hybrid strategy
+   *
+   * ActiveAssetData contains:
+   * - User leverage settings (leverage value and margin mode)
+   * - Available trading amounts
+   * - Position information for a specific coin
+   *
+   * Hybrid Strategy:
+   * 1. HTTP fetch for immediate data (~100ms)
+   * 2. WebSocket subscription for real-time updates (~1s)
+   *
+   * @param params - { user: string, coin: string }
+   * @param callback - Called when data arrives (both HTTP and WS)
+   * @returns Subscription handle for cleanup
+   *
+   * @example
+   * ```typescript
+   * const gateway = new HyperliquidGateway();
+   * const handle = await gateway.subscribeActiveAssetData(
+   *   { user: '0x123...', coin: 'BTC' },
+   *   (data) => {
+   *     console.log('Leverage:', data.leverage);
+   *   }
+   * );
+   *
+   * // Later...
+   * await handle.unsubscribe();
+   * ```
+   */
+  async subscribeActiveAssetData(
+    params: { user: string; coin: string },
+    callback: (data: any) => void,
+  ): Promise<SubscriptionHandle> {
+    // Step 1: HTTP fetch for immediate data
+    // This provides fast initial display (~100ms)
+    try {
+      const httpData = await infoClient.activeAssetData({
+        user: params.user,
+        coin: params.coin.toUpperCase(),
+      });
+      callback(httpData); // Invoke callback immediately
+    } catch (error) {
+      // HTTP failure is not fatal - WebSocket will provide data shortly
+      console.warn(
+        '[HyperliquidGateway] ActiveAssetData HTTP fetch failed, relying on WebSocket:',
+        error,
+      );
+    }
+
+    // Step 2: Establish WebSocket subscription for real-time updates
+    // This provides continuous updates (~1s for initial connection)
+    const handle = await subscriptionManager.subscribe(
+      'activeAssetData',
+      { user: params.user, coin: params.coin },
+      callback,
+    );
+
+    return {
+      unsubscribe: async () => {
+        await subscriptionManager.unsubscribe(handle);
+      },
+    };
+  }
+
+  /**
    * Fetch metaAndAssetCtxs from Hyperliquid API (HTTP only)
    *
    * Corresponds to Hyperliquid's metaAndAssetCtxs endpoint.

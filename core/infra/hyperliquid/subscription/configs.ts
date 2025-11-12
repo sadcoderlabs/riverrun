@@ -36,6 +36,26 @@ interface UserFillsParams {
 // UserFills data contains fill updates
 type UserFillsData = hl.WsUserFillsEvent;
 
+// ActiveAssetData subscription params
+interface ActiveAssetDataParams {
+  user: string;
+  coin: string;
+}
+
+// ActiveAssetData contains leverage and position info for a specific asset
+interface ActiveAssetData {
+  user: string;
+  coin: string;
+  leverage: {
+    type: 'isolated' | 'cross';
+    value: number;
+    rawUsd?: string;
+  };
+  maxTradeSzs: [string, string];
+  availableToTrade: [string, string];
+  markPx: string;
+}
+
 // ============================================================================
 // Configuration: webData2
 // ============================================================================
@@ -92,6 +112,29 @@ subscriptionRegistry.register<UserFillsParams, UserFillsData>('userFills', {
       },
       (event: hl.WsUserFillsEvent) => {
         callback(event);
+      },
+    );
+  },
+});
+
+// ============================================================================
+// Configuration: activeAssetData
+// ============================================================================
+
+subscriptionRegistry.register<ActiveAssetDataParams, ActiveAssetData>('activeAssetData', {
+  // Key by user and coin
+  getKey: params => `${params.user}-${params.coin}`,
+
+  // WebSocket subscription for real-time leverage and position updates
+  subscribe: async (params, callback) => {
+    const subscriptionClient = getSubscriptionClient();
+    return await subscriptionClient.activeAssetData(
+      {
+        coin: params.coin.toUpperCase(),
+        user: params.user,
+      },
+      (assetData: ActiveAssetData) => {
+        callback(assetData);
       },
     );
   },

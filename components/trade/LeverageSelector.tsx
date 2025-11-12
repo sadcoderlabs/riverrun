@@ -1,5 +1,5 @@
 import { LeverageAdjustmentModal } from '@/components/trade/LeverageAdjustmentModal';
-import { useMarginLeverage } from '@/lib/riverrun/margin/useMarginLeverage';
+import { useMarginStore } from '@/core/composition';
 import { ChevronDown } from '@tamagui/lucide-icons';
 import { useState } from 'react';
 import { Text, XStack } from 'tamagui';
@@ -7,8 +7,9 @@ import { Text, XStack } from 'tamagui';
 export function LeverageSelector() {
   const [leverageModalOpen, setLeverageModalOpen] = useState(false);
 
-  // Get real-time margin and leverage data (hybrid strategy: fast HTTP + real-time WebSocket)
-  const { marginLeverage, isLoading } = useMarginLeverage();
+  // Get real-time margin and leverage data from margin context
+  const marginLeverage = useMarginStore(state => state.marginLeverage);
+  const isLoading = useMarginStore(state => state.isLoading);
 
   return (
     <>

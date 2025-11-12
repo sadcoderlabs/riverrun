@@ -78,3 +78,11 @@ export { useBridge } from '../contexts/bridge/reactNative/useBridge';
 export type { UseBridgeResult } from '../contexts/bridge/reactNative/useBridge';
 export { useBridgeStore } from '../contexts/bridge/reactNative/useBridgeStore';
 export { ARBITRUM_CONFIG, BRIDGE_LIMITS, BRIDGE_FEES } from '../contexts/bridge/config';
+
+export {
+  MarginCompositionProvider,
+  useMarginComposition,
+} from '../contexts/margin/reactNative/marginComposition';
+export { useMargin } from '../contexts/margin/reactNative/useMargin';
+export type { UseMarginResult } from '../contexts/margin/reactNative/useMargin';
+export { useMarginStore } from '../contexts/margin/reactNative/useMarginStore';
