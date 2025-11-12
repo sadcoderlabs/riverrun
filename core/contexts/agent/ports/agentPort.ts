@@ -1,3 +1,4 @@
+import type * as hl from '@nktkas/hyperliquid';
 import type { AgentApprovalStatus, AgentWallet } from './types';
 
 /**
@@ -35,4 +36,10 @@ export interface AgentPort {
    * @returns Promise resolving to agent wallet
    */
   getOrCreateAgentWallet(): Promise<AgentWallet>;
+
+  /**
+   * Get agent exchange client for placing orders
+   * @returns Promise resolving to exchange client, or undefined if agent not ready
+   */
+  getExchangeClient(): Promise<hl.ExchangeClient | undefined>;
 }

@@ -1,3 +1,14 @@
+/**
+ * useOrderValue - Calculate the notional value of an order
+ *
+ * Order value = size × executionPrice
+ *
+ * This value is used for:
+ * - Calculating margin required (orderValue / leverage)
+ * - Displaying total order value to the user
+ * - Risk management calculations
+ */
+
 import { useMemo } from 'react';
 
 interface UseOrderValueParams {
@@ -11,13 +22,6 @@ interface UseOrderValueResult {
 
 /**
  * Hook to calculate the notional value of an order
- *
- * Order value = size × executionPrice
- *
- * This value is used for:
- * - Calculating margin required (orderValue / leverage)
- * - Displaying total order value to the user
- * - Risk management calculations
  *
  * @param params - { size, executionPrice }
  * @returns { orderValue: number }

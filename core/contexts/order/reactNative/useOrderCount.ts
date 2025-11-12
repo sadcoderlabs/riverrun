@@ -1,19 +1,21 @@
 /**
- * Hook to get the count of open orders
- * Returns real-time count from useOpenOrders
+ * useOrderCount - Get the count of open orders
+ *
+ * Returns real-time count from orderStore.
  */
 
-import { useWalletContext } from '@/core/composition';
+import { useWalletContext } from '@/core/contexts/wallet/reactNative/useWalletContext';
 import { useMemo } from 'react';
-import { useOpenOrders } from './useOpenOrders';
+import { useOrderStore } from './useOrderStore';
 
 /**
  * Get the count of open orders
+ *
  * @returns number of open orders
  */
 export function useOrderCount(): number {
   const { wallet } = useWalletContext();
-  const { orders } = useOpenOrders();
+  const orders = useOrderStore(state => state.orders);
 
   const count = useMemo(() => {
     if (!wallet) {

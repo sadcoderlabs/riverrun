@@ -7,7 +7,7 @@ import { formatPrice } from '@/core/infra/hyperliquid/format/formatPrice';
 import { formatSize } from '@/core/infra/hyperliquid/format/formatSize';
 import { formatValue } from '@/core/infra/hyperliquid/format/formatValue';
 import { useHistory, type Fill } from '@/core/contexts/history/reactNative/useHistory';
-import { formatTimestamp } from '@/lib/riverrun/order';
+import { formatTimestamp } from '@/core/contexts/order/ports';
 import { useWalletContext, useMarketStore, useMarket } from '@/core/composition';
 import { useMemo, useState } from 'react';
 import { Button, Spinner, Text, View, XStack, YStack } from 'tamagui';

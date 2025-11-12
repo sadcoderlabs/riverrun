@@ -11,6 +11,7 @@
  * - Depends on wallet context for master wallet information
  */
 
+import type * as hl from '@nktkas/hyperliquid';
 import { BaseWallet, BrowserProvider, Wallet } from 'ethers';
 
 import { DEFAULT_AGENT_NAME } from '../constants';
@@ -313,5 +314,25 @@ export class AgentService implements AgentPort {
     }
 
     return this.getOrCreateAgentWalletInternal(ctx.provider, ctx.storageAdapter);
+  }
+
+  /**
+   * Get agent exchange client for placing orders
+   * Returns undefined if agent is not ready
+   */
+  async getExchangeClient(): Promise<hl.ExchangeClient | undefined> {
+    try {
+      // Get agent wallet
+      const agentWallet = await this.getOrCreateAgentWallet();
+
+      // Import the getter function dynamically to avoid circular dependencies
+      const { getAgentExchangeClient } = await import('../../../infra/hyperliquid/client/getter');
+
+      // Return exchange client
+      return getAgentExchangeClient(agentWallet.signer);
+    } catch (error) {
+      console.error('Failed to get agent exchange client:', error);
+      return undefined;
+    }
   }
 }

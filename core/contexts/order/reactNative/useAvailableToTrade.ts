@@ -1,3 +1,10 @@
+/**
+ * useAvailableToTrade - Get real-time available margin for trading
+ *
+ * Provides separate values for long and short positions based on the user's
+ * current margin availability from Hyperliquid's activeAssetData feed.
+ */
+
 import { useMemo } from 'react';
 import { useActiveAssetData } from '@/core/infra/hyperliquid/hooks/useActiveAssetData';
 
@@ -18,9 +25,6 @@ interface UseAvailableToTradeResult {
 
 /**
  * Hook to get real-time available margin for trading
- *
- * Provides separate values for long and short positions based on the user's
- * current margin availability from Hyperliquid's activeAssetData feed.
  *
  * @param coin - Asset symbol (e.g., 'BTC', 'ETH', 'SOL')
  * @returns Object containing longAvailableToTrade, shortAvailableToTrade, loading and error states

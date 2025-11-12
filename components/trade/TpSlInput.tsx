@@ -7,8 +7,9 @@ import {
   calculatePercentFromPrice,
   calculatePriceFromPercent,
   type TpSlType,
-} from '@/lib/riverrun/order/tpslUtils';
-import { calculateTpSlPrices, validateTpSl } from '@/lib/riverrun/order/orderUtils';
+  calculateTpSlPrices,
+  validateTpSl,
+} from '@/core/contexts/order/ports';
 
 type UnitType = 'USD' | '%';
 

@@ -13,7 +13,9 @@ interface AgentCompositionContextValue {
   agentService: AgentPort;
 }
 
-const AgentCompositionContext = createContext<AgentCompositionContextValue | undefined>(undefined);
+export const AgentCompositionContext = createContext<AgentCompositionContextValue | undefined>(
+  undefined,
+);
 
 /**
  * AgentCompositionProvider - Dependency Injection Container for Agent

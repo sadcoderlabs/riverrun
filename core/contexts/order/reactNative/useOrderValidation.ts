@@ -1,3 +1,12 @@
+/**
+ * useOrderValidation - Validate order inputs
+ *
+ * Validates:
+ * - Size: Must be non-empty and non-zero
+ * - Limit price: Must be valid for Limit orders
+ * - TP/SL: Must pass TP/SL validation
+ */
+
 import { useMemo } from 'react';
 import type { TpSlValidationResult } from '@/components/trade/TpSlInput';
 
@@ -20,11 +29,6 @@ interface UseOrderValidationResult {
 
 /**
  * Hook to validate order inputs
- *
- * Validates:
- * - Size: Must be non-empty and non-zero
- * - Limit price: Must be valid for Limit orders
- * - TP/SL: Must pass TP/SL validation
  *
  * @param params - { orderType, size, limitPrice, tpSlValidation }
  * @returns Validation result with error details

@@ -13,13 +13,15 @@ import {
   type TpSlResult,
   type TpSlValidationResult,
 } from '@/components/trade/TpSlInput';
-import { useAvailableToTrade } from '@/lib/riverrun/order/useAvailableToTrade';
+import {
+  useAvailableToTrade,
+  useOrder,
+  useOrderValue,
+  useMarginRequired,
+  useOrderValidation,
+} from '@/core/composition';
 import { usePositionStore } from '@/core/contexts/position/reactNative/usePositionStore';
 import { useMarginStore } from '@/core/composition';
-import { useOrder } from '@/lib/riverrun/order/useOrder';
-import { useOrderValue } from '@/lib/riverrun/order/useOrderValue';
-import { useMarginRequired } from '@/lib/riverrun/order/useMarginRequired';
-import { useOrderValidation } from '@/lib/riverrun/order/useOrderValidation';
 import { useMarketStore } from '@/core/composition';
 import { useMarkPrice, useMidPrice, useExecutionPrice } from './hooks';
 

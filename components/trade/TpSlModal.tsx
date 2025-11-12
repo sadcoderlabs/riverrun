@@ -6,8 +6,7 @@ import { Checkbox } from '@tamagui/checkbox';
 import * as hl from '@nktkas/hyperliquid';
 import { Input } from '@/components/global/Input';
 import { useHyperliquidClient } from '@/core/infra/hyperliquid/hooks';
-import { useOrder } from '@/lib/riverrun/order/useOrder';
-import { useOpenOrders } from '@/lib/riverrun/order/useOpenOrders';
+import { useOrder, useOrderStore } from '@/core/composition';
 import { formatSize } from '@/core/infra/hyperliquid/format/formatSize';
 import { formatPrice } from '@/core/infra/hyperliquid/format/formatPrice';
 import { formatValue } from '@/core/infra/hyperliquid/format/formatValue';
@@ -27,7 +26,7 @@ interface TpSlModalProps {
 
 export default function TpSlModal({ open, onOpenChange, position }: TpSlModalProps) {
   const { placeTpSlOrders, cancelOrder, isPlacingOrder } = useOrder();
-  const { orders } = useOpenOrders();
+  const orders = useOrderStore(state => state.orders);
 
   // Refs
   const scrollViewRef = useRef<ScrollView>(null);

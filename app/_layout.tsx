@@ -24,8 +24,7 @@ import { Toaster } from 'sonner-native';
 import { TamaguiProvider, View } from 'tamagui';
 import { arbitrum } from 'viem/chains';
 import { useAppLifecycle } from '@/components/shared/hooks/useAppLifecycle';
-import { subscriptionManager as libSubscriptionManager } from '@/lib/hyperliquid/subscription';
-import { subscriptionManager as coreSubscriptionManager } from '@/core/infra/hyperliquid/subscription';
+import { subscriptionManager } from '@/core/infra/hyperliquid/subscription';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/lib/reactQuery';
 
@@ -40,14 +39,13 @@ function WalletInfoDisplay() {
   const appState = useAppLifecycle();
 
   // App Lifecycle management for subscription systems
-  // Manages both lib (legacy) and core (new) subscription managers during migration
   // When app goes to background, pause all subscriptions to save battery and data
   // When app comes to foreground, resume all subscriptions
   useEffect(() => {
     if (appState === 'active') {
-      void Promise.all([libSubscriptionManager.resumeAll(), coreSubscriptionManager.resumeAll()]);
+      void subscriptionManager.resumeAll();
     } else if (appState === 'paused') {
-      void Promise.all([libSubscriptionManager.pauseAll(), coreSubscriptionManager.pauseAll()]);
+      void subscriptionManager.pauseAll();
     }
   }, [appState]);
 

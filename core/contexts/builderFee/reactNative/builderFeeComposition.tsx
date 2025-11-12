@@ -13,9 +13,9 @@ interface BuilderFeeCompositionContextValue {
   builderFeeService: BuilderFeePort;
 }
 
-const BuilderFeeCompositionContext = createContext<BuilderFeeCompositionContextValue | undefined>(
-  undefined,
-);
+export const BuilderFeeCompositionContext = createContext<
+  BuilderFeeCompositionContextValue | undefined
+>(undefined);
 
 /**
  * BuilderFeeCompositionProvider - Dependency Injection Container for Builder Fee

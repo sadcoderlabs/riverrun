@@ -106,6 +106,24 @@ export class BuilderFeeService implements BuilderFeePort {
   }
 
   /**
+   * Ensure builder fee is approved before proceeding
+   *
+   * NOTE: This is a service-level method that only checks approval status.
+   * UI dialogs and user interaction should be handled in the presentation layer (useBuilderFee hook).
+   *
+   * @returns true if already approved, false otherwise
+   */
+  async ensureApproval(): Promise<boolean> {
+    try {
+      const status = await this.checkApprovalStatus();
+      return status.isApproved;
+    } catch (error) {
+      console.error('[BuilderFeeService] Failed to check approval:', error);
+      return false;
+    }
+  }
+
+  /**
    * Revoke builder fee by setting max fee to 0%
    */
   async revokeBuilderFee(): Promise<boolean> {

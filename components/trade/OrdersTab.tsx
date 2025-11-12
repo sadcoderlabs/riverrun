@@ -6,15 +6,14 @@
 import { formatPrice } from '@/core/infra/hyperliquid/format/formatPrice';
 import { formatSize } from '@/core/infra/hyperliquid/format/formatSize';
 import { formatValue } from '@/core/infra/hyperliquid/format/formatValue';
-import { useOrder } from '@/lib/riverrun/order/useOrder';
-import { useOpenOrders } from '@/lib/riverrun/order/useOpenOrders';
-import type { Order } from '@/lib/riverrun/order/orders';
+import { useOrder, useOrderStore } from '@/core/composition';
+import type { Order } from '@/core/contexts/order/ports';
 import {
   calculateOrderMetrics,
   formatTimestamp,
   getOrderDirection,
   isMarketOrder,
-} from '@/lib/riverrun/order';
+} from '@/core/contexts/order/ports';
 import { useWalletContext, useMarketStore, useMarket } from '@/core/composition';
 import { useMemo, useState } from 'react';
 import { Button, Spinner, Text, View, XStack, YStack } from 'tamagui';
@@ -197,8 +196,9 @@ export function OrdersTabContent() {
   const { wallet } = useWalletContext();
   const { setSelectedMarketByCoin } = useMarket();
 
-  // Get orders from useOpenOrders (simplified flat structure)
-  const { orders, isLoading, error } = useOpenOrders();
+  // Get orders from orderStore (simplified flat structure)
+  const orders = useOrderStore(state => state.orders);
+  const isLoading = useOrderStore(state => state.isLoading);
 
   // Get order operations from useOrder hook
   const { cancelOrder, cancelOrders, isCanceling, error: cancelError } = useOrder();
@@ -295,13 +295,7 @@ export function OrdersTabContent() {
     );
   }
 
-  if (error) {
-    return (
-      <YStack flex={1} justifyContent="center" alignItems="center" padding="$4">
-        <Text color="$red10">{error.message}</Text>
-      </YStack>
-    );
-  }
+  // Note: orderStore doesn't expose errors - they're logged to console
 
   // Show message when there are no orders at all (not just filtered out)
   if (orders.length === 0) {

@@ -3,7 +3,7 @@ import PositionsTab from '@/components/trade/PositionsTab';
 import HistoryTab from '@/components/trade/HistoryTab';
 import { useState, useEffect } from 'react';
 import { Text, XStack, YStack } from 'tamagui';
-import { useOrderCount } from '@/lib/riverrun/order/useOrderCount';
+import { useOrderCount } from '@/core/composition';
 import { usePositionStore } from '@/core/contexts/position/reactNative/usePositionStore';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 

@@ -291,6 +291,61 @@ export class HyperliquidGateway {
   }
 
   // ============================================================================
+  // Order Operations (Read)
+  // ============================================================================
+
+  /**
+   * Fetch frontend open orders via HTTP
+   *
+   * Returns the current open orders for a user from Hyperliquid API.
+   *
+   * @param userAddress - User wallet address
+   * @returns Promise resolving to open orders data
+   */
+  async getFrontendOpenOrders(userAddress: string): Promise<unknown> {
+    return await infoClient.frontendOpenOrders({ user: userAddress });
+  }
+
+  /**
+   * Subscribe to order updates via WebSocket
+   *
+   * Receives real-time updates when orders are placed, filled, or cancelled.
+   *
+   * @param userAddress - User wallet address
+   * @param callback - Called when order updates arrive
+   * @returns Subscription handle for cleanup
+   */
+  async subscribeOrderUpdates(
+    userAddress: string,
+    callback: (data: unknown) => void,
+  ): Promise<SubscriptionHandle> {
+    const handle = await subscriptionManager.subscribe(
+      'orderUpdates',
+      { user: userAddress },
+      callback,
+    );
+
+    return {
+      unsubscribe: async () => {
+        await subscriptionManager.unsubscribe(handle);
+      },
+    };
+  }
+
+  /**
+   * Get order status via HTTP
+   *
+   * Retrieves the current status of a specific order.
+   *
+   * @param userAddress - User wallet address
+   * @param oid - Order ID
+   * @returns Promise resolving to order status data
+   */
+  async getOrderStatus(userAddress: string, oid: number): Promise<unknown> {
+    return await infoClient.orderStatus({ user: userAddress, oid });
+  }
+
+  // ============================================================================
   // Agent Operations (Write + Read)
   // ============================================================================
 

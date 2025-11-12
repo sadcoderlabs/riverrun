@@ -14,6 +14,7 @@
  * 7. ReferralCompositionProvider (depends on Wallet)
  * 8. BridgeCompositionProvider (depends on Wallet)
  * 9. PositionCompositionProvider (depends on Wallet + Market)
+ * 10. OrderCompositionProvider (depends on Agent + BuilderFee + Market)
  * ... (future contexts)
  */
 
@@ -28,6 +29,7 @@ import { BuilderFeeCompositionProvider } from '../contexts/builderFee/reactNativ
 import { ReferralCompositionProvider } from '../contexts/referral/reactNative/referralComposition';
 import { BridgeCompositionProvider } from '../contexts/bridge/reactNative/bridgeComposition';
 import { PositionCompositionProvider } from '../contexts/position/reactNative/positionComposition';
+import { OrderCompositionProvider } from '../contexts/order/reactNative/orderComposition';
 
 interface AppCompositionProviderProps {
   children: React.ReactNode;
@@ -58,7 +60,9 @@ export function AppCompositionProvider({ children }: AppCompositionProviderProps
               <BuilderFeeCompositionProvider>
                 <ReferralCompositionProvider>
                   <BridgeCompositionProvider>
-                    <PositionCompositionProvider>{children}</PositionCompositionProvider>
+                    <PositionCompositionProvider>
+                      <OrderCompositionProvider>{children}</OrderCompositionProvider>
+                    </PositionCompositionProvider>
                   </BridgeCompositionProvider>
                 </ReferralCompositionProvider>
               </BuilderFeeCompositionProvider>

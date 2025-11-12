@@ -31,6 +31,16 @@ export interface BuilderFeePort {
   approveBuilderFee(): Promise<boolean>;
 
   /**
+   * Ensure builder fee is approved before proceeding
+   *
+   * If not already approved, this will request approval from the user.
+   * Used in trading flow to guarantee approval before placing orders.
+   *
+   * @returns true if approved (or already approved), false if user cancels or fails
+   */
+  ensureApproval(): Promise<boolean>;
+
+  /**
    * Revoke builder fee approval by setting max fee to 0%
    *
    * This is mainly for development/testing purposes.
