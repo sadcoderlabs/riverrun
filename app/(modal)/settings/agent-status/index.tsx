@@ -110,7 +110,7 @@ export default function AgentStatus() {
         },
       ],
     );
-  }, [allAgents, isAgentApproved, approveAgent, checkAgentStatus]);
+  }, [allAgents, isAgentApproved, approveAgent, loadAgentStatus]);
 
   /**
    * Handle revoke agent (Riverrun Agent or other named agents)
@@ -156,7 +156,7 @@ export default function AgentStatus() {
         ],
       );
     },
-    [revokeAgent, checkAgentStatus],
+    [revokeAgent, loadAgentStatus],
   );
 
   // Get other named agents (exclude Riverrun Agent)
