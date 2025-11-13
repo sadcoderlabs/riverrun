@@ -362,31 +362,97 @@ export class HyperliquidGateway {
   /**
    * Approve agent on blockchain
    *
+   * Background Recovery Strategy:
+   * When using Reown wallet, the app backgrounds during signing.
+   * Upon return, network may not be immediately available, causing
+   * "Network request failed" errors. This method implements retry
+   * logic to handle these transient network issues.
+   *
    * @param signer - Signer for the master wallet
    * @param agentAddress - Agent address to approve
    * @param agentName - Name for the agent
    */
   async approveAgent(signer: Signer, agentAddress: string, agentName: string): Promise<void> {
     const client = getMasterExchangeClient(signer);
-    await client.approveAgent({
-      agentAddress,
-      agentName,
-    });
+
+    // Retry configuration
+    const MAX_RETRIES = 3;
+    const RETRY_DELAY_MS = 1500; // Wait for network to recover
+
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        await client.approveAgent({
+          agentAddress,
+          agentName,
+        });
+        return; // Success - exit
+      } catch (error) {
+        // Check if error is network-related
+        const isNetworkError =
+          error instanceof Error &&
+          (error.message.includes('Network request failed') ||
+            error.message.includes('network') ||
+            error.name === 'HttpRequestError');
+
+        // If not a network error or last attempt, throw immediately
+        if (!isNetworkError || attempt === MAX_RETRIES) {
+          throw error;
+        }
+
+        // Network error - wait and retry
+        console.warn(
+          `[HyperliquidGateway] Network error on attempt ${attempt}/${MAX_RETRIES}, retrying in ${RETRY_DELAY_MS}ms...`,
+        );
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+      }
+    }
   }
 
   /**
    * Revoke agent from blockchain
+   *
+   * Background Recovery Strategy:
+   * Similar to approveAgent, implements retry logic to handle
+   * network issues when returning from wallet app after signing.
    *
    * @param signer - Signer for the master wallet
    * @param agentName - Name of the agent to revoke
    */
   async revokeAgent(signer: Signer, agentName: string): Promise<void> {
     const client = getMasterExchangeClient(signer);
-    // Revoke by setting agent address to 0x0
-    await client.approveAgent({
-      agentAddress: '0x0000000000000000000000000000000000000000',
-      agentName,
-    });
+
+    // Retry configuration
+    const MAX_RETRIES = 3;
+    const RETRY_DELAY_MS = 1500; // Wait for network to recover
+
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        // Revoke by setting agent address to 0x0
+        await client.approveAgent({
+          agentAddress: '0x0000000000000000000000000000000000000000',
+          agentName,
+        });
+        return; // Success - exit
+      } catch (error) {
+        // Check if error is network-related
+        const isNetworkError =
+          error instanceof Error &&
+          (error.message.includes('Network request failed') ||
+            error.message.includes('network') ||
+            error.name === 'HttpRequestError');
+
+        // If not a network error or last attempt, throw immediately
+        if (!isNetworkError || attempt === MAX_RETRIES) {
+          throw error;
+        }
+
+        // Network error - wait and retry
+        console.warn(
+          `[HyperliquidGateway] Network error on attempt ${attempt}/${MAX_RETRIES}, retrying in ${RETRY_DELAY_MS}ms...`,
+        );
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+      }
+    }
   }
 
   /**

@@ -20,11 +20,11 @@ import { BrowserProvider, Wallet } from 'ethers';
 import { DEFAULT_AGENT_NAME } from '../constants';
 
 import { HyperliquidGateway } from '../../../infra/hyperliquid/hyperliquidGateway';
+import { activeWalletStore } from '../../wallet/adapters/activeWalletStore';
 import type { WalletPort } from '../../wallet/ports/walletPort';
-import type { AgentApprovalConfirmationPort } from '../ports/agentApprovalConfirmationPort';
 import { AgentPkStore } from '../adapters/agentPkStore';
 import { agentStateStore } from '../adapters/agentStateStore';
-import { activeWalletStore } from '../../wallet/adapters/activeWalletStore';
+import type { AgentApprovalConfirmationPort } from '../ports/agentApprovalConfirmationPort';
 import type { AgentPort } from '../ports/agentPort';
 import type { AgentWallet, TryGetAgentResult } from '../ports/types';
 
@@ -141,7 +141,7 @@ export class AgentService implements AgentPort {
    * 1. Get or create agent wallet from storage
    * 2. Check if approved in allAgents
    * 3. If not approved, request user confirmation via approvalConfirmation port
-   * 4. If confirmed, execute approval transaction
+   * 4. If confirmed, execute approval transaction (with network retry for background recovery)
    * 5. Return agent wallet or error reason
    *
    * All caller code paths (order placement, closing positions, TP/SL, etc.)
@@ -191,12 +191,15 @@ export class AgentService implements AgentPort {
         }
 
         // User confirmed - execute approval transaction
+        // (includes retry logic for network recovery after backgrounding)
         await this.hyperliquidGateway.approveAgent(signer, agentWallet.address, DEFAULT_AGENT_NAME);
 
-        // Update store and reload agents
+        // Update store immediately (agent is now approved)
         agentStateStore.getState().updateState({
           agentAddress: agentWallet.address,
         });
+
+        // Reload agents to sync with blockchain state
         await this.loadAllAgents();
       }
 
