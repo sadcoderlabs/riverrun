@@ -48,8 +48,6 @@ export interface SelectedMarket {
   szDecimals: number;
   /** Maximum leverage available for this market */
   maxLeverage: number;
-  /** Margin table ID (for future dynamic leverage calculation) */
-  marginTableId?: number;
 }
 
 /**
@@ -84,22 +82,6 @@ export interface RawAssetContext {
  */
 export function getMarketByCoin(markets: Market[], coin: string): Market | undefined {
   return markets.find(m => m.coin.toUpperCase() === coin.toUpperCase());
-}
-
-/**
- * Convert a full Market to a SelectedMarket value object
- *
- * @param market - The market to convert
- * @returns SelectedMarket value object
- */
-export function formatMarketForSelection(market: Market): SelectedMarket {
-  return {
-    coin: market.coin,
-    marketPair: market.marketPair,
-    szDecimals: market.szDecimals,
-    maxLeverage: market.maxLeverage,
-    marginTableId: undefined, // Future: dynamic leverage calculation
-  };
 }
 
 /**
@@ -169,5 +151,12 @@ export function convertRawMarket(
  */
 export function getDefaultSelectedMarket(markets: Market[]): SelectedMarket | undefined {
   const btcMarket = getMarketByCoin(markets, 'BTC');
-  return btcMarket ? formatMarketForSelection(btcMarket) : undefined;
+  return btcMarket
+    ? {
+        coin: btcMarket.coin,
+        marketPair: btcMarket.marketPair,
+        szDecimals: btcMarket.szDecimals,
+        maxLeverage: btcMarket.maxLeverage,
+      }
+    : undefined;
 }

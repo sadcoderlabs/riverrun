@@ -4,7 +4,7 @@
  * This Port defines the business capabilities that the Market Context provides.
  */
 
-import type { Market, SelectedMarket } from './types';
+import type { Market } from './types';
 
 export interface MarketPort {
   /**
@@ -46,11 +46,4 @@ export interface MarketPort {
    * @returns Market if found, undefined otherwise
    */
   getMarketByCoin(coin: string): Market | undefined;
-
-  /**
-   * Get the currently selected market
-   *
-   * @returns Current selected market, or undefined if none selected
-   */
-  getSelectedMarket(): SelectedMarket | undefined;
 }

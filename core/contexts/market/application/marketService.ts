@@ -13,12 +13,7 @@
 
 import type { MarketPort } from '../ports/marketPort';
 import type { Market, SelectedMarket, RawMarketMeta, RawAssetContext } from '../ports/types';
-import {
-  getMarketByCoin,
-  formatMarketForSelection,
-  getDefaultSelectedMarket,
-  convertRawMarket,
-} from '../ports/types';
+import { getMarketByCoin, getDefaultSelectedMarket, convertRawMarket } from '../ports/types';
 import { marketStore } from '../adapters/marketStore';
 import type { HyperliquidGateway } from '@/core/infra/hyperliquid/hyperliquidGateway';
 
@@ -88,7 +83,12 @@ export class MarketService implements MarketPort {
     const market = getMarketByCoin(markets, coin);
 
     if (market) {
-      const selectedMarket = formatMarketForSelection(market);
+      const selectedMarket: SelectedMarket = {
+        coin: market.coin,
+        marketPair: market.marketPair,
+        szDecimals: market.szDecimals,
+        maxLeverage: market.maxLeverage,
+      };
       marketStore.getState().setSelectedMarket(selectedMarket);
     } else {
       console.warn(`[MarketService] Market not found: ${coin}`);
@@ -115,14 +115,5 @@ export class MarketService implements MarketPort {
   getMarketByCoin(coin: string): Market | undefined {
     const markets = marketStore.getState().markets;
     return getMarketByCoin(markets, coin);
-  }
-
-  /**
-   * Get the currently selected market
-   *
-   * @returns Current selected market, or undefined if none selected
-   */
-  getSelectedMarket(): SelectedMarket | undefined {
-    return marketStore.getState().selectedMarket;
   }
 }
