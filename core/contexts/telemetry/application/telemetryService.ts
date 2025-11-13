@@ -37,17 +37,11 @@ export class TelemetryService implements TelemetryPort {
 
   /**
    * Initialize telemetry
+   * Note: User identification is handled automatically via wallet subscription
    */
   async initialize(): Promise<void> {
-    const state = telemetryStore.getState();
-
-    // Mark as initialized
-    state.setInitialized(true);
-
-    // If we have a stored userAddress, identify the user
-    if (state.userAddress) {
-      await this.identifyUser({ address: state.userAddress });
-    }
+    // Nothing to initialize - user identification happens automatically
+    // when wallet connects via setupWalletSubscription()
   }
 
   // ==========================================================================
@@ -64,9 +58,6 @@ export class TelemetryService implements TelemetryPort {
       return;
     }
 
-    // Update store
-    telemetryStore.getState().setUserAddress(user.address);
-
     // Identify in Sentry
     this.sentryAdapter.identifyUser(user);
 
@@ -80,9 +71,6 @@ export class TelemetryService implements TelemetryPort {
    * - Segment (future): Call analytics.reset()
    */
   async resetUser(): Promise<void> {
-    // Update store
-    telemetryStore.getState().setUserAddress(undefined);
-
     // Clear in Sentry
     this.sentryAdapter.clearUser();
 

@@ -303,32 +303,13 @@ export interface SpanContext {
 
 /**
  * Telemetry state stored in the store
+ * Only stores user preferences (isEnabled)
  */
 export interface TelemetryState {
   /**
-   * Current user address (wallet address)
-   */
-  userAddress: string | undefined;
-
-  /**
-   * Whether telemetry has been initialized
-   */
-  isInitialized: boolean;
-
-  /**
-   * Whether telemetry is enabled
+   * Whether telemetry is enabled (user preference)
    */
   isEnabled: boolean;
-
-  /**
-   * Set the user address
-   */
-  setUserAddress: (address: string | undefined) => void;
-
-  /**
-   * Set initialization status
-   */
-  setInitialized: (initialized: boolean) => void;
 
   /**
    * Set enabled status
