@@ -3,12 +3,12 @@
  *
  * This service manages market data by:
  * 1. Auto-loading market data from Hyperliquid API on start
- * 2. Auto-subscribing to realtime price updates (WebSocket allMids)
- * 3. Auto-selecting BTC as default market on first load
- * 4. Managing selected market and favorites
- * 5. Updating the market store for UI consumption
+ * 2. Auto-selecting BTC as default market on first load
+ * 3. Managing selected market and favorites
+ * 4. Providing market query methods for other contexts
  *
- * This is an autonomous service - it manages its own lifecycle and state.
+ * Note: Real-time price updates are handled by MarketSelectorModal directly.
+ * This service only loads static market metadata.
  */
 
 import type { MarketPort } from '../ports/marketPort';
@@ -20,10 +20,7 @@ import {
   convertRawMarket,
 } from '../ports/types';
 import { marketStore } from '../adapters/marketStore';
-import type {
-  HyperliquidGateway,
-  SubscriptionHandle,
-} from '@/core/infra/hyperliquid/hyperliquidGateway';
+import type { HyperliquidGateway } from '@/core/infra/hyperliquid/hyperliquidGateway';
 
 /**
  * Market Service Implementation
@@ -31,8 +28,6 @@ import type {
  * Manages market data lifecycle and business logic.
  */
 export class MarketService implements MarketPort {
-  private priceSubscription: SubscriptionHandle | undefined;
-
   constructor(private readonly hyperliquidGateway: HyperliquidGateway) {}
 
   /**
@@ -40,25 +35,20 @@ export class MarketService implements MarketPort {
    *
    * Initiates:
    * - Initial market data load
-   * - WebSocket subscription for realtime prices
    * - Auto-selection of default market (BTC)
    */
   start(): void {
     // Load initial data
     this.loadMarkets();
-
-    // Start realtime price updates
-    this.startPriceSubscription();
   }
 
   /**
    * Stop the market service
    *
-   * Cleans up:
-   * - WebSocket subscriptions
+   * Currently no cleanup needed (subscriptions handled by components)
    */
   stop(): void {
-    this.stopPriceSubscription();
+    // No-op: Real-time subscriptions are now managed by individual components
   }
 
   /**
@@ -174,42 +164,6 @@ export class MarketService implements MarketPort {
       console.error('[MarketService] Failed to load markets:', error);
       marketStore.getState().setLoading(false);
       throw error;
-    }
-  }
-
-  /**
-   * Start subscribing to realtime price updates (internal)
-   *
-   * Subscribes to allMids stream and updates market prices in realtime.
-   * Gateway handles HTTP+WS hybrid strategy internally.
-   */
-  private async startPriceSubscription(): Promise<void> {
-    // If already subscribed, stop first
-    if (this.priceSubscription) {
-      await this.stopPriceSubscription();
-    }
-
-    try {
-      // Subscribe to realtime prices via Gateway (HTTP+WS hybrid)
-      this.priceSubscription = await this.hyperliquidGateway.subscribeAllMids(
-        (prices: Record<string, string>) => {
-          // Update prices in store
-          marketStore.getState().updatePrices(prices);
-        },
-      );
-    } catch (error) {
-      console.error('[MarketService] Failed to start price subscription:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Stop the current price subscription (internal)
-   */
-  private async stopPriceSubscription(): Promise<void> {
-    if (this.priceSubscription) {
-      await this.priceSubscription.unsubscribe();
-      this.priceSubscription = undefined;
     }
   }
 }

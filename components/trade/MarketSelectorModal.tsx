@@ -1,9 +1,8 @@
 import { MarketListItem } from '@/components/trade/MarketListItem';
 import { useMarketStore, useMarket } from '@/core/composition';
 import { useSubscription } from '@/core/infra/hyperliquid/subscription';
-import { useThrottle } from '@/components/shared/hooks/useThrottle';
 import { ArrowDown, ArrowUp, Search } from '@tamagui/lucide-icons';
-import { useCallback, useState, useMemo } from 'react';
+import { useCallback, useState, useMemo, useEffect } from 'react';
 import { FlatList, RefreshControl, StyleSheet } from 'react-native';
 import Modal from 'react-native-modal';
 import { Button, Input, Text, XStack, YStack } from 'tamagui';
@@ -30,17 +29,59 @@ export function MarketSelectorModal({ open, onOpenChange }: MarketSelectorModalP
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
   // Real-time prices (only when modal is open)
-  const { data: rawAllMidsData } = useSubscription('allMids');
-  const allMidsData = useThrottle(rawAllMidsData, 100);
+  // Pass undefined when modal is closed to skip subscription
+  const { data: allMidsData, isLoading: isAllMidsLoading } = useSubscription(
+    'allMids',
+    open ? {} : undefined,
+  );
+
+  // Debug: Monitor allMidsData changes
+  useEffect(() => {
+    if (open) {
+      console.log('[MarketSelectorModal] 📊 Modal opened, checking subscription:', {
+        isLoading: isAllMidsLoading,
+        hasData: !!allMidsData,
+        dataKeys: allMidsData && typeof allMidsData === 'object' ? Object.keys(allMidsData) : [],
+      });
+
+      if (allMidsData?.mids) {
+        const coins = Object.keys(allMidsData.mids);
+        console.log('[MarketSelectorModal] 💰 AllMids data available:', {
+          coinCount: coins.length,
+          sampleCoins: coins.slice(0, 5),
+          samplePrices: coins.slice(0, 3).map(coin => ({ coin, price: allMidsData.mids[coin] })),
+        });
+      }
+    }
+  }, [open, allMidsData, isAllMidsLoading]);
 
   // Filtered and sorted markets with real-time prices
   const filteredMarkets = useMemo(() => {
     if (markets.length === 0) return [];
 
+    console.log('[MarketSelectorModal] 🔄 Recalculating filteredMarkets', {
+      marketsCount: markets.length,
+      open,
+      hasAllMidsData: !!allMidsData,
+      hasMids: !!allMidsData?.mids,
+      midsCount: allMidsData?.mids ? Object.keys(allMidsData.mids).length : 0,
+    });
+
     // Merge real-time prices if available
     const marketsWithRealtimePrices = open
-      ? markets.map(market => {
+      ? markets.map((market, idx) => {
           const realtimeMidPriceStr = allMidsData?.mids?.[market.coin];
+
+          // Debug first market
+          if (idx === 0) {
+            console.log('[MarketSelectorModal] 💱 First market price check:', {
+              coin: market.coin,
+              storePx: market.price,
+              realtimePxStr: realtimeMidPriceStr,
+              hasRealtimePrice: !!realtimeMidPriceStr,
+            });
+          }
+
           if (!realtimeMidPriceStr) return market;
 
           const realtimePrice = parseFloat(realtimeMidPriceStr);

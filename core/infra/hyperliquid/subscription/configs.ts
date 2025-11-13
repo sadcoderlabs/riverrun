@@ -36,7 +36,9 @@ interface AllMidsParams {
 }
 
 // AllMids data contains price information for all markets
-type AllMidsData = hl.WsAllMidsEvent;
+interface AllMidsData {
+  mids: Record<string, string>;
+}
 
 // UserFills subscription params
 interface UserFillsParams {
@@ -102,8 +104,34 @@ subscriptionRegistry.register<AllMidsParams, AllMidsData>('allMids', {
   // WebSocket subscription for real-time price updates across all markets
   subscribe: async (_params, callback) => {
     const subscriptionClient = getSubscriptionClient();
+    console.log('[AllMids Config] 🔌 Starting WebSocket subscription');
+
+    let eventCount = 0;
     return await subscriptionClient.allMids((event: hl.WsAllMidsEvent) => {
-      callback(event);
+      eventCount++;
+      // Log first 3 events and then every 10th event
+      if (eventCount <= 3 || eventCount % 10 === 0) {
+        console.log(`[AllMids Config] 📨 Received event #${eventCount}`);
+        console.log('[AllMids Config] Event structure:', {
+          hasMids: !!event.mids,
+          midsCount: event.mids ? Object.keys(event.mids).length : 0,
+          sampleCoins: event.mids ? Object.keys(event.mids).slice(0, 3) : [],
+          samplePrices: event.mids ? Object.entries(event.mids).slice(0, 3) : [],
+        });
+      }
+
+      // Extract mids from the event to match AllMidsData interface
+      // event structure: { mids: { [coin: string]: string }, dex?: string }
+      const data = { mids: event.mids };
+
+      if (eventCount === 1) {
+        console.log('[AllMids Config] 📤 Calling callback with data:', {
+          dataStructure: Object.keys(data),
+          hasMids: !!data.mids,
+        });
+      }
+
+      callback(data);
     });
   },
 });
