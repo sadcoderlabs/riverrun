@@ -43,11 +43,28 @@ function WalletInfoDisplay() {
   // When app comes to foreground, resume all subscriptions
   useEffect(() => {
     if (appState === 'active') {
+      // Resume Hyperliquid subscriptions
       void subscriptionManager.resumeAll();
-    } else if (appState === 'paused') {
+
+      // Force Privy wallet reconnection after background
+      // Privy's embedded wallet WebSocket times out in background, so we need to
+      // trigger reconnection by calling getProvider() when app returns to foreground
+      if (wallet?.type === 'privy') {
+        void (async () => {
+          try {
+            // Getting provider forces Privy to reconnect its internal WebSocket
+            await wallet.getProvider();
+          } catch (error) {
+            // Log warning but don't block app startup
+            console.warn('[WalletInfoDisplay] Failed to refresh Privy connection:', error);
+          }
+        })();
+      }
+    } else if (appState === 'paused' || appState === 'suspended') {
+      // Pause subscriptions for both paused (recent) and suspended (>30s) states
       void subscriptionManager.pauseAll();
     }
-  }, [appState]);
+  }, [appState, wallet]);
 
   return (
     <>
