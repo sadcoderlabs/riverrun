@@ -1,4 +1,4 @@
-import { useWalletContext } from '@/core/composition';
+import { useWalletContext } from '@/core/contexts/wallet/reactNative/useWalletContext';
 import { useSubscription, type ActiveAssetData } from '../subscription';
 import { useMemo, useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
