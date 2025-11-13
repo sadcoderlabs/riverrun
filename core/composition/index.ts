@@ -41,22 +41,22 @@ export { useTelemetry } from '../contexts/telemetry/reactNative/useTelemetry';
 export type { UseTelemetryResult } from '../contexts/telemetry/reactNative/useTelemetry';
 export { useTelemetryStore } from '../contexts/telemetry/reactNative/useTelemetryStore';
 
-// Telemetry Types & Utilities
+// Telemetry Types (Type-safe events and screens)
 export type {
-  BreadcrumbData,
-  TelemetrySeverity,
+  // User
   TelemetryUser,
-  ErrorContext,
+  // Events
+  TelemetryEventName,
+  TelemetryEventProps,
+  // Screens
+  ScreenName,
+  ScreenProps,
+  // Errors
+  TelemetryErrorContext,
+  // Performance
+  SpanName,
+  SpanContext,
 } from '../contexts/telemetry/ports/types';
-export {
-  createNavigationBreadcrumb,
-  createUserActionBreadcrumb,
-  createNetworkBreadcrumb,
-  createTransactionBreadcrumb,
-  createStateChangeBreadcrumb,
-  createSystemEventBreadcrumb,
-  createConsoleBreadcrumb,
-} from '../contexts/telemetry/utils/breadcrumbs';
 
 // Wallet Context
 export {

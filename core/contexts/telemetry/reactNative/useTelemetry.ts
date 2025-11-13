@@ -2,72 +2,114 @@
  * useTelemetry Hook
  *
  * Public hook for accessing telemetry business operations.
- * Provides methods for error tracking and breadcrumbs.
+ * Provides type-safe methods for tracking events, screens, errors, and performance.
  */
 
 import { useCallback } from 'react';
 
 import { useTelemetryComposition } from './telemetryComposition';
 import type {
-  BreadcrumbData,
-  ErrorContext,
-  TelemetrySeverity,
+  ScreenName,
+  ScreenProps,
+  SpanContext,
+  SpanName,
+  TelemetryErrorContext,
+  TelemetryEventName,
+  TelemetryEventProps,
   TelemetryUser,
 } from '../ports/types';
 
 export interface UseTelemetryResult {
   /**
    * Identify the current user
-   * @param userId Unique user identifier (e.g., wallet address)
-   * @param user Optional user traits and metadata
+   * @param user User information (wallet address, etc.)
    */
-  identifyUser: (userId: string, user?: Partial<TelemetryUser>) => Promise<void>;
+  identifyUser: (user: TelemetryUser) => Promise<void>;
 
   /**
-   * Clear user identification
+   * Reset user identification
    * Call this when user disconnects/logs out
    */
-  clearUser: () => Promise<void>;
+  resetUser: () => Promise<void>;
 
   /**
-   * Capture an error with optional context
-   * @param error Error object or message
-   * @param context Additional context about the error
+   * Track a user event (type-safe)
+   * @param event Event name
+   * @param props Event properties
+   *
+   * @example
+   * ```ts
+   * trackEvent('order_submitted', {
+   *   market: 'BTC',
+   *   side: 'buy',
+   *   orderType: 'limit',
+   *   leverage: 10,
+   *   size: 1.5
+   * });
+   * ```
    */
-  captureError: (error: Error | string, context?: ErrorContext) => Promise<void>;
-
-  /**
-   * Capture a message with severity level
-   * @param message Message to log
-   * @param level Severity level (default: 'info')
-   * @param context Additional context
-   */
-  captureMessage: (
-    message: string,
-    level?: TelemetrySeverity,
-    context?: ErrorContext,
+  trackEvent: <E extends TelemetryEventName>(
+    event: E,
+    props: TelemetryEventProps[E],
   ) => Promise<void>;
 
   /**
-   * Add a breadcrumb to track user actions
-   * Breadcrumbs provide context leading up to errors
-   * @param breadcrumb Breadcrumb data
+   * Track screen view (type-safe)
+   * @param screen Screen name
+   * @param props Screen properties
+   *
+   * @example
+   * ```ts
+   * trackScreen('Trade', { market: 'BTC', tab: 'order' });
+   * ```
    */
-  addBreadcrumb: (breadcrumb: BreadcrumbData) => void;
+  trackScreen: <S extends ScreenName>(screen: S, props: ScreenProps[S]) => Promise<void>;
 
   /**
-   * Set a global context value
-   * @param key Context key
-   * @param value Context value
+   * Capture an error
+   * @param error Error object or message
+   * @param context Additional context
+   *
+   * @example
+   * ```ts
+   * captureError(error, {
+   *   component: 'OrderForm',
+   *   action: 'submit_order',
+   *   tags: { market: 'BTC' }
+   * });
+   * ```
    */
-  setContext: (key: string, value: Record<string, unknown>) => void;
+  captureError: (error: unknown, context?: TelemetryErrorContext) => Promise<void>;
 
   /**
-   * Set a global tag
-   * @param key Tag key
-   * @param value Tag value
+   * Capture a warning message
+   * @param message Warning message
+   * @param context Additional context
+   *
+   * @example
+   * ```ts
+   * captureWarning('API rate limit approaching', {
+   *   component: 'MarketData',
+   *   extra: { remainingRequests: 10 }
+   * });
+   * ```
    */
-  setTag: (key: string, value: string) => void;
+  captureWarning: (message: string, context?: TelemetryErrorContext) => Promise<void>;
+
+  /**
+   * Track performance of an async operation
+   * @param spanName Span name
+   * @param fn Function to track
+   * @param context Additional context
+   *
+   * @example
+   * ```ts
+   * const result = await withSpan('order_submission', async () => {
+   *   return await submitOrder(params);
+   * }, { data: { market: 'BTC' } });
+   * ```
+   */
+  withSpan: <T>(spanName: SpanName, fn: () => Promise<T>, context?: SpanContext) => Promise<T>;
 
   /**
    * Enable or disable telemetry
@@ -84,86 +126,87 @@ export interface UseTelemetryResult {
 /**
  * useTelemetry - Telemetry business operations hook
  *
- * This hook provides telemetry operations for error tracking and breadcrumbs.
- * All operations are fire-and-forget and don't require loading states.
+ * This hook provides type-safe telemetry operations.
+ * All operations use predefined, typed events and screens to prevent event sprawl.
  *
- * For state access (userId, isEnabled), use useTelemetryStore instead.
+ * For state access (userAddress, isEnabled), use useTelemetryStore instead.
  *
  * @example
  * ```tsx
  * import { useTelemetry } from '@/core/composition';
  *
- * function MyComponent() {
- *   const { captureError, addBreadcrumb } = useTelemetry();
+ * function OrderForm() {
+ *   const { trackEvent, captureError } = useTelemetry();
  *
  *   const handleSubmit = async () => {
- *     // Add breadcrumb for user action
- *     addBreadcrumb({
- *       category: 'user',
- *       message: 'User clicked submit button',
- *       level: 'info',
- *     });
- *
  *     try {
- *       await submitForm();
+ *       // Track event (type-safe!)
+ *       await trackEvent('order_submitted', {
+ *         market: 'BTC',
+ *         side: 'buy',
+ *         orderType: 'limit',
+ *         leverage: 10,
+ *         size: 1.5
+ *       });
+ *
+ *       await submitOrder();
  *     } catch (error) {
  *       captureError(error, {
- *         component: 'MyComponent',
- *         action: 'submit_form',
+ *         component: 'OrderForm',
+ *         action: 'submit_order',
  *       });
  *     }
  *   };
  *
- *   return <Button onPress={handleSubmit}>Submit</Button>;
+ *   return <Button onPress={handleSubmit}>Submit Order</Button>;
  * }
  * ```
  */
 export function useTelemetry(): UseTelemetryResult {
   const { telemetryService } = useTelemetryComposition();
 
-  // All methods are wrapped in useCallback to ensure stable references
   const identifyUser = useCallback(
-    (userId: string, user?: Partial<TelemetryUser>) => {
-      return telemetryService.identifyUser(userId, user);
+    (user: TelemetryUser) => {
+      return telemetryService.identifyUser(user);
     },
     [telemetryService],
   );
 
-  const clearUser = useCallback(() => {
-    return telemetryService.clearUser();
+  const resetUser = useCallback(() => {
+    return telemetryService.resetUser();
   }, [telemetryService]);
 
+  const trackEvent = useCallback(
+    <E extends TelemetryEventName>(event: E, props: TelemetryEventProps[E]) => {
+      return telemetryService.trackEvent(event, props);
+    },
+    [telemetryService],
+  );
+
+  const trackScreen = useCallback(
+    <S extends ScreenName>(screen: S, props: ScreenProps[S]) => {
+      return telemetryService.trackScreen(screen, props);
+    },
+    [telemetryService],
+  );
+
   const captureError = useCallback(
-    (error: Error | string, context?: ErrorContext) => {
+    (error: unknown, context?: TelemetryErrorContext) => {
       return telemetryService.captureError(error, context);
     },
     [telemetryService],
   );
 
-  const captureMessage = useCallback(
-    (message: string, level?: TelemetrySeverity, context?: ErrorContext) => {
-      return telemetryService.captureMessage(message, level, context);
+  const captureWarning = useCallback(
+    (message: string, context?: TelemetryErrorContext) => {
+      return telemetryService.captureWarning(message, context);
     },
     [telemetryService],
   );
 
-  const addBreadcrumb = useCallback(
-    (breadcrumb: BreadcrumbData) => {
-      telemetryService.addBreadcrumb(breadcrumb);
-    },
-    [telemetryService],
-  );
-
-  const setContext = useCallback(
-    (key: string, value: Record<string, unknown>) => {
-      telemetryService.setContext(key, value);
-    },
-    [telemetryService],
-  );
-
-  const setTag = useCallback(
-    (key: string, value: string) => {
-      telemetryService.setTag(key, value);
+  const withSpan = useCallback(
+    <T>(spanName: SpanName, fn: () => Promise<T>, context?: SpanContext) => {
+      return telemetryService.withSpan(spanName, fn, context);
     },
     [telemetryService],
   );
@@ -181,12 +224,12 @@ export function useTelemetry(): UseTelemetryResult {
 
   return {
     identifyUser,
-    clearUser,
+    resetUser,
+    trackEvent,
+    trackScreen,
     captureError,
-    captureMessage,
-    addBreadcrumb,
-    setContext,
-    setTag,
+    captureWarning,
+    withSpan,
     setEnabled,
     isEnabled,
   };

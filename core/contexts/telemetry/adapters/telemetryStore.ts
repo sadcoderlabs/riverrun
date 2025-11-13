@@ -2,7 +2,7 @@
  * Telemetry Store
  *
  * Vanilla Zustand store for managing telemetry state.
- * Persists userId and enabled status to AsyncStorage.
+ * Persists userAddress and enabled status to AsyncStorage.
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -16,11 +16,11 @@ import type { TelemetryState } from '../ports/types';
 export const telemetryStore = createStore<TelemetryState>()(
   persist(
     set => ({
-      userId: undefined,
+      userAddress: undefined,
       isInitialized: false,
       isEnabled: true, // Always enabled by default
 
-      setUserId: (userId: string | undefined) => set({ userId }),
+      setUserAddress: (address: string | undefined) => set({ userAddress: address }),
 
       setInitialized: (initialized: boolean) => set({ isInitialized: initialized }),
 
@@ -31,7 +31,7 @@ export const telemetryStore = createStore<TelemetryState>()(
       storage: createJSONStorage(() => AsyncStorage),
       // Only persist user preferences, not runtime state
       partialize: state => ({
-        userId: state.userId,
+        userAddress: state.userAddress,
         isEnabled: state.isEnabled,
       }),
     },

@@ -20,12 +20,12 @@ import { telemetryStore } from '../adapters/telemetryStore';
  *
  * function TelemetrySettings() {
  *   // Subscribe to specific state slices
- *   const userId = useTelemetryStore(state => state.userId);
+ *   const userAddress = useTelemetryStore(state => state.userAddress);
  *   const isEnabled = useTelemetryStore(state => state.isEnabled);
  *
  *   return (
  *     <View>
- *       <Text>User ID: {userId || 'Not identified'}</Text>
+ *       <Text>User: {userAddress || 'Not connected'}</Text>
  *       <Text>Telemetry: {isEnabled ? 'Enabled' : 'Disabled'}</Text>
  *     </View>
  *   );

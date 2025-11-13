@@ -1,11 +1,25 @@
 /**
  * Telemetry Port
  *
- * Defines the business interface for telemetry operations.
- * This port abstracts error tracking and user analytics.
+ * Unified, type-safe interface for telemetry operations.
+ * This port abstracts Sentry and Segment behind a common API.
+ *
+ * Design principles:
+ * - Platform-agnostic: No mention of Sentry/Segment in the interface
+ * - Type-safe: All events, screens, and properties are strictly typed
+ * - Prevents event sprawl: Only predefined events can be tracked
  */
 
-import type { BreadcrumbData, ErrorContext, TelemetrySeverity, TelemetryUser } from './types';
+import type {
+  ScreenName,
+  ScreenProps,
+  SpanContext,
+  SpanName,
+  TelemetryErrorContext,
+  TelemetryEventName,
+  TelemetryEventProps,
+  TelemetryUser,
+} from './types';
 
 /**
  * Port interface for telemetry operations
@@ -17,54 +31,141 @@ export interface TelemetryPort {
    */
   initialize(): Promise<void>;
 
+  // ==========================================================================
+  // User Identification
+  // ==========================================================================
+
   /**
    * Identify the current user
-   * @param userId Unique user identifier (e.g., wallet address)
-   * @param user Optional user traits and metadata
+   * - Sets user context in Sentry
+   * - Identifies user in Segment
+   *
+   * @param user User information (wallet address, etc.)
    */
-  identifyUser(userId: string, user?: Partial<TelemetryUser>): Promise<void>;
+  identifyUser(user: TelemetryUser): Promise<void>;
 
   /**
    * Clear user identification
    * Call this when user disconnects/logs out
+   * - Clears user in Sentry
+   * - Resets analytics in Segment
    */
-  clearUser(): Promise<void>;
+  resetUser(): Promise<void>;
+
+  // ==========================================================================
+  // Event Tracking (primarily for Segment, selectively for Sentry breadcrumbs)
+  // ==========================================================================
 
   /**
-   * Capture an error with optional context
+   * Track a user event
+   * - Primary: Sent to Segment
+   * - Secondary: Important events also added as Sentry breadcrumbs
+   *
+   * Type-safe: Only predefined events with correct properties can be tracked
+   *
+   * @param event Event name (type-safe union)
+   * @param props Event properties (type-safe per event)
+   *
+   * @example
+   * ```ts
+   * trackEvent('order_submitted', {
+   *   market: 'BTC',
+   *   side: 'buy',
+   *   orderType: 'limit',
+   *   leverage: 10,
+   *   size: 1.5
+   * });
+   * ```
+   */
+  trackEvent<E extends TelemetryEventName>(event: E, props: TelemetryEventProps[E]): Promise<void>;
+
+  // ==========================================================================
+  // Screen Tracking (primarily for Segment)
+  // ==========================================================================
+
+  /**
+   * Track screen view
+   * - Sent to Segment as screen event
+   * - Sets Sentry tag for error filtering
+   *
+   * Type-safe: Only predefined screens with correct properties
+   *
+   * @param screen Screen name (type-safe union)
+   * @param props Screen properties (type-safe per screen)
+   *
+   * @example
+   * ```ts
+   * trackScreen('Trade', { market: 'BTC', tab: 'order' });
+   * ```
+   */
+  trackScreen<S extends ScreenName>(screen: S, props: ScreenProps[S]): Promise<void>;
+
+  // ==========================================================================
+  // Error Tracking (primarily for Sentry)
+  // ==========================================================================
+
+  /**
+   * Capture an error
+   * - Sent to Sentry for error tracking
+   * - Optionally sent to Segment as 'error_occurred' event
+   *
    * @param error Error object or message
-   * @param context Additional context about the error
+   * @param context Additional context (component, action, tags, etc.)
+   *
+   * @example
+   * ```ts
+   * captureError(error, {
+   *   component: 'OrderForm',
+   *   action: 'submit_order',
+   *   tags: { market: 'BTC' }
+   * });
+   * ```
    */
-  captureError(error: Error | string, context?: ErrorContext): Promise<void>;
+  captureError(error: unknown, context?: TelemetryErrorContext): Promise<void>;
 
   /**
-   * Capture a message with severity level
-   * @param message Message to log
-   * @param level Severity level (default: 'info')
+   * Capture a warning message
+   * - Sent to Sentry with warning level
+   * - Not sent to Segment (errors only)
+   *
+   * @param message Warning message
    * @param context Additional context
+   *
+   * @example
+   * ```ts
+   * captureWarning('API rate limit approaching', {
+   *   component: 'MarketData',
+   *   extra: { remainingRequests: 10 }
+   * });
+   * ```
    */
-  captureMessage(message: string, level?: TelemetrySeverity, context?: ErrorContext): Promise<void>;
+  captureWarning(message: string, context?: TelemetryErrorContext): Promise<void>;
+
+  // ==========================================================================
+  // Performance Tracking (Sentry spans)
+  // ==========================================================================
 
   /**
-   * Add a breadcrumb to track user actions
-   * Breadcrumbs provide context leading up to errors
-   * @param breadcrumb Breadcrumb data
+   * Track performance of an async operation
+   * Uses Sentry spans for performance monitoring
+   *
+   * @param spanName Type-safe span name
+   * @param fn Async function to track
+   * @param context Additional context for the span
+   * @returns Result of the function
+   *
+   * @example
+   * ```ts
+   * const result = await withSpan('order_submission', async () => {
+   *   return await submitOrder(params);
+   * }, { data: { market: 'BTC' } });
+   * ```
    */
-  addBreadcrumb(breadcrumb: BreadcrumbData): void;
+  withSpan<T>(spanName: SpanName, fn: () => Promise<T>, context?: SpanContext): Promise<T>;
 
-  /**
-   * Set a global context value
-   * @param key Context key
-   * @param value Context value
-   */
-  setContext(key: string, value: Record<string, unknown>): void;
-
-  /**
-   * Set a global tag
-   * @param key Tag key
-   * @param value Tag value
-   */
-  setTag(key: string, value: string): void;
+  // ==========================================================================
+  // System Controls
+  // ==========================================================================
 
   /**
    * Enable or disable telemetry

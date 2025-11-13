@@ -3,7 +3,12 @@
  *
  * Core business logic for telemetry operations.
  * Implements the TelemetryPort interface and coordinates between
- * the telemetry store and Sentry adapter.
+ * Sentry (and future Segment integration).
+ *
+ * Design:
+ * - Unified API that abstracts Sentry/Segment specifics
+ * - Type-safe event tracking to prevent event sprawl
+ * - Automatic user identification via wallet connection
  */
 
 import { activeWalletStore } from '../../wallet/adapters/activeWalletStore';
@@ -11,9 +16,13 @@ import type { SentryAdapter } from '../adapters/sentryAdapter';
 import { telemetryStore } from '../adapters/telemetryStore';
 import type { TelemetryPort } from '../ports/telemetryPort';
 import type {
-  BreadcrumbData,
-  ErrorContext,
-  TelemetrySeverity,
+  ScreenName,
+  ScreenProps,
+  SpanContext,
+  SpanName,
+  TelemetryErrorContext,
+  TelemetryEventName,
+  TelemetryEventProps,
   TelemetryUser,
 } from '../ports/types';
 
@@ -35,126 +44,169 @@ export class TelemetryService implements TelemetryPort {
     // Mark as initialized
     state.setInitialized(true);
 
-    // If we have a stored userId, identify the user
-    if (state.userId) {
-      await this.identifyUser(state.userId);
+    // If we have a stored userAddress, identify the user
+    if (state.userAddress) {
+      await this.identifyUser({ address: state.userAddress });
     }
   }
 
+  // ==========================================================================
+  // User Identification
+  // ==========================================================================
+
   /**
-   * Identify user by wallet address or custom ID
+   * Identify user
+   * - Sentry: Set user context
+   * - Segment (future): Call analytics.identify()
    */
-  async identifyUser(userId: string, user?: Partial<TelemetryUser>): Promise<void> {
+  async identifyUser(user: TelemetryUser): Promise<void> {
     if (!this.isEnabled()) {
       return;
     }
 
     // Update store
-    telemetryStore.getState().setUserId(userId);
+    telemetryStore.getState().setUserAddress(user.address);
 
     // Identify in Sentry
-    this.sentryAdapter.identifyUser(userId, user);
+    this.sentryAdapter.identifyUser(user);
 
-    // Add breadcrumb for user identification
-    this.addBreadcrumb({
-      category: 'user',
-      message: 'User identified',
-      level: 'info',
-      data: { userId },
-    });
+    // TODO: When Segment is integrated, also identify there
+    // segmentAdapter.identify(user.address, { walletSource: user.walletSource });
   }
 
   /**
-   * Clear user identification
+   * Reset user identification
+   * - Sentry: Clear user
+   * - Segment (future): Call analytics.reset()
    */
-  async clearUser(): Promise<void> {
+  async resetUser(): Promise<void> {
     // Update store
-    telemetryStore.getState().setUserId(undefined);
+    telemetryStore.getState().setUserAddress(undefined);
 
     // Clear in Sentry
     this.sentryAdapter.clearUser();
 
-    // Add breadcrumb
-    this.addBreadcrumb({
-      category: 'user',
-      message: 'User cleared',
-      level: 'info',
-    });
+    // TODO: When Segment is integrated, also reset there
+    // segmentAdapter.reset();
   }
 
+  // ==========================================================================
+  // Event Tracking
+  // ==========================================================================
+
   /**
-   * Capture an error with context
+   * Track event
+   * - Segment (future): Primary destination via analytics.track()
+   * - Sentry: Important events also logged as breadcrumbs
    */
-  async captureError(error: Error | string, context?: ErrorContext): Promise<void> {
+  async trackEvent<E extends TelemetryEventName>(
+    event: E,
+    props: TelemetryEventProps[E],
+  ): Promise<void> {
+    if (!this.isEnabled()) {
+      console.log(`[Telemetry] Event tracked (disabled): ${event}`, props);
+      return;
+    }
+
+    // Add to Sentry breadcrumbs (for important events)
+    this.sentryAdapter.trackEventAsBreadcrumb(event, props);
+
+    // TODO: When Segment is integrated, send all events there
+    // segmentAdapter.track(event, props);
+  }
+
+  // ==========================================================================
+  // Screen Tracking
+  // ==========================================================================
+
+  /**
+   * Track screen view
+   * - Segment (future): analytics.screen()
+   * - Sentry: Set tag for error filtering
+   */
+  async trackScreen<S extends ScreenName>(screen: S, props: ScreenProps[S]): Promise<void> {
+    if (!this.isEnabled()) {
+      return;
+    }
+
+    // Set screen context in Sentry for error filtering
+    this.sentryAdapter.setScreenContext(screen, props as Record<string, unknown>);
+
+    // TODO: When Segment is integrated, track screen view
+    // segmentAdapter.screen(screen, props);
+  }
+
+  // ==========================================================================
+  // Error Tracking
+  // ==========================================================================
+
+  /**
+   * Capture error
+   * - Sentry: Capture exception
+   * - Segment (future): Optionally track as 'error_occurred' event
+   */
+  async captureError(error: unknown, context?: TelemetryErrorContext): Promise<void> {
     if (!this.isEnabled()) {
       console.error('[Telemetry] Error captured (telemetry disabled):', error);
       return;
     }
 
+    // Capture in Sentry
     this.sentryAdapter.captureError(error, context);
+
+    // TODO: When Segment is integrated, optionally track error event
+    // if (shouldTrackErrorInAnalytics(error)) {
+    //   segmentAdapter.track('error_occurred', {
+    //     message: error.message,
+    //     component: context?.component,
+    //     action: context?.action,
+    //   });
+    // }
   }
 
   /**
-   * Capture a message with severity
+   * Capture warning
+   * - Sentry: Capture message with warning level
+   * - Segment: Not sent (errors only)
    */
-  async captureMessage(
-    message: string,
-    level: TelemetrySeverity = 'info',
-    context?: ErrorContext,
-  ): Promise<void> {
+  async captureWarning(message: string, context?: TelemetryErrorContext): Promise<void> {
     if (!this.isEnabled()) {
-      console.log(`[Telemetry] Message captured (telemetry disabled) [${level}]:`, message);
+      console.warn('[Telemetry] Warning captured (telemetry disabled):', message);
       return;
     }
 
-    this.sentryAdapter.captureMessage(message, level, context);
+    // Capture in Sentry
+    this.sentryAdapter.captureWarning(message, context);
+
+    // Segment: Warnings are not tracked in analytics
   }
+
+  // ==========================================================================
+  // Performance Tracking
+  // ==========================================================================
 
   /**
-   * Add a breadcrumb
+   * Execute function within a performance span
+   * - Sentry: startSpan for performance monitoring
+   * - Segment: Not applicable
    */
-  addBreadcrumb(breadcrumb: BreadcrumbData): void {
+  async withSpan<T>(spanName: SpanName, fn: () => Promise<T>, context?: SpanContext): Promise<T> {
     if (!this.isEnabled()) {
-      return;
+      return await fn();
     }
 
-    this.sentryAdapter.addBreadcrumb(breadcrumb);
+    return await this.sentryAdapter.withSpan(spanName, fn, context);
   }
 
-  /**
-   * Set global context
-   */
-  setContext(key: string, value: Record<string, unknown>): void {
-    if (!this.isEnabled()) {
-      return;
-    }
-
-    this.sentryAdapter.setContext(key, value);
-  }
-
-  /**
-   * Set global tag
-   */
-  setTag(key: string, value: string): void {
-    if (!this.isEnabled()) {
-      return;
-    }
-
-    this.sentryAdapter.setTag(key, value);
-  }
+  // ==========================================================================
+  // System Controls
+  // ==========================================================================
 
   /**
    * Enable or disable telemetry
    */
   async setEnabled(enabled: boolean): Promise<void> {
     telemetryStore.getState().setEnabled(enabled);
-
-    // Add breadcrumb
-    this.addBreadcrumb({
-      category: 'system',
-      message: `Telemetry ${enabled ? 'enabled' : 'disabled'}`,
-      level: 'info',
-    });
   }
 
   /**
@@ -163,6 +215,10 @@ export class TelemetryService implements TelemetryPort {
   isEnabled(): boolean {
     return telemetryStore.getState().isEnabled;
   }
+
+  // ==========================================================================
+  // Private Methods
+  // ==========================================================================
 
   /**
    * Setup subscription to wallet changes
@@ -175,16 +231,15 @@ export class TelemetryService implements TelemetryPort {
 
       // User connected wallet
       if (currentAddress && currentAddress !== previousAddress) {
-        void this.identifyUser(currentAddress, {
-          traits: {
-            walletSource: state.wallet?.source,
-          },
+        void this.identifyUser({
+          address: currentAddress,
+          walletSource: state.wallet?.source,
         });
       }
 
       // User disconnected wallet
       if (!currentAddress && previousAddress) {
-        void this.clearUser();
+        void this.resetUser();
       }
     });
   }
