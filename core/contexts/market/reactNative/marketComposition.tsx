@@ -35,15 +35,13 @@ interface MarketCompositionProviderProps {
  * Sets up the dependency graph:
  *
  * Infrastructure Layer:
- * - HyperliquidGateway: Unified data access with HTTP+WS hybrid strategy
- *   - HTTP fetch for immediate data (~100ms)
- *   - WebSocket subscription for realtime updates
- *   - Corresponds to Hyperliquid API: fetchMetaAndAssetCtxs, subscribeAllMids
+ * - HyperliquidGateway: Unified data access
+ *   - HTTP fetch for market data
+ *   - Corresponds to Hyperliquid API: fetchMetaAndAssetCtxs
  *
  * Domain Layer:
  * - MarketService: Core business logic
- *   - Auto-loads market data on start
- *   - Auto-subscribes to realtime price updates
+ *   - Loads market data from Hyperliquid API
  *   - Handles business logic (convertRawMarket)
  *   - Manages selected market and favorites
  *   - Updates marketStore (persisted to AsyncStorage)
@@ -53,7 +51,7 @@ interface MarketCompositionProviderProps {
  *   - Persists: markets, selectedMarket, favorites
  *   - Used by both MarketService and React components
  *
- * The MarketService autonomously manages market data lifecycle.
+ * Note: Real-time price updates are handled by MarketSelectorModal directly.
  */
 export function MarketCompositionProvider({ children }: MarketCompositionProviderProps) {
   // Create service instances (stable across renders)
@@ -65,15 +63,10 @@ export function MarketCompositionProvider({ children }: MarketCompositionProvide
     return new MarketService(hyperliquidGateway);
   }, []);
 
-  // Manage service lifecycle
+  // Load initial market data
   useEffect(() => {
-    // Start the service (loads data and begins realtime updates)
-    marketService.start();
-
-    return () => {
-      // Stop the service (cleanup subscriptions)
-      marketService.stop();
-    };
+    // Load market data on mount
+    marketService.loadMarkets();
   }, [marketService]);
 
   const value = useMemo(

@@ -54,39 +54,23 @@ export function useSubscription<TData = any>(type: string, params?: any): Subscr
 
   useEffect(() => {
     let handle: SubscriptionHandle | null = null;
-    let dataUpdateCount = 0;
 
     // Setup subscription
     const setupSubscription = async () => {
       // Skip subscription if params is undefined (wallet not ready yet)
       if (params === undefined) {
-        console.log(`[useSubscription] ⏭️ Skipping ${type} - params is undefined`);
         setIsLoading(false);
         return;
       }
 
-      console.log(`[useSubscription] 🚀 Setting up ${type} subscription`, {
-        params: serializedParams.substring(0, 100),
-      });
-
       try {
         handle = await subscriptionManager.subscribe<TData>(type, params, (newData: TData) => {
-          dataUpdateCount++;
-          if (dataUpdateCount <= 3 || dataUpdateCount % 10 === 0) {
-            console.log(`[useSubscription] 📥 ${type} data update #${dataUpdateCount}`, {
-              hasData: !!newData,
-              dataType: typeof newData,
-              dataKeys:
-                newData && typeof newData === 'object' ? Object.keys(newData).slice(0, 5) : [],
-            });
-          }
           setData(newData);
           setIsLoading(false);
           setError(undefined);
         });
-        console.log(`[useSubscription] ✅ ${type} subscription established`);
       } catch (err) {
-        console.error(`[useSubscription] ❌ Error subscribing to ${type}:`, err);
+        console.error(`[useSubscription] Error subscribing to ${type}:`, err);
         setError(err instanceof Error ? err : new Error('Failed to subscribe'));
         setIsLoading(false);
       }
@@ -97,7 +81,6 @@ export function useSubscription<TData = any>(type: string, params?: any): Subscr
     // Cleanup on unmount or when dependencies change
     return () => {
       if (handle) {
-        console.log(`[useSubscription] 🧹 Cleaning up ${type} subscription`);
         void subscriptionManager.unsubscribe(handle);
       }
     };

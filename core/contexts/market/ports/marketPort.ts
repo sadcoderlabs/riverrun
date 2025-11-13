@@ -2,41 +2,20 @@
  * Market Port - Business Logic Interface
  *
  * This Port defines the business capabilities that the Market Context provides.
- * It follows the autonomous service pattern where the service manages its own
- * lifecycle and data updates automatically.
  */
 
 import type { Market, SelectedMarket } from './types';
 
 export interface MarketPort {
   /**
-   * Start the Market Service
+   * Load market data from Hyperliquid API
    *
-   * Initiates the following:
-   * - Loads initial market data from Hyperliquid API
-   * - Starts WebSocket subscription for realtime price updates (allMids)
-   * - Auto-selects BTC as default market if no market is selected
+   * Fetches market metadata and updates the store.
+   * Auto-selects BTC as default market if no market is currently selected.
+   *
+   * @returns Promise that resolves when loading is complete
    */
-  start(): void;
-
-  /**
-   * Stop the Market Service
-   *
-   * Cleans up:
-   * - Stops WebSocket subscriptions
-   * - Clears all interval timers
-   */
-  stop(): void;
-
-  /**
-   * Manually refresh market data from Hyperliquid API
-   *
-   * Forces a refresh of market metadata (meta, assetCtxs).
-   * Useful for pull-to-refresh functionality.
-   *
-   * @returns Promise that resolves when refresh is complete
-   */
-  refresh(): Promise<void>;
+  loadMarkets(): Promise<void>;
 
   /**
    * Set the currently selected market by coin symbol

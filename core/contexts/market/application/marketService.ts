@@ -2,7 +2,7 @@
  * Market Service - Core Business Logic
  *
  * This service manages market data by:
- * 1. Auto-loading market data from Hyperliquid API on start
+ * 1. Loading market data from Hyperliquid API
  * 2. Auto-selecting BTC as default market on first load
  * 3. Managing selected market and favorites
  * 4. Providing market query methods for other contexts
@@ -25,40 +25,62 @@ import type { HyperliquidGateway } from '@/core/infra/hyperliquid/hyperliquidGat
 /**
  * Market Service Implementation
  *
- * Manages market data lifecycle and business logic.
+ * Manages market data and business logic.
  */
 export class MarketService implements MarketPort {
   constructor(private readonly hyperliquidGateway: HyperliquidGateway) {}
 
   /**
-   * Start the market service
+   * Load market data from Hyperliquid API
    *
-   * Initiates:
-   * - Initial market data load
-   * - Auto-selection of default market (BTC)
+   * Fetches market metadata and updates the store.
+   * Auto-selects BTC as default if no market is currently selected.
    */
-  start(): void {
-    // Load initial data
-    this.loadMarkets();
-  }
+  async loadMarkets(): Promise<void> {
+    marketStore.getState().setLoading(true);
 
-  /**
-   * Stop the market service
-   *
-   * Currently no cleanup needed (subscriptions handled by components)
-   */
-  stop(): void {
-    // No-op: Real-time subscriptions are now managed by individual components
-  }
+    try {
+      // Fetch raw market data from Hyperliquid via Gateway
+      const [meta, assetCtxs] = await this.hyperliquidGateway.fetchMetaAndAssetCtxs();
 
-  /**
-   * Manually refresh market data
-   *
-   * Forces a refresh of market metadata from Hyperliquid API.
-   * Useful for pull-to-refresh functionality.
-   */
-  async refresh(): Promise<void> {
-    await this.loadMarkets();
+      // Business logic: Convert raw data to domain Market type
+      const markets: Market[] = meta.universe.map((asset: any, index: number) => {
+        const rawMeta: RawMarketMeta = {
+          name: asset.name,
+          szDecimals: asset.szDecimals || 0,
+          maxLeverage: asset.maxLeverage || 1,
+        };
+
+        const ctx = assetCtxs[index];
+        const rawCtx: RawAssetContext = {
+          markPx: ctx.markPx,
+          prevDayPx: ctx.prevDayPx,
+          funding: ctx.funding,
+          dayNtlVlm: ctx.dayNtlVlm,
+        };
+
+        // Use pure function from ports to convert
+        return convertRawMarket(rawMeta, rawCtx, index);
+      });
+
+      // Update store
+      marketStore.getState().setMarkets(markets);
+
+      // Auto-select default market (BTC) if none selected
+      const currentSelectedMarket = marketStore.getState().selectedMarket;
+      if (!currentSelectedMarket && markets.length > 0) {
+        const defaultMarket = getDefaultSelectedMarket(markets);
+        if (defaultMarket) {
+          marketStore.getState().setSelectedMarket(defaultMarket);
+        }
+      }
+
+      marketStore.getState().setLoading(false);
+    } catch (error) {
+      console.error('[MarketService] Failed to load markets:', error);
+      marketStore.getState().setLoading(false);
+      throw error;
+    }
   }
 
   /**
@@ -107,63 +129,5 @@ export class MarketService implements MarketPort {
    */
   getSelectedMarket(): SelectedMarket | undefined {
     return marketStore.getState().selectedMarket;
-  }
-
-  // ============================================================================
-  // Private Methods
-  // ============================================================================
-
-  /**
-   * Load markets from Hyperliquid API (internal)
-   *
-   * Fetches market metadata and updates the store.
-   * Business logic (convertRawMarket) is handled here in Service layer.
-   * Auto-selects BTC as default if no market is currently selected.
-   */
-  private async loadMarkets(): Promise<void> {
-    marketStore.getState().setLoading(true);
-
-    try {
-      // Fetch raw market data from Hyperliquid via Gateway
-      const [meta, assetCtxs] = await this.hyperliquidGateway.fetchMetaAndAssetCtxs();
-
-      // Business logic: Convert raw data to domain Market type
-      const markets: Market[] = meta.universe.map((asset: any, index: number) => {
-        const rawMeta: RawMarketMeta = {
-          name: asset.name,
-          szDecimals: asset.szDecimals || 0,
-          maxLeverage: asset.maxLeverage || 1,
-        };
-
-        const ctx = assetCtxs[index];
-        const rawCtx: RawAssetContext = {
-          markPx: ctx.markPx,
-          prevDayPx: ctx.prevDayPx,
-          funding: ctx.funding,
-          dayNtlVlm: ctx.dayNtlVlm,
-        };
-
-        // Use pure function from ports to convert
-        return convertRawMarket(rawMeta, rawCtx, index);
-      });
-
-      // Update store
-      marketStore.getState().setMarkets(markets);
-
-      // Auto-select default market (BTC) if none selected
-      const currentSelectedMarket = marketStore.getState().selectedMarket;
-      if (!currentSelectedMarket && markets.length > 0) {
-        const defaultMarket = getDefaultSelectedMarket(markets);
-        if (defaultMarket) {
-          marketStore.getState().setSelectedMarket(defaultMarket);
-        }
-      }
-
-      marketStore.getState().setLoading(false);
-    } catch (error) {
-      console.error('[MarketService] Failed to load markets:', error);
-      marketStore.getState().setLoading(false);
-      throw error;
-    }
   }
 }

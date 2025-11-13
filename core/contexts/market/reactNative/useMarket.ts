@@ -58,7 +58,7 @@ export function useMarket(): UseMarketResult {
   const refresh = useCallback(async () => {
     setIsRefreshing(true);
     try {
-      await marketService.refresh();
+      await marketService.loadMarkets();
     } finally {
       setIsRefreshing(false);
     }
