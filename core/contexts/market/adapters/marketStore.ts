@@ -20,8 +20,6 @@ interface MarketState {
   selectedMarket: SelectedMarket | undefined;
   /** User's favorite market coins */
   favorites: string[];
-  /** Loading state for initial data fetch */
-  isLoading: boolean;
 }
 
 /**
@@ -43,9 +41,6 @@ interface MarketStateActions {
   /** Toggle favorite status for a coin */
   toggleFavorite: (coin: string) => void;
 
-  /** Set loading state */
-  setLoading: (isLoading: boolean) => void;
-
   /** Clear all state (reset to initial) */
   clear: () => void;
 }
@@ -57,7 +52,6 @@ const initialState: MarketState = {
   markets: [],
   selectedMarket: undefined,
   favorites: [],
-  isLoading: false,
 };
 
 /**
@@ -67,7 +61,6 @@ const initialState: MarketState = {
  * Can be used both in core business logic and React components.
  *
  * Persists: markets, selectedMarket, favorites
- * (isLoading is excluded from persistence as it's transient state)
  */
 export const marketStore = createStore<MarketState & MarketStateActions>()(
   persist(
@@ -103,8 +96,6 @@ export const marketStore = createStore<MarketState & MarketStateActions>()(
             : [...state.favorites, coin],
         })),
 
-      setLoading: (isLoading: boolean) => set({ isLoading }),
-
       clear: () => set(initialState),
     }),
     {
@@ -114,7 +105,6 @@ export const marketStore = createStore<MarketState & MarketStateActions>()(
         markets: state.markets,
         selectedMarket: state.selectedMarket,
         favorites: state.favorites,
-        // Exclude isLoading from persistence (transient state)
       }),
     },
   ),

@@ -37,8 +37,6 @@ export class MarketService implements MarketPort {
    * Auto-selects BTC as default if no market is currently selected.
    */
   async loadMarkets(): Promise<void> {
-    marketStore.getState().setLoading(true);
-
     try {
       // Fetch raw market data from Hyperliquid via Gateway
       const [meta, assetCtxs] = await this.hyperliquidGateway.fetchMetaAndAssetCtxs();
@@ -74,11 +72,8 @@ export class MarketService implements MarketPort {
           marketStore.getState().setSelectedMarket(defaultMarket);
         }
       }
-
-      marketStore.getState().setLoading(false);
     } catch (error) {
       console.error('[MarketService] Failed to load markets:', error);
-      marketStore.getState().setLoading(false);
       throw error;
     }
   }
