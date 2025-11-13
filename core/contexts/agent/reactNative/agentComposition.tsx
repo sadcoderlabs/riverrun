@@ -52,9 +52,12 @@ export function AgentCompositionProvider({ children }: { children: React.ReactNo
     return new AgentService(walletService, hyperliquidGateway);
   }, [walletService]);
 
-  const value = {
-    agentService,
-  };
+  const value = useMemo(
+    () => ({
+      agentService,
+    }),
+    [agentService],
+  );
 
   return (
     <AgentCompositionContext.Provider value={value}>{children}</AgentCompositionContext.Provider>

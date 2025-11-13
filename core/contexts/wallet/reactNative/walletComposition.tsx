@@ -126,9 +126,12 @@ export function WalletCompositionProvider({ children }: { children: React.ReactN
     return null;
   }
 
-  const value = {
-    walletService,
-  };
+  const value = useMemo(
+    () => ({
+      walletService,
+    }),
+    [walletService],
+  );
 
   return (
     <WalletCompositionContext.Provider value={value}>{children}</WalletCompositionContext.Provider>

@@ -51,9 +51,12 @@ export function ReferralCompositionProvider({ children }: { children: React.Reac
     return new ReferralService(walletService, hyperliquidGateway);
   }, [walletService]);
 
-  const value = {
-    referralService,
-  };
+  const value = useMemo(
+    () => ({
+      referralService,
+    }),
+    [referralService],
+  );
 
   return (
     <ReferralCompositionContext.Provider value={value}>

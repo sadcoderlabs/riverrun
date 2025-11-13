@@ -51,9 +51,12 @@ export function BuilderFeeCompositionProvider({ children }: { children: React.Re
     return new BuilderFeeService(walletService, hyperliquidGateway);
   }, [walletService]);
 
-  const value = {
-    builderFeeService,
-  };
+  const value = useMemo(
+    () => ({
+      builderFeeService,
+    }),
+    [builderFeeService],
+  );
 
   return (
     <BuilderFeeCompositionContext.Provider value={value}>
