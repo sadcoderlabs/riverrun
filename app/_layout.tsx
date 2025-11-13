@@ -27,6 +27,11 @@ import { useAppLifecycle } from '@/components/shared/hooks/useAppLifecycle';
 import { subscriptionManager } from '@/core/infra/hyperliquid/subscription';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/core/infra/reactQuery';
+import { initializeSentry } from '@/core/infra/sentry/sentryConfig';
+
+// Initialize Sentry for error tracking, performance monitoring, and session replay
+// Must be called before any other code runs
+initializeSentry();
 
 // Suppress known WalletConnect warnings during session restoration
 LogBox.ignoreLogs(['emitting session_request', 'without any listeners']);

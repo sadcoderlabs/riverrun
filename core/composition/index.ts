@@ -31,6 +31,37 @@
 export { AppCompositionProvider } from './appComposition';
 
 // Individual context providers (for advanced use cases or testing)
+
+// Telemetry Context
+export {
+  TelemetryCompositionProvider,
+  useTelemetryComposition,
+} from '../contexts/telemetry/reactNative/telemetryComposition';
+export { useTelemetry } from '../contexts/telemetry/reactNative/useTelemetry';
+export type { UseTelemetryResult } from '../contexts/telemetry/reactNative/useTelemetry';
+export { useTelemetryStore } from '../contexts/telemetry/reactNative/useTelemetryStore';
+
+// Telemetry Types & Utilities
+export type {
+  BreadcrumbData,
+  TelemetrySeverity,
+  TelemetryUser,
+  ErrorContext,
+  PerformanceTransaction,
+  TransactionHandle,
+  SpanHandle,
+} from '../contexts/telemetry/ports/types';
+export {
+  createNavigationBreadcrumb,
+  createUserActionBreadcrumb,
+  createNetworkBreadcrumb,
+  createTransactionBreadcrumb,
+  createStateChangeBreadcrumb,
+  createSystemEventBreadcrumb,
+  createConsoleBreadcrumb,
+} from '../contexts/telemetry/utils/breadcrumbs';
+
+// Wallet Context
 export {
   WalletCompositionProvider,
   useWalletComposition,
