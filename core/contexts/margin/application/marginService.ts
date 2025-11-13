@@ -15,11 +15,11 @@ import type { MarginLeverage, SetMarginLeverageParams } from '../ports/types';
 import { marginStore } from '../adapters/marginStore';
 import { marketStore } from '../../market/adapters/marketStore';
 import type { WalletPort } from '../../wallet/ports/walletPort';
+import type { AgentPort } from '../../agent/ports/agentPort';
 import type {
   HyperliquidGateway,
   SubscriptionHandle,
 } from '@/core/infra/hyperliquid/hyperliquidGateway';
-import { getMasterExchangeClient } from '@/core/infra/hyperliquid/client/getter';
 
 /**
  * Margin Service Implementation
@@ -33,6 +33,7 @@ export class MarginService implements MarginPort {
 
   constructor(
     private readonly walletService: WalletPort,
+    private readonly agentPort: AgentPort,
     private readonly hyperliquidGateway: HyperliquidGateway,
   ) {}
 
@@ -136,19 +137,13 @@ export class MarginService implements MarginPort {
       throw new Error(`Market not found for ${selectedMarket.coin}`);
     }
 
-    // Get wallet and exchange client
-    const wallet = await this.walletService.active();
-    if (!wallet) {
-      throw new Error('No active wallet');
+    // Get agent wallet and exchange client
+    const { agentWallet } = await this.agentPort.tryGetAgentWallet();
+    if (!agentWallet) {
+      throw new Error('Agent wallet not available');
     }
 
-    const provider = await wallet.getProvider();
-    if (!provider) {
-      throw new Error('Provider not available');
-    }
-
-    const signer = await provider.getSigner();
-    const exchangeClient = getMasterExchangeClient(signer);
+    const exchangeClient = this.hyperliquidGateway.getAgentExchangeClient(agentWallet.signer);
 
     // Convert marginMode to isCross for API
     const isCross = marginMode === 'cross';

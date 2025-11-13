@@ -8,9 +8,9 @@
  * 1. TelemetryCompositionProvider (no dependencies - must be first for error tracking)
  * 2. WalletCompositionProvider (no dependencies)
  * 3. MarketCompositionProvider (no dependencies)
- * 4. MarginCompositionProvider (depends on Wallet + Market store)
- * 5. HistoryCompositionProvider (depends on Wallet)
- * 6. AgentCompositionProvider (depends on Wallet)
+ * 4. AgentCompositionProvider (depends on Wallet)
+ * 5. MarginCompositionProvider (depends on Wallet + Market + Agent)
+ * 6. HistoryCompositionProvider (depends on Wallet)
  * 7. BuilderFeeCompositionProvider (depends on Wallet)
  * 8. ReferralCompositionProvider (depends on Wallet)
  * 9. BridgeCompositionProvider (depends on Wallet)
@@ -57,9 +57,9 @@ export function AppCompositionProvider({ children }: AppCompositionProviderProps
     <TelemetryCompositionProvider>
       <WalletCompositionProvider>
         <MarketCompositionProvider>
-          <MarginCompositionProvider>
-            <HistoryCompositionProvider>
-              <AgentCompositionProvider>
+          <AgentCompositionProvider>
+            <MarginCompositionProvider>
+              <HistoryCompositionProvider>
                 <BuilderFeeCompositionProvider>
                   <ReferralCompositionProvider>
                     <BridgeCompositionProvider>
@@ -69,9 +69,9 @@ export function AppCompositionProvider({ children }: AppCompositionProviderProps
                     </BridgeCompositionProvider>
                   </ReferralCompositionProvider>
                 </BuilderFeeCompositionProvider>
-              </AgentCompositionProvider>
-            </HistoryCompositionProvider>
-          </MarginCompositionProvider>
+              </HistoryCompositionProvider>
+            </MarginCompositionProvider>
+          </AgentCompositionProvider>
         </MarketCompositionProvider>
       </WalletCompositionProvider>
     </TelemetryCompositionProvider>

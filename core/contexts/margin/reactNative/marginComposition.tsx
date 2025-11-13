@@ -8,6 +8,7 @@ import React, { createContext, useContext, useEffect, useMemo } from 'react';
 import { MarginService } from '../application/marginService';
 import type { MarginPort } from '../ports/marginPort';
 import { useWalletComposition } from '../../wallet/reactNative/walletComposition';
+import { useAgentComposition } from '../../agent/reactNative/agentComposition';
 import { HyperliquidGateway } from '@/core/infra/hyperliquid/hyperliquidGateway';
 
 /**
@@ -37,12 +38,13 @@ interface MarginCompositionProviderProps {
  */
 export function MarginCompositionProvider({ children }: MarginCompositionProviderProps) {
   const { walletService } = useWalletComposition();
+  const { agentService } = useAgentComposition();
 
   // Create service instance (only once)
   const marginService = useMemo(() => {
     const hyperliquidGateway = new HyperliquidGateway();
-    return new MarginService(walletService, hyperliquidGateway);
-  }, [walletService]);
+    return new MarginService(walletService, agentService, hyperliquidGateway);
+  }, [walletService, agentService]);
 
   // Start service on mount, stop on unmount
   useEffect(() => {
