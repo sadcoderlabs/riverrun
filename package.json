@@ -99,6 +99,7 @@
     "zustand": "^5.0.8"
   },
   "devDependencies": {
+    "@sentry/cli": "^2.58.2",
     "@types/jest": "29.5.14",
     "@types/react": "19.1.13",
     "eslint": "9.35.0",
