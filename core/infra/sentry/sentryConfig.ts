@@ -51,12 +51,8 @@ export function initializeSentry(): void {
     // Enable debug mode in development
     debug: __DEV__,
 
-    // Enable performance monitoring
-    enableTracing: true,
+    // Performance monitoring
     tracesSampleRate: environment === 'production' ? 0.2 : 1.0, // 20% in prod, 100% in dev
-
-    // Enable session replay (currently in beta for mobile)
-    enableCaptureFailedRequests: true,
 
     // Breadcrumbs configuration
     maxBreadcrumbs: 100,
@@ -73,14 +69,8 @@ export function initializeSentry(): void {
     // Enable automatic performance instrumentation
     enableAutoPerformanceTracing: true,
 
-    // Network breadcrumbs
+    // Network request capture
     enableCaptureFailedRequests: true,
-
-    // Integrations
-    integrations: [
-      // Navigation tracking
-      new Sentry.ReactNavigationInstrumentation(),
-    ],
 
     // Before send hook - filter out sensitive data
     beforeSend(event) {
@@ -127,27 +117,25 @@ export function initializeSentry(): void {
 }
 
 /**
- * Get the navigation integration for React Navigation
+ * Navigation tracking
  *
- * This should be attached to your NavigationContainer's onReady and onStateChange
- * to enable automatic screen tracking.
+ * Note: React Navigation integration in Sentry SDK 7.x requires manual setup.
+ * For automatic screen tracking, consider using the navigation breadcrumb utility
+ * in your navigation listeners.
  *
  * @example
  * ```tsx
- * import { getNavigationIntegration } from '@/core/infra/sentry/sentryConfig';
+ * import { useTelemetry, createNavigationBreadcrumb } from '@/core/composition';
  *
- * const routingInstrumentation = getNavigationIntegration();
+ * const { addBreadcrumb } = useTelemetry();
  *
  * <NavigationContainer
- *   ref={navigationRef}
- *   onReady={() => {
- *     routingInstrumentation.registerNavigationContainer(navigationRef);
+ *   onStateChange={(state) => {
+ *     const currentRoute = getCurrentRoute(state);
+ *     addBreadcrumb(createNavigationBreadcrumb(currentRoute.name, currentRoute.params));
  *   }}
  * >
  *   {children}
  * </NavigationContainer>
  * ```
  */
-export function getNavigationIntegration(): Sentry.ReactNavigationInstrumentation {
-  return new Sentry.ReactNavigationInstrumentation();
-}

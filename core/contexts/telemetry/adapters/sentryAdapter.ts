@@ -99,57 +99,111 @@ export class SentryAdapter {
   }
 
   /**
-   * Start a performance transaction
+   * Start a performance transaction using Sentry SDK 7.x startSpanManual API
+   *
+   * This uses the modern Sentry API for manual span tracking.
+   * The span must be manually finished by calling finish() or fail().
    */
   startTransaction(transaction: PerformanceTransaction): TransactionHandle | undefined {
-    const sentryTransaction = Sentry.startTransaction({
-      name: transaction.name,
-      op: transaction.operation || 'task',
-      data: transaction.data,
-      tags: transaction.tags,
-    });
+    // Convert data to Sentry-compatible attributes
+    const attributes: Record<string, string | number | boolean> = {};
+    if (transaction.data) {
+      Object.entries(transaction.data).forEach(([key, value]) => {
+        if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+          attributes[key] = value;
+        }
+      });
+    }
+    if (transaction.tags) {
+      Object.entries(transaction.tags).forEach(([key, value]) => {
+        attributes[key] = value;
+      });
+    }
 
-    if (!sentryTransaction) {
+    let activeSpan: Sentry.Span | undefined;
+
+    // Use startSpanManual for manual lifecycle control
+    Sentry.startSpanManual(
+      {
+        name: transaction.name,
+        op: transaction.operation || 'task',
+        attributes,
+      },
+      span => {
+        activeSpan = span;
+        return span;
+      },
+    );
+
+    if (!activeSpan) {
       return undefined;
     }
 
     return {
-      startChild: (span: PerformanceSpan): SpanHandle => {
-        const sentrySpan = sentryTransaction.startChild({
-          op: span.operation || 'task',
-          description: span.name,
-          data: span.data,
+      startChild: (childSpan: PerformanceSpan): SpanHandle => {
+        // Convert child span data to attributes
+        const childAttributes: Record<string, string | number | boolean> = {};
+        if (childSpan.data) {
+          Object.entries(childSpan.data).forEach(([key, value]) => {
+            if (
+              typeof value === 'string' ||
+              typeof value === 'number' ||
+              typeof value === 'boolean'
+            ) {
+              childAttributes[key] = value;
+            }
+          });
+        }
+
+        // Start a child span using the modern API
+        const span = Sentry.startInactiveSpan({
+          name: childSpan.name,
+          op: childSpan.operation || 'task',
+          attributes: childAttributes,
         });
 
         return {
           setData: (key: string, value: unknown) => {
-            sentrySpan.setData(key, value);
+            if (
+              span &&
+              (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean')
+            ) {
+              span.setAttribute(key, value);
+            }
           },
           finish: () => {
-            sentrySpan.finish();
+            span?.end();
           },
         };
       },
 
       setData: (key: string, value: unknown) => {
-        sentryTransaction.setData(key, value);
+        if (
+          activeSpan &&
+          (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean')
+        ) {
+          activeSpan.setAttribute(key, value);
+        }
       },
 
       setTag: (key: string, value: string) => {
-        sentryTransaction.setTag(key, value);
+        activeSpan?.setAttribute(key, value);
       },
 
       finish: () => {
-        sentryTransaction.setStatus('ok');
-        sentryTransaction.finish();
+        activeSpan?.end();
       },
 
       fail: (error?: Error) => {
-        sentryTransaction.setStatus('unknown_error');
         if (error) {
-          this.captureError(error);
+          this.captureError(error, {
+            tags: {
+              transaction: transaction.name,
+              ...transaction.tags,
+            },
+          });
         }
-        sentryTransaction.finish();
+        activeSpan?.end();
       },
     };
   }
