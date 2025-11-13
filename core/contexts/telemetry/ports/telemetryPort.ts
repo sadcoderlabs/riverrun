@@ -25,12 +25,6 @@ import type {
  * Port interface for telemetry operations
  */
 export interface TelemetryPort {
-  /**
-   * Initialize the telemetry system
-   * Should be called once at app startup
-   */
-  initialize(): Promise<void>;
-
   // ==========================================================================
   // User Identification
   // ==========================================================================

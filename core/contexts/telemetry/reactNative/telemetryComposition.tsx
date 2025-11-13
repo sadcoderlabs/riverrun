@@ -53,12 +53,7 @@ export function TelemetryCompositionProvider({ children }: { children: React.Rea
 
     // Create telemetry service with Sentry adapter
     // Note: TelemetryService automatically subscribes to wallet changes in its constructor
-    const service = new TelemetryService(sentryAdapter);
-
-    // Initialize telemetry asynchronously
-    void service.initialize();
-
-    return service;
+    return new TelemetryService(sentryAdapter);
   }, []);
 
   const value = useMemo(

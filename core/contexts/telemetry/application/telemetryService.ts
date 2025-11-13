@@ -35,15 +35,6 @@ export class TelemetryService implements TelemetryPort {
     this.setupWalletSubscription();
   }
 
-  /**
-   * Initialize telemetry
-   * Note: User identification is handled automatically via wallet subscription
-   */
-  async initialize(): Promise<void> {
-    // Nothing to initialize - user identification happens automatically
-    // when wallet connects via setupWalletSubscription()
-  }
-
   // ==========================================================================
   // User Identification
   // ==========================================================================
