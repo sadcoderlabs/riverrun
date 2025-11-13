@@ -1,4 +1,4 @@
-import { appKit } from '@/lib/reown/appKitConfig';
+import { appKit } from '@/core/infra/reown/appKitConfig';
 import { AppKit, AppKitProvider } from '@reown/appkit-react-native';
 
 import { tamaguiConfig } from '@/tamagui.config';
@@ -26,7 +26,7 @@ import { arbitrum } from 'viem/chains';
 import { useAppLifecycle } from '@/components/shared/hooks/useAppLifecycle';
 import { subscriptionManager } from '@/core/infra/hyperliquid/subscription';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { queryClient } from '@/lib/reactQuery';
+import { queryClient } from '@/core/infra/reactQuery';
 
 // Suppress known WalletConnect warnings during session restoration
 LogBox.ignoreLogs(['emitting session_request', 'without any listeners']);
