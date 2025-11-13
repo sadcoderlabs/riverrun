@@ -56,7 +56,8 @@
       "eas": {
         "projectId": "058a60a5-6caf-492e-8330-d0814b655293"
       },
-      "sentryDsn": "https://1bc264969dedd2511942c018ffaea2cd@o4504549357715456.ingest.us.sentry.io/4510356116996096"
+      "sentryDsn": "https://1bc264969dedd2511942c018ffaea2cd@o4504549357715456.ingest.us.sentry.io/4510356116996096",
+      "segmentWriteKey": "dFei7pHO2AKo8rQ2Ck9pTAyAwCxITiaH"
     },
     "owner": "perpetual-protocol"
   }

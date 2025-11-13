@@ -3,15 +3,18 @@
  *
  * Core business logic for telemetry operations.
  * Implements the TelemetryPort interface and coordinates between
- * Sentry (and future Segment integration).
+ * Sentry and Segment.
  *
  * Design:
  * - Unified API that abstracts Sentry/Segment specifics
  * - Type-safe event tracking to prevent event sprawl
  * - Automatic user identification via wallet connection
+ * - Sentry: Error tracking, performance monitoring, selective breadcrumbs
+ * - Segment: Analytics events forwarded to Amplitude and other destinations
  */
 
 import { activeWalletStore } from '../../wallet/adapters/activeWalletStore';
+import type { SegmentAdapter } from '../adapters/segmentAdapter';
 import type { SentryAdapter } from '../adapters/sentryAdapter';
 import { telemetryStore } from '../adapters/telemetryStore';
 import type { TelemetryPort } from '../ports/telemetryPort';
@@ -30,7 +33,10 @@ import type {
  * Telemetry service implementation
  */
 export class TelemetryService implements TelemetryPort {
-  constructor(private readonly sentryAdapter: SentryAdapter) {
+  constructor(
+    private readonly sentryAdapter: SentryAdapter,
+    private readonly segmentAdapter?: SegmentAdapter,
+  ) {
     // Subscribe to wallet changes to auto-identify users
     this.setupWalletSubscription();
   }
@@ -42,7 +48,7 @@ export class TelemetryService implements TelemetryPort {
   /**
    * Identify user
    * - Sentry: Set user context
-   * - Segment (future): Call analytics.identify()
+   * - Segment: Call analytics.identify()
    */
   async identifyUser(user: TelemetryUser): Promise<void> {
     if (!this.isEnabled()) {
@@ -52,21 +58,21 @@ export class TelemetryService implements TelemetryPort {
     // Identify in Sentry
     this.sentryAdapter.identifyUser(user);
 
-    // TODO: When Segment is integrated, also identify there
-    // segmentAdapter.identify(user.address, { walletSource: user.walletSource });
+    // Identify in Segment
+    this.segmentAdapter?.identify(user);
   }
 
   /**
    * Reset user identification
    * - Sentry: Clear user
-   * - Segment (future): Call analytics.reset()
+   * - Segment: Call analytics.reset()
    */
   async resetUser(): Promise<void> {
     // Clear in Sentry
     this.sentryAdapter.clearUser();
 
-    // TODO: When Segment is integrated, also reset there
-    // segmentAdapter.reset();
+    // Reset in Segment
+    this.segmentAdapter?.reset();
   }
 
   // ==========================================================================
@@ -75,7 +81,7 @@ export class TelemetryService implements TelemetryPort {
 
   /**
    * Track event
-   * - Segment (future): Primary destination via analytics.track()
+   * - Segment: Primary destination via analytics.track()
    * - Sentry: Important events also logged as breadcrumbs
    */
   async trackEvent<E extends TelemetryEventName>(
@@ -87,11 +93,11 @@ export class TelemetryService implements TelemetryPort {
       return;
     }
 
-    // Add to Sentry breadcrumbs (for important events)
-    this.sentryAdapter.trackEventAsBreadcrumb(event, props);
+    // Send all events to Segment (forwarded to Amplitude and other destinations)
+    this.segmentAdapter?.track(event, props);
 
-    // TODO: When Segment is integrated, send all events there
-    // segmentAdapter.track(event, props);
+    // Add important events to Sentry breadcrumbs (for error context)
+    this.sentryAdapter.trackEventAsBreadcrumb(event, props);
   }
 
   // ==========================================================================
@@ -100,7 +106,7 @@ export class TelemetryService implements TelemetryPort {
 
   /**
    * Track screen view
-   * - Segment (future): analytics.screen()
+   * - Segment: analytics.screen()
    * - Sentry: Set tag for error filtering
    */
   async trackScreen<S extends ScreenName>(screen: S, props: ScreenProps[S]): Promise<void> {
@@ -108,11 +114,11 @@ export class TelemetryService implements TelemetryPort {
       return;
     }
 
+    // Track screen view in Segment
+    this.segmentAdapter?.screen(screen, props);
+
     // Set screen context in Sentry for error filtering
     this.sentryAdapter.setScreenContext(screen, props as Record<string, unknown>);
-
-    // TODO: When Segment is integrated, track screen view
-    // segmentAdapter.screen(screen, props);
   }
 
   // ==========================================================================
@@ -122,7 +128,7 @@ export class TelemetryService implements TelemetryPort {
   /**
    * Capture error
    * - Sentry: Capture exception
-   * - Segment (future): Optionally track as 'error_occurred' event
+   * - Segment: Not sent (errors are tracked in Sentry only)
    */
   async captureError(error: unknown, context?: TelemetryErrorContext): Promise<void> {
     if (!this.isEnabled()) {
@@ -130,17 +136,8 @@ export class TelemetryService implements TelemetryPort {
       return;
     }
 
-    // Capture in Sentry
+    // Capture in Sentry (errors are not sent to Segment)
     this.sentryAdapter.captureError(error, context);
-
-    // TODO: When Segment is integrated, optionally track error event
-    // if (shouldTrackErrorInAnalytics(error)) {
-    //   segmentAdapter.track('error_occurred', {
-    //     message: error.message,
-    //     component: context?.component,
-    //     action: context?.action,
-    //   });
-    // }
   }
 
   /**

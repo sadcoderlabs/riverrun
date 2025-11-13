@@ -2,11 +2,12 @@
  * Telemetry Composition Provider
  *
  * Dependency injection container for the telemetry context.
- * Wires together the Sentry adapter and telemetry service.
+ * Wires together the Sentry adapter, Segment adapter, and telemetry service.
  */
 
 import React, { createContext, useContext, useMemo } from 'react';
 
+import { SegmentAdapter } from '../adapters/segmentAdapter';
 import { SentryAdapter } from '../adapters/sentryAdapter';
 import { TelemetryService } from '../application/telemetryService';
 import type { TelemetryPort } from '../ports/telemetryPort';
@@ -28,12 +29,14 @@ export const TelemetryCompositionContext = createContext<
  *
  * This is the composition root for the telemetry context in hexagonal architecture.
  * It wires together:
- * - SentryAdapter (external SDK wrapper)
+ * - SentryAdapter (error tracking and performance monitoring)
+ * - SegmentAdapter (analytics events forwarded to Amplitude)
  * - TelemetryService (core business logic)
  *
  * This provider has no dependencies and can be placed at the root of the composition tree.
  *
- * Note: Sentry must be initialized (via initializeSentry()) before this provider is rendered.
+ * Note: Sentry and Segment must be initialized (via initializeSentry() and initializeSegment())
+ * before this provider is rendered.
  *
  * @example
  * ```tsx
@@ -48,12 +51,15 @@ export function TelemetryCompositionProvider({ children }: { children: React.Rea
   // ==========================
 
   const telemetryService = useMemo(() => {
-    // Create Sentry adapter
+    // Create Sentry adapter for error tracking and performance monitoring
     const sentryAdapter = new SentryAdapter();
 
-    // Create telemetry service with Sentry adapter
+    // Create Segment adapter for analytics tracking
+    const segmentAdapter = new SegmentAdapter();
+
+    // Create telemetry service with both adapters
     // Note: TelemetryService automatically subscribes to wallet changes in its constructor
-    return new TelemetryService(sentryAdapter);
+    return new TelemetryService(sentryAdapter, segmentAdapter);
   }, []);
 
   const value = useMemo(

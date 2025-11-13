@@ -28,10 +28,15 @@ import { subscriptionManager } from '@/core/infra/hyperliquid/subscription';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/core/infra/reactQuery';
 import { initializeSentry } from '@/core/infra/sentry/sentryConfig';
+import { initializeSegment } from '@/core/infra/segment/segmentConfig';
 
 // Initialize Sentry for error tracking, performance monitoring, and session replay
 // Must be called before any other code runs
 initializeSentry();
+
+// Initialize Segment for analytics tracking (forwarded to Amplitude)
+// Should be called after Sentry initialization
+initializeSegment();
 
 // Suppress known warnings
 LogBox.ignoreLogs([
