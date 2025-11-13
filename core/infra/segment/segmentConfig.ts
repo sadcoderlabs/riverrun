@@ -54,7 +54,7 @@ export function initializeSegment(): void {
     // Note: Segment automatically captures app info, device info, and screen context
     segmentClient = createClient({
       writeKey,
-      trackAppLifecycleEvents: false, // We track these manually for consistency
+      trackAppLifecycleEvents: true, // Auto-track Application Opened/Backgrounded/Foregrounded
       debug: __DEV__, // Enable debug logging in development
     });
 

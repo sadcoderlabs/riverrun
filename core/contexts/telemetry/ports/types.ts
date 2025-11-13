@@ -31,12 +31,11 @@ export interface TelemetryUser {
 /**
  * All possible telemetry event names
  * Add new events here to maintain type safety
+ *
+ * Note: App lifecycle events (opened/backgrounded/foregrounded) are automatically
+ * tracked by Segment SDK and don't need to be manually defined here.
  */
 export type TelemetryEventName =
-  // Lifecycle
-  | 'app_opened'
-  | 'app_backgrounded'
-  | 'app_foregrounded'
   // Wallet
   | 'wallet_connected'
   | 'wallet_disconnected'
@@ -75,11 +74,6 @@ export type TelemetryEventName =
  * Enforce correct properties per event
  */
 export interface TelemetryEventProps {
-  // Lifecycle
-  app_opened: undefined;
-  app_backgrounded: undefined;
-  app_foregrounded: undefined;
-
   // Wallet
   wallet_connected: {
     walletSource: 'privy' | 'reown';

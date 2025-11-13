@@ -94,11 +94,13 @@ Once connected, you can verify that events are flowing correctly:
 
 The app sends the following event types to Segment (and Amplitude):
 
-### Lifecycle Events
+### Lifecycle Events (Automatic)
 
-- `app_opened`
-- `app_backgrounded`
-- `app_foregrounded`
+These events are automatically tracked by the Segment SDK:
+
+- `Application Opened` - When the app starts
+- `Application Backgrounded` - When the app goes to background
+- `Application Foregrounded` - When the app returns to foreground
 
 ### Wallet Events
 

@@ -35,7 +35,7 @@ import type {
 export class TelemetryService implements TelemetryPort {
   constructor(
     private readonly sentryAdapter: SentryAdapter,
-    private readonly segmentAdapter?: SegmentAdapter,
+    private readonly segmentAdapter: SegmentAdapter,
   ) {
     // Subscribe to wallet changes to auto-identify users
     this.setupWalletSubscription();
@@ -59,7 +59,7 @@ export class TelemetryService implements TelemetryPort {
     this.sentryAdapter.identifyUser(user);
 
     // Identify in Segment
-    this.segmentAdapter?.identify(user);
+    this.segmentAdapter.identify(user);
   }
 
   /**
@@ -72,7 +72,7 @@ export class TelemetryService implements TelemetryPort {
     this.sentryAdapter.clearUser();
 
     // Reset in Segment
-    this.segmentAdapter?.reset();
+    this.segmentAdapter.reset();
   }
 
   // ==========================================================================
@@ -94,7 +94,7 @@ export class TelemetryService implements TelemetryPort {
     }
 
     // Send all events to Segment (forwarded to Amplitude and other destinations)
-    this.segmentAdapter?.track(event, props);
+    this.segmentAdapter.track(event, props);
 
     // Add important events to Sentry breadcrumbs (for error context)
     this.sentryAdapter.trackEventAsBreadcrumb(event, props);
@@ -115,7 +115,7 @@ export class TelemetryService implements TelemetryPort {
     }
 
     // Track screen view in Segment
-    this.segmentAdapter?.screen(screen, props);
+    this.segmentAdapter.screen(screen, props);
 
     // Set screen context in Sentry for error filtering
     this.sentryAdapter.setScreenContext(screen, props as Record<string, unknown>);

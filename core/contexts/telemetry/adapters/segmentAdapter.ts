@@ -75,7 +75,7 @@ export class SegmentAdapter {
     }
 
     try {
-      // Handle events with undefined props (like app_opened)
+      // Handle events with undefined props
       const properties = props === undefined ? {} : (props as JsonMap);
 
       client.track(event, properties);
