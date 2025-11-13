@@ -95,6 +95,11 @@ export function OrderBook({ onPriceClick }: OrderBookProps) {
     throttledSetDataRef.current = throttledSetData;
   });
 
+  // Reset data immediately when coin changes to prevent stale market data from being displayed
+  useEffect(() => {
+    setData(undefined);
+  }, [coin]);
+
   // Update throttled data when rawData changes
   useEffect(() => {
     throttledSetDataRef.current(rawData);

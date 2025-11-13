@@ -38,6 +38,11 @@ interface UseTradesResult {
 export function useTrades({ coin }: UseTradesParams): UseTradesResult {
   const [trades, setTrades] = useState<Trade[]>([]);
 
+  // Reset trades array when coin changes to prevent stale data from previous market
+  useEffect(() => {
+    setTrades([]);
+  }, [coin]);
+
   // Subscribe to trades WebSocket via unified subscription system
   const {
     data: wsData,
