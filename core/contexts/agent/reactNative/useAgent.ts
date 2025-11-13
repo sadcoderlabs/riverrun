@@ -24,14 +24,6 @@ export interface UseAgentResult {
   loadAllAgents: () => Promise<void>;
 
   /**
-   * Approve the Riverrun Agent on blockchain
-   *
-   * This calls tryGetAgentWallet internally to create and approve a new agent.
-   * Throws error if approval fails or user cancels.
-   */
-  approve: () => Promise<void>;
-
-  /**
    * Revoke a named agent from blockchain
    * @param agentName - Name of the agent to revoke
    * Throws error if revocation fails
@@ -47,39 +39,21 @@ export interface UseAgentResult {
  *
  * IMPORTANT: This hook does NOT auto-load data. Call loadAllAgents() to initialize.
  *
- * Provides:
- * - Agent operations (approve, revoke, load all agents)
- * - Access to agent exchange client
- * - UI loading state
+ * Note: Agent approval confirmation is handled automatically by the service layer
+ * through the injected AgentApprovalConfirmationPort. All operations that require
+ * an agent wallet (order placement, closing positions, TP/SL, etc.) will
+ * automatically trigger user confirmation when needed.
  *
  * @example
  * ```tsx
- * import { useAgentStore, useAgent } from '@/core/composition';
+ * import { useAgent } from '@/core/composition';
  *
- * // State access - precise subscriptions
- * const agentAddress = useAgentStore(state => state.agentAddress);
- * const allAgents = useAgentStore(state => state.allAgents);
+ * const { loadAllAgents, isLoading } = useAgent();
  *
- * // Calculate isApproved from state
- * const isApproved = allAgents.some(
- *   a => a.address.toLowerCase() === agentAddress?.toLowerCase()
- * );
- *
- * // Business operations
- * const { approve, loadAllAgents, isLoading } = useAgent();
- *
- * // Load data on mount
+ * // Load agents on mount
  * useEffect(() => {
  *   loadAllAgents();
  * }, [loadAllAgents]);
- *
- * if (!isApproved) {
- *   return (
- *     <Button onPress={approve} loading={isLoading}>
- *       Approve Agent
- *     </Button>
- *   );
- * }
  * ```
  */
 export function useAgent(): UseAgentResult {
@@ -93,20 +67,6 @@ export function useAgent(): UseAgentResult {
     setIsLoading(true);
     try {
       await agentService.loadAllAgents();
-    } finally {
-      setIsLoading(false);
-    }
-  }, [agentService]);
-
-  const approve = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      // Call tryGetAgentWallet to create and approve new agent
-      // We don't use the returned wallet, just trigger the approval flow
-      const result = await agentService.tryGetAgentWallet();
-      if (result.errorReason) {
-        throw new Error(result.errorReason);
-      }
     } finally {
       setIsLoading(false);
     }
@@ -127,7 +87,6 @@ export function useAgent(): UseAgentResult {
   return {
     isLoading,
     loadAllAgents,
-    approve,
     revoke,
   };
 }

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useMemo } from 'react';
 
 import { AgentService } from '../application/agentService';
+import { AlertAgentApprovalConfirmationAdapter } from './alertAgentApprovalConfirmationAdapter';
 import { HyperliquidGateway } from '../../../infra/hyperliquid/hyperliquidGateway';
 import type { AgentPort } from '../ports/agentPort';
 import { useWalletComposition } from '@/core/contexts/wallet/reactNative/walletComposition';
@@ -47,9 +48,12 @@ export function AgentCompositionProvider({ children }: { children: React.ReactNo
     // Create Hyperliquid gateway (unified infrastructure gateway)
     const hyperliquidGateway = new HyperliquidGateway();
 
-    // AgentService depends on WalletPort and HyperliquidGateway
+    // Create approval confirmation adapter (UI implementation)
+    const approvalConfirmation = new AlertAgentApprovalConfirmationAdapter(walletService);
+
+    // AgentService depends on WalletPort, HyperliquidGateway, and AgentApprovalConfirmationPort
     // Note: AgentService automatically subscribes to wallet changes in its constructor
-    return new AgentService(walletService, hyperliquidGateway);
+    return new AgentService(walletService, hyperliquidGateway, approvalConfirmation);
   }, [walletService]);
 
   const value = useMemo(

@@ -2,13 +2,14 @@
  * AgentService - Core business logic for agent operations
  *
  * This service implements the AgentPort interface with 3 essential methods:
- * 1. tryGetAgentWallet() - Get or create agent wallet (for trading)
+ * 1. tryGetAgentWallet() - Get agent wallet (handles approval confirmation internally)
  * 2. loadAllAgents() - Load all agents from blockchain (for initialization)
  * 3. revoke() - Revoke an agent (for management)
  *
  * Design principles:
- * - Pure business logic (no React dependencies)
+ * - Pure business logic (no React dependencies, no UI)
  * - Uses adapters for external operations (blockchain, storage)
+ * - Depends on AgentApprovalConfirmationPort for user confirmation (injected)
  * - Updates agentStateStore for reactive UI
  * - Depends on wallet context for master wallet information
  * - Auto-syncs agent state when wallet changes (subscribes to activeWalletStore in constructor)
@@ -20,6 +21,7 @@ import { DEFAULT_AGENT_NAME } from '../constants';
 
 import { HyperliquidGateway } from '../../../infra/hyperliquid/hyperliquidGateway';
 import type { WalletPort } from '../../wallet/ports/walletPort';
+import type { AgentApprovalConfirmationPort } from '../ports/agentApprovalConfirmationPort';
 import { AgentPkStore } from '../adapters/agentPkStore';
 import { agentStateStore } from '../adapters/agentStateStore';
 import { activeWalletStore } from '../../wallet/adapters/activeWalletStore';
@@ -35,6 +37,7 @@ export class AgentService implements AgentPort {
   constructor(
     private readonly walletService: WalletPort,
     private readonly hyperliquidGateway: HyperliquidGateway,
+    private readonly approvalConfirmation: AgentApprovalConfirmationPort,
   ) {
     // Create stateless storage adapter
     this.agentPkStore = new AgentPkStore();
@@ -134,11 +137,15 @@ export class AgentService implements AgentPort {
   /**
    * Try to get agent wallet for trading
    *
-   * Simplified flow:
+   * This method handles the complete flow:
    * 1. Get or create agent wallet from storage
    * 2. Check if approved in allAgents
-   * 3. If not approved, approve it on blockchain
-   * 4. Return agent wallet
+   * 3. If not approved, request user confirmation via approvalConfirmation port
+   * 4. If confirmed, execute approval transaction
+   * 5. Return agent wallet or error reason
+   *
+   * All caller code paths (order placement, closing positions, TP/SL, etc.)
+   * automatically get user confirmation when needed.
    */
   async tryGetAgentWallet(): Promise<TryGetAgentResult> {
     try {
@@ -171,23 +178,29 @@ export class AgentService implements AgentPort {
         agent => agent.address.toLowerCase() === agentWallet.address.toLowerCase(),
       );
 
-      if (isApproved) {
-        // Already approved, return it
-        return {
-          agentWallet,
-          errorReason: undefined,
-        };
+      if (!isApproved) {
+        // Not approved - request user confirmation
+        const confirmed = await this.approvalConfirmation.confirmApproval();
+
+        if (!confirmed) {
+          // User cancelled
+          return {
+            agentWallet: undefined,
+            errorReason: 'User cancelled agent approval',
+          };
+        }
+
+        // User confirmed - execute approval transaction
+        await this.hyperliquidGateway.approveAgent(signer, agentWallet.address, DEFAULT_AGENT_NAME);
+
+        // Update store and reload agents
+        agentStateStore.getState().updateState({
+          agentAddress: agentWallet.address,
+        });
+        await this.loadAllAgents();
       }
 
-      // 4. Not approved - approve it on blockchain
-      await this.hyperliquidGateway.approveAgent(signer, agentWallet.address, DEFAULT_AGENT_NAME);
-
-      // 5. Update store and reload
-      agentStateStore.getState().updateState({
-        agentAddress: agentWallet.address,
-      });
-      await this.loadAllAgents();
-
+      // Agent is approved (either was already approved, or just got approved)
       return {
         agentWallet,
         errorReason: undefined,

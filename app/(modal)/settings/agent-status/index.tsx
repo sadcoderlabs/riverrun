@@ -1,5 +1,5 @@
 import { Button } from '@/components/global/Button';
-import { useAgent, useAgentStore } from '@/core/composition';
+import { useAgent, useAgentComposition, useAgentStore } from '@/core/composition';
 import { DEFAULT_AGENT_NAME } from '@/core/contexts/agent/constants';
 import { ArrowLeft } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
@@ -18,6 +18,9 @@ function shortenAddress(address: string | undefined): string {
 export default function AgentStatus() {
   const router = useRouter();
 
+  // Agent service composition
+  const { agentService } = useAgentComposition();
+
   // Agent state - precise subscriptions
   const agentAddress = useAgentStore(state => state.agentAddress);
   const allAgents = useAgentStore(state => state.allAgents);
@@ -31,7 +34,6 @@ export default function AgentStatus() {
   const {
     isLoading: isAgentLoading,
     loadAllAgents: loadAgentStatus,
-    approve: approveAgent,
     revoke: revokeAgent,
   } = useAgent();
 
@@ -85,36 +87,27 @@ export default function AgentStatus() {
       return;
     }
 
-    // Show confirmation dialog then approve
-    Alert.alert(
-      `Approve ${DEFAULT_AGENT_NAME}`,
-      'This will generate a new agent wallet to place orders on your behalf. You will be redirected to your wallet app to sign the approval.',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Approve',
-          onPress: async () => {
-            try {
-              const success = await approveAgent();
-              if (success) {
-                Alert.alert('Success', `${DEFAULT_AGENT_NAME} approved successfully`);
-                await loadAgentStatus();
-              }
-            } catch (error) {
-              console.error('Failed to approve agent:', error);
-              Alert.alert(
-                'Error',
-                error instanceof Error ? error.message : 'Failed to approve agent',
-              );
-            }
-          },
-        },
-      ],
-    );
-  }, [allAgents, isAgentApproved, approveAgent, loadAgentStatus]);
+    // Call tryGetAgentWallet - it will automatically show confirmation dialog
+    // via the injected AgentApprovalConfirmationPort (AlertAgentApprovalConfirmationAdapter)
+    try {
+      const result = await agentService.tryGetAgentWallet();
+
+      if (result.agentWallet) {
+        // Success - agent is now approved
+        Alert.alert('Success', `${DEFAULT_AGENT_NAME} approved successfully`);
+        await loadAgentStatus();
+      } else if (result.errorReason) {
+        // User cancelled or error occurred
+        if (result.errorReason !== 'User cancelled agent approval') {
+          // Only show error if it's not user cancellation
+          Alert.alert('Error', result.errorReason);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to approve agent:', error);
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to approve agent');
+    }
+  }, [allAgents, isAgentApproved, agentService, loadAgentStatus]);
 
   /**
    * Handle revoke agent (Riverrun Agent or other named agents)

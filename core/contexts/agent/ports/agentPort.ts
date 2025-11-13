@@ -4,8 +4,8 @@ import type { TryGetAgentResult } from './types';
  * Agent Port Interface
  * Defines the contract for core agent business operations
  *
- * This interface contains only 3 essential methods:
- * 1. tryGetAgentWallet - Get or create agent wallet (for trading)
+ * This interface contains 3 essential methods:
+ * 1. tryGetAgentWallet - Get agent wallet (handles approval internally via confirmation port)
  * 2. loadAllAgents - Load all agents from blockchain (for initialization)
  * 3. revoke - Revoke an agent (for management)
  */
@@ -13,12 +13,15 @@ export interface AgentPort {
   /**
    * Try to get agent wallet for trading
    *
-   * This method:
-   * 1. Gets existing agent from storage
-   * 2. Validates against allAgents (loaded optimistically)
-   * 3. If valid, returns the agent wallet
-   * 4. If invalid or missing, creates new agent and approves it
-   * 5. If user cancels approval, returns error reason
+   * This method handles the complete flow internally:
+   * 1. Gets or creates agent wallet from storage
+   * 2. Checks if approved in allAgents
+   * 3. If not approved, requests user confirmation via injected confirmation port
+   * 4. If confirmed, executes approval transaction
+   * 5. Returns agent wallet or error reason
+   *
+   * All caller code paths (order placement, closing positions, TP/SL, etc.)
+   * automatically get user confirmation when needed through this single method.
    *
    * @returns Promise resolving to result containing agentWallet or error reason
    */
