@@ -45,7 +45,15 @@
       ],
       "expo-secure-store",
       "expo-web-browser",
-      "@sentry/react-native/expo"
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "note": "Use SENTRY_AUTH_TOKEN env to authenticate with Sentry. Already added in EAS platform",
+          "organization": "perp",
+          "project": "riverrun"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

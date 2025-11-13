@@ -1,6 +1,8 @@
-const { getDefaultConfig } = require('expo/metro-config');
+// Use Sentry's Metro config to ensure unique Debug IDs for bundles and source maps
+// This enables better error tracking and source map mapping in Sentry
+const { getSentryExpoConfig } = require('@sentry/react-native/metro');
 
-const config = getDefaultConfig(__dirname);
+const config = getSentryExpoConfig(__dirname);
 
 // Enable package exports for select libraries
 const resolveRequestWithPackageExports = (context, moduleName, platform) => {
