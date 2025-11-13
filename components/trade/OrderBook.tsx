@@ -85,9 +85,9 @@ export function OrderBook({ onPriceClick }: OrderBookProps) {
     nSigFigs: effectiveNSigFigs,
   });
 
-  // Throttle UI updates to max 10 updates/sec to prevent mobile performance issues
+  // Throttle UI updates to max 5 updates/sec to prevent mobile performance issues
   const [data, setData] = useState<OrderBookData | undefined>(rawData);
-  const throttledSetData = useThrottle(setData, 100, { leading: true, trailing: true });
+  const throttledSetData = useThrottle(setData, 200, { leading: true, trailing: true });
 
   // Store in ref to avoid useEffect dependency issues
   const throttledSetDataRef = useRef(throttledSetData);
