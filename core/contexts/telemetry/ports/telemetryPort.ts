@@ -2,17 +2,10 @@
  * Telemetry Port
  *
  * Defines the business interface for telemetry operations.
- * This port abstracts error tracking, performance monitoring, and user analytics.
+ * This port abstracts error tracking and user analytics.
  */
 
-import type {
-  BreadcrumbData,
-  ErrorContext,
-  PerformanceTransaction,
-  TelemetrySeverity,
-  TelemetryUser,
-  TransactionHandle,
-} from './types';
+import type { BreadcrumbData, ErrorContext, TelemetrySeverity, TelemetryUser } from './types';
 
 /**
  * Port interface for telemetry operations
@@ -58,13 +51,6 @@ export interface TelemetryPort {
    * @param breadcrumb Breadcrumb data
    */
   addBreadcrumb(breadcrumb: BreadcrumbData): void;
-
-  /**
-   * Start a performance transaction
-   * @param transaction Transaction configuration
-   * @returns Handle to control the transaction lifecycle
-   */
-  startTransaction(transaction: PerformanceTransaction): TransactionHandle | undefined;
 
   /**
    * Set a global context value

@@ -1,20 +1,15 @@
 /**
  * Sentry Adapter
  *
- * Adapter that wraps the Sentry SDK for error tracking, performance monitoring,
- * and breadcrumb tracking.
+ * Adapter that wraps the Sentry SDK for error tracking and breadcrumb tracking.
  */
 
 import * as Sentry from '@sentry/react-native';
 import type {
   BreadcrumbData,
   ErrorContext,
-  PerformanceTransaction,
   TelemetrySeverity,
   TelemetryUser,
-  TransactionHandle,
-  SpanHandle,
-  PerformanceSpan,
 } from '../ports/types';
 
 /**
@@ -96,116 +91,6 @@ export class SentryAdapter {
       data: breadcrumb.data,
       timestamp: breadcrumb.timestamp,
     });
-  }
-
-  /**
-   * Start a performance transaction using Sentry SDK 7.x startSpanManual API
-   *
-   * This uses the modern Sentry API for manual span tracking.
-   * The span must be manually finished by calling finish() or fail().
-   */
-  startTransaction(transaction: PerformanceTransaction): TransactionHandle | undefined {
-    // Convert data to Sentry-compatible attributes
-    const attributes: Record<string, string | number | boolean> = {};
-    if (transaction.data) {
-      Object.entries(transaction.data).forEach(([key, value]) => {
-        if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-          attributes[key] = value;
-        }
-      });
-    }
-    if (transaction.tags) {
-      Object.entries(transaction.tags).forEach(([key, value]) => {
-        attributes[key] = value;
-      });
-    }
-
-    let activeSpan: Sentry.Span | undefined;
-
-    // Use startSpanManual for manual lifecycle control
-    Sentry.startSpanManual(
-      {
-        name: transaction.name,
-        op: transaction.operation || 'task',
-        attributes,
-      },
-      span => {
-        activeSpan = span;
-        return span;
-      },
-    );
-
-    if (!activeSpan) {
-      return undefined;
-    }
-
-    return {
-      startChild: (childSpan: PerformanceSpan): SpanHandle => {
-        // Convert child span data to attributes
-        const childAttributes: Record<string, string | number | boolean> = {};
-        if (childSpan.data) {
-          Object.entries(childSpan.data).forEach(([key, value]) => {
-            if (
-              typeof value === 'string' ||
-              typeof value === 'number' ||
-              typeof value === 'boolean'
-            ) {
-              childAttributes[key] = value;
-            }
-          });
-        }
-
-        // Start a child span using the modern API
-        const span = Sentry.startInactiveSpan({
-          name: childSpan.name,
-          op: childSpan.operation || 'task',
-          attributes: childAttributes,
-        });
-
-        return {
-          setData: (key: string, value: unknown) => {
-            if (
-              span &&
-              (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean')
-            ) {
-              span.setAttribute(key, value);
-            }
-          },
-          finish: () => {
-            span?.end();
-          },
-        };
-      },
-
-      setData: (key: string, value: unknown) => {
-        if (
-          activeSpan &&
-          (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean')
-        ) {
-          activeSpan.setAttribute(key, value);
-        }
-      },
-
-      setTag: (key: string, value: string) => {
-        activeSpan?.setAttribute(key, value);
-      },
-
-      finish: () => {
-        activeSpan?.end();
-      },
-
-      fail: (error?: Error) => {
-        if (error) {
-          this.captureError(error, {
-            tags: {
-              transaction: transaction.name,
-              ...transaction.tags,
-            },
-          });
-        }
-        activeSpan?.end();
-      },
-    };
   }
 
   /**

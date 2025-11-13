@@ -33,8 +33,15 @@ import { initializeSentry } from '@/core/infra/sentry/sentryConfig';
 // Must be called before any other code runs
 initializeSentry();
 
-// Suppress known WalletConnect warnings during session restoration
-LogBox.ignoreLogs(['emitting session_request', 'without any listeners']);
+// Suppress known warnings
+LogBox.ignoreLogs([
+  // WalletConnect warnings during session restoration
+  'emitting session_request',
+  'without any listeners',
+  // react-native-jazzicon uses deprecated componentWillReceiveProps
+  // This is a third-party library issue and doesn't affect functionality
+  'componentWillReceiveProps has been renamed',
+]);
 
 // Prevent the splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();

@@ -143,6 +143,20 @@ export default function Index() {
                 />
               </ListSection>
             </YStack>
+
+            {/* Developer Tools Section - Only in Development */}
+            {__DEV__ && (
+              <YStack>
+                <ListSection label="Developer Tools">
+                  <ListItem
+                    title="Telemetry"
+                    subTitle="Test Sentry error tracking and monitoring"
+                    showIosChevron={true}
+                    onPress={() => router.push('/settings/telemetry')}
+                  />
+                </ListSection>
+              </YStack>
+            )}
           </YStack>
         </ScrollView>
 

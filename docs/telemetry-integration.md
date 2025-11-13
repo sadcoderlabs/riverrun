@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Riverrun app uses a comprehensive telemetry system built on **Sentry** for error tracking, performance monitoring, and user behavior analysis. The system follows clean architecture principles with a hexagonal (ports & adapters) pattern.
+The Riverrun app uses a comprehensive telemetry system built on **Sentry** for error tracking and user behavior analysis. The system follows clean architecture principles with a hexagonal (ports & adapters) pattern.
 
 **Note**: This implementation uses `@sentry/react-native` directly (Expo SDK 50+). The deprecated `sentry-expo` package is **not** used.
 
@@ -154,33 +154,6 @@ addBreadcrumb(createNavigationBreadcrumb('TradeScreen', { coin: 'BTC' }));
 addBreadcrumb(createNetworkBreadcrumb('POST', '/api/orders', 200));
 ```
 
-### Performance Monitoring
-
-```typescript
-import { useTelemetry } from '@/core/composition';
-
-const { startTransaction } = useTelemetry();
-
-async function loadMarketData() {
-  const transaction = startTransaction({
-    name: 'Load Market Data',
-    operation: 'http',
-    tags: { endpoint: '/market-data' },
-  });
-
-  try {
-    const data = await fetchMarketData();
-    transaction?.finish();
-    return data;
-  } catch (error) {
-    transaction?.fail(error);
-    throw error;
-  }
-}
-```
-
-**Note**: The implementation uses Sentry SDK 7.x modern APIs (`startSpanManual` and `startInactiveSpan`) for manual performance tracking. Automatic instrumentation (`enableAutoPerformanceTracing: true`) is also enabled for tracking React Native operations automatically.
-
 ### Capturing Messages
 
 ```typescript
@@ -225,7 +198,6 @@ function TelemetrySettings() {
 The system automatically provides:
 
 ✅ **Error Tracking** - Captures unhandled exceptions and errors
-✅ **Performance Monitoring** - Tracks app performance and slow operations (20% sample rate in production)
 ✅ **Session Tracking** - Records user sessions every 30 seconds
 ✅ **Native Crash Reporting** - Captures native iOS/Android crashes
 ✅ **User Identification** - Automatically identifies users by wallet address when connected
@@ -267,9 +239,7 @@ The service subscribes to `activeWalletStore` and handles identification automat
 
 ### Known Limitations
 
-1. **Manual Transaction API**: Sentry SDK 7.x has simplified the transaction API. The current implementation provides a lightweight handle for compatibility, but relies on automatic instrumentation for actual tracking.
-
-2. **Navigation Integration**: React Navigation integration requires manual breadcrumb tracking. Automatic screen tracking is not yet implemented.
+**Navigation Integration**: React Navigation integration requires manual breadcrumb tracking. Automatic screen tracking is not yet implemented.
 
 ### Future Improvements
 
@@ -288,14 +258,6 @@ The architecture is designed to support multiple telemetry backends. To add Segm
    ```
 3. Update `TelemetryService` to coordinate both Sentry and Segment
 4. No changes required to consumers
-
-#### Performance Tracking Enhancements
-
-The current implementation uses Sentry SDK 7.x modern APIs (`startSpanManual` and `startInactiveSpan`). Future enhancements could include:
-
-- More granular span tracking for specific operations
-- Custom instrumentation for React Navigation
-- Advanced profiling integration when available in React Native SDK
 
 #### Navigation Tracking
 
@@ -394,14 +356,6 @@ If you see TypeScript errors related to Sentry SDK:
 1. Check the installed version: `pnpm list @sentry/react-native`
 2. Ensure compatibility with the adapter implementation
 3. Refer to Sentry React Native docs: https://docs.sentry.io/platforms/react-native/
-
-### Performance issues
-
-If telemetry is affecting app performance:
-
-1. Reduce sample rate in production (currently 20%)
-2. Limit breadcrumbs (currently 100)
-3. Disable unnecessary features in `sentryConfig.ts`
 
 ## Migration from sentry-expo
 

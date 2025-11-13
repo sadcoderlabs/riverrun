@@ -2,7 +2,7 @@
  * Telemetry Domain Types
  *
  * Defines the domain types for telemetry operations including
- * error tracking, breadcrumbs, user identification, and performance monitoring.
+ * error tracking, breadcrumbs, and user identification.
  */
 
 /**
@@ -100,96 +100,6 @@ export interface ErrorContext {
    * Tags for categorization
    */
   tags?: Record<string, string>;
-}
-
-/**
- * Performance transaction options
- */
-export interface PerformanceTransaction {
-  /**
-   * Name of the transaction (e.g., 'Place Order', 'Load Market Data')
-   */
-  name: string;
-
-  /**
-   * Operation type (e.g., 'http', 'ui', 'task')
-   */
-  operation?: string;
-
-  /**
-   * Additional data to attach to the transaction
-   */
-  data?: Record<string, unknown>;
-
-  /**
-   * Tags for categorization
-   */
-  tags?: Record<string, string>;
-}
-
-/**
- * Performance span for nested operations
- */
-export interface PerformanceSpan {
-  /**
-   * Name of the span
-   */
-  name: string;
-
-  /**
-   * Operation type
-   */
-  operation?: string;
-
-  /**
-   * Additional data
-   */
-  data?: Record<string, unknown>;
-}
-
-/**
- * Transaction handle for controlling lifecycle
- */
-export interface TransactionHandle {
-  /**
-   * Start a child span within the transaction
-   */
-  startChild(span: PerformanceSpan): SpanHandle;
-
-  /**
-   * Set additional data on the transaction
-   */
-  setData(key: string, value: unknown): void;
-
-  /**
-   * Set tags on the transaction
-   */
-  setTag(key: string, value: string): void;
-
-  /**
-   * Mark the transaction as successful and finish it
-   */
-  finish(): void;
-
-  /**
-   * Mark the transaction as failed and finish it
-   */
-  fail(error?: Error): void;
-}
-
-/**
- * Span handle for controlling nested operation lifecycle
- */
-export interface SpanHandle {
-  /**
-   * Set additional data on the span
-   */
-  setData(key: string, value: unknown): void;
-
-  /**
-   * Mark the span as complete
-   */
-  finish(): void;
 }
 
 /**

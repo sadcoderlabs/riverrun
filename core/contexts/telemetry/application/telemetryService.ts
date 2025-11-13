@@ -13,10 +13,8 @@ import type { TelemetryPort } from '../ports/telemetryPort';
 import type {
   BreadcrumbData,
   ErrorContext,
-  PerformanceTransaction,
   TelemetrySeverity,
   TelemetryUser,
-  TransactionHandle,
 } from '../ports/types';
 
 /**
@@ -121,27 +119,6 @@ export class TelemetryService implements TelemetryPort {
     }
 
     this.sentryAdapter.addBreadcrumb(breadcrumb);
-  }
-
-  /**
-   * Start a performance transaction
-   */
-  startTransaction(transaction: PerformanceTransaction): TransactionHandle | undefined {
-    if (!this.isEnabled()) {
-      // Return a no-op handle when disabled
-      return {
-        startChild: () => ({
-          setData: () => {},
-          finish: () => {},
-        }),
-        setData: () => {},
-        setTag: () => {},
-        finish: () => {},
-        fail: () => {},
-      };
-    }
-
-    return this.sentryAdapter.startTransaction(transaction);
   }
 
   /**

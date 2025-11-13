@@ -2,7 +2,7 @@
  * useTelemetry Hook
  *
  * Public hook for accessing telemetry business operations.
- * Provides methods for error tracking, breadcrumbs, and performance monitoring.
+ * Provides methods for error tracking and breadcrumbs.
  */
 
 import { useCallback } from 'react';
@@ -11,10 +11,8 @@ import { useTelemetryComposition } from './telemetryComposition';
 import type {
   BreadcrumbData,
   ErrorContext,
-  PerformanceTransaction,
   TelemetrySeverity,
   TelemetryUser,
-  TransactionHandle,
 } from '../ports/types';
 
 export interface UseTelemetryResult {
@@ -58,13 +56,6 @@ export interface UseTelemetryResult {
   addBreadcrumb: (breadcrumb: BreadcrumbData) => void;
 
   /**
-   * Start a performance transaction
-   * @param transaction Transaction configuration
-   * @returns Handle to control the transaction lifecycle
-   */
-  startTransaction: (transaction: PerformanceTransaction) => TransactionHandle | undefined;
-
-  /**
    * Set a global context value
    * @param key Context key
    * @param value Context value
@@ -93,9 +84,8 @@ export interface UseTelemetryResult {
 /**
  * useTelemetry - Telemetry business operations hook
  *
- * This hook provides telemetry operations for error tracking, breadcrumbs,
- * and performance monitoring. All operations are fire-and-forget and don't
- * require loading states.
+ * This hook provides telemetry operations for error tracking and breadcrumbs.
+ * All operations are fire-and-forget and don't require loading states.
  *
  * For state access (userId, isEnabled), use useTelemetryStore instead.
  *
@@ -104,7 +94,7 @@ export interface UseTelemetryResult {
  * import { useTelemetry } from '@/core/composition';
  *
  * function MyComponent() {
- *   const { captureError, addBreadcrumb, startTransaction } = useTelemetry();
+ *   const { captureError, addBreadcrumb } = useTelemetry();
  *
  *   const handleSubmit = async () => {
  *     // Add breadcrumb for user action
@@ -114,17 +104,9 @@ export interface UseTelemetryResult {
  *       level: 'info',
  *     });
  *
- *     // Start performance transaction
- *     const transaction = startTransaction({
- *       name: 'Submit Form',
- *       operation: 'ui',
- *     });
- *
  *     try {
  *       await submitForm();
- *       transaction?.finish();
  *     } catch (error) {
- *       transaction?.fail(error);
  *       captureError(error, {
  *         component: 'MyComponent',
  *         action: 'submit_form',
@@ -172,13 +154,6 @@ export function useTelemetry(): UseTelemetryResult {
     [telemetryService],
   );
 
-  const startTransaction = useCallback(
-    (transaction: PerformanceTransaction) => {
-      return telemetryService.startTransaction(transaction);
-    },
-    [telemetryService],
-  );
-
   const setContext = useCallback(
     (key: string, value: Record<string, unknown>) => {
       telemetryService.setContext(key, value);
@@ -210,7 +185,6 @@ export function useTelemetry(): UseTelemetryResult {
     captureError,
     captureMessage,
     addBreadcrumb,
-    startTransaction,
     setContext,
     setTag,
     setEnabled,

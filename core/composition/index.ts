@@ -47,9 +47,6 @@ export type {
   TelemetrySeverity,
   TelemetryUser,
   ErrorContext,
-  PerformanceTransaction,
-  TransactionHandle,
-  SpanHandle,
 } from '../contexts/telemetry/ports/types';
 export {
   createNavigationBreadcrumb,
