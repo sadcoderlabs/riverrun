@@ -174,24 +174,26 @@ export function useOrderSubscription() {
         orderStore.getState().setLoading(false);
 
         // Step 2: Subscribe to orderUpdates WebSocket
-        subscription = await gateway.subscribeOrderUpdates(walletAddress, (updates: unknown) => {
-          // Cast updates to the expected array type
-          const typedUpdates = updates as {
-            order: {
-              coin: string;
-              side: 'B' | 'A';
-              limitPx: string;
-              sz: string;
-              oid: number;
-              timestamp: number;
-              origSz: string;
-            };
-            status?: string;
-          }[];
+        subscription = await gateway.subscribeOrderUpdates(walletAddress, (data: unknown) => {
+          // Cast to wrapper object type containing updates array
+          const orderUpdatesData = data as {
+            updates: {
+              order: {
+                coin: string;
+                side: 'B' | 'A';
+                limitPx: string;
+                sz: string;
+                oid: number;
+                timestamp: number;
+                origSz: string;
+              };
+              status?: string;
+            }[];
+          };
 
           // Don't process if effect was cancelled
           if (!isCancelled) {
-            handleOrderUpdates(typedUpdates, walletAddress, gateway);
+            handleOrderUpdates(orderUpdatesData.updates, walletAddress, gateway);
           }
         });
       } catch (error) {

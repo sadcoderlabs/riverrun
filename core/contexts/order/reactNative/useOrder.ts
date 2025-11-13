@@ -128,7 +128,7 @@ function buildTpSlSuccessMessage(params: TpSlOrderParams): string {
  * ```
  */
 export function useOrder(): UseOrderResult {
-  const { orderService } = useOrderContext();
+  const { orderCommandService } = useOrderContext();
 
   // UI state only
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
@@ -148,7 +148,7 @@ export function useOrder(): UseOrderResult {
       setError(undefined);
 
       try {
-        const result = await orderService.placeOrder(params);
+        const result = await orderCommandService.placeOrder(params);
 
         if (result.success) {
           const successMessage = buildPlaceOrderSuccessMessage(params);
@@ -167,7 +167,7 @@ export function useOrder(): UseOrderResult {
         setIsPlacingOrder(false);
       }
     },
-    [orderService],
+    [orderCommandService],
   );
 
   /**
@@ -179,7 +179,7 @@ export function useOrder(): UseOrderResult {
       setError(undefined);
 
       try {
-        const result = await orderService.placeCloseMarketOrder(params);
+        const result = await orderCommandService.placeCloseMarketOrder(params);
 
         if (result.success) {
           toast.success('Market Close Order Placed', {
@@ -197,7 +197,7 @@ export function useOrder(): UseOrderResult {
         setIsPlacingOrder(false);
       }
     },
-    [orderService],
+    [orderCommandService],
   );
 
   /**
@@ -209,7 +209,7 @@ export function useOrder(): UseOrderResult {
       setError(undefined);
 
       try {
-        const result = await orderService.placeCloseLimitOrder(params);
+        const result = await orderCommandService.placeCloseLimitOrder(params);
 
         if (result.success) {
           toast.success('Limit Close Order Placed', {
@@ -227,7 +227,7 @@ export function useOrder(): UseOrderResult {
         setIsPlacingOrder(false);
       }
     },
-    [orderService],
+    [orderCommandService],
   );
 
   /**
@@ -239,7 +239,7 @@ export function useOrder(): UseOrderResult {
       setError(undefined);
 
       try {
-        const result = await orderService.placeTpSlOrders(params);
+        const result = await orderCommandService.placeTpSlOrders(params);
 
         if (result.success) {
           const description = buildTpSlSuccessMessage(params);
@@ -258,7 +258,7 @@ export function useOrder(): UseOrderResult {
         setIsPlacingOrder(false);
       }
     },
-    [orderService],
+    [orderCommandService],
   );
 
   // ==========================================================================
@@ -274,7 +274,7 @@ export function useOrder(): UseOrderResult {
       setError(undefined);
 
       try {
-        const result = await orderService.cancelOrder(params);
+        const result = await orderCommandService.cancelOrder(params);
 
         if (result.success) {
           toast.success('Order Cancelled', {
@@ -292,7 +292,7 @@ export function useOrder(): UseOrderResult {
         setIsCanceling(false);
       }
     },
-    [orderService],
+    [orderCommandService],
   );
 
   /**
@@ -304,7 +304,7 @@ export function useOrder(): UseOrderResult {
       setError(undefined);
 
       try {
-        const result = await orderService.cancelOrders(params);
+        const result = await orderCommandService.cancelOrders(params);
 
         if (result.success) {
           toast.success('Orders Cancelled', {
@@ -322,7 +322,7 @@ export function useOrder(): UseOrderResult {
         setIsCanceling(false);
       }
     },
-    [orderService],
+    [orderCommandService],
   );
 
   // ==========================================================================
