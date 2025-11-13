@@ -83,42 +83,7 @@ function WalletInfoDisplay() {
           />
           {/* Modal group - includes settings, deposit, withdraw with safe area handling */}
           <Stack.Screen
-            name="(modal)/settings/index"
-            options={{
-              headerShown: false,
-              animation: 'slide_from_right',
-            }}
-          />
-          <Stack.Screen
-            name="(modal)/settings/approval-status/index"
-            options={{
-              headerShown: false,
-              animation: 'slide_from_right',
-            }}
-          />
-          <Stack.Screen
-            name="(modal)/settings/builder-fee-status/index"
-            options={{
-              headerShown: false,
-              animation: 'slide_from_right',
-            }}
-          />
-          <Stack.Screen
-            name="(modal)/settings/agent-status/index"
-            options={{
-              headerShown: false,
-              animation: 'slide_from_right',
-            }}
-          />
-          <Stack.Screen
-            name="(modal)/deposit/deposit-hl-bridge"
-            options={{
-              headerShown: false,
-              animation: 'slide_from_right',
-            }}
-          />
-          <Stack.Screen
-            name="(modal)/withdraw/withdraw-hl-bridge"
+            name="(modal)"
             options={{
               headerShown: false,
               animation: 'slide_from_right',
