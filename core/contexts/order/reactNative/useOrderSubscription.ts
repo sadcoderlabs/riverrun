@@ -105,22 +105,34 @@ export async function handleOrderUpdates(
     // Fetch complete order data using orderStatus
     try {
       const orderDataRaw = await gateway.getOrderStatus(userAddress, oid);
-      // Cast to the expected type structure
-      const orderData = orderDataRaw as { status: string; order?: Order };
+      // Cast to the expected type structure (double-nested)
+      // API returns: { status: "order", order: { order: Order, status: string, statusTimestamp: number } }
+      const orderData = orderDataRaw as {
+        status: string;
+        order?: {
+          order: Order;
+          status: string;
+          statusTimestamp: number;
+        };
+      };
 
-      // orderStatus returns { status: string, order?: Order }
-      if (orderData.status === 'order' && orderData.order) {
-        // Update or add the order
+      // orderStatus returns { status: string, order?: { order: Order, status: string } }
+      if (orderData.status === 'order' && orderData.order?.order) {
+        // Extract the actual Order object from the nested structure
+        const actualOrder = orderData.order.order;
         const currentOrders = orderStore.getState().orders;
         const existingOrder = currentOrders.find(o => o.oid === oid);
 
         if (existingOrder) {
-          orderStore.getState().updateOrder(oid, orderData.order);
+          orderStore.getState().updateOrder(oid, actualOrder);
         } else {
-          orderStore.getState().setOrders([...currentOrders, orderData.order]);
+          orderStore.getState().setOrders([...currentOrders, actualOrder]);
         }
+      } else if (orderData.order?.status && FAILED_ORDER_STATUSES.has(orderData.order.status)) {
+        // Order is no longer open (check the nested status field)
+        orderStore.getState().removeOrder(oid);
       } else if (orderData.status && FAILED_ORDER_STATUSES.has(orderData.status)) {
-        // Order is no longer open (canceled/filled)
+        // Order is no longer open (check the top-level status field)
         orderStore.getState().removeOrder(oid);
       }
     } catch (error) {
