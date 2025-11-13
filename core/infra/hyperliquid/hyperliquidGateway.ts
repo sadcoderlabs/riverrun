@@ -486,6 +486,10 @@ export class HyperliquidGateway {
   /**
    * Approve builder fee on blockchain
    *
+   * Background Recovery Strategy:
+   * Similar to approveAgent, implements retry logic to handle
+   * network issues when returning from wallet app after signing.
+   *
    * @param signer - Signer for the master wallet
    * @param maxFeeRate - Maximum fee rate as percentage string (e.g., '0.1%')
    * @param builderAddress - Builder address to approve
@@ -496,10 +500,38 @@ export class HyperliquidGateway {
     builderAddress: string,
   ): Promise<void> {
     const client = getMasterExchangeClient(signer);
-    await client.approveBuilderFee({
-      maxFeeRate,
-      builder: builderAddress,
-    });
+
+    // Retry configuration
+    const MAX_RETRIES = 3;
+    const RETRY_DELAY_MS = 1500; // Wait for network to recover
+
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        await client.approveBuilderFee({
+          maxFeeRate,
+          builder: builderAddress,
+        });
+        return; // Success - exit
+      } catch (error) {
+        // Check if error is network-related
+        const isNetworkError =
+          error instanceof Error &&
+          (error.message.includes('Network request failed') ||
+            error.message.includes('network') ||
+            error.name === 'HttpRequestError');
+
+        // If not a network error or last attempt, throw immediately
+        if (!isNetworkError || attempt === MAX_RETRIES) {
+          throw error;
+        }
+
+        // Network error - wait and retry
+        console.warn(
+          `[HyperliquidGateway] Network error on attempt ${attempt}/${MAX_RETRIES}, retrying in ${RETRY_DELAY_MS}ms...`,
+        );
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+      }
+    }
   }
 
   /**

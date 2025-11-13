@@ -7,6 +7,7 @@
  * Design principles:
  * - Pure business logic (no React dependencies, no UI)
  * - Uses adapters for external operations (Hyperliquid SDK)
+ * - Depends on BuilderFeeApprovalConfirmationPort for user confirmation (injected)
  * - Updates builderFeeStateStore for reactive UI
  * - Depends on wallet context for wallet information and clients
  */
@@ -16,6 +17,7 @@ import type { Signer } from 'ethers';
 import type { BuilderFeePort } from '../ports/builderFeePort';
 import type { BuilderFeeStatus } from '../ports/types';
 import type { WalletPort } from '../../wallet/ports/walletPort';
+import type { BuilderFeeApprovalConfirmationPort } from '../ports/builderFeeApprovalConfirmationPort';
 import { HyperliquidGateway } from '../../../infra/hyperliquid/hyperliquidGateway';
 import { builderFeeStateStore } from '../adapters/builderFeeStateStore';
 import { BUILDER_CONFIG } from '../config';
@@ -27,6 +29,7 @@ export class BuilderFeeService implements BuilderFeePort {
   constructor(
     private readonly walletService: WalletPort,
     private readonly hyperliquidGateway: HyperliquidGateway,
+    private readonly approvalConfirmation: BuilderFeeApprovalConfirmationPort,
   ) {}
 
   /**
@@ -108,17 +111,49 @@ export class BuilderFeeService implements BuilderFeePort {
   /**
    * Ensure builder fee is approved before proceeding
    *
-   * NOTE: This is a service-level method that only checks approval status.
-   * UI dialogs and user interaction should be handled in the presentation layer (useBuilderFee hook).
+   * This method handles the complete flow:
+   * 1. Check if already approved
+   * 2. If not approved, request user confirmation via approvalConfirmation port
+   * 3. If confirmed, execute approval transaction (with network retry)
+   * 4. Verify approval succeeded
+   * 5. Return approval status
    *
-   * @returns true if already approved, false otherwise
+   * All caller code paths (order placement, closing positions, TP/SL, etc.)
+   * automatically get user confirmation when needed.
+   *
+   * @returns true if approved (already or newly), false if user cancelled or failed
    */
   async ensureApproval(): Promise<boolean> {
     try {
+      // 1. Check if already approved
       const status = await this.checkApprovalStatus();
-      return status.isApproved;
+      if (status.isApproved) {
+        return true; // Already approved
+      }
+
+      // 2. Not approved - request user confirmation
+      const confirmed = await this.approvalConfirmation.confirmApproval();
+
+      if (!confirmed) {
+        // User cancelled
+        console.log('[BuilderFeeService] User cancelled approval');
+        return false;
+      }
+
+      // 3. User confirmed - execute approval transaction
+      // (includes retry logic for network recovery after backgrounding)
+      const signer = await this.getSigner();
+      await this.hyperliquidGateway.approveBuilderFee(
+        signer,
+        BUILDER_CONFIG.maxFeeRate,
+        BUILDER_CONFIG.address,
+      );
+
+      // 4. Verify approval succeeded
+      const updatedStatus = await this.checkApprovalStatus();
+      return updatedStatus.isApproved;
     } catch (error) {
-      console.error('[BuilderFeeService] Failed to check approval:', error);
+      console.error('[BuilderFeeService] Failed to ensure approval:', error);
       return false;
     }
   }

@@ -3,6 +3,7 @@ import React, { createContext, useContext, useMemo } from 'react';
 import { useWalletComposition } from '@/core/contexts/wallet/reactNative/walletComposition';
 import { HyperliquidGateway } from '../../../infra/hyperliquid/hyperliquidGateway';
 import { BuilderFeeService } from '../application/builderFeeService';
+import { AlertBuilderFeeApprovalConfirmationAdapter } from './alertBuilderFeeApprovalConfirmationAdapter';
 import type { BuilderFeePort } from '../ports/builderFeePort';
 
 interface BuilderFeeCompositionContextValue {
@@ -47,8 +48,11 @@ export function BuilderFeeCompositionProvider({ children }: { children: React.Re
     // Create Hyperliquid gateway (unified infrastructure gateway)
     const hyperliquidGateway = new HyperliquidGateway();
 
-    // BuilderFeeService depends on WalletPort and HyperliquidGateway
-    return new BuilderFeeService(walletService, hyperliquidGateway);
+    // Create approval confirmation adapter (UI implementation)
+    const approvalConfirmation = new AlertBuilderFeeApprovalConfirmationAdapter(walletService);
+
+    // BuilderFeeService depends on WalletPort, HyperliquidGateway, and BuilderFeeApprovalConfirmationPort
+    return new BuilderFeeService(walletService, hyperliquidGateway, approvalConfirmation);
   }, [walletService]);
 
   const value = useMemo(
