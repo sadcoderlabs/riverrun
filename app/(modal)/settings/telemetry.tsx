@@ -138,16 +138,16 @@ export default function TelemetryTest() {
 
           {/* Event Tracking Tests */}
           <YStack>
-            <ListSection label="Event Tracking (Segment + Sentry Breadcrumbs)">
+            <ListSection label="Analytics Events → Segment → Amplitude">
               <ListItem
                 title="Track Event: order_submitted"
-                subTitle="Type-safe event with strict properties"
+                subTitle="Sent to Segment/Amplitude (check Segment Debugger)"
                 showIosChevron={true}
                 onPress={() => void testTrackEvent()}
               />
               <ListItem
                 title="Track Screen: Trade"
-                subTitle="Screen view tracking for analytics"
+                subTitle="Screen view sent to Segment/Amplitude"
                 showIosChevron={true}
                 onPress={() => void testTrackScreen()}
               />
@@ -197,10 +197,13 @@ export default function TelemetryTest() {
                 ✓ Autocomplete: TypeScript suggests valid event properties
               </Text>
               <Text fontSize="$3" color="$color9">
-                ✓ Unified API: Single interface for Sentry + Segment (future)
+                ✓ Unified API: Single interface for Sentry + Segment
               </Text>
               <Text fontSize="$3" color="$color9">
                 ✓ Prevents event sprawl: No arbitrary string events
+              </Text>
+              <Text fontSize="$3" color="$color9">
+                ✓ Dual tracking: Analytics → Amplitude, Errors → Sentry
               </Text>
             </YStack>
           </YStack>
@@ -212,18 +215,40 @@ export default function TelemetryTest() {
             </Text>
             <YStack gap="$2">
               <Text fontSize="$3" color="$color9">
-                • Errors: Check Issues tab in Sentry dashboard
+                📊 Events: Check Segment Debugger or Amplitude dashboard
               </Text>
               <Text fontSize="$3" color="$color9">
-                • Events: Check breadcrumbs in error details
+                🐛 Errors: Check Issues tab in Sentry dashboard
               </Text>
               <Text fontSize="$3" color="$color9">
-                • Performance: Check Performance tab for spans
+                🍞 Breadcrumbs: Visible in Sentry error details (not standalone)
               </Text>
               <Text fontSize="$3" color="$color9">
-                • User Context: Verify wallet address is set as user ID
+                ⚡ Performance: Check Performance tab in Sentry for spans
               </Text>
             </YStack>
+          </YStack>
+
+          {/* Important Note */}
+          <YStack
+            paddingHorizontal="$4"
+            paddingVertical="$3"
+            marginHorizontal="$4"
+            marginTop="$3"
+            backgroundColor="$yellow2"
+            borderRadius="$4"
+            borderWidth={1}
+            borderColor="$yellow6"
+          >
+            <Text fontSize="$4" fontFamily="$interSemiBold" color="$yellow11" marginBottom="$2">
+              ⚠️ Important
+            </Text>
+            <Text fontSize="$3" color="$yellow11">
+              Events (order_submitted, etc.) go to Segment/Amplitude, NOT Sentry Issues.
+            </Text>
+            <Text fontSize="$3" color="$yellow11" marginTop="$1">
+              To see breadcrumbs in Sentry, trigger an error first.
+            </Text>
           </YStack>
         </YStack>
       </ScrollView>
