@@ -3,8 +3,8 @@ import React, { createContext, useContext, useMemo } from 'react';
 import { useWalletComposition } from '@/core/contexts/wallet/reactNative/walletComposition';
 import { HyperliquidGateway } from '../../../infra/hyperliquid/hyperliquidGateway';
 import { BuilderFeeService } from '../application/builderFeeService';
-import { AlertBuilderFeeApprovalConfirmationAdapter } from './alertBuilderFeeApprovalConfirmationAdapter';
 import type { BuilderFeePort } from '../ports/builderFeePort';
+import { AlertBuilderFeeApprovalConfirmationAdapter } from './alertBuilderFeeApprovalConfirmationAdapter';
 
 interface BuilderFeeCompositionContextValue {
   /**
