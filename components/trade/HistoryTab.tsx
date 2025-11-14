@@ -3,13 +3,13 @@
  * Displays user's fill history (executed trades)
  */
 
+import { useMarket, useMarketStore, useWalletContext } from '@/core/composition';
+import { useHistory, type Fill } from '@/core/contexts/history/reactNative/useHistory';
+import { formatTimestamp } from '@/core/contexts/order/ports';
 import { formatPrice } from '@/core/infra/hyperliquid/format/formatPrice';
 import { formatSize } from '@/core/infra/hyperliquid/format/formatSize';
 import { formatValue } from '@/core/infra/hyperliquid/format/formatValue';
-import { useHistory, type Fill } from '@/core/contexts/history/reactNative/useHistory';
-import { formatTimestamp } from '@/core/contexts/order/ports';
-import { useWalletContext, useMarketStore, useMarket } from '@/core/composition';
-import { useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Button, Spinner, Text, View, XStack, YStack } from 'tamagui';
 
 // ============================================================================
@@ -18,18 +18,11 @@ import { Button, Spinner, Text, View, XStack, YStack } from 'tamagui';
 
 interface FillCardProps {
   fill: Fill;
+  szDecimals: number;
   onPress: () => void;
 }
 
-function FillCard({ fill, onPress }: FillCardProps) {
-  const markets = useMarketStore(state => state.markets);
-
-  // Get szDecimals from markets data (from metaAndAssetCtxs subscription)
-  const szDecimals = useMemo(() => {
-    const market = markets.find(m => m.coin === fill.coin);
-    return market?.szDecimals ?? 4;
-  }, [markets, fill.coin]);
-
+const FillCard = React.memo<FillCardProps>(({ fill, szDecimals, onPress }) => {
   // Early return if fill data is invalid
   if (!fill.coin) {
     return null;
@@ -138,7 +131,9 @@ function FillCard({ fill, onPress }: FillCardProps) {
       </XStack>
     </YStack>
   );
-}
+});
+
+FillCard.displayName = 'FillCard';
 
 // ============================================================================
 // Main Component
@@ -146,14 +141,32 @@ function FillCard({ fill, onPress }: FillCardProps) {
 
 type FillFilter = 'all' | 'long' | 'short';
 
+const ITEMS_PER_PAGE = 20;
+
 export function HistoryTabContent() {
   const { wallet } = useWalletContext();
   const { setSelectedMarketByCoin } = useMarket();
+  const markets = useMarketStore(state => state.markets);
 
   // Get fills from useHistory hook
   const { fills, isLoading, error } = useHistory();
 
   const [filter, setFilter] = useState<FillFilter>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Build coin -> szDecimals map once for all fills
+  const coinDecimalsMap = useMemo(() => {
+    const map = new Map<string, number>();
+    markets.forEach(market => {
+      map.set(market.coin, market.szDecimals);
+    });
+    return map;
+  }, [markets]);
+
+  // Reset to page 1 when filter changes
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [filter]);
 
   // Filter fills
   const filteredFills = useMemo(() => {
@@ -177,6 +190,12 @@ export function HistoryTabContent() {
 
     return fills;
   }, [fills, filter]);
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredFills.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedFills = filteredFills.slice(startIndex, endIndex);
 
   // Switch market when fill card is clicked
   const handleFillClick = (coin: string) => {
@@ -219,7 +238,7 @@ export function HistoryTabContent() {
     );
   }
 
-  // Render fills list with filters
+  // Render fills list with filters and pagination
   return (
     <YStack gap="$2" paddingBottom="$4">
       {/* Filter Section */}
@@ -253,19 +272,60 @@ export function HistoryTabContent() {
         </Button>
       </XStack>
 
-      {/* Show filtered fills or message if filter results in no fills */}
-      {filteredFills.length === 0 ? (
+      {/* Show filtered fills or empty message */}
+      {paginatedFills.length === 0 ? (
         <YStack flex={1} justifyContent="center" alignItems="center" padding="$4">
           <Text>No {filter === 'all' ? '' : filter} trades</Text>
         </YStack>
       ) : (
-        filteredFills.map(fill => (
-          <FillCard
-            key={`fill-${fill.tid}`}
-            fill={fill}
-            onPress={() => handleFillClick(fill.coin)}
-          />
-        ))
+        <>
+          {/* Pagination Info */}
+          {totalPages > 1 && (
+            <XStack justifyContent="space-between" alignItems="center" paddingBottom="$2">
+              <Text fontSize="$2" color="$color9">
+                Page {currentPage} of {totalPages} ({filteredFills.length} total)
+              </Text>
+            </XStack>
+          )}
+
+          {/* Fill Cards */}
+          {paginatedFills.map(fill => {
+            const szDecimals = coinDecimalsMap.get(fill.coin) ?? 4;
+            return (
+              <FillCard
+                key={`fill-${fill.tid}`}
+                fill={fill}
+                szDecimals={szDecimals}
+                onPress={() => handleFillClick(fill.coin)}
+              />
+            );
+          })}
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <XStack justifyContent="center" alignItems="center" gap="$2" paddingTop="$3">
+              <Button
+                size="$2"
+                disabled={currentPage === 1}
+                onPress={() => setCurrentPage(p => Math.max(1, p - 1))}
+                opacity={currentPage === 1 ? 0.5 : 1}
+              >
+                Previous
+              </Button>
+              <Text fontSize="$2" color="$color9" minWidth={80} textAlign="center">
+                {currentPage} / {totalPages}
+              </Text>
+              <Button
+                size="$2"
+                disabled={currentPage === totalPages}
+                onPress={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                opacity={currentPage === totalPages ? 0.5 : 1}
+              >
+                Next
+              </Button>
+            </XStack>
+          )}
+        </>
       )}
     </YStack>
   );
