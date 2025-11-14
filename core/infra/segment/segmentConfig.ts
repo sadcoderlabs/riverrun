@@ -5,7 +5,7 @@
  * Events are sent to Segment, which forwards them to Amplitude and other destinations.
  */
 
-import { appVariant, features } from '@/core/config/environment';
+import { appVariant, isDevelopmentBuild } from '@/core/config/environment';
 import { createClient } from '@segment/analytics-react-native';
 import Constants from 'expo-constants';
 
@@ -35,7 +35,7 @@ export function initializeSegment(): void {
     segmentClient = createClient({
       writeKey,
       trackAppLifecycleEvents: true, // Auto-track Application Opened/Backgrounded/Foregrounded
-      debug: features.enableDebugLogging, // Enable debug logging in development builds
+      debug: isDevelopmentBuild, // Enable debug logging in development builds
     });
 
     console.log(`[Segment] Initialized in ${appVariant} environment`);
