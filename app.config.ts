@@ -50,6 +50,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     extra: {
       ...config.extra,
       appVariant: process.env.APP_VARIANT || 'development',
+      // Segment write key - set via environment variable for each build profile
+      segmentWriteKey: process.env.SEGMENT_WRITE_KEY,
     },
   };
 };

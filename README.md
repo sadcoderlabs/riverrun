@@ -13,7 +13,10 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    pnpm install
    ```
 
-2. Start the app
+2. Fetch and create .env.local
+   `eas env:pull --environment development`
+
+3. Start the app
 
    ```bash
    npx expo start

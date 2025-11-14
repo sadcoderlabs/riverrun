@@ -5,9 +5,9 @@
  * Events are sent to Segment, which forwards them to Amplitude and other destinations.
  */
 
+import { appVariant, features } from '@/core/config/environment';
 import { createClient } from '@segment/analytics-react-native';
 import Constants from 'expo-constants';
-import { appVariant, features } from '@/core/config/environment';
 
 /**
  * Segment client instance
@@ -22,9 +22,7 @@ export let segmentClient: ReturnType<typeof createClient> | undefined = undefine
  * Creates the Segment client instance used by SegmentAdapter.
  */
 export function initializeSegment(): void {
-  // Get write key from environment config
-  const writeKey =
-    Constants.expoConfig?.extra?.segmentWriteKey || process.env.EXPO_PUBLIC_SEGMENT_WRITE_KEY;
+  const writeKey = Constants.expoConfig?.extra?.segmentWriteKey;
 
   if (!writeKey) {
     console.warn('[Segment] No write key provided, Segment will not be initialized');
