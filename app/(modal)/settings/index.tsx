@@ -6,7 +6,7 @@ import { useWalletContext } from '@/core/composition';
 import { type ThemePreference } from '@/components/shared/theme/theme.store';
 import { ArrowLeft, ArrowUpRight } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
-import { Pressable } from 'react-native';
+import { Linking, Pressable } from 'react-native';
 import { PortalProvider, ScrollView, Text, View, XStack, YStack } from 'tamagui';
 import { useState } from 'react';
 import ExportWalletModal from '@/components/settings/ExportWalletModal';
@@ -67,12 +67,6 @@ export default function Index() {
                   onPress={() => router.push('/settings/agent-status')}
                 />
                 <ListItem
-                  title="Builder Fee Status"
-                  subTitle="Manage builder fee approval"
-                  showIosChevron={true}
-                  onPress={() => router.push('/settings/builder-fee-status')}
-                />
-                <ListItem
                   title="Referral Status"
                   subTitle="Manage referral code"
                   showIosChevron={true}
@@ -101,32 +95,6 @@ export default function Index() {
                     System
                   </AdaptiveSelect.Item>
                 </AdaptiveSelect>
-                <ListItem
-                  title="Allow Notifications"
-                  subTitle="Permission Unset"
-                  showIosChevron={true}
-                />
-              </ListSection>
-            </YStack>
-            {/* Support Section */}
-            <YStack>
-              <ListSection label="Support">
-                <ListItem
-                  title="FAQ"
-                  iconAfter={
-                    <View marginRight={'$1.5'}>
-                      <ArrowUpRight size={18} color={'$color04'} />
-                    </View>
-                  }
-                />
-                <ListItem
-                  title="Documents"
-                  iconAfter={
-                    <View marginRight={'$1.5'}>
-                      <ArrowUpRight size={18} color={'$color04'} />
-                    </View>
-                  }
-                />
               </ListSection>
             </YStack>
             {/* Socials Section */}
@@ -134,12 +102,13 @@ export default function Index() {
               <ListSection label="Socials">
                 <ListItem
                   title="X / Twitter"
-                  subTitle="@riverrun"
+                  subTitle="@perpprotocol"
                   iconAfter={
                     <View marginRight={'$1.5'}>
                       <ArrowUpRight size={18} color={'$color04'} fontWeight={'bold'} />
                     </View>
                   }
+                  onPress={() => Linking.openURL('https://x.com/perpprotocol')}
                 />
               </ListSection>
             </YStack>
@@ -148,6 +117,12 @@ export default function Index() {
             {__DEV__ && (
               <YStack>
                 <ListSection label="Developer Tools">
+                  <ListItem
+                    title="Builder Fee Status"
+                    subTitle="Manage builder fee approval"
+                    showIosChevron={true}
+                    onPress={() => router.push('/settings/builder-fee-status')}
+                  />
                   <ListItem
                     title="Telemetry"
                     subTitle="Test Sentry error tracking and monitoring"
