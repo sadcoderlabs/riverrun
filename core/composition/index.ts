@@ -32,6 +32,16 @@ export { AppCompositionProvider } from './appComposition';
 
 // Individual context providers (for advanced use cases or testing)
 
+// Environment Configuration
+export {
+  appVariant,
+  isDevelopmentBuild,
+  isPreviewBuild,
+  isProductionBuild,
+  features,
+} from '../config/environment';
+export type { AppVariant } from '../config/environment';
+
 // Telemetry Context
 export {
   TelemetryCompositionProvider,

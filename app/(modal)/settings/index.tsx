@@ -4,6 +4,7 @@ import { ListSection } from '@/components/global/ListSection';
 import { useThemePreference } from '@/components/shared/theme/useThemePreference';
 import { useWalletContext } from '@/core/composition';
 import { type ThemePreference } from '@/components/shared/theme/theme.store';
+import { features } from '@/core/config/environment';
 import { ArrowLeft, ArrowUpRight } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 import { Linking, Pressable } from 'react-native';
@@ -114,7 +115,7 @@ export default function Index() {
             </YStack>
 
             {/* Developer Tools Section - Only in Development */}
-            {__DEV__ && (
+            {features.showDeveloperTools && (
               <YStack>
                 <ListSection label="Developer Tools">
                   <ListItem

@@ -7,29 +7,13 @@
 
 import { createClient } from '@segment/analytics-react-native';
 import Constants from 'expo-constants';
+import { appVariant, features } from '@/core/config/environment';
 
 /**
  * Segment client instance
  * Used by SegmentAdapter to track events
  */
 export let segmentClient: ReturnType<typeof createClient> | undefined = undefined;
-
-/**
- * Get the current environment
- */
-function getEnvironment(): string {
-  if (__DEV__) {
-    return 'development';
-  }
-
-  // Check if this is a preview/staging build
-  const releaseChannel = Constants.expoConfig?.extra?.releaseChannel;
-  if (releaseChannel === 'staging' || releaseChannel === 'preview') {
-    return 'staging';
-  }
-
-  return 'production';
-}
 
 /**
  * Initialize Segment
@@ -47,18 +31,16 @@ export function initializeSegment(): void {
     return;
   }
 
-  const environment = getEnvironment();
-
   try {
     // Create Segment client
     // Note: Segment automatically captures app info, device info, and screen context
     segmentClient = createClient({
       writeKey,
       trackAppLifecycleEvents: true, // Auto-track Application Opened/Backgrounded/Foregrounded
-      debug: __DEV__, // Enable debug logging in development
+      debug: features.enableDebugLogging, // Enable debug logging in development builds
     });
 
-    console.log(`[Segment] Initialized in ${environment} environment`);
+    console.log(`[Segment] Initialized in ${appVariant} environment`);
   } catch (error) {
     console.error('[Segment] Failed to initialize:', error);
   }

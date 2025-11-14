@@ -46,5 +46,10 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       ...config.android,
       package: getUniqueIdentifier(),
     },
+    // Pass app variant to runtime
+    extra: {
+      ...config.extra,
+      appVariant: process.env.APP_VARIANT || 'development',
+    },
   };
 };

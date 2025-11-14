@@ -7,23 +7,7 @@
 
 import * as Sentry from '@sentry/react-native';
 import Constants from 'expo-constants';
-
-/**
- * Get the current environment
- */
-function getEnvironment(): string {
-  if (__DEV__) {
-    return 'development';
-  }
-
-  // Check if this is a preview/staging build
-  const releaseChannel = Constants.expoConfig?.extra?.releaseChannel;
-  if (releaseChannel === 'staging' || releaseChannel === 'preview') {
-    return 'staging';
-  }
-
-  return 'production';
-}
+import { appVariant, isDevelopmentBuild } from '@/core/config/environment';
 
 /**
  * Initialize Sentry
@@ -39,20 +23,18 @@ export function initializeSentry(): void {
     return;
   }
 
-  const environment = getEnvironment();
-
   Sentry.init({
     // Sentry DSN
     dsn,
 
     // Environment
-    environment,
+    environment: appVariant,
 
-    // Enable debug mode in development
-    debug: __DEV__,
+    // Enable debug mode in development builds
+    debug: isDevelopmentBuild,
 
     // Performance monitoring
-    tracesSampleRate: environment === 'production' ? 0.2 : 1.0, // 20% in prod, 100% in dev
+    tracesSampleRate: appVariant === 'production' ? 0.2 : 1.0, // 20% in prod, 100% in dev
 
     // Breadcrumbs configuration
     maxBreadcrumbs: 100,
@@ -91,7 +73,7 @@ export function initializeSentry(): void {
     // Before breadcrumb hook - filter sensitive breadcrumbs
     beforeBreadcrumb(breadcrumb) {
       // Don't track console.log in production
-      if (breadcrumb.category === 'console' && environment === 'production') {
+      if (breadcrumb.category === 'console' && appVariant === 'production') {
         return null;
       }
 
@@ -113,7 +95,7 @@ export function initializeSentry(): void {
   Sentry.setTag('platform', Constants.platform?.ios ? 'ios' : 'android');
   Sentry.setTag('app_version', Constants.expoConfig?.version || 'unknown');
 
-  console.log(`[Sentry] Initialized in ${environment} environment`);
+  console.log(`[Sentry] Initialized in ${appVariant} environment`);
 }
 
 /**
