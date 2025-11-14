@@ -13,7 +13,10 @@
       "extends": "base",
       "developmentClient": true,
       "distribution": "internal",
-      "environment": "development"
+      "environment": "development",
+      "env": {
+        "APP_VARIANT": "development"
+      }
     },
     "ios-simulator": {
       "extends": "base",
@@ -22,17 +25,26 @@
       "ios": {
         "simulator": true
       },
-      "environment": "development"
+      "environment": "development",
+      "env": {
+        "APP_VARIANT": "development"
+      }
     },
     "preview": {
       "extends": "base",
       "distribution": "internal",
-      "environment": "preview"
+      "environment": "preview",
+      "env": {
+        "APP_VARIANT": "preview"
+      }
     },
     "production": {
       "extends": "base",
       "autoIncrement": true,
-      "environment": "production"
+      "environment": "production",
+      "env": {
+        "APP_VARIANT": "production"
+      }
     }
   },
   "submit": {

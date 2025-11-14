@@ -3,6 +3,7 @@
   "main": "index.ts",
   "version": "1.0.0",
   "scripts": {
+    "dev": "APP_VARIANT=development pnpm expo start",
     "start": "expo start",
     "start:log": "expo start 2>&1 | tee expo-server.log",
     "android": "expo start --android",

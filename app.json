@@ -1,6 +1,5 @@
 {
   "expo": {
-    "name": "riverrun",
     "slug": "riverrun",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -10,7 +9,6 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.perpetualprotocol.riverrun",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
