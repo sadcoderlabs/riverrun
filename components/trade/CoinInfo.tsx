@@ -1,5 +1,5 @@
 import { MarketSelectorModal } from '@/components/trade/MarketSelectorModal';
-import { useMarketStore } from '@/core/composition';
+import { useMarketStore } from '@/core/app-internal';
 import type { SelectedMarket } from '@/core/contexts/market/ports/types';
 import { CandlestickChart, Menu } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';

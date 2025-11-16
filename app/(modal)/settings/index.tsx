@@ -2,7 +2,7 @@ import AdaptiveSelect from '@/components/global/AdaptiveSelect';
 import { ListItem } from '@/components/global/ListItem';
 import { ListSection } from '@/components/global/ListSection';
 import { useThemePreference } from '@/components/shared/theme/useThemePreference';
-import { useWalletContext } from '@/core/composition';
+import { useWalletContext } from '@/core/app-internal';
 import { type ThemePreference } from '@/components/shared/theme/theme.store';
 import { features } from '@/core/config/environment';
 import { ArrowLeft, ArrowUpRight } from '@tamagui/lucide-icons';

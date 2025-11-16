@@ -6,7 +6,7 @@
 import { formatPrice } from '@/core/infra/hyperliquid/format/formatPrice';
 import { formatSize } from '@/core/infra/hyperliquid/format/formatSize';
 import { formatValue } from '@/core/infra/hyperliquid/format/formatValue';
-import { useOrder, useOrderStore } from '@/core/composition';
+import { useOrder, useOrderStore } from '@/core/app-internal';
 import type { Order } from '@/core/contexts/order/ports';
 import {
   calculateOrderMetrics,
@@ -14,7 +14,7 @@ import {
   getOrderDirection,
   isMarketOrder,
 } from '@/core/contexts/order/ports';
-import { useWalletContext, useMarketStore, useMarket } from '@/core/composition';
+import { useWalletContext, useMarketStore, useMarket } from '@/core/app-internal';
 import { useMemo, useState } from 'react';
 import { Button, Spinner, Text, View, XStack, YStack } from 'tamagui';
 

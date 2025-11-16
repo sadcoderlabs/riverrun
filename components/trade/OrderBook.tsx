@@ -11,7 +11,7 @@ import {
   type PrecisionMenuItem,
 } from '@/core/infra/hyperliquid/subscription';
 import { useThrottle } from '@/components/shared/hooks/useThrottle';
-import { useMarketStore } from '@/core/composition';
+import { useMarketStore } from '@/core/app-internal';
 import { ArrowDownRight, ArrowUpRight, ChevronDown, Info } from '@tamagui/lucide-icons';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList } from 'react-native';

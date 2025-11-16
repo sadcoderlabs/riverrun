@@ -4,7 +4,7 @@ import { Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, XStack, YStack } from 'tamagui';
 import { ChartUI } from '@/components/trade/ChartUi';
-import { useMarketStore } from '@/core/composition';
+import { useMarketStore } from '@/core/app-internal';
 
 /**
  * Full-Screen Chart Page

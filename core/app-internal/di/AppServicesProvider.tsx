@@ -23,9 +23,9 @@ import type { AppContainer, AppCradle } from './types';
 import { useWalletComposition } from '../features/wallet/components/walletComposition';
 
 // Subscription hooks (run internally)
-import { useHistorySubscription } from '../../contexts/history/reactNative/useHistorySubscription';
-import { useOrderSubscription } from '../../contexts/order/reactNative/useOrderSubscription';
-import { usePositionSubscription } from '../../contexts/position/reactNative/usePositionSubscription';
+import { useHistorySubscription } from '../features/history/hooks/useHistorySubscription';
+import { useOrderSubscription } from '../features/order/hooks/useOrderSubscription';
+import { usePositionSubscription } from '../features/position/hooks/usePositionSubscription';
 
 // ============================================================================
 // Context Definition

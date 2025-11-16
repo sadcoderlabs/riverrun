@@ -1,4 +1,4 @@
-import { useMargin, useMarginStore } from '@/core/composition';
+import { useMargin, useMarginStore } from '@/core/app-internal';
 import { toast } from 'sonner-native';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Modal, Pressable, StyleSheet } from 'react-native';

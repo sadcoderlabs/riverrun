@@ -1,5 +1,5 @@
 import { LeverageAdjustmentModal } from '@/components/trade/LeverageAdjustmentModal';
-import { useMarginStore } from '@/core/composition';
+import { useMarginStore } from '@/core/app-internal';
 import { ChevronDown } from '@tamagui/lucide-icons';
 import { useState } from 'react';
 import { Text, XStack } from 'tamagui';

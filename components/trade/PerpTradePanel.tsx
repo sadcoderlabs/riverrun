@@ -19,10 +19,10 @@ import {
   useOrderValue,
   useMarginRequired,
   useOrderValidation,
-} from '@/core/composition';
-import { usePositionStore } from '@/core/contexts/position/reactNative/usePositionStore';
-import { useMarginStore } from '@/core/composition';
-import { useMarketStore } from '@/core/composition';
+} from '@/core/app-internal';
+import { usePositionStore } from '@/core/app-internal';
+import { useMarginStore } from '@/core/app-internal';
+import { useMarketStore } from '@/core/app-internal';
 import { useMarkPrice, useMidPrice, useExecutionPrice } from './hooks';
 
 import { Checkbox } from '@tamagui/checkbox';

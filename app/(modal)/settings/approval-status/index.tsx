@@ -1,6 +1,6 @@
 import { ListButton, ListItem } from '@/components/global/ListItem';
 import { ListSection } from '@/components/global/ListSection';
-import { useReferral, useReferralStore, useReferralHintsStore } from '@/core/composition';
+import { useReferral, useReferralStore, useReferralHintsStore } from '@/core/app-internal';
 import { ArrowLeft } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';

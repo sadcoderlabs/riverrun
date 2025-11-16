@@ -7,7 +7,7 @@
  *
  * @example
  * ```tsx
- * import { useWalletComposition } from '@/core/composition';
+ * import { useWalletComposition } from '@/core/app-internal';
  *
  * function MyComponent() {
  *   const { walletService, isReady } = useWalletComposition();

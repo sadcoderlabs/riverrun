@@ -1,5 +1,5 @@
 import { Button } from '@/components/global/Button';
-import { useAgent, useAgentStore, useContainer } from '@/core/composition';
+import { useAgent, useAgentStore, useContainer } from '@/core/app-internal';
 import { DEFAULT_AGENT_NAME } from '@/core/contexts/agent/constants';
 import { ArrowLeft } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';

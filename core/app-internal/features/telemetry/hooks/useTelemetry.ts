@@ -133,7 +133,7 @@ export interface UseTelemetryResult {
  *
  * @example
  * ```tsx
- * import { useTelemetry } from '@/core/composition';
+ * import { useTelemetry } from '@/core/app-internal/di';
  *
  * function OrderForm() {
  *   const { trackEvent, captureError } = useTelemetry();

@@ -1,7 +1,7 @@
 import { ListButton, ListItem } from '@/components/global/ListItem';
 import { ListSection } from '@/components/global/ListSection';
 import { BUILDER_CONFIG } from '@/core/contexts/builderFee/config';
-import { useBuilderFee, useBuilderFeeStore } from '@/core/composition';
+import { useBuilderFee, useBuilderFeeStore } from '@/core/app-internal';
 import { ArrowLeft } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';

@@ -11,7 +11,7 @@ import {
   useBridgeStore,
   ARBITRUM_CONFIG,
   BRIDGE_LIMITS,
-} from '@/core/composition';
+} from '@/core/app-internal';
 import { DEPOSIT_TOKENS, type ChainName } from '@/core/contexts/bridge/depositTokens';
 
 // Helper function to shorten address (first 5 and last 5 characters)

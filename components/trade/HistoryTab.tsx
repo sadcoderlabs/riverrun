@@ -3,8 +3,8 @@
  * Displays user's fill history (executed trades)
  */
 
-import { useMarket, useMarketStore, useWalletContext } from '@/core/composition';
-import { useHistory, type Fill } from '@/core/contexts/history/reactNative/useHistory';
+import { useMarket, useMarketStore, useWalletContext } from '@/core/app-internal';
+import { useHistory, type Fill } from '@/core/app-internal';
 import { formatTimestamp } from '@/core/contexts/order/ports';
 import { formatPrice } from '@/core/infra/hyperliquid/format/formatPrice';
 import { formatSize } from '@/core/infra/hyperliquid/format/formatSize';

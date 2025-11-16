@@ -1,4 +1,4 @@
-import { useWalletContext } from '@/core/composition';
+import { useWalletContext } from '@/core/app-internal';
 import { Copy, Settings, Wallet } from '@tamagui/lucide-icons';
 import * as Clipboard from 'expo-clipboard';
 import { Link } from 'expo-router';

@@ -1,7 +1,7 @@
 import { Button } from '@/components/global/Button';
 import { Heading } from '@/components/global/Heading';
 import { useThemePreference } from '@/components/shared/theme/useThemePreference';
-import { useWalletContext } from '@/core/composition';
+import { useWalletContext } from '@/core/app-internal';
 import { Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { toast } from 'sonner-native';

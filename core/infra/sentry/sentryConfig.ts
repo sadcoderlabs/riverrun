@@ -107,7 +107,7 @@ export function initializeSentry(): void {
  *
  * @example
  * ```tsx
- * import { useTelemetry, createNavigationBreadcrumb } from '@/core/composition';
+ * import { useTelemetry, createNavigationBreadcrumb } from '@/core/app-internal';
  *
  * const { addBreadcrumb } = useTelemetry();
  *

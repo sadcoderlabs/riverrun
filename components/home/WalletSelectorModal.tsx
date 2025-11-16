@@ -1,4 +1,4 @@
-import { useWalletContext } from '@/core/composition';
+import { useWalletContext } from '@/core/app-internal';
 import { LogOut } from '@tamagui/lucide-icons';
 import { Modal, Pressable, StyleSheet, ScrollView } from 'react-native';
 import { toast } from 'sonner-native';

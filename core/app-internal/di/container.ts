@@ -20,8 +20,8 @@ import { HyperliquidGateway } from '../../infra/hyperliquid/hyperliquidGateway';
 // Adapters
 import { SentryAdapter } from '../../contexts/telemetry/adapters/sentryAdapter';
 import { SegmentAdapter } from '../../contexts/telemetry/adapters/segmentAdapter';
-import { AlertAgentApprovalConfirmationAdapter } from '../../contexts/agent/reactNative/alertAgentApprovalConfirmationAdapter';
-import { AlertBuilderFeeApprovalConfirmationAdapter } from '../../contexts/builderFee/reactNative/alertBuilderFeeApprovalConfirmationAdapter';
+import { AlertAgentApprovalConfirmationAdapter } from '../../contexts/agent/adapters/alertAgentApprovalConfirmationAdapter';
+import { AlertBuilderFeeApprovalConfirmationAdapter } from '../../contexts/builderFee/adapters/alertBuilderFeeApprovalConfirmationAdapter';
 
 // Services
 import { TelemetryService } from '../../contexts/telemetry/application/telemetryService';

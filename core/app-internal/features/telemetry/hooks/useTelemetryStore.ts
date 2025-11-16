@@ -16,7 +16,7 @@ import { telemetryStore } from '../../../../contexts/telemetry/adapters/telemetr
  *
  * @example
  * ```tsx
- * import { useTelemetryStore } from '@/core/composition';
+ * import { useTelemetryStore } from '@/core/app-internal/di';
  *
  * function TelemetrySettings() {
  *   // Subscribe to enabled status
