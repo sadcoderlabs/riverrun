@@ -4,6 +4,7 @@ import type { OrderParameters } from '@nktkas/hyperliquid/api/exchange';
 import type {
   OrderExchangePort,
   OrderExecutionResponse,
+  OrderCancelRequest,
 } from '../../contexts/order/application/ports/OrderExchangePort';
 
 /**
@@ -36,11 +37,9 @@ export class HyperliquidExchangeGateway implements OrderExchangePort {
     };
   }
 
-  async cancelOrders(_: {
-    signer: Signer;
-    clientOrderIds: string[];
-  }): Promise<OrderExecutionResponse> {
-    // Sample 不著墨 cancel，先直接回傳成功。
+  async cancel(signer: Signer, request: OrderCancelRequest): Promise<OrderExecutionResponse> {
+    const client = this.getClient(signer);
+    await client.cancel({ cloids: request.clientOrderIds });
     return { ok: true };
   }
 

@@ -8,7 +8,11 @@ export type OrderExecutionResponse = {
   errorCode?: string;
 };
 
+export type OrderCancelRequest = {
+  clientOrderIds: string[];
+};
+
 export interface OrderExchangePort {
   order(signer: Signer, request: OrderParameters): Promise<OrderExecutionResponse>;
-  cancelOrders(req: { signer: Signer; clientOrderIds: string[] }): Promise<OrderExecutionResponse>;
+  cancel(signer: Signer, request: OrderCancelRequest): Promise<OrderExecutionResponse>;
 }

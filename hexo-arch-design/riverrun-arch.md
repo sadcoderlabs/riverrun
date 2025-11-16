@@ -246,9 +246,13 @@ export type OrderExecutionResponse = {
   errorCode?: string;
 };
 
+export type OrderCancelRequest = {
+  clientOrderIds: string[];
+};
+
 export interface OrderExchangePort {
   order(signer: Signer, request: OrderParameters): Promise<OrderExecutionResponse>;
-  cancelOrders(req: { signer: Signer; clientOrderIds: string[] }): Promise<OrderExecutionResponse>;
+  cancel(signer: Signer, request: OrderCancelRequest): Promise<OrderExecutionResponse>;
 }
 ```
 
@@ -261,6 +265,7 @@ import type { Signer } from 'ethers';
 import type {
   OrderExchangePort,
   OrderExecutionResponse,
+  OrderCancelRequest,
 } from '@/contexts/order/application/ports/OrderExchangePort';
 
 export class HyperliquidExchangeGateway implements OrderExchangePort {
@@ -290,10 +295,9 @@ export class HyperliquidExchangeGateway implements OrderExchangePort {
     };
   }
 
-  async cancelOrders(_req: {
-    signer: Signer;
-    clientOrderIds: string[];
-  }): Promise<OrderExecutionResponse> {
+  async cancel(signer: Signer, request: OrderCancelRequest): Promise<OrderExecutionResponse> {
+    const client = this.getClient(signer);
+    await client.cancel({ cloids: request.clientOrderIds });
     return { ok: true };
   }
 
