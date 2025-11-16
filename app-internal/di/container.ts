@@ -174,42 +174,24 @@ export function createAppContainer(options: CreateContainerOptions): AppContaine
   container.register({
     // EnsureBuilderFeeApprovalUseCase: Main approval flow
     ensureBuilderFeeApprovalUseCase: asFunction(
-      ({
-        walletService,
-        builderFeeExchangePort,
-        builderFeeConfirmationPort,
-        builderFeeStatePort,
-      }) => {
+      ({ walletService, builderFeeExchangePort, builderFeeConfirmationPort }) => {
         return new EnsureBuilderFeeApprovalUseCase(
           walletService,
           builderFeeExchangePort,
           builderFeeConfirmationPort,
-          builderFeeStatePort,
         );
       },
     ).singleton(),
 
     // CheckBuilderFeeStatusUseCase: Query approval status
-    checkBuilderFeeStatusUseCase: asFunction(
-      ({ walletService, builderFeeExchangePort, builderFeeStatePort }) => {
-        return new CheckBuilderFeeStatusUseCase(
-          walletService,
-          builderFeeExchangePort,
-          builderFeeStatePort,
-        );
-      },
-    ).singleton(),
+    checkBuilderFeeStatusUseCase: asFunction(({ walletService, builderFeeExchangePort }) => {
+      return new CheckBuilderFeeStatusUseCase(walletService, builderFeeExchangePort);
+    }).singleton(),
 
     // RevokeBuilderFeeUseCase: Revoke approval
-    revokeBuilderFeeUseCase: asFunction(
-      ({ walletService, builderFeeExchangePort, builderFeeStatePort }) => {
-        return new RevokeBuilderFeeUseCase(
-          walletService,
-          builderFeeExchangePort,
-          builderFeeStatePort,
-        );
-      },
-    ).singleton(),
+    revokeBuilderFeeUseCase: asFunction(({ walletService, builderFeeExchangePort }) => {
+      return new RevokeBuilderFeeUseCase(walletService, builderFeeExchangePort);
+    }).singleton(),
   });
 
   // ==========================================================================

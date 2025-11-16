@@ -3,6 +3,7 @@ import { Alert } from 'react-native';
 
 import { useContainer } from '@/app-internal/di';
 import { BUILDER_CONFIG } from '../../../../contexts/builderFee/config';
+import { builderFeeStateStore } from '../../../../contexts/builderFee/adapters/builderFeeStateStore';
 
 export interface UseBuilderFeeResult {
   /**
@@ -103,11 +104,14 @@ export function useBuilderFee(): UseBuilderFeeResult {
 
   /**
    * Load builder fee status from blockchain
+   * Updates UI state store after fetching (UI layer responsibility)
    */
   const loadBuilderFeeStatus = useCallback(async () => {
     setIsLoading(true);
     try {
       const status = await checkStatusUseCase.execute();
+      // UI layer responsibility: update state store
+      builderFeeStateStore.getState().updateStatus(status);
       return status.maxApprovedFee;
     } finally {
       setIsLoading(false);
@@ -118,6 +122,7 @@ export function useBuilderFee(): UseBuilderFeeResult {
    * Core approval logic - executes the approval use case
    * Use case handles confirmation dialog internally
    * Does not show success alert, only error alerts
+   * Reloads status after successful approval (UI layer responsibility)
    */
   const executeApproval = useCallback(async (): Promise<boolean> => {
     try {
@@ -126,9 +131,12 @@ export function useBuilderFee(): UseBuilderFeeResult {
 
       if (!success) {
         Alert.alert('Approval Failed', 'Builder fee approval was not confirmed. Please try again.');
+        return false;
       }
 
-      return success;
+      // UI layer responsibility: reload status to update state
+      await loadBuilderFeeStatus();
+      return true;
     } catch (error) {
       console.error('Failed to approve builder fee:', error);
       Alert.alert(
@@ -139,7 +147,7 @@ export function useBuilderFee(): UseBuilderFeeResult {
     } finally {
       setIsLoading(false);
     }
-  }, [ensureApprovalUseCase]);
+  }, [ensureApprovalUseCase, loadBuilderFeeStatus]);
 
   /**
    * Approve builder fee
@@ -177,12 +185,19 @@ export function useBuilderFee(): UseBuilderFeeResult {
    * Ensure builder fee is approved before proceeding
    * If not approved, automatically shows approval dialog (handled by use case)
    * Use case handles the complete flow including confirmation
+   * Reloads status after successful approval (UI layer responsibility)
    */
   const ensureBuilderFeeApproval = useCallback(async (): Promise<boolean> => {
     try {
       setIsLoading(true);
       // Use case handles: check status → request confirmation → execute approval
       const success = await ensureApprovalUseCase.execute();
+
+      if (success) {
+        // UI layer responsibility: reload status to update state
+        await loadBuilderFeeStatus();
+      }
+
       return success;
     } catch (error) {
       console.error('Failed to ensure builder fee approval:', error);
@@ -194,11 +209,12 @@ export function useBuilderFee(): UseBuilderFeeResult {
     } finally {
       setIsLoading(false);
     }
-  }, [ensureApprovalUseCase]);
+  }, [ensureApprovalUseCase, loadBuilderFeeStatus]);
 
   /**
    * Revoke builder fee
    * Shows confirmation dialog before revoking
+   * After successful revocation, reloads status to update UI
    */
   const revokeBuilderFee = useCallback(async (): Promise<boolean> => {
     return new Promise<boolean>(resolve => {
@@ -217,15 +233,15 @@ export function useBuilderFee(): UseBuilderFeeResult {
             onPress: async () => {
               try {
                 setIsLoading(true);
-                const success = await revokeUseCase.execute();
 
-                if (success) {
-                  Alert.alert('Success', 'Builder fee revoked successfully');
-                } else {
-                  Alert.alert('Error', 'Builder fee revoke was not confirmed');
-                }
+                // Execute revocation on-chain
+                await revokeUseCase.execute();
 
-                resolve(success);
+                // Reload status to update UI state (UI layer responsibility)
+                await loadBuilderFeeStatus();
+
+                Alert.alert('Success', 'Builder fee revoked successfully');
+                resolve(true);
               } catch (error) {
                 console.error('Failed to revoke builder fee:', error);
                 Alert.alert(
@@ -241,7 +257,7 @@ export function useBuilderFee(): UseBuilderFeeResult {
         ],
       );
     });
-  }, [revokeUseCase]);
+  }, [revokeUseCase, loadBuilderFeeStatus]);
 
   return {
     isLoading,

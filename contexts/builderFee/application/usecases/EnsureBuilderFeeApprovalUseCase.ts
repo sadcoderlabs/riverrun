@@ -3,21 +3,27 @@
  *
  * Ensures that builder fee approval is in place before proceeding with trading operations.
  *
+ * Responsibilities:
+ * - Check if already approved
+ * - Request user confirmation if not approved
+ * - Execute approval transaction on-chain
+ * - Return approval result
+ *
+ * Non-responsibilities:
+ * - State management (UI layer responsibility)
+ *
  * Flow:
  * 1. Check if already approved
  * 2. If not approved, request user confirmation
  * 3. If confirmed, execute approval transaction
- * 4. Verify approval succeeded
- * 5. Return approval status
+ * 4. Return success/failure
  *
  * This use case is the main entry point for ensuring builder fee approval
  * in all trading flows (order placement, closing positions, TP/SL, etc.)
  */
 
-import type { BuilderFeeStatus } from '../../ports/types';
 import type { BuilderFeeExchangePort } from '../ports/BuilderFeeExchangePort';
 import type { BuilderFeeConfirmationPort } from '../ports/BuilderFeeConfirmationPort';
-import type { BuilderFeeStatePort } from '../ports/BuilderFeeStatePort';
 import type { WalletPort } from '../../../wallet/ports/walletPort';
 import { BUILDER_CONFIG } from '../../config';
 
@@ -26,34 +32,7 @@ export class EnsureBuilderFeeApprovalUseCase {
     private readonly wallet: WalletPort,
     private readonly exchange: BuilderFeeExchangePort,
     private readonly confirmation: BuilderFeeConfirmationPort,
-    private readonly state: BuilderFeeStatePort,
   ) {}
-
-  /**
-   * Refresh approval status from blockchain
-   * @private
-   */
-  private async refreshStatus(address: string): Promise<BuilderFeeStatus> {
-    try {
-      const maxFee = await this.exchange.getMaxBuilderFee(address, BUILDER_CONFIG.address);
-
-      const status: BuilderFeeStatus = {
-        maxApprovedFee: maxFee,
-        isApproved: maxFee >= BUILDER_CONFIG.feeRate,
-      };
-
-      this.state.updateStatus(status);
-      return status;
-    } catch (error) {
-      console.error('[EnsureBuilderFeeApprovalUseCase] Failed to refresh status:', error);
-      const status: BuilderFeeStatus = {
-        maxApprovedFee: 0,
-        isApproved: false,
-      };
-      this.state.updateStatus(status);
-      return status;
-    }
-  }
 
   /**
    * Execute the use case
@@ -66,17 +45,14 @@ export class EnsureBuilderFeeApprovalUseCase {
       const wallet = await this.wallet.active();
       if (!wallet) {
         console.warn('[EnsureBuilderFeeApprovalUseCase] No active wallet');
-        const status: BuilderFeeStatus = {
-          maxApprovedFee: 0,
-          isApproved: false,
-        };
-        this.state.updateStatus(status);
         return false;
       }
 
       // 1. Check if already approved
-      const status = await this.refreshStatus(wallet.address);
-      if (status.isApproved) {
+      const maxFee = await this.exchange.getMaxBuilderFee(wallet.address, BUILDER_CONFIG.address);
+      const isApproved = maxFee >= BUILDER_CONFIG.feeRate;
+
+      if (isApproved) {
         return true; // Already approved
       }
 
@@ -99,9 +75,8 @@ export class EnsureBuilderFeeApprovalUseCase {
         BUILDER_CONFIG.address,
       );
 
-      // 4. Verify approval succeeded
-      const updatedStatus = await this.refreshStatus(wallet.address);
-      return updatedStatus.isApproved;
+      // Transaction succeeded
+      return true;
     } catch (error) {
       console.error('[EnsureBuilderFeeApprovalUseCase] Failed to ensure approval:', error);
       return false;
