@@ -27,7 +27,6 @@ import { AlertBuilderFeeApprovalConfirmationAdapter } from '@/contexts/builderFe
 import { TelemetryService } from '@/contexts/telemetry/application/telemetryService';
 import { MarketService } from '@/contexts/market/application/marketService';
 import { AgentService } from '@/contexts/agent/application/agentService';
-import { ReferralService } from '@/contexts/referral/application/referralService';
 import { BridgeService } from '@/contexts/bridge/application/bridgeService';
 import { MarginService } from '@/contexts/margin/application/marginService';
 import { OrderCommandService } from '@/contexts/order/application/orderCommandService';
@@ -36,6 +35,10 @@ import { OrderCommandService } from '@/contexts/order/application/orderCommandSe
 import { GetBuilderFeeStatusUseCase } from '@/contexts/builderFee/application/usecases/GetBuilderFeeStatusUseCase';
 import { ApproveBuilderFeeUseCase } from '@/contexts/builderFee/application/usecases/ApproveBuilderFeeUseCase';
 import { RevokeBuilderFeeUseCase } from '@/contexts/builderFee/application/usecases/RevokeBuilderFeeUseCase';
+
+// Referral UseCases
+import { GetReferralStatusUseCase } from '@/contexts/referral/application/usecases/GetReferralStatusUseCase';
+import { SetReferrerUseCase } from '@/contexts/referral/application/usecases/SetReferrerUseCase';
 
 // Ports (for interface injection)
 import type { WalletPort } from '@/contexts/wallet/ports/walletPort';
@@ -115,11 +118,6 @@ export function createAppContainer(options: CreateContainerOptions): AppContaine
       return new AgentService(walletService, hyperliquidGateway, approvalConfirmation);
     }).singleton(),
 
-    // Referral Service (depends on Wallet + HyperliquidGateway)
-    referralService: asFunction(({ walletService, hyperliquidGateway }) => {
-      return new ReferralService(walletService, hyperliquidGateway);
-    }).singleton(),
-
     // Bridge Service (depends on Wallet + HyperliquidGateway)
     bridgeService: asFunction(({ walletService, hyperliquidGateway }) => {
       return new BridgeService(walletService, hyperliquidGateway);
@@ -188,6 +186,33 @@ export function createAppContainer(options: CreateContainerOptions): AppContaine
     // RevokeBuilderFeeUseCase: Revoke approval
     revokeBuilderFeeUseCase: asFunction(({ builderFeeExchangePort }) => {
       return new RevokeBuilderFeeUseCase(builderFeeExchangePort);
+    }).singleton(),
+  });
+
+  // ==========================================================================
+  // Referral Context - Out Ports (Adapters)
+  // ==========================================================================
+
+  container.register({
+    // ReferralExchangePort: Implemented by HyperliquidGateway directly
+    referralExchangePort: asFunction(({ hyperliquidGateway }) => {
+      return hyperliquidGateway;
+    }).singleton(),
+  });
+
+  // ==========================================================================
+  // Referral Context - UseCases
+  // ==========================================================================
+
+  container.register({
+    // GetReferralStatusUseCase: Query referral status
+    getReferralStatusUseCase: asFunction(({ referralExchangePort }) => {
+      return new GetReferralStatusUseCase(referralExchangePort);
+    }).singleton(),
+
+    // SetReferrerUseCase: Set referrer code
+    setReferrerUseCase: asFunction(({ referralExchangePort }) => {
+      return new SetReferrerUseCase(referralExchangePort);
     }).singleton(),
   });
 

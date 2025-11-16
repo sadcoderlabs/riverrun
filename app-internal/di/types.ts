@@ -10,7 +10,6 @@ import type { TelemetryPort } from '@/contexts/telemetry/ports/telemetryPort';
 import type { WalletPort } from '@/contexts/wallet/ports/walletPort';
 import type { MarketPort } from '@/contexts/market/ports/marketPort';
 import type { AgentPort } from '@/contexts/agent/ports/agentPort';
-import type { ReferralPort } from '@/contexts/referral/ports/referralPort';
 import type { BridgePort } from '@/contexts/bridge/ports/bridgePort';
 import type { MarginPort } from '@/contexts/margin/ports/marginPort';
 import type { OrderCommandPort } from '@/contexts/order/ports/orderCommandPort';
@@ -24,6 +23,13 @@ import type { RevokeBuilderFeeUseCase } from '@/contexts/builderFee/application/
 // BuilderFee Ports
 import type { BuilderFeeExchangePort } from '@/contexts/builderFee/application/ports/BuilderFeeExchangePort';
 import type { BuilderFeeConfirmationPort } from '@/contexts/builderFee/application/ports/BuilderFeeConfirmationPort';
+
+// Referral UseCases
+import type { GetReferralStatusUseCase } from '@/contexts/referral/application/usecases/GetReferralStatusUseCase';
+import type { SetReferrerUseCase } from '@/contexts/referral/application/usecases/SetReferrerUseCase';
+
+// Referral Ports
+import type { ReferralExchangePort } from '@/contexts/referral/application/ports/ReferralExchangePort';
 
 /**
  * AppCradle - Type-safe container cradle
@@ -42,7 +48,6 @@ export interface AppCradle {
 
   // Domain Services
   agentService: AgentPort;
-  referralService: ReferralPort;
   bridgeService: BridgePort;
   marginService: MarginPort;
 
@@ -57,6 +62,13 @@ export interface AppCradle {
   getBuilderFeeStatusUseCase: GetBuilderFeeStatusUseCase;
   approveBuilderFeeUseCase: ApproveBuilderFeeUseCase;
   revokeBuilderFeeUseCase: RevokeBuilderFeeUseCase;
+
+  // Referral Context - Out Ports
+  referralExchangePort: ReferralExchangePort;
+
+  // Referral Context - UseCases
+  getReferralStatusUseCase: GetReferralStatusUseCase;
+  setReferrerUseCase: SetReferrerUseCase;
 }
 
 /**

@@ -1,6 +1,6 @@
 import { ListButton, ListItem } from '@/app-internal/components/global/ListItem';
 import { ListSection } from '@/app-internal/components/global/ListSection';
-import { useReferral, useReferralStore, useReferralHintsStore } from '@/app-internal';
+import { useReferral, useReferralHintsStore } from '@/app-internal';
 import { ArrowLeft } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
@@ -18,12 +18,14 @@ function shortenAddress(address: string | undefined): string {
 export default function ApprovalStatus() {
   const router = useRouter();
 
-  // Referral state
-  const referralInfo = useReferralStore(state => state.referralInfo);
-  const hasReferrer = useReferralStore(state => state.hasReferrer);
-
-  // Referral operations
-  const { loadStatus, setReferrer, isLoading: isReferralLoading } = useReferral();
+  // Referral state and operations
+  const {
+    referralInfo,
+    hasReferrer,
+    loadStatus,
+    setReferrer,
+    isLoading: isReferralLoading,
+  } = useReferral();
 
   // Referral hints store
   const { dontHintReferral, setDontHintReferral } = useReferralHintsStore();

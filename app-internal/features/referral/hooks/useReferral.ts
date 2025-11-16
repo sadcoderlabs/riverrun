@@ -9,19 +9,27 @@ import { useCallback, useState } from 'react';
 import { Alert } from 'react-native';
 
 import { useContainer } from '@/app-internal/di';
-import { REFERRAL_CONFIG } from '../../../../contexts/referral/config';
-import type { ReferralInfo } from '../../../../contexts/referral/ports/types';
+import { useWalletContext } from '@/app-internal/features/wallet/hooks/useWalletContext';
+import { REFERRAL_CONFIG } from '@/contexts/referral/config';
+import type { ReferralInfo } from '@/contexts/referral/ports/types';
 
 /**
  * Result type for useReferral hook
  */
 export interface UseReferralResult {
+  /** Referral information */
+  referralInfo: ReferralInfo;
+
+  /** Whether user has a referrer */
+  hasReferrer: boolean;
+
   /** Whether operations are in progress (UI state only) */
   isLoading: boolean;
+
   /**
    * Load referral status from blockchain
    *
-   * Updates the referralStateStore with the current referral status.
+   * Fetches the current referral status and updates the hook's state.
    * This method must be called manually to initialize or refresh referral state.
    *
    * @returns Promise resolving to the current referral info
@@ -34,8 +42,10 @@ export interface UseReferralResult {
    * ```
    */
   loadStatus: () => Promise<ReferralInfo>;
+
   /** Set referrer code (shows confirmation dialog) */
   setReferrer: (code?: string) => Promise<boolean>;
+
   /** Show referral hint dialog */
   showReferralHint: (
     onResponse?: (result: { set: boolean; dontAskAgain: boolean }) => void,
@@ -43,20 +53,24 @@ export interface UseReferralResult {
 }
 
 /**
- * Hook for managing referral operations with UI integration
+ * Hook for managing referral operations and state with UI integration
+ *
+ * This hook provides referral state and operations together.
  *
  * IMPORTANT: This hook does NOT auto-load data. Call loadStatus() to initialize.
  *
  * @example
  * ```tsx
- * import { useReferralStore, useReferral } from '@/app-internal/di';
+ * import { useReferral } from '@/app-internal';
  *
- * // State access - precise subscriptions
- * const hasReferrer = useReferralStore(state => state.hasReferrer);
- * const referralInfo = useReferralStore(state => state.referralInfo);
- *
- * // Business operations
- * const { setReferrer, showReferralHint, loadStatus, isLoading } = useReferral();
+ * const {
+ *   hasReferrer,
+ *   referralInfo,
+ *   setReferrer,
+ *   showReferralHint,
+ *   loadStatus,
+ *   isLoading,
+ * } = useReferral();
  *
  * // Load data on mount
  * useEffect(() => {
@@ -73,25 +87,66 @@ export interface UseReferralResult {
  * ```
  */
 export function useReferral(): UseReferralResult {
-  const referralService = useContainer(c => c.referralService);
+  // Inject UseCases from DI container
+  const getReferralStatusUseCase = useContainer(c => c.getReferralStatusUseCase);
+  const setReferrerUseCase = useContainer(c => c.setReferrerUseCase);
+
+  // Wallet access (UI layer responsibility)
+  const { wallet, getSigner } = useWalletContext();
+
+  // State management - referral information (presentation layer)
+  const [referralInfo, setReferralInfo] = useState<ReferralInfo>({
+    referrer: undefined,
+    code: undefined,
+    cumVlm: '0',
+  });
 
   // UI state management (presentation layer only)
   const [isLoading, setIsLoading] = useState(false);
 
+  // Derived state
+  const hasReferrer = referralInfo.referrer !== undefined;
+
   /**
    * Load referral status from blockchain
+   * Updates hook's state after fetching (UI layer responsibility)
    */
   const loadStatus = useCallback(async (): Promise<ReferralInfo> => {
     try {
       setIsLoading(true);
-      return await referralService.checkStatus();
+
+      if (!wallet) {
+        const emptyInfo: ReferralInfo = {
+          referrer: undefined,
+          code: undefined,
+          cumVlm: '0',
+        };
+        // UI layer responsibility: update state
+        setReferralInfo(emptyInfo);
+        return emptyInfo;
+      }
+
+      // Execute use case
+      const info = await getReferralStatusUseCase.execute({
+        walletAddress: wallet.address,
+      });
+
+      // UI layer responsibility: update state
+      setReferralInfo(info);
+      return info;
     } catch (error) {
       console.error('[useReferral] Failed to load status:', error);
-      return { referrer: undefined, code: undefined, cumVlm: '0' };
+      const emptyInfo: ReferralInfo = {
+        referrer: undefined,
+        code: undefined,
+        cumVlm: '0',
+      };
+      setReferralInfo(emptyInfo);
+      return emptyInfo;
     } finally {
       setIsLoading(false);
     }
-  }, [referralService]);
+  }, [getReferralStatusUseCase, wallet]);
 
   /**
    * Set referrer code (with confirmation dialog)
@@ -113,13 +168,28 @@ export function useReferral(): UseReferralResult {
             {
               text: 'Set Referral',
               onPress: async () => {
+                if (!wallet) {
+                  Alert.alert('No Wallet', 'Please connect a wallet first.');
+                  resolve(false);
+                  return;
+                }
+
                 try {
                   setIsLoading(true);
 
+                  // Get signer (UI layer responsibility)
+                  const signer = await getSigner();
+
                   // Execute business logic
-                  const info = await referralService.setReferrer(referralCode);
+                  const info = await setReferrerUseCase.execute({
+                    signer,
+                    code: referralCode,
+                  });
 
                   if (info.code === referralCode) {
+                    // UI layer responsibility: update state
+                    setReferralInfo(info);
+
                     Alert.alert('Success', `Referral code "${referralCode}" set successfully`);
                     resolve(true);
                   } else {
@@ -142,7 +212,7 @@ export function useReferral(): UseReferralResult {
         );
       });
     },
-    [referralService],
+    [setReferrerUseCase, wallet, getSigner],
   );
 
   /**
@@ -194,7 +264,14 @@ export function useReferral(): UseReferralResult {
   );
 
   return {
+    // State
+    referralInfo,
+    hasReferrer,
+
+    // UI state
     isLoading,
+
+    // Operations
     loadStatus,
     setReferrer,
     showReferralHint,

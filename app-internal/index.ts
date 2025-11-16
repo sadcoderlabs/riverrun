@@ -49,7 +49,6 @@ export { getBuilderParam } from '@/contexts/builderFee/config';
 // Referral
 export { useReferral } from './features/referral/hooks/useReferral';
 export type { UseReferralResult } from './features/referral/hooks/useReferral';
-export { useReferralStore } from './features/referral/hooks/useReferralStore';
 export { useReferralHintsStore } from '@/contexts/referral/adapters/referralHintsStore';
 export { REFERRAL_CONFIG } from '@/contexts/referral/config';
 
