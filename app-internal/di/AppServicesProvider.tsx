@@ -26,6 +26,7 @@ import { useWalletComposition } from '../features/wallet/components/walletCompos
 import { useHistorySubscription } from '../features/history/hooks/useHistorySubscription';
 import { useOrderSubscription } from '../features/order/hooks/useOrderSubscription';
 import { usePositionSubscription } from '../features/position/hooks/usePositionSubscription';
+import { useMarginSubscription } from '../features/margin/hooks/useMarginSubscription';
 
 // ============================================================================
 // Context Definition
@@ -63,12 +64,10 @@ interface AppServicesProviderProps {
  * Services Available:
  * - telemetryService
  * - marketService
- * - agentService
- * - builderFeeService
- * - referralService
- * - bridgeService
- * - marginService
  * - orderCommandService
+ *
+ * UseCases Available:
+ * - All context UseCases (BuilderFee, Referral, Bridge, Agent, Margin)
  *
  * @example
  * ```tsx
@@ -100,20 +99,18 @@ export function AppServicesProvider({ children }: AppServicesProviderProps) {
     // Initialize MarketService: Load market data on mount
     const marketService = container.resolve('marketService');
     marketService.loadMarkets();
-
-    // Initialize MarginService: Start subscription lifecycle
-    const marginService = container.resolve('marginService');
-    marginService.start();
-
-    // Cleanup on unmount
-    return () => {
-      marginService.stop();
-    };
   }, [container]);
 
   // ==========================================================================
   // Run Subscription Hooks
   // ==========================================================================
+
+  const walletPort = container.resolve('walletService');
+  const hyperliquidGateway = container.resolve('hyperliquidGateway');
+  const marketService = container.resolve('marketService');
+
+  // Margin subscription (auto-manages margin/leverage WebSocket)
+  useMarginSubscription(walletPort, hyperliquidGateway);
 
   // History subscription (auto-manages history fills)
   useHistorySubscription();
@@ -123,7 +120,6 @@ export function AppServicesProvider({ children }: AppServicesProviderProps) {
 
   // Position subscription (auto-manages open positions)
   // Note: Needs MarketService for enrichment
-  const marketService = container.resolve('marketService');
   usePositionSubscription(marketService);
 
   // ==========================================================================

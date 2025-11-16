@@ -27,7 +27,6 @@ import { ArbitrumBridgeAdapter } from '@/contexts/bridge/adapters/arbitrumBridge
 // Services
 import { TelemetryService } from '@/contexts/telemetry/application/telemetryService';
 import { MarketService } from '@/contexts/market/application/marketService';
-import { MarginService } from '@/contexts/margin/application/marginService';
 import { OrderCommandService } from '@/contexts/order/application/orderCommandService';
 
 // BuilderFee UseCases
@@ -51,6 +50,9 @@ import { GetAgentStatusUseCase } from '@/contexts/agent/application/usecases/Get
 import { ApproveAgentUseCase } from '@/contexts/agent/application/usecases/ApproveAgentUseCase';
 import { RevokeAgentUseCase } from '@/contexts/agent/application/usecases/RevokeAgentUseCase';
 import { TryGetAgentWalletUseCase } from '@/contexts/agent/application/usecases/TryGetAgentWalletUseCase';
+
+// Margin UseCases
+import { SetMarginLeverageUseCase } from '@/contexts/margin/application/usecases/SetMarginLeverageUseCase';
 
 // Agent Adapters
 import { AgentPkStore } from '@/contexts/agent/adapters/agentPkStore';
@@ -128,11 +130,7 @@ export function createAppContainer(options: CreateContainerOptions): AppContaine
     }).singleton(),
 
     // Agent Service removed - replaced with UseCases pattern
-
-    // Margin Service (depends on Wallet + Agent UseCase + HyperliquidGateway)
-    marginService: asFunction(({ walletService, tryGetAgentWalletUseCase, hyperliquidGateway }) => {
-      return new MarginService(walletService, tryGetAgentWalletUseCase, hyperliquidGateway);
-    }).singleton(),
+    // Margin Service removed - replaced with UseCases pattern (WebSocket subscription moved to React layer)
 
     // Order Command Service (depends on Agent + BuilderFee UseCases + Wallet + Market + HyperliquidGateway)
     orderCommandService: asFunction(
@@ -333,6 +331,28 @@ export function createAppContainer(options: CreateContainerOptions): AppContaine
         );
       },
     ).singleton(),
+  });
+
+  // ==========================================================================
+  // Margin Context - Out Ports
+  // ==========================================================================
+
+  container.register({
+    // MarginExchangePort: Implemented by HyperliquidGateway directly
+    marginExchangePort: asFunction(({ hyperliquidGateway }) => {
+      return hyperliquidGateway;
+    }).singleton(),
+  });
+
+  // ==========================================================================
+  // Margin Context - UseCases
+  // ==========================================================================
+
+  container.register({
+    // SetMarginLeverageUseCase: Update margin mode and leverage
+    setMarginLeverageUseCase: asFunction(({ marginExchangePort }) => {
+      return new SetMarginLeverageUseCase(marginExchangePort);
+    }).singleton(),
   });
 
   return container;

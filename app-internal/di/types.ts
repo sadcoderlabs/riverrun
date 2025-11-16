@@ -9,7 +9,6 @@ import type { AwilixContainer } from 'awilix';
 import type { TelemetryPort } from '@/contexts/telemetry/ports/telemetryPort';
 import type { WalletPort } from '@/contexts/wallet/ports/walletPort';
 import type { MarketPort } from '@/contexts/market/ports/marketPort';
-import type { MarginPort } from '@/contexts/margin/ports/marginPort';
 import type { OrderCommandPort } from '@/contexts/order/ports/orderCommandPort';
 import type { HyperliquidGateway } from '@/infra/hyperliquid/hyperliquidGateway';
 
@@ -51,6 +50,12 @@ import type { AgentExchangePort } from '@/contexts/agent/application/ports/Agent
 import type { AgentStoragePort } from '@/contexts/agent/application/ports/AgentStoragePort';
 import type { AgentApprovalConfirmationPort } from '@/contexts/agent/ports/agentApprovalConfirmationPort';
 
+// Margin UseCases
+import type { SetMarginLeverageUseCase } from '@/contexts/margin/application/usecases/SetMarginLeverageUseCase';
+
+// Margin Ports
+import type { MarginExchangePort } from '@/contexts/margin/application/ports/MarginExchangePort';
+
 /**
  * AppCradle - Type-safe container cradle
  *
@@ -65,9 +70,6 @@ export interface AppCradle {
   walletService: WalletPort;
   telemetryService: TelemetryPort;
   marketService: MarketPort;
-
-  // Domain Services
-  marginService: MarginPort;
 
   // Command Services
   orderCommandService: OrderCommandPort;
@@ -111,6 +113,12 @@ export interface AppCradle {
 
   // Agent Context - High-level Composition UseCase
   tryGetAgentWalletUseCase: TryGetAgentWalletUseCase;
+
+  // Margin Context - Out Ports
+  marginExchangePort: MarginExchangePort;
+
+  // Margin Context - UseCases
+  setMarginLeverageUseCase: SetMarginLeverageUseCase;
 }
 
 /**

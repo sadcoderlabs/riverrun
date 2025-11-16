@@ -28,6 +28,7 @@ import type { BuilderFeeExchangePort } from '@/contexts/builderFee/application/p
 import type { ReferralExchangePort } from '@/contexts/referral/application/ports/ReferralExchangePort';
 import type { HyperliquidBridgePort } from '@/contexts/bridge/application/ports/HyperliquidBridgePort';
 import type { AgentExchangePort } from '@/contexts/agent/application/ports/AgentExchangePort';
+import type { MarginExchangePort } from '@/contexts/margin/application/ports/MarginExchangePort';
 import * as infoClient from './client/infoClient';
 import { getMasterExchangeClient, getAgentExchangeClient } from './client/getter';
 import { subscriptionManager } from './subscription';
@@ -40,6 +41,11 @@ export interface SubscriptionHandle {
 }
 
 /**
+ * Re-export ExchangeClient type for use in ports
+ */
+export type ExchangeClient = hl.ExchangeClient;
+
+/**
  * Hyperliquid Gateway
  *
  * Provides unified access to Hyperliquid data with HTTP+WS hybrid strategy.
@@ -50,9 +56,15 @@ export interface SubscriptionHandle {
  * - ReferralExchangePort: Referral code operations
  * - HyperliquidBridgePort: Bridge withdrawal operations
  * - AgentExchangePort: Agent approval and management operations
+ * - MarginExchangePort: Margin/leverage operations
  */
 export class HyperliquidGateway
-  implements BuilderFeeExchangePort, ReferralExchangePort, HyperliquidBridgePort, AgentExchangePort
+  implements
+    BuilderFeeExchangePort,
+    ReferralExchangePort,
+    HyperliquidBridgePort,
+    AgentExchangePort,
+    MarginExchangePort
 {
   /**
    * Subscribe to WebData2 stream with HTTP+WS hybrid strategy
@@ -489,6 +501,34 @@ export class HyperliquidGateway
       console.error('[HyperliquidGateway] Failed to get agents:', error);
       return [];
     }
+  }
+
+  // ============================================================================
+  // Margin Operations (Write)
+  // ============================================================================
+
+  /**
+   * Update leverage and margin mode for an asset
+   *
+   * This method implements the MarginExchangePort interface.
+   *
+   * @param params - Update parameters
+   * @param params.client - Exchange client for executing the operation
+   * @param params.asset - Asset ID
+   * @param params.isCross - True for cross margin, false for isolated
+   * @param params.leverage - Leverage value
+   */
+  async updateLeverage(params: {
+    client: hl.ExchangeClient;
+    asset: number;
+    isCross: boolean;
+    leverage: number;
+  }): Promise<void> {
+    await params.client.updateLeverage({
+      asset: params.asset,
+      isCross: params.isCross,
+      leverage: params.leverage,
+    });
   }
 
   // ============================================================================

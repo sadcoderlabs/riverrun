@@ -27,3 +27,24 @@ export interface SetMarginLeverageParams {
   /** Margin mode */
   marginMode: 'isolated' | 'cross';
 }
+
+/**
+ * Command for setting margin leverage
+ *
+ * UseCase pattern: All parameters passed through Command object
+ */
+export type SetMarginLeverageCommand = {
+  /** Agent wallet for executing the operation */
+  agentWallet: {
+    address: string;
+    signer: any;
+  };
+  /** Market coin symbol */
+  coin: string;
+  /** Asset ID on the exchange */
+  assetId: number;
+  /** New leverage value */
+  leverage: number;
+  /** Margin mode */
+  marginMode: 'isolated' | 'cross';
+};

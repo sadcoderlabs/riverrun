@@ -1,20 +1,62 @@
 /**
- * useMarginStore - Margin State Access Hook
+ * useMarginStore - Margin State Management
  *
- * Provides reactive access to margin store state for React components.
+ * React Zustand hook for managing margin/leverage state.
+ * This store is updated by useMarginSubscription based on activeAssetData WebSocket.
+ *
+ * Note: This is a UI-only store (not used by core business logic).
+ * It uses React hook API (create) instead of vanilla API (createStore).
  */
 
-import { useStore } from 'zustand';
-import { marginStore } from '../../../../contexts/margin/adapters/marginStore';
+import { create } from 'zustand';
+import type { MarginLeverage } from '../../../../contexts/margin/ports/types';
 
 /**
- * useMarginStore - Subscribe to margin store state
+ * Margin state shape
+ */
+interface MarginState {
+  /** Current margin and leverage settings for selected market */
+  marginLeverage: MarginLeverage | undefined;
+  /** Loading state (true while fetching initial data) */
+  isLoading: boolean;
+  /** Error state */
+  error: Error | undefined;
+}
+
+/**
+ * Margin state actions
+ */
+interface MarginStateActions {
+  /** Set margin/leverage data */
+  setMarginLeverage: (marginLeverage: MarginLeverage | undefined) => void;
+
+  /** Set loading state */
+  setLoading: (isLoading: boolean) => void;
+
+  /** Set error state */
+  setError: (error: Error | undefined) => void;
+
+  /** Clear all state (reset to initial) */
+  clear: () => void;
+}
+
+/**
+ * Initial state
+ */
+const initialState: MarginState = {
+  marginLeverage: undefined,
+  isLoading: false,
+  error: undefined,
+};
+
+/**
+ * Margin Store (React Hook)
  *
+ * React Zustand hook for margin state management.
  * Use this hook to access margin state in React components.
- * Prefer this over useMargin() for state access (better performance).
  *
- * @param selector - Function to select specific state slice
- * @returns Selected state value
+ * Note: No persistence needed - margin/leverage is real-time data
+ * that should be fetched on each app launch.
  *
  * @example
  * ```typescript
@@ -22,16 +64,24 @@ import { marginStore } from '../../../../contexts/margin/adapters/marginStore';
  * const marginLeverage = useMarginStore(state => state.marginLeverage);
  * const isLoading = useMarginStore(state => state.isLoading);
  *
- * // Use in component
- * if (isLoading || !marginLeverage) {
- *   return <Loading />;
- * }
+ * // Update state (from subscription hook)
+ * useMarginStore.getState().setMarginLeverage({ leverage: 10, marginMode: 'cross', ... });
  *
- * return <div>{marginLeverage.leverage}x {marginLeverage.marginMode}</div>;
+ * // Subscribe outside React (from subscription hook)
+ * useMarginStore.subscribe(state => {
+ *   console.log('Margin changed:', state.marginLeverage);
+ * });
  * ```
  */
-export function useMarginStore<T>(
-  selector: (state: ReturnType<typeof marginStore.getState>) => T,
-): T {
-  return useStore(marginStore, selector);
-}
+export const useMarginStore = create<MarginState & MarginStateActions>(set => ({
+  ...initialState,
+
+  setMarginLeverage: (marginLeverage: MarginLeverage | undefined) =>
+    set({ marginLeverage, isLoading: false, error: undefined }),
+
+  setLoading: (isLoading: boolean) => set({ isLoading }),
+
+  setError: (error: Error | undefined) => set({ error, isLoading: false }),
+
+  clear: () => set(initialState),
+}));
