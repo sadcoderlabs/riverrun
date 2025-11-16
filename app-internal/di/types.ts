@@ -17,17 +17,13 @@ import type { OrderCommandPort } from '@/contexts/order/ports/orderCommandPort';
 import type { HyperliquidGateway } from '@/infra/hyperliquid/hyperliquidGateway';
 
 // BuilderFee UseCases
-import type { EnsureBuilderFeeApprovalUseCase } from '@/contexts/builderFee/application/usecases/EnsureBuilderFeeApprovalUseCase';
-import type { CheckBuilderFeeStatusUseCase } from '@/contexts/builderFee/application/usecases/CheckBuilderFeeStatusUseCase';
+import type { GetBuilderFeeStatusUseCase } from '@/contexts/builderFee/application/usecases/GetBuilderFeeStatusUseCase';
+import type { ApproveBuilderFeeUseCase } from '@/contexts/builderFee/application/usecases/ApproveBuilderFeeUseCase';
 import type { RevokeBuilderFeeUseCase } from '@/contexts/builderFee/application/usecases/RevokeBuilderFeeUseCase';
 
 // BuilderFee Ports
 import type { BuilderFeeExchangePort } from '@/contexts/builderFee/application/ports/BuilderFeeExchangePort';
-import type { BuilderFeeStatePort } from '@/contexts/builderFee/application/ports/BuilderFeeStatePort';
 import type { BuilderFeeConfirmationPort } from '@/contexts/builderFee/application/ports/BuilderFeeConfirmationPort';
-
-// Cross-context Ports
-import type { BuilderFeeApprovalPort } from '@/contexts/order/application/ports/BuilderFeeApprovalPort';
 
 /**
  * AppCradle - Type-safe container cradle
@@ -55,16 +51,12 @@ export interface AppCradle {
 
   // BuilderFee Context - Out Ports
   builderFeeExchangePort: BuilderFeeExchangePort;
-  builderFeeStatePort: BuilderFeeStatePort;
   builderFeeConfirmationPort: BuilderFeeConfirmationPort;
 
   // BuilderFee Context - UseCases
-  ensureBuilderFeeApprovalUseCase: EnsureBuilderFeeApprovalUseCase;
-  checkBuilderFeeStatusUseCase: CheckBuilderFeeStatusUseCase;
+  getBuilderFeeStatusUseCase: GetBuilderFeeStatusUseCase;
+  approveBuilderFeeUseCase: ApproveBuilderFeeUseCase;
   revokeBuilderFeeUseCase: RevokeBuilderFeeUseCase;
-
-  // BuilderFee Context - Cross-context Adapter
-  builderFeeApprovalPort: BuilderFeeApprovalPort;
 }
 
 /**

@@ -24,6 +24,7 @@
 
 import type * as hl from '@nktkas/hyperliquid';
 import type { Signer } from 'ethers';
+import type { BuilderFeeExchangePort } from '@/contexts/builderFee/application/ports/BuilderFeeExchangePort';
 import * as infoClient from './client/infoClient';
 import { getMasterExchangeClient, getAgentExchangeClient } from './client/getter';
 import { subscriptionManager } from './subscription';
@@ -40,8 +41,11 @@ export interface SubscriptionHandle {
  *
  * Provides unified access to Hyperliquid data with HTTP+WS hybrid strategy.
  * All methods are read-only operations.
+ *
+ * This gateway also implements BuilderFeeExchangePort to provide builder fee
+ * operations directly without an additional adapter layer.
  */
-export class HyperliquidGateway {
+export class HyperliquidGateway implements BuilderFeeExchangePort {
   /**
    * Subscribe to WebData2 stream with HTTP+WS hybrid strategy
    *

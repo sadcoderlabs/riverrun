@@ -18,7 +18,9 @@
 import { roundPrice } from '@/app-internal/components/trade/priceUtils';
 import type { AgentPort } from '@/contexts/agent/ports/agentPort';
 import { getBuilderParam } from '@/contexts/builderFee/config';
-import type { BuilderFeeApprovalPort } from './ports/BuilderFeeApprovalPort';
+import type { GetBuilderFeeStatusUseCase } from '@/contexts/builderFee/application/usecases/GetBuilderFeeStatusUseCase';
+import type { ApproveBuilderFeeUseCase } from '@/contexts/builderFee/application/usecases/ApproveBuilderFeeUseCase';
+import type { WalletPort } from '@/contexts/wallet/ports/walletPort';
 import type { MarketPort } from '@/contexts/market/ports/marketPort';
 import type { HyperliquidGateway } from '@/infra/hyperliquid/hyperliquidGateway';
 import * as hl from '@nktkas/hyperliquid';
@@ -71,7 +73,9 @@ interface OrderContext {
 export class OrderCommandService implements OrderCommandPort {
   constructor(
     private readonly agentPort: AgentPort,
-    private readonly builderFeePort: BuilderFeeApprovalPort,
+    private readonly getBuilderFeeStatus: GetBuilderFeeStatusUseCase,
+    private readonly approveBuilderFee: ApproveBuilderFeeUseCase,
+    private readonly walletPort: WalletPort,
     private readonly marketPort: MarketPort,
     private readonly hyperliquidGateway: HyperliquidGateway,
   ) {}
@@ -79,6 +83,38 @@ export class OrderCommandService implements OrderCommandPort {
   // ==========================================================================
   // Helper Methods (Private)
   // ==========================================================================
+
+  /**
+   * Ensure builder fee is approved before placing orders
+   * Composes GetBuilderFeeStatusUseCase and ApproveBuilderFeeUseCase
+   */
+  private async ensureBuilderFeeApproval(): Promise<boolean> {
+    try {
+      // Get master wallet info
+      const masterWallet = await this.walletPort.active();
+      if (!masterWallet) {
+        return false;
+      }
+
+      // Check if already approved
+      const status = await this.getBuilderFeeStatus.execute({
+        walletAddress: masterWallet.address,
+      });
+
+      if (status.isApproved) {
+        return true; // Already approved
+      }
+
+      // Not approved - request approval
+      const signer = await this.walletPort.getSigner();
+      const success = await this.approveBuilderFee.execute({ signer });
+
+      return success;
+    } catch (error) {
+      console.error('[OrderCommandService] Failed to ensure builder fee approval:', error);
+      return false;
+    }
+  }
 
   /**
    * Get order context (exchange client + asset metadata)
@@ -216,7 +252,7 @@ export class OrderCommandService implements OrderCommandPort {
       }
 
       // 2. Ensure builder fee is approved
-      const builderFeeApproved = await this.builderFeePort.ensureApproval();
+      const builderFeeApproved = await this.ensureBuilderFeeApproval();
       if (!builderFeeApproved) {
         return { success: false, error: 'Builder fee approval was cancelled' };
       }
@@ -284,7 +320,7 @@ export class OrderCommandService implements OrderCommandPort {
   async placeCloseMarketOrder(params: CloseMarketOrderParams): Promise<OrderResult> {
     try {
       // 1. Ensure builder fee is approved
-      const builderFeeApproved = await this.builderFeePort.ensureApproval();
+      const builderFeeApproved = await this.ensureBuilderFeeApproval();
       if (!builderFeeApproved) {
         return { success: false, error: 'Builder fee approval was cancelled' };
       }
@@ -348,7 +384,7 @@ export class OrderCommandService implements OrderCommandPort {
   async placeCloseLimitOrder(params: CloseLimitOrderParams): Promise<OrderResult> {
     try {
       // 1. Ensure builder fee is approved
-      const builderFeeApproved = await this.builderFeePort.ensureApproval();
+      const builderFeeApproved = await this.ensureBuilderFeeApproval();
       if (!builderFeeApproved) {
         return { success: false, error: 'Builder fee approval was cancelled' };
       }
@@ -410,7 +446,7 @@ export class OrderCommandService implements OrderCommandPort {
       }
 
       // 2. Ensure builder fee is approved
-      const builderFeeApproved = await this.builderFeePort.ensureApproval();
+      const builderFeeApproved = await this.ensureBuilderFeeApproval();
       if (!builderFeeApproved) {
         return { success: false, error: 'Builder fee approval was cancelled' };
       }

@@ -4,7 +4,7 @@ import { Alert } from 'react-native';
 import { useContainer } from '@/app-internal/di';
 import { useWalletContext } from '@/app-internal/features/wallet/hooks/useWalletContext';
 import { BUILDER_CONFIG } from '../../../../contexts/builderFee/config';
-import { builderFeeStateStore } from '../../../../contexts/builderFee/adapters/builderFeeStateStore';
+import { builderFeeStateStore } from '../builderFeeStateStore';
 
 export interface UseBuilderFeeResult {
   /**
@@ -96,8 +96,8 @@ export interface UseBuilderFeeResult {
  * ```
  */
 export function useBuilderFee(): UseBuilderFeeResult {
-  const checkStatusUseCase = useContainer(c => c.checkBuilderFeeStatusUseCase);
-  const ensureApprovalUseCase = useContainer(c => c.ensureBuilderFeeApprovalUseCase);
+  const getStatusUseCase = useContainer(c => c.getBuilderFeeStatusUseCase);
+  const approveUseCase = useContainer(c => c.approveBuilderFeeUseCase);
   const revokeUseCase = useContainer(c => c.revokeBuilderFeeUseCase);
 
   // Wallet access (for getting wallet address and signer)
@@ -120,14 +120,14 @@ export function useBuilderFee(): UseBuilderFeeResult {
 
     setIsLoading(true);
     try {
-      const status = await checkStatusUseCase.execute({ walletAddress: wallet.address });
+      const status = await getStatusUseCase.execute({ walletAddress: wallet.address });
       // UI layer responsibility: update state store
       builderFeeStateStore.getState().updateStatus(status);
       return status.maxApprovedFee;
     } finally {
       setIsLoading(false);
     }
-  }, [checkStatusUseCase, wallet]);
+  }, [getStatusUseCase, wallet]);
 
   /**
    * Core approval logic - executes the approval use case
@@ -147,10 +147,7 @@ export function useBuilderFee(): UseBuilderFeeResult {
       // Get signer from active wallet (UI layer responsibility)
       const signer = await getSigner();
 
-      const success = await ensureApprovalUseCase.execute({
-        walletAddress: wallet.address,
-        signer,
-      });
+      const success = await approveUseCase.execute({ signer });
 
       if (!success) {
         Alert.alert('Approval Failed', 'Builder fee approval was not confirmed. Please try again.');
@@ -170,7 +167,7 @@ export function useBuilderFee(): UseBuilderFeeResult {
     } finally {
       setIsLoading(false);
     }
-  }, [ensureApprovalUseCase, loadBuilderFeeStatus, wallet, getSigner]);
+  }, [approveUseCase, loadBuilderFeeStatus, wallet, getSigner]);
 
   /**
    * Approve builder fee
@@ -206,9 +203,8 @@ export function useBuilderFee(): UseBuilderFeeResult {
 
   /**
    * Ensure builder fee is approved before proceeding
-   * If not approved, automatically shows approval dialog (handled by use case)
-   * Use case handles the complete flow including confirmation
-   * Reloads status after successful approval (UI layer responsibility)
+   * Checks status first, then prompts for approval if needed
+   * This composes GetBuilderFeeStatusUseCase and ApproveBuilderFeeUseCase
    */
   const ensureBuilderFeeApproval = useCallback(async (): Promise<boolean> => {
     if (!wallet) {
@@ -219,14 +215,16 @@ export function useBuilderFee(): UseBuilderFeeResult {
     try {
       setIsLoading(true);
 
-      // Get signer from active wallet (UI layer responsibility)
-      const signer = await getSigner();
+      // 1. Check if already approved
+      const status = await getStatusUseCase.execute({ walletAddress: wallet.address });
 
-      // Use case handles: check status → request confirmation → execute approval
-      const success = await ensureApprovalUseCase.execute({
-        walletAddress: wallet.address,
-        signer,
-      });
+      if (status.isApproved) {
+        return true; // Already approved
+      }
+
+      // 2. Not approved - request approval
+      const signer = await getSigner();
+      const success = await approveUseCase.execute({ signer });
 
       if (success) {
         // UI layer responsibility: reload status to update state
@@ -244,7 +242,7 @@ export function useBuilderFee(): UseBuilderFeeResult {
     } finally {
       setIsLoading(false);
     }
-  }, [ensureApprovalUseCase, loadBuilderFeeStatus, wallet, getSigner]);
+  }, [getStatusUseCase, approveUseCase, loadBuilderFeeStatus, wallet, getSigner]);
 
   /**
    * Revoke builder fee

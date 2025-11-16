@@ -6,7 +6,7 @@
  */
 
 import { useStore } from 'zustand';
-import { builderFeeStateStore } from '../../../../contexts/builderFee/adapters/builderFeeStateStore';
+import { builderFeeStateStore } from '../builderFeeStateStore';
 
 /**
  * Hook to access builder fee store

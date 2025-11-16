@@ -22,9 +22,6 @@ import { SentryAdapter } from '@/contexts/telemetry/adapters/sentryAdapter';
 import { SegmentAdapter } from '@/contexts/telemetry/adapters/segmentAdapter';
 import { AlertAgentApprovalConfirmationAdapter } from '@/contexts/agent/adapters/alertAgentApprovalConfirmationAdapter';
 import { AlertBuilderFeeApprovalConfirmationAdapter } from '@/contexts/builderFee/adapters/alertBuilderFeeApprovalConfirmationAdapter';
-import { HyperliquidBuilderFeeAdapter } from '@/contexts/builderFee/adapters/hyperliquidBuilderFeeAdapter';
-import { BuilderFeeStateAdapter } from '@/contexts/builderFee/adapters/builderFeeStateAdapter';
-import { BuilderFeeApprovalAdapter } from '@/contexts/builderFee/adapters/builderFeeApprovalAdapter';
 
 // Services
 import { TelemetryService } from '@/contexts/telemetry/application/telemetryService';
@@ -36,8 +33,8 @@ import { MarginService } from '@/contexts/margin/application/marginService';
 import { OrderCommandService } from '@/contexts/order/application/orderCommandService';
 
 // BuilderFee UseCases
-import { EnsureBuilderFeeApprovalUseCase } from '@/contexts/builderFee/application/usecases/EnsureBuilderFeeApprovalUseCase';
-import { CheckBuilderFeeStatusUseCase } from '@/contexts/builderFee/application/usecases/CheckBuilderFeeStatusUseCase';
+import { GetBuilderFeeStatusUseCase } from '@/contexts/builderFee/application/usecases/GetBuilderFeeStatusUseCase';
+import { ApproveBuilderFeeUseCase } from '@/contexts/builderFee/application/usecases/ApproveBuilderFeeUseCase';
 import { RevokeBuilderFeeUseCase } from '@/contexts/builderFee/application/usecases/RevokeBuilderFeeUseCase';
 
 // Ports (for interface injection)
@@ -133,12 +130,21 @@ export function createAppContainer(options: CreateContainerOptions): AppContaine
       return new MarginService(walletService, agentService, hyperliquidGateway);
     }).singleton(),
 
-    // Order Command Service (depends on Agent + BuilderFee + Market + HyperliquidGateway)
+    // Order Command Service (depends on Agent + BuilderFee UseCases + Wallet + Market + HyperliquidGateway)
     orderCommandService: asFunction(
-      ({ agentService, builderFeeApprovalPort, marketService, hyperliquidGateway }) => {
+      ({
+        agentService,
+        getBuilderFeeStatusUseCase,
+        approveBuilderFeeUseCase,
+        walletService,
+        marketService,
+        hyperliquidGateway,
+      }) => {
         return new OrderCommandService(
           agentService,
-          builderFeeApprovalPort,
+          getBuilderFeeStatusUseCase,
+          approveBuilderFeeUseCase,
+          walletService,
           marketService,
           hyperliquidGateway,
         );
@@ -151,14 +157,9 @@ export function createAppContainer(options: CreateContainerOptions): AppContaine
   // ==========================================================================
 
   container.register({
-    // BuilderFeeExchangePort: Hyperliquid exchange adapter
+    // BuilderFeeExchangePort: Implemented by HyperliquidGateway directly
     builderFeeExchangePort: asFunction(({ hyperliquidGateway }) => {
-      return new HyperliquidBuilderFeeAdapter(hyperliquidGateway);
-    }).singleton(),
-
-    // BuilderFeeStatePort: Zustand state adapter
-    builderFeeStatePort: asFunction(() => {
-      return new BuilderFeeStateAdapter();
+      return hyperliquidGateway;
     }).singleton(),
 
     // BuilderFeeConfirmationPort: React Native Alert adapter
@@ -172,35 +173,21 @@ export function createAppContainer(options: CreateContainerOptions): AppContaine
   // ==========================================================================
 
   container.register({
-    // EnsureBuilderFeeApprovalUseCase: Main approval flow
-    ensureBuilderFeeApprovalUseCase: asFunction(
+    // GetBuilderFeeStatusUseCase: Query approval status
+    getBuilderFeeStatusUseCase: asFunction(({ builderFeeExchangePort }) => {
+      return new GetBuilderFeeStatusUseCase(builderFeeExchangePort);
+    }).singleton(),
+
+    // ApproveBuilderFeeUseCase: Execute approval
+    approveBuilderFeeUseCase: asFunction(
       ({ builderFeeExchangePort, builderFeeConfirmationPort }) => {
-        return new EnsureBuilderFeeApprovalUseCase(
-          builderFeeExchangePort,
-          builderFeeConfirmationPort,
-        );
+        return new ApproveBuilderFeeUseCase(builderFeeExchangePort, builderFeeConfirmationPort);
       },
     ).singleton(),
-
-    // CheckBuilderFeeStatusUseCase: Query approval status
-    checkBuilderFeeStatusUseCase: asFunction(({ builderFeeExchangePort }) => {
-      return new CheckBuilderFeeStatusUseCase(builderFeeExchangePort);
-    }).singleton(),
 
     // RevokeBuilderFeeUseCase: Revoke approval
     revokeBuilderFeeUseCase: asFunction(({ builderFeeExchangePort }) => {
       return new RevokeBuilderFeeUseCase(builderFeeExchangePort);
-    }).singleton(),
-  });
-
-  // ==========================================================================
-  // BuilderFee Context - Cross-context Adapter
-  // ==========================================================================
-
-  container.register({
-    // BuilderFeeApprovalPort: Adapter for order context to use
-    builderFeeApprovalPort: asFunction(({ ensureBuilderFeeApprovalUseCase }) => {
-      return new BuilderFeeApprovalAdapter(ensureBuilderFeeApprovalUseCase);
     }).singleton(),
   });
 

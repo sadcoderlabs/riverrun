@@ -1,5 +1,5 @@
 /**
- * CheckBuilderFeeStatusUseCase
+ * GetBuilderFeeStatusUseCase
  *
  * Queries the current builder fee approval status for a wallet address.
  *
@@ -20,16 +20,16 @@ import type { BuilderFeeExchangePort } from '../ports/BuilderFeeExchangePort';
 import { BUILDER_CONFIG } from '../../config';
 
 /**
- * Command for checking builder fee status
+ * Command for getting builder fee status
  */
-export type CheckBuilderFeeStatusCommand = {
+export type GetBuilderFeeStatusCommand = {
   /**
    * Wallet address to check approval status for
    */
   walletAddress: string;
 };
 
-export class CheckBuilderFeeStatusUseCase {
+export class GetBuilderFeeStatusUseCase {
   constructor(private readonly exchange: BuilderFeeExchangePort) {}
 
   /**
@@ -38,7 +38,7 @@ export class CheckBuilderFeeStatusUseCase {
    * @param command - Command containing the wallet address
    * @returns Current builder fee approval status
    */
-  async execute(command: CheckBuilderFeeStatusCommand): Promise<BuilderFeeStatus> {
+  async execute(command: GetBuilderFeeStatusCommand): Promise<BuilderFeeStatus> {
     const { walletAddress } = command;
 
     // Query max builder fee from exchange

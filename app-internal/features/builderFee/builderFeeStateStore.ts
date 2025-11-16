@@ -1,10 +1,10 @@
 import { createStore } from 'zustand/vanilla';
 
-import type { BuilderFeeStatus } from '../ports/types';
+import type { BuilderFeeStatus } from '@/contexts/builderFee/ports/types';
 
 interface BuilderFeeState extends BuilderFeeStatus {}
 
-interface BuilderFeeStateStore extends BuilderFeeState {
+export interface BuilderFeeStateStore extends BuilderFeeState {
   /**
    * Update builder fee status
    */
