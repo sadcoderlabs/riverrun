@@ -1,4 +1,4 @@
-import { useWalletContext } from '@/core/app-internal';
+import { useWalletContext } from '@/app-internal';
 import { Redirect } from 'expo-router';
 
 export default function Index() {

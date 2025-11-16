@@ -1,16 +1,16 @@
-import AdaptiveSelect from '@/components/global/AdaptiveSelect';
-import { ListItem } from '@/components/global/ListItem';
-import { ListSection } from '@/components/global/ListSection';
-import { useThemePreference } from '@/components/shared/theme/useThemePreference';
-import { useWalletContext } from '@/core/app-internal';
-import { type ThemePreference } from '@/components/shared/theme/theme.store';
-import { features } from '@/core/config/environment';
+import AdaptiveSelect from '@/app-internal/components/global/AdaptiveSelect';
+import { ListItem } from '@/app-internal/components/global/ListItem';
+import { ListSection } from '@/app-internal/components/global/ListSection';
+import { useThemePreference } from '@/app-internal/components/shared/theme/useThemePreference';
+import { useWalletContext } from '@/app-internal';
+import { type ThemePreference } from '@/app-internal/components/shared/theme/theme.store';
+import { features } from '@/config/environment';
 import { ArrowLeft, ArrowUpRight } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 import { Linking, Pressable } from 'react-native';
 import { PortalProvider, ScrollView, Text, View, XStack, YStack } from 'tamagui';
 import { useState } from 'react';
-import ExportWalletModal from '@/components/settings/ExportWalletModal';
+import ExportWalletModal from '@/app-internal/components/settings/ExportWalletModal';
 
 export default function Index() {
   const router = useRouter();

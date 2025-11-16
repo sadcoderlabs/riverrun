@@ -1,6 +1,6 @@
-import { Button } from '@/components/global/Button';
-import { useAgent, useAgentStore, useContainer } from '@/core/app-internal';
-import { DEFAULT_AGENT_NAME } from '@/core/contexts/agent/constants';
+import { Button } from '@/app-internal/components/global/Button';
+import { useAgent, useAgentStore, useContainer } from '@/app-internal';
+import { DEFAULT_AGENT_NAME } from '@/contexts/agent/constants';
 import { ArrowLeft } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
@@ -19,7 +19,7 @@ export default function AgentStatus() {
   const router = useRouter();
 
   // Agent service from DI container
-  const agentService = useContainer((c) => c.agentService);
+  const agentService = useContainer(c => c.agentService);
 
   // Agent state - precise subscriptions
   const agentAddress = useAgentStore(state => state.agentAddress);

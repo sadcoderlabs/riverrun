@@ -1,6 +1,6 @@
-import { ListItem } from '@/components/global/ListItem';
-import { ListSection } from '@/components/global/ListSection';
-import { useTelemetry } from '@/core/app-internal';
+import { ListItem } from '@/app-internal/components/global/ListItem';
+import { ListSection } from '@/app-internal/components/global/ListSection';
+import { useTelemetry } from '@/app-internal';
 import { ArrowLeft } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 import { Pressable } from 'react-native';

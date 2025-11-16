@@ -1,4 +1,4 @@
-import { appKit } from '@/core/infra/reown/appKitConfig';
+import { appKit } from '@/infra/reown/appKitConfig';
 import { AppKit, AppKitProvider } from '@reown/appkit-react-native';
 
 import { tamaguiConfig } from '@/tamagui.config';
@@ -10,9 +10,9 @@ import {
   useFonts,
 } from '@expo-google-fonts/inter';
 
-import { useThemePreference } from '@/components/shared/theme/useThemePreference';
-import { AppCompositionProvider } from '@/core/app-internal';
-import { useWalletContext } from '@/core/app-internal';
+import { useThemePreference } from '@/app-internal/components/shared/theme/useThemePreference';
+import { AppCompositionProvider } from '@/app-internal';
+import { useWalletContext } from '@/app-internal';
 import { ActionSheetProvider } from '@expo/react-native-action-sheet';
 import { PrivyProvider } from '@privy-io/expo';
 import { PrivyElements } from '@privy-io/expo/ui';
@@ -24,12 +24,12 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Toaster } from 'sonner-native';
 import { TamaguiProvider, View } from 'tamagui';
 import { arbitrum } from 'viem/chains';
-import { useAppLifecycle } from '@/components/shared/hooks/useAppLifecycle';
-import { subscriptionManager } from '@/core/infra/hyperliquid/subscription';
+import { useAppLifecycle } from '@/app-internal/components/shared/hooks/useAppLifecycle';
+import { subscriptionManager } from '@/infra/hyperliquid/subscription';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { queryClient } from '@/core/infra/reactQuery';
-import { initializeSentry } from '@/core/infra/sentry/sentryConfig';
-import { initializeSegment } from '@/core/infra/segment/segmentConfig';
+import { queryClient } from '@/infra/reactQuery';
+import { initializeSentry } from '@/infra/sentry/sentryConfig';
+import { initializeSegment } from '@/infra/segment/segmentConfig';
 
 // Initialize Sentry for error tracking, performance monitoring, and session replay
 // Must be called before any other code runs

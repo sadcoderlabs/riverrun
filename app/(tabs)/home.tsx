@@ -1,7 +1,7 @@
-import { AccountEquity } from '@/components/home/AccountEquity';
-import { PerpsOverview } from '@/components/home/PerpsOverview';
-import { TransferFund } from '@/components/home/TransferFund';
-import { WalletInfo } from '@/components/home/WalletInfo';
+import { AccountEquity } from '@/app-internal/components/home/AccountEquity';
+import { PerpsOverview } from '@/app-internal/components/home/PerpsOverview';
+import { TransferFund } from '@/app-internal/components/home/TransferFund';
+import { WalletInfo } from '@/app-internal/components/home/WalletInfo';
 import { ScrollView, YStack } from 'tamagui';
 
 /**

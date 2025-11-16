@@ -1,6 +1,6 @@
-import { CoinInfo } from '@/components/trade/CoinInfo';
-import { PerpTabs } from '@/components/trade/PerpTabs';
-import { useMarketStore, useMarket } from '@/core/app-internal';
+import { CoinInfo } from '@/app-internal/components/trade/CoinInfo';
+import { PerpTabs } from '@/app-internal/components/trade/PerpTabs';
+import { useMarketStore, useMarket } from '@/app-internal';
 import { Slot, usePathname } from 'expo-router';
 import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';

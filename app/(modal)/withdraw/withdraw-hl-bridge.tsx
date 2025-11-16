@@ -11,7 +11,7 @@ import {
   useBridgeStore,
   BRIDGE_LIMITS,
   BRIDGE_FEES,
-} from '@/core/app-internal';
+} from '@/app-internal';
 
 // Validate Ethereum address format
 function isValidAddress(address: string): boolean {

@@ -1,7 +1,7 @@
-import { Button } from '@/components/global/Button';
-import { Heading } from '@/components/global/Heading';
-import { useThemePreference } from '@/components/shared/theme/useThemePreference';
-import { useWalletContext } from '@/core/app-internal';
+import { Button } from '@/app-internal/components/global/Button';
+import { Heading } from '@/app-internal/components/global/Heading';
+import { useThemePreference } from '@/app-internal/components/shared/theme/useThemePreference';
+import { useWalletContext } from '@/app-internal';
 import { Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { toast } from 'sonner-native';
@@ -93,8 +93,8 @@ export default function Login() {
         <Image
           source={
             effectiveTheme === 'dark'
-              ? require('@/assets/images/PoweredByHL-light.png')
-              : require('@/assets/images/PoweredByHL-dark.png')
+              ? require('@/app-internal/assets/images/PoweredByHL-light.png')
+              : require('@/app-internal/assets/images/PoweredByHL-dark.png')
           }
           style={{ width: 200 }}
           resizeMode="contain"

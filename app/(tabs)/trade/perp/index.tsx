@@ -1,4 +1,4 @@
-import { PerpTradePanel } from '@/components/trade/PerpTradePanel';
+import { PerpTradePanel } from '@/app-internal/components/trade/PerpTradePanel';
 import { YStack } from 'tamagui';
 
 /**
