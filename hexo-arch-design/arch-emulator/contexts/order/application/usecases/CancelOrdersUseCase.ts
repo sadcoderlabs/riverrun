@@ -1,6 +1,5 @@
 import type { Signer } from 'ethers';
-import type { OrderExchangePort } from '../ports/OrderExchangePort';
-import type { OrderResult } from './PlaceOrderUseCase';
+import type { OrderExchangePort, OrderExchangeResult } from '../ports/OrderExchangePort';
 
 export type CancelOrdersCommand = {
   signer: Signer;
@@ -10,12 +9,7 @@ export type CancelOrdersCommand = {
 export class CancelOrdersUseCase {
   constructor(private readonly exchange: OrderExchangePort) {}
 
-  async execute(cmd: CancelOrdersCommand): Promise<OrderResult> {
-    const response = await this.exchange.cancel(cmd.signer, { clientOrderIds: cmd.clientOrderIds });
-
-    return {
-      status: response.ok ? 'accepted' : 'rejected',
-      rejectReason: response.errorCode,
-    };
+  async execute(cmd: CancelOrdersCommand): Promise<OrderExchangeResult> {
+    return this.exchange.cancel(cmd.signer, { clientOrderIds: cmd.clientOrderIds });
   }
 }

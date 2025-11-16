@@ -129,7 +129,7 @@ export function useContainer<T>(
 import type { Signer } from 'ethers';
 import { OrderAssembler } from '../services/OrderAssembler';
 import type { BuilderFeeApprovalPort } from '../ports/BuilderFeeApprovalPort';
-import type { OrderExchangePort } from '../ports/OrderExchangePort';
+import type { OrderExchangePort, OrderExchangeResult } from '../ports/OrderExchangePort';
 import type { OrderTelemetryPort } from '../ports/OrderTelemetryPort';
 import { OrderDraft } from '../../domain/entities/OrderDraft';
 
@@ -148,12 +148,6 @@ export type PlaceOrderCommand = {
   };
 };
 
-export type OrderResult = {
-  orderId?: string;
-  status: 'accepted' | 'rejected';
-  rejectReason?: string;
-};
-
 export class PlaceOrderUseCase {
   constructor(
     private readonly exchange: OrderExchangePort,
@@ -161,7 +155,7 @@ export class PlaceOrderUseCase {
     private readonly telemetry: OrderTelemetryPort,
   ) {}
 
-  async execute(cmd: PlaceOrderCommand): Promise<OrderResult> {
+  async execute(cmd: PlaceOrderCommand): Promise<OrderExchangeResult> {
     const draft = OrderDraft.fromCommand(cmd);
     draft.ensureValid();
 
@@ -170,20 +164,16 @@ export class PlaceOrderUseCase {
       allowance: draft.requiredAllowance,
     });
 
-    const response = await this.exchange.order(cmd.signer, OrderAssembler.toOrderParameters(draft));
+    const result = await this.exchange.order(cmd.signer, OrderAssembler.toOrderParameters(draft));
 
     await this.telemetry.trackPlacedOrder({
       coin: draft.coin,
-      orderId: response.orderId?.toString(),
-      ok: response.ok,
-      rejectReason: response.errorCode,
+      orderId: result.orderId,
+      ok: result.status === 'accepted',
+      rejectReason: result.rejectReason,
     });
 
-    return {
-      orderId: response.orderId?.toString(),
-      status: response.ok ? 'accepted' : 'rejected',
-      rejectReason: response.errorCode,
-    };
+    return result;
   }
 }
 ```
@@ -239,11 +229,11 @@ export class OrderDraft {
 import type { Signer } from 'ethers';
 import type { OrderParameters } from '@nktkas/hyperliquid/api/exchange';
 
-export type OrderExecutionResponse = {
-  ok: boolean;
-  orderId?: number;
+export type OrderExchangeResult = {
+  orderId?: string;
   clientOrderId?: string;
-  errorCode?: string;
+  status: 'accepted' | 'rejected';
+  rejectReason?: string;
 };
 
 export type OrderCancelRequest = {
@@ -251,8 +241,8 @@ export type OrderCancelRequest = {
 };
 
 export interface OrderExchangePort {
-  order(signer: Signer, request: OrderParameters): Promise<OrderExecutionResponse>;
-  cancel(signer: Signer, request: OrderCancelRequest): Promise<OrderExecutionResponse>;
+  order(signer: Signer, request: OrderParameters): Promise<OrderExchangeResult>;
+  cancel(signer: Signer, request: OrderCancelRequest): Promise<OrderExchangeResult>;
 }
 ```
 
@@ -264,7 +254,7 @@ import type { OrderParameters } from '@nktkas/hyperliquid/api/exchange';
 import type { Signer } from 'ethers';
 import type {
   OrderExchangePort,
-  OrderExecutionResponse,
+  OrderExchangeResult,
   OrderCancelRequest,
 } from '@/contexts/order/application/ports/OrderExchangePort';
 
@@ -276,29 +266,29 @@ export class HyperliquidExchangeGateway implements OrderExchangePort {
     this.transport = transport ?? new hl.HttpTransport();
   }
 
-  async order(signer: Signer, request: OrderParameters): Promise<OrderExecutionResponse> {
+  async order(signer: Signer, request: OrderParameters): Promise<OrderExchangeResult> {
     const client = this.getClient(signer);
     const res = await client.order(request);
     const first = res.response.data.statuses[0];
 
     if ('error' in first) {
-      return { ok: false, errorCode: first.error };
+      return { status: 'rejected', rejectReason: first.error };
     }
 
     const resting = 'resting' in first ? first.resting : undefined;
     const filled = 'filled' in first ? first.filled : undefined;
 
     return {
-      ok: true,
-      orderId: resting?.oid ?? filled?.oid,
+      status: 'accepted',
+      orderId: (resting?.oid ?? filled?.oid)?.toString(),
       clientOrderId: resting?.cloid ?? filled?.cloid,
     };
   }
 
-  async cancel(signer: Signer, request: OrderCancelRequest): Promise<OrderExecutionResponse> {
+  async cancel(signer: Signer, request: OrderCancelRequest): Promise<OrderExchangeResult> {
     const client = this.getClient(signer);
     await client.cancel({ cloids: request.clientOrderIds });
-    return { ok: true };
+    return { status: 'accepted' };
   }
 
   private getClient(signer: Signer) {
@@ -315,13 +305,13 @@ export class HyperliquidExchangeGateway implements OrderExchangePort {
 // app-internal/features/order/hooks/usePlaceOrder.ts
 
 import { useCallback, useState } from 'react';
-import { useUseCase } from '@/app-internal/features/di/AppServicesProvider';
+import { useContainer } from '@/app-internal/features/di/AppServicesProvider';
 import { mapFormToCommand } from '../viewModels/orderFormMapper';
-import type { OrderResult } from '@/contexts/order/application/usecases/PlaceOrderUseCase';
+import type { OrderExchangeResult } from '@/contexts/order/application/ports/OrderExchangePort';
 
 export function usePlaceOrder(signer: Signer) {
-  const placeOrderUseCase = useUseCase(services => services.order.placeOrder);
-  const [lastResult, setLastResult] = useState<OrderResult | undefined>();
+  const placeOrderUseCase = useContainer(container => container.resolve('placeOrderUseCase'));
+  const [lastResult, setLastResult] = useState<OrderExchangeResult | undefined>();
   const [isSubmitting, setSubmitting] = useState(false);
 
   const placeOrder = useCallback(

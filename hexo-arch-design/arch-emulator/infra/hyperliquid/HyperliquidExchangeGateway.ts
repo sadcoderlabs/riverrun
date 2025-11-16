@@ -3,7 +3,7 @@ import * as hl from '@nktkas/hyperliquid';
 import type { OrderParameters } from '@nktkas/hyperliquid/api/exchange';
 import type {
   OrderExchangePort,
-  OrderExecutionResponse,
+  OrderExchangeResult,
   OrderCancelRequest,
 } from '../../contexts/order/application/ports/OrderExchangePort';
 
@@ -18,29 +18,29 @@ export class HyperliquidExchangeGateway implements OrderExchangePort {
     this.transport = transport ?? new hl.HttpTransport();
   }
 
-  async order(signer: Signer, request: OrderParameters): Promise<OrderExecutionResponse> {
+  async order(signer: Signer, request: OrderParameters): Promise<OrderExchangeResult> {
     const client = this.getClient(signer);
     const res = await client.order(request);
 
     const firstStatus = res.response.data.statuses[0];
     if ('error' in firstStatus) {
-      return { ok: false, errorCode: firstStatus.error };
+      return { status: 'rejected', rejectReason: firstStatus.error };
     }
 
     const resting = 'resting' in firstStatus ? firstStatus.resting : undefined;
     const filled = 'filled' in firstStatus ? firstStatus.filled : undefined;
 
     return {
-      ok: true,
-      orderId: resting?.oid ?? filled?.oid,
+      status: 'accepted',
+      orderId: (resting?.oid ?? filled?.oid)?.toString(),
       clientOrderId: resting?.cloid ?? filled?.cloid,
     };
   }
 
-  async cancel(signer: Signer, request: OrderCancelRequest): Promise<OrderExecutionResponse> {
+  async cancel(signer: Signer, request: OrderCancelRequest): Promise<OrderExchangeResult> {
     const client = this.getClient(signer);
     await client.cancel({ cloids: request.clientOrderIds });
-    return { ok: true };
+    return { status: 'accepted' };
   }
 
   private getClient(signer: Signer): hl.ExchangeClient {

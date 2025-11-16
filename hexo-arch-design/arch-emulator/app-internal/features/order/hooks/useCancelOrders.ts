@@ -1,9 +1,9 @@
 import type { Signer } from 'ethers';
 import { useCallback, useState } from 'react';
+import type { OrderExchangeResult } from '../../../../contexts/order/application/ports/OrderExchangePort';
 import type {
   CancelOrdersCommand,
   CancelOrdersUseCase,
-  OrderResult,
 } from '../../../../contexts/order/application/usecases/CancelOrdersUseCase';
 import { useContainer } from '../../di/AppServicesProvider';
 
@@ -11,7 +11,7 @@ export function useCancelOrders(signer: Signer) {
   const cancelOrdersUseCase = useContainer<CancelOrdersUseCase>(container =>
     container.resolve('cancelOrdersUseCase'),
   );
-  const [lastResult, setLastResult] = useState<OrderResult | undefined>();
+  const [lastResult, setLastResult] = useState<OrderExchangeResult | undefined>();
   const [isSubmitting, setSubmitting] = useState(false);
 
   const cancelOrders = useCallback(

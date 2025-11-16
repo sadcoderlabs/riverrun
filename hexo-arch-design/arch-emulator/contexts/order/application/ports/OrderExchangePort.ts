@@ -1,11 +1,11 @@
 import type { Signer } from 'ethers';
 import type { OrderParameters } from '@nktkas/hyperliquid/api/exchange';
 
-export type OrderExecutionResponse = {
-  ok: boolean;
-  orderId?: number;
+export type OrderExchangeResult = {
+  orderId?: string;
   clientOrderId?: string;
-  errorCode?: string;
+  status: 'accepted' | 'rejected';
+  rejectReason?: string;
 };
 
 export type OrderCancelRequest = {
@@ -13,6 +13,6 @@ export type OrderCancelRequest = {
 };
 
 export interface OrderExchangePort {
-  order(signer: Signer, request: OrderParameters): Promise<OrderExecutionResponse>;
-  cancel(signer: Signer, request: OrderCancelRequest): Promise<OrderExecutionResponse>;
+  order(signer: Signer, request: OrderParameters): Promise<OrderExchangeResult>;
+  cancel(signer: Signer, request: OrderCancelRequest): Promise<OrderExchangeResult>;
 }

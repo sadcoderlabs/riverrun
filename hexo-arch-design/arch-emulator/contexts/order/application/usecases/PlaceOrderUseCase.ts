@@ -1,6 +1,6 @@
 import type { Signer } from 'ethers';
 import type { BuilderFeeApprovalPort } from '../ports/BuilderFeeApprovalPort';
-import type { OrderExchangePort } from '../ports/OrderExchangePort';
+import type { OrderExchangePort, OrderExchangeResult } from '../ports/OrderExchangePort';
 import type { OrderTelemetryPort } from '../ports/OrderTelemetryPort';
 import { OrderDraft } from '../../domain/entities/OrderDraft';
 import { OrderAssembler } from '../services/OrderAssembler';
@@ -20,12 +20,6 @@ export type PlaceOrderCommand = {
   };
 };
 
-export type OrderResult = {
-  orderId?: string;
-  status: 'accepted' | 'rejected';
-  rejectReason?: string;
-};
-
 export class PlaceOrderUseCase {
   constructor(
     private readonly exchange: OrderExchangePort,
@@ -33,7 +27,7 @@ export class PlaceOrderUseCase {
     private readonly telemetry: OrderTelemetryPort,
   ) {}
 
-  async execute(cmd: PlaceOrderCommand): Promise<OrderResult> {
+  async execute(cmd: PlaceOrderCommand): Promise<OrderExchangeResult> {
     const draft = OrderDraft.fromCommand(cmd);
     draft.ensureValid();
 
@@ -42,19 +36,15 @@ export class PlaceOrderUseCase {
       allowance: draft.requiredAllowance,
     });
 
-    const response = await this.exchange.order(cmd.signer, OrderAssembler.toOrderParameters(draft));
+    const result = await this.exchange.order(cmd.signer, OrderAssembler.toOrderParameters(draft));
 
     await this.telemetry.trackPlacedOrder({
       coin: draft.coin,
-      orderId: response.orderId?.toString(),
-      ok: response.ok,
-      rejectReason: response.errorCode,
+      orderId: result.orderId,
+      ok: result.status === 'accepted',
+      rejectReason: result.rejectReason,
     });
 
-    return {
-      orderId: response.orderId?.toString(),
-      status: response.ok ? 'accepted' : 'rejected',
-      rejectReason: response.errorCode,
-    };
+    return result;
   }
 }
