@@ -2,7 +2,7 @@ import type { Signer } from 'ethers';
 import { useCallback, useState } from 'react';
 import type { OrderExchangeResult } from '../../../../contexts/order/application/ports/OrderExchangePort';
 import type { PlaceOrderUseCase } from '../../../../contexts/order/application/usecases/PlaceOrderUseCase';
-import { useContainer } from '../../di/AppServicesProvider';
+import { useContainer } from '../../../di/AppServicesProvider';
 import { mapFormToCommand } from '../viewModels/orderFormMapper';
 
 export type PlaceOrderFormValues = {

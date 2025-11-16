@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
-import { useContainer } from '../../di/AppServicesProvider';
 import type { BuilderFeeStatus } from '../../../../contexts/builderFee/application/ports/BuilderFeeStatePort';
 import type { EnsureBuilderFeeApprovalUseCase } from '../../../../contexts/builderFee/application/usecases/EnsureBuilderFeeApprovalUseCase';
+import { useContainer } from '../../../di/AppServicesProvider';
 
 export function useBuilderFeeApproval() {
   const ensureUseCase = useContainer<EnsureBuilderFeeApprovalUseCase>(container =>

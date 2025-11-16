@@ -5,7 +5,7 @@ import type {
   CancelOrdersCommand,
   CancelOrdersUseCase,
 } from '../../../../contexts/order/application/usecases/CancelOrdersUseCase';
-import { useContainer } from '../../di/AppServicesProvider';
+import { useContainer } from '../../../di/AppServicesProvider';
 
 export function useCancelOrders(signer: Signer) {
   const cancelOrdersUseCase = useContainer<CancelOrdersUseCase>(container =>
