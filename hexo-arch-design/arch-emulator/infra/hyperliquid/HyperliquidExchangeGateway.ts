@@ -4,7 +4,7 @@ import type { OrderParameters } from '@nktkas/hyperliquid/api/exchange';
 import type {
   OrderExchangePort,
   OrderExecutionResponse,
-} from '../../contexts/order/application/ports/exchange/OrderExchangePort';
+} from '../../contexts/order/application/ports/OrderExchangePort';
 
 /**
  * 真實 Hyperliquid Gateway 實作，使用官方 SDK 的 ExchangeClient 下單。

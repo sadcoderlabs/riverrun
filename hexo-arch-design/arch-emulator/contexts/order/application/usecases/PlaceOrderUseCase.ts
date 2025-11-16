@@ -1,7 +1,7 @@
 import type { Signer } from 'ethers';
-import type { BuilderFeeApprovalPort } from '../ports/approvals/BuilderFeeApprovalPort';
-import type { OrderExchangePort } from '../ports/exchange/OrderExchangePort';
-import type { OrderTelemetryPort } from '../ports/telemetry/OrderTelemetryPort';
+import type { BuilderFeeApprovalPort } from '../ports/BuilderFeeApprovalPort';
+import type { OrderExchangePort } from '../ports/OrderExchangePort';
+import type { OrderTelemetryPort } from '../ports/OrderTelemetryPort';
 import { OrderDraft } from '../../domain/entities/OrderDraft';
 import { OrderAssembler } from '../services/OrderAssembler';
 

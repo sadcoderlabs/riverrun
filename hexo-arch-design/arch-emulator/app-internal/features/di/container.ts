@@ -1,7 +1,7 @@
 import { createContainer, asFunction, asValue, type AwilixContainer } from 'awilix';
-import type { BuilderFeeApprovalPort } from '../../../contexts/order/application/ports/approvals/BuilderFeeApprovalPort';
-import type { OrderExchangePort } from '../../../contexts/order/application/ports/exchange/OrderExchangePort';
-import type { OrderTelemetryPort } from '../../../contexts/order/application/ports/telemetry/OrderTelemetryPort';
+import type { BuilderFeeApprovalPort } from '../../../contexts/order/application/ports/BuilderFeeApprovalPort';
+import type { OrderExchangePort } from '../../../contexts/order/application/ports/OrderExchangePort';
+import type { OrderTelemetryPort } from '../../../contexts/order/application/ports/OrderTelemetryPort';
 import { PlaceOrderUseCase } from '../../../contexts/order/application/usecases/PlaceOrderUseCase';
 
 export type AppContainerDeps = {

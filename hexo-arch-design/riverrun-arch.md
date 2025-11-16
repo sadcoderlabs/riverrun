@@ -29,12 +29,9 @@
         - services/
           - OrderAssembler.ts
         - ports # 只放 out ports
-          - exchange/
-            - OrderExchangePort.ts
-          - approvals/
-            - BuilderFeeApprovalPort.ts
-          - telemetry/
-            - OrderTelemetryPort.ts
+          - OrderExchangePort.ts
+          - BuilderFeeApprovalPort.ts
+          - OrderTelemetryPort.ts
       - reactNative/
         - orderComposition.tsx
         - useOrderStatus.ts
@@ -131,9 +128,9 @@ export function useContainer<T>(
 
 import type { Signer } from 'ethers';
 import { OrderAssembler } from '../services/OrderAssembler';
-import type { BuilderFeeApprovalPort } from '../ports/approvals/BuilderFeeApprovalPort';
-import type { OrderExchangePort } from '../ports/exchange/OrderExchangePort';
-import type { OrderTelemetryPort } from '../ports/telemetry/OrderTelemetryPort';
+import type { BuilderFeeApprovalPort } from '../ports/BuilderFeeApprovalPort';
+import type { OrderExchangePort } from '../ports/OrderExchangePort';
+import type { OrderTelemetryPort } from '../ports/OrderTelemetryPort';
 import { OrderDraft } from '../../domain/entities/OrderDraft';
 
 export type PlaceOrderCommand = {
@@ -237,7 +234,7 @@ export class OrderDraft {
 ```
 
 ```ts
-// contexts/order/application/ports/exchange/OrderExchangePort.ts
+// contexts/order/application/ports/OrderExchangePort.ts
 
 import type { Signer } from 'ethers';
 import type { OrderParameters } from '@nktkas/hyperliquid/api/exchange';
@@ -264,7 +261,7 @@ import type { Signer } from 'ethers';
 import type {
   OrderExchangePort,
   OrderExecutionResponse,
-} from '@/contexts/order/application/ports/exchange/OrderExchangePort';
+} from '@/contexts/order/application/ports/OrderExchangePort';
 
 export class HyperliquidExchangeGateway implements OrderExchangePort {
   private readonly transport: hl.HttpTransport;
