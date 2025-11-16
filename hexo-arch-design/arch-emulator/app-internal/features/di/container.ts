@@ -3,6 +3,7 @@ import type { BuilderFeeApprovalPort } from '../../../contexts/order/application
 import type { OrderExchangePort } from '../../../contexts/order/application/ports/OrderExchangePort';
 import type { OrderTelemetryPort } from '../../../contexts/order/application/ports/OrderTelemetryPort';
 import { PlaceOrderUseCase } from '../../../contexts/order/application/usecases/PlaceOrderUseCase';
+import { CancelOrdersUseCase } from '../../../contexts/order/application/usecases/CancelOrdersUseCase';
 
 export type AppContainerDeps = {
   exchangePort: OrderExchangePort;
@@ -15,6 +16,7 @@ export type AppCradle = {
   builderFeePort: BuilderFeeApprovalPort;
   telemetryPort: OrderTelemetryPort;
   placeOrderUseCase: PlaceOrderUseCase;
+  cancelOrdersUseCase: CancelOrdersUseCase;
 };
 
 export type AppContainer = AwilixContainer<AppCradle>;
@@ -29,6 +31,9 @@ export function createAppContainer(deps: AppContainerDeps): AppContainer {
     placeOrderUseCase: asFunction(
       ({ exchangePort, builderFeePort, telemetryPort }: AppCradle) =>
         new PlaceOrderUseCase(exchangePort, builderFeePort, telemetryPort),
+    ).singleton(),
+    cancelOrdersUseCase: asFunction(
+      ({ exchangePort }: AppCradle) => new CancelOrdersUseCase(exchangePort),
     ).singleton(),
   });
 
