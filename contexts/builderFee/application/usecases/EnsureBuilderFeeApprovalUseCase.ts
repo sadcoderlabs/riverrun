@@ -10,6 +10,7 @@
  * - Return approval result
  *
  * Non-responsibilities:
+ * - Wallet selection (caller responsibility)
  * - State management (UI layer responsibility)
  *
  * Flow:
@@ -22,14 +23,28 @@
  * in all trading flows (order placement, closing positions, TP/SL, etc.)
  */
 
+import type { Signer } from 'ethers';
 import type { BuilderFeeExchangePort } from '../ports/BuilderFeeExchangePort';
 import type { BuilderFeeConfirmationPort } from '../ports/BuilderFeeConfirmationPort';
-import type { WalletPort } from '../../../wallet/ports/walletPort';
 import { BUILDER_CONFIG } from '../../config';
+
+/**
+ * Command for ensuring builder fee approval
+ */
+export type EnsureBuilderFeeApprovalCommand = {
+  /**
+   * Wallet address to check approval status for
+   */
+  walletAddress: string;
+
+  /**
+   * Signer to execute the approval transaction if needed
+   */
+  signer: Signer;
+};
 
 export class EnsureBuilderFeeApprovalUseCase {
   constructor(
-    private readonly wallet: WalletPort,
     private readonly exchange: BuilderFeeExchangePort,
     private readonly confirmation: BuilderFeeConfirmationPort,
   ) {}
@@ -37,19 +52,15 @@ export class EnsureBuilderFeeApprovalUseCase {
   /**
    * Execute the use case
    *
+   * @param command - Command containing wallet address and signer
    * @returns true if approved (already or newly), false if user cancelled or failed
    */
-  async execute(): Promise<boolean> {
+  async execute(command: EnsureBuilderFeeApprovalCommand): Promise<boolean> {
     try {
-      // Get active wallet
-      const wallet = await this.wallet.active();
-      if (!wallet) {
-        console.warn('[EnsureBuilderFeeApprovalUseCase] No active wallet');
-        return false;
-      }
+      const { walletAddress, signer } = command;
 
       // 1. Check if already approved
-      const maxFee = await this.exchange.getMaxBuilderFee(wallet.address, BUILDER_CONFIG.address);
+      const maxFee = await this.exchange.getMaxBuilderFee(walletAddress, BUILDER_CONFIG.address);
       const isApproved = maxFee >= BUILDER_CONFIG.feeRate;
 
       if (isApproved) {
@@ -66,9 +77,6 @@ export class EnsureBuilderFeeApprovalUseCase {
       }
 
       // 3. User confirmed - execute approval transaction
-      const provider = await wallet.getProvider();
-      const signer = await provider.getSigner();
-
       await this.exchange.approveBuilderFee(
         signer,
         BUILDER_CONFIG.maxFeeRate,

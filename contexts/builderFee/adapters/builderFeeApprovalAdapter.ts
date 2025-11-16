@@ -15,13 +15,14 @@
  *   → BuilderFeeApprovalAdapter (this class) → EnsureBuilderFeeApprovalUseCase
  */
 
+import type { Signer } from 'ethers';
 import type { BuilderFeeApprovalPort } from '../../order/application/ports/BuilderFeeApprovalPort';
 import type { EnsureBuilderFeeApprovalUseCase } from '../application/usecases/EnsureBuilderFeeApprovalUseCase';
 
 export class BuilderFeeApprovalAdapter implements BuilderFeeApprovalPort {
   constructor(private readonly ensureApprovalUseCase: EnsureBuilderFeeApprovalUseCase) {}
 
-  async ensureApproval(): Promise<boolean> {
-    return await this.ensureApprovalUseCase.execute();
+  async ensureApproval(walletAddress: string, signer: Signer): Promise<boolean> {
+    return await this.ensureApprovalUseCase.execute({ walletAddress, signer });
   }
 }
