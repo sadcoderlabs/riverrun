@@ -8,7 +8,7 @@
 import { useCallback, useState } from 'react';
 import { Alert } from 'react-native';
 
-import { useReferralComposition } from './referralComposition';
+import { useContainer } from '@/core/di';
 import { REFERRAL_CONFIG } from '../config';
 import type { ReferralInfo } from '../ports/types';
 
@@ -73,7 +73,7 @@ export interface UseReferralResult {
  * ```
  */
 export function useReferral(): UseReferralResult {
-  const { referralService } = useReferralComposition();
+  const referralService = useContainer(c => c.referralService);
 
   // UI state management (presentation layer only)
   const [isLoading, setIsLoading] = useState(false);

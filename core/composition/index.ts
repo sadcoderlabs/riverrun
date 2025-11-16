@@ -30,6 +30,10 @@
 // Unified composition provider (recommended)
 export { AppCompositionProvider } from './appComposition';
 
+// DI Container - Service Access
+export { useContainer, AppServicesProvider } from '../di';
+export type { AppCradle, AppContainer } from '../di';
+
 // Individual context providers (for advanced use cases or testing)
 
 // Environment Configuration

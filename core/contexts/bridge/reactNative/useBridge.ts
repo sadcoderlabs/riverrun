@@ -6,7 +6,7 @@
  */
 
 import { useCallback, useState } from 'react';
-import { useBridgeComposition } from './bridgeComposition';
+import { useContainer } from '@/core/di';
 import type { DepositResult, WithdrawalResult } from '../ports/types';
 
 /**
@@ -84,7 +84,7 @@ export interface UseBridgeResult {
  * ```
  */
 export function useBridge(): UseBridgeResult {
-  const { bridgeService } = useBridgeComposition();
+  const bridgeService = useContainer(c => c.bridgeService);
 
   // UI state management (presentation layer only)
   const [isDepositing, setIsDepositing] = useState(false);

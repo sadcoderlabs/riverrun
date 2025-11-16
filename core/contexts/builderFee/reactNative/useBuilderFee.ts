@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { Alert } from 'react-native';
 
-import { useBuilderFeeComposition } from './builderFeeComposition';
+import { useContainer } from '@/core/di';
 import { BUILDER_CONFIG } from '../config';
 
 export interface UseBuilderFeeResult {
@@ -89,7 +89,7 @@ export interface UseBuilderFeeResult {
  * ```
  */
 export function useBuilderFee(): UseBuilderFeeResult {
-  const { builderFeeService } = useBuilderFeeComposition();
+  const builderFeeService = useContainer(c => c.builderFeeService);
 
   // UI state management (presentation layer only)
   const [isLoading, setIsLoading] = useState(false);

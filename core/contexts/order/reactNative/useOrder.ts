@@ -11,7 +11,7 @@
 
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner-native';
-import { useOrderContext } from './orderComposition';
+import { useContainer } from '@/core/di';
 import type {
   PlaceOrderParams,
   CloseMarketOrderParams,
@@ -128,7 +128,7 @@ function buildTpSlSuccessMessage(params: TpSlOrderParams): string {
  * ```
  */
 export function useOrder(): UseOrderResult {
-  const { orderCommandService } = useOrderContext();
+  const orderCommandService = useContainer(c => c.orderCommandService);
 
   // UI state only
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);

@@ -5,8 +5,8 @@
  * For state access, use useMarketStore instead for better performance.
  */
 
-import { useContext, useCallback, useState } from 'react';
-import { MarketContext } from './marketComposition';
+import { useCallback, useState } from 'react';
+import { useContainer } from '@/core/di';
 
 export interface UseMarketResult {
   /** UI loading state (for manual refresh) */
@@ -43,13 +43,8 @@ export interface UseMarketResult {
  * ```
  */
 export function useMarket(): UseMarketResult {
-  const context = useContext(MarketContext);
-
-  if (!context) {
-    throw new Error('useMarket must be used within MarketCompositionProvider');
-  }
-
-  const { marketService } = context;
+  // Get marketService from DI container
+  const marketService = useContainer(c => c.marketService);
 
   // UI state only (for manual refresh)
   const [isRefreshing, setIsRefreshing] = useState(false);

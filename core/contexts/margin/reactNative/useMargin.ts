@@ -6,7 +6,7 @@
  */
 
 import { useCallback, useState } from 'react';
-import { useMarginComposition } from './marginComposition';
+import { useContainer } from '@/core/di';
 import type { MarginLeverage, SetMarginLeverageParams } from '../ports/types';
 
 export interface UseMarginResult {
@@ -43,7 +43,7 @@ export interface UseMarginResult {
  * ```
  */
 export function useMargin(): UseMarginResult {
-  const { marginService } = useMarginComposition();
+  const marginService = useContainer(c => c.marginService);
 
   // UI state only (for setMarginLeverage operation)
   const [isUpdating, setIsUpdating] = useState(false);

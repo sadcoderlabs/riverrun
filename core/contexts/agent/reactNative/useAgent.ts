@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 
-import { useAgentComposition } from './agentComposition';
+import { useContainer } from '@/core/di';
 
 export interface UseAgentResult {
   /**
@@ -57,7 +57,7 @@ export interface UseAgentResult {
  * ```
  */
 export function useAgent(): UseAgentResult {
-  const { agentService } = useAgentComposition();
+  const agentService = useContainer(c => c.agentService);
 
   // UI state management (presentation layer only)
   const [isLoading, setIsLoading] = useState(false);

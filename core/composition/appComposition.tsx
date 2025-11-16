@@ -1,37 +1,31 @@
 /**
  * AppCompositionProvider - Unified Composition Root
  *
- * This provider composes all bounded context providers in the correct dependency order.
- * It provides a single entry point for dependency injection across the entire application.
+ * This provider now uses a hybrid architecture:
+ * 1. TelemetryCompositionProvider - Telemetry initialization (React Context)
+ * 2. WalletCompositionProvider - Wallet management with Privy/Reown hooks (React Context)
+ * 3. AppServicesProvider - All other services via DI Container (Awilix)
  *
- * Dependency Order:
- * 1. TelemetryCompositionProvider (no dependencies - must be first for error tracking)
- * 2. WalletCompositionProvider (no dependencies)
- * 3. MarketCompositionProvider (no dependencies)
- * 4. AgentCompositionProvider (depends on Wallet)
- * 5. MarginCompositionProvider (depends on Wallet + Market + Agent)
- * 6. HistoryCompositionProvider (depends on Wallet)
- * 7. BuilderFeeCompositionProvider (depends on Wallet)
- * 8. ReferralCompositionProvider (depends on Wallet)
- * 9. BridgeCompositionProvider (depends on Wallet)
- * 10. PositionCompositionProvider (depends on Wallet + Market)
- * 11. OrderCompositionProvider (depends on Agent + BuilderFee + Market)
- * ... (future contexts)
+ * Architecture Migration:
+ * - BEFORE: 11+ nested React Context providers
+ * - AFTER: 3 providers (Telemetry + Wallet + DI Container)
+ *
+ * Why Hybrid?
+ * - TelemetryCompositionProvider: Sets up error tracking early
+ * - WalletCompositionProvider: Requires React hooks (usePrivy, useAccount, etc.)
+ * - AppServicesProvider: Pure business logic services via DI
+ *
+ * Services in DI Container:
+ * - marketService, agentService, builderFeeService, referralService
+ * - bridgeService, marginService, orderCommandService
+ * - Subscriptions: History, Order, Position (managed internally)
  */
 
 import React from 'react';
 
 import { TelemetryCompositionProvider } from '../contexts/telemetry/reactNative/telemetryComposition';
 import { WalletCompositionProvider } from '../contexts/wallet/reactNative/walletComposition';
-import { MarketCompositionProvider } from '../contexts/market/reactNative/marketComposition';
-import { MarginCompositionProvider } from '../contexts/margin/reactNative/marginComposition';
-import { HistoryCompositionProvider } from '../contexts/history/reactNative/historyComposition';
-import { AgentCompositionProvider } from '../contexts/agent/reactNative/agentComposition';
-import { BuilderFeeCompositionProvider } from '../contexts/builderFee/reactNative/builderFeeComposition';
-import { ReferralCompositionProvider } from '../contexts/referral/reactNative/referralComposition';
-import { BridgeCompositionProvider } from '../contexts/bridge/reactNative/bridgeComposition';
-import { PositionCompositionProvider } from '../contexts/position/reactNative/positionComposition';
-import { OrderCompositionProvider } from '../contexts/order/reactNative/orderComposition';
+import { AppServicesProvider } from '../di';
 
 interface AppCompositionProviderProps {
   children: React.ReactNode;
@@ -40,8 +34,8 @@ interface AppCompositionProviderProps {
 /**
  * AppCompositionProvider
  *
- * Composes all bounded context providers in the correct order.
- * Add new context providers here as the application grows.
+ * The main composition root for the application.
+ * Uses a hybrid architecture combining React Context and DI Container.
  *
  * @example
  * ```tsx
@@ -51,28 +45,23 @@ interface AppCompositionProviderProps {
  *   </TamaguiProvider>
  * </AppCompositionProvider>
  * ```
+ *
+ * Accessing Services:
+ * ```tsx
+ * import { useContainer } from '@/core/di';
+ *
+ * function MyComponent() {
+ *   const marketService = useContainer(c => c.marketService);
+ *   const orderCommandService = useContainer(c => c.orderCommandService);
+ *   // ...
+ * }
+ * ```
  */
 export function AppCompositionProvider({ children }: AppCompositionProviderProps) {
   return (
     <TelemetryCompositionProvider>
       <WalletCompositionProvider>
-        <MarketCompositionProvider>
-          <AgentCompositionProvider>
-            <MarginCompositionProvider>
-              <HistoryCompositionProvider>
-                <BuilderFeeCompositionProvider>
-                  <ReferralCompositionProvider>
-                    <BridgeCompositionProvider>
-                      <PositionCompositionProvider>
-                        <OrderCompositionProvider>{children}</OrderCompositionProvider>
-                      </PositionCompositionProvider>
-                    </BridgeCompositionProvider>
-                  </ReferralCompositionProvider>
-                </BuilderFeeCompositionProvider>
-              </HistoryCompositionProvider>
-            </MarginCompositionProvider>
-          </AgentCompositionProvider>
-        </MarketCompositionProvider>
+        <AppServicesProvider>{children}</AppServicesProvider>
       </WalletCompositionProvider>
     </TelemetryCompositionProvider>
   );
