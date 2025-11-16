@@ -33,6 +33,7 @@ import { OrderCommandService } from '@/contexts/order/application/orderCommandSe
 import { GetBuilderFeeStatusUseCase } from '@/contexts/builderFee/application/usecases/GetBuilderFeeStatusUseCase';
 import { ApproveBuilderFeeUseCase } from '@/contexts/builderFee/application/usecases/ApproveBuilderFeeUseCase';
 import { RevokeBuilderFeeUseCase } from '@/contexts/builderFee/application/usecases/RevokeBuilderFeeUseCase';
+import { EnsureBuilderFeeUseCase } from '@/contexts/builderFee/application/usecases/EnsureBuilderFeeUseCase';
 
 // Referral UseCases
 import { GetReferralStatusUseCase } from '@/contexts/referral/application/usecases/GetReferralStatusUseCase';
@@ -191,6 +192,13 @@ export function createAppContainer(options: CreateContainerOptions): AppContaine
     revokeBuilderFeeUseCase: asFunction(({ builderFeeExchangePort }) => {
       return new RevokeBuilderFeeUseCase(builderFeeExchangePort);
     }).singleton(),
+
+    // EnsureBuilderFeeUseCase: Composition UseCase - ensure approval with automatic flow
+    ensureBuilderFeeUseCase: asFunction(
+      ({ getBuilderFeeStatusUseCase, approveBuilderFeeUseCase }) => {
+        return new EnsureBuilderFeeUseCase(getBuilderFeeStatusUseCase, approveBuilderFeeUseCase);
+      },
+    ).singleton(),
   });
 
   // ==========================================================================

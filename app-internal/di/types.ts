@@ -16,6 +16,7 @@ import type { HyperliquidGateway } from '@/infra/hyperliquid/hyperliquidGateway'
 import type { GetBuilderFeeStatusUseCase } from '@/contexts/builderFee/application/usecases/GetBuilderFeeStatusUseCase';
 import type { ApproveBuilderFeeUseCase } from '@/contexts/builderFee/application/usecases/ApproveBuilderFeeUseCase';
 import type { RevokeBuilderFeeUseCase } from '@/contexts/builderFee/application/usecases/RevokeBuilderFeeUseCase';
+import type { EnsureBuilderFeeUseCase } from '@/contexts/builderFee/application/usecases/EnsureBuilderFeeUseCase';
 
 // BuilderFee Ports
 import type { BuilderFeeExchangePort } from '@/contexts/builderFee/application/ports/BuilderFeeExchangePort';
@@ -78,10 +79,13 @@ export interface AppCradle {
   builderFeeExchangePort: BuilderFeeExchangePort;
   builderFeeConfirmationPort: BuilderFeeConfirmationPort;
 
-  // BuilderFee Context - UseCases
+  // BuilderFee Context - Fine-grained UseCases
   getBuilderFeeStatusUseCase: GetBuilderFeeStatusUseCase;
   approveBuilderFeeUseCase: ApproveBuilderFeeUseCase;
   revokeBuilderFeeUseCase: RevokeBuilderFeeUseCase;
+
+  // BuilderFee Context - Composition UseCase
+  ensureBuilderFeeUseCase: EnsureBuilderFeeUseCase;
 
   // Referral Context - Out Ports
   referralExchangePort: ReferralExchangePort;

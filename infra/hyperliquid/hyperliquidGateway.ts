@@ -29,6 +29,7 @@ import type { ReferralExchangePort } from '@/contexts/referral/application/ports
 import type { HyperliquidBridgePort } from '@/contexts/bridge/application/ports/HyperliquidBridgePort';
 import type { AgentExchangePort } from '@/contexts/agent/application/ports/AgentExchangePort';
 import type { MarginExchangePort } from '@/contexts/margin/application/ports/MarginExchangePort';
+import type { OrderExchangePort } from '@/contexts/order/application/ports/OrderExchangePort';
 import * as infoClient from './client/infoClient';
 import { getMasterExchangeClient, getAgentExchangeClient } from './client/getter';
 import { subscriptionManager } from './subscription';
@@ -57,6 +58,7 @@ export type ExchangeClient = hl.ExchangeClient;
  * - HyperliquidBridgePort: Bridge withdrawal operations
  * - AgentExchangePort: Agent approval and management operations
  * - MarginExchangePort: Margin/leverage operations
+ * - OrderExchangePort: Order placement and cancellation operations
  */
 export class HyperliquidGateway
   implements
@@ -64,7 +66,8 @@ export class HyperliquidGateway
     ReferralExchangePort,
     HyperliquidBridgePort,
     AgentExchangePort,
-    MarginExchangePort
+    MarginExchangePort,
+    OrderExchangePort
 {
   /**
    * Subscribe to WebData2 stream with HTTP+WS hybrid strategy
@@ -531,6 +534,49 @@ export class HyperliquidGateway
       asset: params.asset,
       isCross: params.isCross,
       leverage: params.leverage,
+    });
+  }
+
+  // ============================================================================
+  // Order Operations (OrderExchangePort)
+  // ============================================================================
+
+  /**
+   * Place an order on the exchange
+   *
+   * This method implements the OrderExchangePort interface.
+   *
+   * @param signer - Signer for the agent wallet executing the order
+   * @param request - Order request parameters
+   * @returns Order response from exchange
+   */
+  async placeOrder(
+    signer: Signer,
+    request: import('@/contexts/order/application/ports/OrderExchangePort').OrderRequest,
+  ): Promise<import('@/contexts/order/application/ports/OrderExchangePort').OrderResponse> {
+    const client = getAgentExchangeClient(signer);
+    return await client.order({
+      orders: request.orders,
+      grouping: request.grouping,
+      builder: request.builder,
+    });
+  }
+
+  /**
+   * Cancel orders on the exchange
+   *
+   * This method implements the OrderExchangePort interface.
+   *
+   * @param signer - Signer for the agent wallet executing the cancellation
+   * @param request - Cancel request parameters
+   */
+  async cancelOrders(
+    signer: Signer,
+    request: import('@/contexts/order/application/ports/OrderExchangePort').CancelRequest,
+  ): Promise<void> {
+    const client = getAgentExchangeClient(signer);
+    await client.cancel({
+      cancels: request.cancels,
     });
   }
 
