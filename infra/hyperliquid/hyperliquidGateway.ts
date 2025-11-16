@@ -512,19 +512,22 @@ export class HyperliquidGateway
    *
    * This method implements the MarginExchangePort interface.
    *
+   * @param signer - Signer for the agent wallet executing the operation
    * @param params - Update parameters
-   * @param params.client - Exchange client for executing the operation
    * @param params.asset - Asset ID
    * @param params.isCross - True for cross margin, false for isolated
    * @param params.leverage - Leverage value
    */
-  async updateLeverage(params: {
-    client: hl.ExchangeClient;
-    asset: number;
-    isCross: boolean;
-    leverage: number;
-  }): Promise<void> {
-    await params.client.updateLeverage({
+  async updateLeverage(
+    signer: Signer,
+    params: {
+      asset: number;
+      isCross: boolean;
+      leverage: number;
+    },
+  ): Promise<void> {
+    const client = getAgentExchangeClient(signer);
+    await client.updateLeverage({
       asset: params.asset,
       isCross: params.isCross,
       leverage: params.leverage,

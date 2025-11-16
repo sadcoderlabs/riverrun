@@ -30,15 +30,11 @@ export class SetMarginLeverageUseCase {
   async execute(command: SetMarginLeverageCommand): Promise<void> {
     const { agentWallet, assetId, leverage, marginMode } = command;
 
-    // Create agent exchange client
-    const exchangeClient = this.exchange.getAgentExchangeClient(agentWallet.signer);
-
     // Convert marginMode to isCross for API
     const isCross = marginMode === 'cross';
 
     // Call exchange API to update leverage
-    await this.exchange.updateLeverage({
-      client: exchangeClient,
+    await this.exchange.updateLeverage(agentWallet.signer, {
       asset: assetId,
       isCross,
       leverage,

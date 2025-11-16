@@ -5,29 +5,27 @@
  * This port abstracts the Hyperliquid exchange API operations.
  */
 
-import type { ExchangeClient } from '@/infra/hyperliquid/hyperliquidGateway';
+import type { Signer } from 'ethers';
 
 /**
  * Port for margin/leverage exchange operations
  */
 export interface MarginExchangePort {
   /**
-   * Get an agent exchange client for executing margin operations
-   *
-   * @param signer - Agent wallet signer
-   * @returns Exchange client instance
-   */
-  getAgentExchangeClient(signer: any): ExchangeClient;
-
-  /**
    * Update leverage and margin mode for an asset
    *
+   * @param signer - Signer for the agent wallet executing the operation
    * @param params - Update parameters
+   * @param params.asset - Asset ID
+   * @param params.isCross - True for cross margin, false for isolated
+   * @param params.leverage - Leverage value
    */
-  updateLeverage(params: {
-    client: ExchangeClient;
-    asset: number;
-    isCross: boolean;
-    leverage: number;
-  }): Promise<void>;
+  updateLeverage(
+    signer: Signer,
+    params: {
+      asset: number;
+      isCross: boolean;
+      leverage: number;
+    },
+  ): Promise<void>;
 }
