@@ -11,7 +11,7 @@
 
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner-native';
-import { useContainer } from '@/core/di';
+import { useContainer } from '@/core/app-internal/di';
 import type {
   PlaceOrderParams,
   CloseMarketOrderParams,
@@ -19,7 +19,7 @@ import type {
   TpSlOrderParams,
   CancelOrderParams,
   CancelOrdersParams,
-} from '../ports/orderPort';
+} from '../ports';
 
 // ============================================================================
 // Hook Result Interface

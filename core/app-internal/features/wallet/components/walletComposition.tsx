@@ -3,11 +3,11 @@ import { usePrivy, useEmbeddedEthereumWallet } from '@privy-io/expo';
 import { useLogin } from '@privy-io/expo/ui';
 import { useAccount, useWalletInfo, useProvider, useAppKit } from '@reown/appkit-react-native';
 
-import { PrivyWalletAdapter } from '../adapters/privyWalletAdapter';
-import { ReownWalletAdapter } from '../adapters/reownWalletAdapter';
-import { WalletService } from '../application/walletService';
-import { activeWalletStore } from '../adapters/activeWalletStore';
-import type { WalletPort } from '../ports/walletPort';
+import { PrivyWalletAdapter } from '../../../../contexts/wallet/adapters/privyWalletAdapter';
+import { ReownWalletAdapter } from '../../../../contexts/wallet/adapters/reownWalletAdapter';
+import { WalletService } from '../../../../contexts/wallet/application/walletService';
+import { activeWalletStore } from '../../../../contexts/wallet/adapters/activeWalletStore';
+import type { WalletPort } from '../../../../contexts/wallet/ports/walletPort';
 
 interface WalletCompositionContextValue {
   /**

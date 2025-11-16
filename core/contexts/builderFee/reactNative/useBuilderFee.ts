@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { Alert } from 'react-native';
 
-import { useContainer } from '@/core/di';
+import { useContainer } from '@/core/app-internal/di';
 import { BUILDER_CONFIG } from '../config';
 
 export interface UseBuilderFeeResult {

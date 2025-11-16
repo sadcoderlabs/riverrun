@@ -6,16 +6,16 @@
  */
 
 import type { AwilixContainer } from 'awilix';
-import type { TelemetryPort } from '../contexts/telemetry/ports/telemetryPort';
-import type { WalletPort } from '../contexts/wallet/ports/walletPort';
-import type { MarketPort } from '../contexts/market/ports/marketPort';
-import type { AgentPort } from '../contexts/agent/ports/agentPort';
-import type { BuilderFeePort } from '../contexts/builderFee/ports/builderFeePort';
-import type { ReferralPort } from '../contexts/referral/ports/referralPort';
-import type { BridgePort } from '../contexts/bridge/ports/bridgePort';
-import type { MarginPort } from '../contexts/margin/ports/marginPort';
-import type { OrderCommandPort } from '../contexts/order/ports/orderCommandPort';
-import type { HyperliquidGateway } from '../infra/hyperliquid/hyperliquidGateway';
+import type { TelemetryPort } from '../../contexts/telemetry/ports/telemetryPort';
+import type { WalletPort } from '../../contexts/wallet/ports/walletPort';
+import type { MarketPort } from '../../contexts/market/ports/marketPort';
+import type { AgentPort } from '../../contexts/agent/ports/agentPort';
+import type { BuilderFeePort } from '../../contexts/builderFee/ports/builderFeePort';
+import type { ReferralPort } from '../../contexts/referral/ports/referralPort';
+import type { BridgePort } from '../../contexts/bridge/ports/bridgePort';
+import type { MarginPort } from '../../contexts/margin/ports/marginPort';
+import type { OrderCommandPort } from '../../contexts/order/ports/orderCommandPort';
+import type { HyperliquidGateway } from '../../infra/hyperliquid/hyperliquidGateway';
 
 /**
  * AppCradle - Type-safe container cradle

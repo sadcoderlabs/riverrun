@@ -8,7 +8,7 @@
 import { useCallback, useState } from 'react';
 import { Alert } from 'react-native';
 
-import { useContainer } from '@/core/di';
+import { useContainer } from '@/core/app-internal/di';
 import { REFERRAL_CONFIG } from '../config';
 import type { ReferralInfo } from '../ports/types';
 

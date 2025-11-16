@@ -11,7 +11,8 @@ import {
 } from '@expo-google-fonts/inter';
 
 import { useThemePreference } from '@/components/shared/theme/useThemePreference';
-import { useWalletContext, AppCompositionProvider } from '@/core/composition';
+import { AppCompositionProvider } from '@/core/app-internal/di';
+import { useWalletContext } from '@/core/composition';
 import { ActionSheetProvider } from '@expo/react-native-action-sheet';
 import { PrivyProvider } from '@privy-io/expo';
 import { PrivyElements } from '@privy-io/expo/ui';

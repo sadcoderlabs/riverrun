@@ -6,7 +6,7 @@
  */
 
 import { useCallback, useState } from 'react';
-import { useContainer } from '@/core/di';
+import { useContainer } from '@/core/app-internal/di';
 
 export interface UseMarketResult {
   /** UI loading state (for manual refresh) */

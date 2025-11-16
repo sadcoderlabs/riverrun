@@ -1,120 +1,65 @@
 /**
- * Composition Root - Dependency Injection
+ * Composition Root - Temporary Barrel Export
  *
- * This module provides the composition root for hexagonal architecture,
- * wiring together ports, adapters, and application logic.
- *
- * ## Store Hooks vs Business Hooks
- *
- * ### Store Hooks (useXxxStore)
- * - Direct access to state with custom selectors
- * - Optimal performance - only re-renders when selected fields change
- * - Use for state access in components
- *
- * ### Business Hooks (useXxx)
- * - Business operations and UI interactions
- * - Loading states for UI
- * - Use for actions and operations
- *
- * @example
- * ```typescript
- * // State access - precise subscriptions
- * const agentAddress = useAgentStore(state => state.agentAddress);
- * const isApproved = useAgentStore(state => state.isApproved);
- *
- * // Business operations
- * const { approve, isLoading } = useAgent();
- * ```
+ * This is a temporary re-export file during the migration to app-internal structure.
+ * It will be removed once all features are migrated.
  */
 
-// Unified composition provider (recommended)
-export { AppCompositionProvider } from './appComposition';
+// DI Container
+export { useContainer } from '../app-internal/di';
 
-// DI Container - Service Access
-export { useContainer, AppServicesProvider } from '../di';
-export type { AppCradle, AppContainer } from '../di';
-
-// Individual context providers (for advanced use cases or testing)
-
-// Environment Configuration
-export {
-  appVariant,
-  isDevelopmentBuild,
-  isPreviewBuild,
-  isProductionBuild,
-  features,
-} from '../config/environment';
-export type { AppVariant } from '../config/environment';
-
-// Telemetry Context
+// Telemetry (migrated to app-internal/features/telemetry)
+export { useTelemetry } from '../app-internal/features/telemetry/hooks/useTelemetry';
+export type { UseTelemetryResult } from '../app-internal/features/telemetry/hooks/useTelemetry';
+export { useTelemetryStore } from '../app-internal/features/telemetry/hooks/useTelemetryStore';
 export {
   TelemetryCompositionProvider,
   useTelemetryComposition,
-} from '../contexts/telemetry/reactNative/telemetryComposition';
-export { useTelemetry } from '../contexts/telemetry/reactNative/useTelemetry';
-export type { UseTelemetryResult } from '../contexts/telemetry/reactNative/useTelemetry';
-export { useTelemetryStore } from '../contexts/telemetry/reactNative/useTelemetryStore';
+} from '../app-internal/features/telemetry/components/telemetryComposition';
 
-// Telemetry Types (Type-safe events and screens)
-export type {
-  // User
-  TelemetryUser,
-  // Events
-  TelemetryEventName,
-  TelemetryEventProps,
-  // Screens
-  ScreenName,
-  ScreenProps,
-  // Errors
-  TelemetryErrorContext,
-  // Performance
-  SpanName,
-  SpanContext,
-} from '../contexts/telemetry/ports/types';
-
-// Wallet Context
+// Wallet (migrated to app-internal/features/wallet)
+export { useWalletContext } from '../app-internal/features/wallet/hooks/useWalletContext';
+export type { UseWalletContextResult } from '../app-internal/features/wallet/hooks/useWalletContext';
 export {
   WalletCompositionProvider,
   useWalletComposition,
-} from '../contexts/wallet/reactNative/walletComposition';
-export { useWalletContext } from '../contexts/wallet/reactNative/useWalletContext';
-export type { UseWalletContextResult } from '../contexts/wallet/reactNative/useWalletContext';
+} from '../app-internal/features/wallet/components/walletComposition';
 
-// Market Context
+// Market (not yet migrated)
 export { useMarket } from '../contexts/market/reactNative/useMarket';
 export type { UseMarketResult } from '../contexts/market/reactNative/useMarket';
 export { useMarketStore } from '../contexts/market/reactNative/useMarketStore';
 
-// Agent Context
+// Agent (not yet migrated)
 export { useAgent } from '../contexts/agent/reactNative/useAgent';
 export type { UseAgentResult } from '../contexts/agent/reactNative/useAgent';
 export { useAgentStore } from '../contexts/agent/reactNative/useAgentStore';
 
-// Builder Fee Context
+// Builder Fee (not yet migrated)
 export { useBuilderFee } from '../contexts/builderFee/reactNative/useBuilderFee';
 export type { UseBuilderFeeResult } from '../contexts/builderFee/reactNative/useBuilderFee';
 export { useBuilderFeeStore } from '../contexts/builderFee/reactNative/useBuilderFeeStore';
 export { getBuilderParam } from '../contexts/builderFee/config';
 
-// Referral Context
+// Referral (not yet migrated)
 export { useReferral } from '../contexts/referral/reactNative/useReferral';
 export type { UseReferralResult } from '../contexts/referral/reactNative/useReferral';
 export { useReferralStore } from '../contexts/referral/reactNative/useReferralStore';
 export { useReferralHintsStore } from '../contexts/referral/adapters/referralHintsStore';
 export { REFERRAL_CONFIG } from '../contexts/referral/config';
 
-// Bridge Context
+// Bridge (not yet migrated)
 export { useBridge } from '../contexts/bridge/reactNative/useBridge';
 export type { UseBridgeResult } from '../contexts/bridge/reactNative/useBridge';
 export { useBridgeStore } from '../contexts/bridge/reactNative/useBridgeStore';
 export { ARBITRUM_CONFIG, BRIDGE_LIMITS, BRIDGE_FEES } from '../contexts/bridge/config';
 
-// Margin Context
+// Margin (not yet migrated)
 export { useMargin } from '../contexts/margin/reactNative/useMargin';
 export type { UseMarginResult } from '../contexts/margin/reactNative/useMargin';
 export { useMarginStore } from '../contexts/margin/reactNative/useMarginStore';
 
-// Order Context
+// Order (not yet migrated)
 export { useOrder } from '../contexts/order/reactNative/useOrder';
 export type { UseOrderResult } from '../contexts/order/reactNative/useOrder';
 export { useOrderStore } from '../contexts/order/reactNative/useOrderStore';
@@ -125,3 +70,25 @@ export {
   useOrderCount,
   useAvailableToTrade,
 } from '../contexts/order/reactNative';
+
+// Telemetry Types
+export type {
+  TelemetryUser,
+  TelemetryEventName,
+  TelemetryEventProps,
+  ScreenName,
+  ScreenProps,
+  TelemetryErrorContext,
+  SpanName,
+  SpanContext,
+} from '../contexts/telemetry/ports/types';
+
+// Environment
+export {
+  appVariant,
+  isDevelopmentBuild,
+  isPreviewBuild,
+  isProductionBuild,
+  features,
+} from '../config/environment';
+export type { AppVariant } from '../config/environment';

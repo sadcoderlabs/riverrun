@@ -6,7 +6,7 @@
  */
 
 import { useStore } from 'zustand';
-import { telemetryStore } from '../adapters/telemetryStore';
+import { telemetryStore } from '../../../../contexts/telemetry/adapters/telemetryStore';
 
 /**
  * useTelemetryStore - Access telemetry preferences

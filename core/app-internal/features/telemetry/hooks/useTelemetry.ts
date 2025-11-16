@@ -7,7 +7,7 @@
 
 import { useCallback } from 'react';
 
-import { useTelemetryComposition } from './telemetryComposition';
+import { useTelemetryComposition } from '../components/telemetryComposition';
 import type {
   ScreenName,
   ScreenProps,
@@ -17,7 +17,7 @@ import type {
   TelemetryEventName,
   TelemetryEventProps,
   TelemetryUser,
-} from '../ports/types';
+} from '../../../../contexts/telemetry/ports/types';
 
 export interface UseTelemetryResult {
   /**

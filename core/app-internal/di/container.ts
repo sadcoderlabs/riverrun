@@ -15,26 +15,26 @@ import { asValue, asFunction, createContainer, InjectionMode } from 'awilix';
 import type { AppContainer, AppCradle } from './types';
 
 // Infrastructure
-import { HyperliquidGateway } from '../infra/hyperliquid/hyperliquidGateway';
+import { HyperliquidGateway } from '../../infra/hyperliquid/hyperliquidGateway';
 
 // Adapters
-import { SentryAdapter } from '../contexts/telemetry/adapters/sentryAdapter';
-import { SegmentAdapter } from '../contexts/telemetry/adapters/segmentAdapter';
-import { AlertAgentApprovalConfirmationAdapter } from '../contexts/agent/reactNative/alertAgentApprovalConfirmationAdapter';
-import { AlertBuilderFeeApprovalConfirmationAdapter } from '../contexts/builderFee/reactNative/alertBuilderFeeApprovalConfirmationAdapter';
+import { SentryAdapter } from '../../contexts/telemetry/adapters/sentryAdapter';
+import { SegmentAdapter } from '../../contexts/telemetry/adapters/segmentAdapter';
+import { AlertAgentApprovalConfirmationAdapter } from '../../contexts/agent/reactNative/alertAgentApprovalConfirmationAdapter';
+import { AlertBuilderFeeApprovalConfirmationAdapter } from '../../contexts/builderFee/reactNative/alertBuilderFeeApprovalConfirmationAdapter';
 
 // Services
-import { TelemetryService } from '../contexts/telemetry/application/telemetryService';
-import { MarketService } from '../contexts/market/application/marketService';
-import { AgentService } from '../contexts/agent/application/agentService';
-import { BuilderFeeService } from '../contexts/builderFee/application/builderFeeService';
-import { ReferralService } from '../contexts/referral/application/referralService';
-import { BridgeService } from '../contexts/bridge/application/bridgeService';
-import { MarginService } from '../contexts/margin/application/marginService';
-import { OrderCommandService } from '../contexts/order/application/orderCommandService';
+import { TelemetryService } from '../../contexts/telemetry/application/telemetryService';
+import { MarketService } from '../../contexts/market/application/marketService';
+import { AgentService } from '../../contexts/agent/application/agentService';
+import { BuilderFeeService } from '../../contexts/builderFee/application/builderFeeService';
+import { ReferralService } from '../../contexts/referral/application/referralService';
+import { BridgeService } from '../../contexts/bridge/application/bridgeService';
+import { MarginService } from '../../contexts/margin/application/marginService';
+import { OrderCommandService } from '../../contexts/order/application/orderCommandService';
 
 // Ports (for interface injection)
-import type { WalletPort } from '../contexts/wallet/ports/walletPort';
+import type { WalletPort } from '../../contexts/wallet/ports/walletPort';
 
 /**
  * Container creation options

@@ -23,9 +23,9 @@
 
 import React from 'react';
 
-import { TelemetryCompositionProvider } from '../contexts/telemetry/reactNative/telemetryComposition';
-import { WalletCompositionProvider } from '../contexts/wallet/reactNative/walletComposition';
-import { AppServicesProvider } from '../di';
+import { TelemetryCompositionProvider } from '../features/telemetry/components/telemetryComposition';
+import { WalletCompositionProvider } from '../features/wallet/components/walletComposition';
+import { AppServicesProvider } from './AppServicesProvider';
 
 interface AppCompositionProviderProps {
   children: React.ReactNode;
@@ -48,7 +48,7 @@ interface AppCompositionProviderProps {
  *
  * Accessing Services:
  * ```tsx
- * import { useContainer } from '@/core/di';
+ * import { useContainer } from '@/core/app-internal/di';
  *
  * function MyComponent() {
  *   const marketService = useContainer(c => c.marketService);

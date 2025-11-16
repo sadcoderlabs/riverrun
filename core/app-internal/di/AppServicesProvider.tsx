@@ -20,12 +20,12 @@ import { createAppContainer } from './container';
 import type { AppContainer, AppCradle } from './types';
 
 // Wallet Context (external dependency)
-import { useWalletComposition } from '../contexts/wallet/reactNative/walletComposition';
+import { useWalletComposition } from '../features/wallet/components/walletComposition';
 
 // Subscription hooks (run internally)
-import { useHistorySubscription } from '../contexts/history/reactNative/useHistorySubscription';
-import { useOrderSubscription } from '../contexts/order/reactNative/useOrderSubscription';
-import { usePositionSubscription } from '../contexts/position/reactNative/usePositionSubscription';
+import { useHistorySubscription } from '../../contexts/history/reactNative/useHistorySubscription';
+import { useOrderSubscription } from '../../contexts/order/reactNative/useOrderSubscription';
+import { usePositionSubscription } from '../../contexts/position/reactNative/usePositionSubscription';
 
 // ============================================================================
 // Context Definition

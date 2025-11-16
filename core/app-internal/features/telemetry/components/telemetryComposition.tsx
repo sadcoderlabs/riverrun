@@ -7,10 +7,10 @@
 
 import React, { createContext, useContext, useMemo } from 'react';
 
-import { SegmentAdapter } from '../adapters/segmentAdapter';
-import { SentryAdapter } from '../adapters/sentryAdapter';
-import { TelemetryService } from '../application/telemetryService';
-import type { TelemetryPort } from '../ports/telemetryPort';
+import { SegmentAdapter } from '../../../../contexts/telemetry/adapters/segmentAdapter';
+import { SentryAdapter } from '../../../../contexts/telemetry/adapters/sentryAdapter';
+import { TelemetryService } from '../../../../contexts/telemetry/application/telemetryService';
+import type { TelemetryPort } from '../../../../contexts/telemetry/ports/telemetryPort';
 
 interface TelemetryCompositionContextValue {
   /**

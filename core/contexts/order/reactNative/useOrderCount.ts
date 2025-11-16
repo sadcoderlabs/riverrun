@@ -4,7 +4,7 @@
  * Returns real-time count from orderStore.
  */
 
-import { useWalletContext } from '@/core/contexts/wallet/reactNative/useWalletContext';
+import { useWalletContext } from '@/core/composition';
 import { useMemo } from 'react';
 import { useOrderStore } from './useOrderStore';
 
