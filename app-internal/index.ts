@@ -55,7 +55,6 @@ export { REFERRAL_CONFIG } from '@/contexts/referral/config';
 // Bridge
 export { useBridge } from './features/bridge/hooks/useBridge';
 export type { UseBridgeResult } from './features/bridge/hooks/useBridge';
-export { useBridgeStore } from './features/bridge/hooks/useBridgeStore';
 export { ARBITRUM_CONFIG, BRIDGE_LIMITS, BRIDGE_FEES } from '@/contexts/bridge/config';
 
 // Margin

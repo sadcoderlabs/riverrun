@@ -5,13 +5,7 @@ import { Alert, Pressable, ScrollView } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { Button, Input, Spinner, Text, XStack, YStack } from 'tamagui';
 import { toast } from 'sonner-native';
-import {
-  useWalletContext,
-  useBridge,
-  useBridgeStore,
-  BRIDGE_LIMITS,
-  BRIDGE_FEES,
-} from '@/app-internal';
+import { useWalletContext, useBridge, BRIDGE_LIMITS, BRIDGE_FEES } from '@/app-internal';
 
 // Validate Ethereum address format
 function isValidAddress(address: string): boolean {
@@ -32,9 +26,13 @@ export default function HyperliquidBridgeWithdrawPage() {
   const { wallet } = useWalletContext();
 
   // Bridge hooks
-  const withdrawableBalance = useBridgeStore(state => state.withdrawableBalance);
-  const isLoadingBalance = useBridgeStore(state => state.isLoadingBalances);
-  const { withdraw, refreshBalances, isWithdrawing } = useBridge();
+  const {
+    withdrawableBalance,
+    isLoadingBalances: isLoadingBalance,
+    withdraw,
+    refreshBalances,
+    isWithdrawing,
+  } = useBridge();
 
   // State
   const [recipientAddress, setRecipientAddress] = useState('');

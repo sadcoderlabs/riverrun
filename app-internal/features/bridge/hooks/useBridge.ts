@@ -2,31 +2,42 @@
  * useBridge - React Hook for Bridge Operations (UseCase Pattern)
  *
  * This hook provides bridge operations with UI integration (loading states, etc.).
- * For state access, use useBridgeStore instead for better performance.
  *
  * Responsibilities:
  * - Get wallet and signer from WalletContext
  * - Build commands for UseCases
  * - Execute UseCases
  * - Compose UseCases (e.g., refreshBalances = getArbitrumBalance + getWithdrawableBalance)
- * - Update bridgeStore with results
+ * - Manage state with useState (local state, single responsibility)
  * - Manage UI loading states
  * - Handle errors
  *
  * Does NOT contain:
  * - Business logic (in UseCases)
  * - Infrastructure logic (in Ports/Adapters)
+ *
+ * State Management:
+ * - Uses useState (not Zustand) - follows BuilderFee/Referral pattern
+ * - Single hook provides both state and operations
+ * - 2 使用端: deposit/withdraw 頁面 (各自獨立，無需共享狀態)
  */
 
 import { useCallback, useState } from 'react';
 import { useContainer, useWalletContext } from '@/app-internal';
-import { bridgeStore } from '../../../../contexts/bridge/adapters/bridgeStore';
 import type { DepositResult, WithdrawalResult } from '../../../../contexts/bridge/ports/types';
 
 /**
  * Result type for useBridge hook
  */
 export interface UseBridgeResult {
+  /** USDC balance on Arbitrum */
+  arbitrumBalance: string | undefined;
+  /** Withdrawable USDC balance on Hyperliquid */
+  withdrawableBalance: string | undefined;
+  /** Loading state for balance fetching */
+  isLoadingBalances: boolean;
+  /** Error state */
+  error: Error | undefined;
   /** Whether deposit operation is in progress (UI state only) */
   isDepositing: boolean;
   /** Whether withdrawal operation is in progress (UI state only) */
@@ -35,7 +46,7 @@ export interface UseBridgeResult {
    * Refresh balances on both chains
    *
    * Composes GetArbitrumBalanceUseCase and GetWithdrawableBalanceUseCase.
-   * Updates the bridgeStore with current Arbitrum and Hyperliquid balances.
+   * Updates local state with current Arbitrum and Hyperliquid balances.
    *
    * @returns Promise that resolves when balances are refreshed
    *
@@ -73,14 +84,20 @@ export interface UseBridgeResult {
  *
  * @example
  * ```tsx
- * import { useBridgeStore, useBridge } from '@/app-internal/di';
+ * import { useBridge } from '@/app-internal';
  *
- * // State access - precise subscriptions
- * const arbitrumBalance = useBridgeStore(state => state.arbitrumBalance);
- * const withdrawableBalance = useBridgeStore(state => state.withdrawableBalance);
- *
- * // Business operations
- * const { deposit, withdraw, refreshBalances, isDepositing, isWithdrawing } = useBridge();
+ * // Single hook provides both state and operations
+ * const {
+ *   arbitrumBalance,
+ *   withdrawableBalance,
+ *   isLoadingBalances,
+ *   error,
+ *   deposit,
+ *   withdraw,
+ *   refreshBalances,
+ *   isDepositing,
+ *   isWithdrawing
+ * } = useBridge();
  *
  * // Refresh balances on mount
  * useEffect(() => {
@@ -108,6 +125,13 @@ export function useBridge(): UseBridgeResult {
   // Get wallet from React Context
   const { wallet, getSigner } = useWalletContext();
 
+  // State management - useState (not Zustand)
+  // Follows BuilderFee/Referral pattern for consistency
+  const [arbitrumBalance, setArbitrumBalance] = useState<string | undefined>(undefined);
+  const [withdrawableBalance, setWithdrawableBalance] = useState<string | undefined>(undefined);
+  const [isLoadingBalances, setIsLoadingBalances] = useState(false);
+  const [error, setError] = useState<Error | undefined>(undefined);
+
   // UI state management (presentation layer only)
   const [isDepositing, setIsDepositing] = useState(false);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
@@ -120,32 +144,32 @@ export function useBridge(): UseBridgeResult {
   const refreshBalances = useCallback(async (): Promise<void> => {
     try {
       // UI Layer: Update loading state
-      bridgeStore.getState().setLoadingBalances(true);
-      bridgeStore.getState().setError(undefined);
+      setIsLoadingBalances(true);
+      setError(undefined);
 
       if (!wallet) {
         // No wallet - clear balances
-        bridgeStore.getState().setArbitrumBalance(undefined);
-        bridgeStore.getState().setWithdrawableBalance(undefined);
+        setArbitrumBalance(undefined);
+        setWithdrawableBalance(undefined);
         return;
       }
 
       // UI Layer: Compose two Query UseCases
       // Execute both queries in parallel for better performance
-      const [arbitrumBalance, withdrawableBalance] = await Promise.all([
+      const [arbitrumBal, withdrawableBal] = await Promise.all([
         getArbitrumBalanceUseCase.execute({ walletAddress: wallet.address }),
         getWithdrawableBalanceUseCase.execute({ walletAddress: wallet.address }),
       ]);
 
-      // UI Layer: Update store with results
-      bridgeStore.getState().setArbitrumBalance(arbitrumBalance);
-      bridgeStore.getState().setWithdrawableBalance(withdrawableBalance);
-    } catch (error) {
-      const err = error instanceof Error ? error : new Error(String(error));
-      bridgeStore.getState().setError(err);
-      console.error('[useBridge] Failed to refresh balances:', error);
+      // UI Layer: Update state with results
+      setArbitrumBalance(arbitrumBal);
+      setWithdrawableBalance(withdrawableBal);
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      setError(error);
+      console.error('[useBridge] Failed to refresh balances:', err);
     } finally {
-      bridgeStore.getState().setLoadingBalances(false);
+      setIsLoadingBalances(false);
     }
   }, [getArbitrumBalanceUseCase, getWithdrawableBalanceUseCase, wallet]);
 
@@ -226,6 +250,10 @@ export function useBridge(): UseBridgeResult {
   );
 
   return {
+    arbitrumBalance,
+    withdrawableBalance,
+    isLoadingBalances,
+    error,
     isDepositing,
     isWithdrawing,
     refreshBalances,

@@ -5,13 +5,7 @@ import { Alert, Pressable, ScrollView } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { Button, Input, Spinner, Text, XStack, YStack } from 'tamagui';
 import { toast } from 'sonner-native';
-import {
-  useWalletContext,
-  useBridge,
-  useBridgeStore,
-  ARBITRUM_CONFIG,
-  BRIDGE_LIMITS,
-} from '@/app-internal';
+import { useWalletContext, useBridge, ARBITRUM_CONFIG, BRIDGE_LIMITS } from '@/app-internal';
 import { DEPOSIT_TOKENS, type ChainName } from '@/contexts/bridge/depositTokens';
 
 // Helper function to shorten address (first 5 and last 5 characters)
@@ -33,8 +27,7 @@ export default function HyperliquidBridgePage() {
 
   // Wallet and bridge hooks
   const { wallet } = useWalletContext();
-  const balance = useBridgeStore(state => state.arbitrumBalance);
-  const { deposit, refreshBalances, isDepositing } = useBridge();
+  const { arbitrumBalance: balance, deposit, refreshBalances, isDepositing } = useBridge();
 
   // Find the token based on symbol from URL params
   const token = DEPOSIT_TOKENS.find(t => t.symbol === params.symbol);
