@@ -1,132 +1,131 @@
 /**
- * Margin Subscription Hook
+ * useMarginSubscription - Manages real-time margin/leverage data subscriptions
  *
- * React composition layer for managing margin/leverage WebSocket subscriptions.
+ * This hook automatically:
+ * - Monitors active wallet changes
+ * - Monitors selected market changes
+ * - Subscribes to activeAssetData via HTTP + WebSocket hybrid
+ * - Extracts leverage data from data stream
+ * - Enriches data with market info (maxLeverage)
+ * - Updates margin store with enriched data
  *
- * Responsibilities:
- * - Subscribe to marketStore.selectedMarket changes (reactive)
- * - Auto-manage activeAssetData WebSocket subscriptions
- * - Update marginStore with real-time data
- * - Lifecycle management (subscribe on mount, cleanup on unmount)
- *
- * This hook should be called once at app root level to maintain global
- * subscription state throughout the app lifecycle.
+ * Design: React Hook for subscription management
+ * - Embraces React lifecycle (useEffect)
+ * - Manages subscriptions automatically
+ * - Updates marginStore directly
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo } from 'react';
+import { useStore } from 'zustand';
 import { useMarginStore } from './useMarginStore';
+import { activeWalletStore } from '@/contexts/wallet/adapters/activeWalletStore';
 import { marketStore } from '@/contexts/market/adapters/marketStore';
-import type {
+import {
   HyperliquidGateway,
-  SubscriptionHandle,
+  type SubscriptionHandle,
 } from '@/infra/hyperliquid/hyperliquidGateway';
-import type { WalletPort } from '@/contexts/wallet/ports/walletPort';
+import type { MarginLeverage } from '@/contexts/margin/ports/types';
+
+// ============================================================================
+// Data Processing Functions (Testable)
+// ============================================================================
 
 /**
- * Hook for managing margin subscription lifecycle
- *
- * @param walletPort - Wallet service for getting active wallet
- * @param hyperliquidGateway - Gateway for WebSocket subscriptions
+ * Extract margin/leverage data from activeAssetData response
+ * Exported for testing purposes
  */
-export function useMarginSubscription(
-  walletPort: WalletPort,
-  hyperliquidGateway: HyperliquidGateway,
-) {
-  const activeAssetDataSubscription = useRef<SubscriptionHandle | undefined>(undefined);
-  const currentCoin = useRef<string | undefined>(undefined);
+export function extractMarginData(
+  data: any,
+  coin: string,
+  markets: Array<{ coin: string; maxLeverage: number }>,
+): MarginLeverage {
+  // Find market to get maxLeverage
+  const market = markets.find(m => m.coin.toUpperCase() === coin.toUpperCase());
+
+  return {
+    leverage: data.leverage.value,
+    marginMode: data.leverage.type,
+    minLeverage: 1,
+    maxLeverage: market?.maxLeverage || 1,
+  };
+}
+
+// ============================================================================
+// Subscription Hook
+// ============================================================================
+
+/**
+ * useMarginSubscription - Automatically manages margin subscriptions
+ *
+ * Usage:
+ * ```tsx
+ * export function AppServicesProvider({ children }) {
+ *   useMarginSubscription();  // No parameters needed
+ *   return <AppContainerContext.Provider>{children}</AppContainerContext.Provider>;
+ * }
+ * ```
+ */
+export function useMarginSubscription() {
+  const wallet = useStore(activeWalletStore, state => state.wallet);
+  const selectedMarket = useStore(marketStore, state => state.selectedMarket);
+  const walletAddress = wallet?.address;
+  const coin = selectedMarket?.coin;
+  const gateway = useMemo(() => new HyperliquidGateway(), []);
 
   useEffect(() => {
-    // Track previous market for comparison
-    let prevMarket = marketStore.getState().selectedMarket;
-
-    // Subscribe to market changes
-    const unsubscribeMarket = marketStore.subscribe(state => {
-      const currentMarket = state.selectedMarket;
-
-      // Only resubscribe if the selected coin actually changed
-      if (currentMarket?.coin !== prevMarket?.coin) {
-        if (currentMarket) {
-          subscribeToMarket(currentMarket.coin);
-        } else {
-          // No market selected, clean up
-          unsubscribeActiveAssetData();
-          useMarginStore.getState().clear();
-        }
-        prevMarket = currentMarket;
-      }
-    });
-
-    // Initial subscription for currently selected market
-    const selectedMarket = marketStore.getState().selectedMarket;
-    if (selectedMarket) {
-      subscribeToMarket(selectedMarket.coin);
+    // No wallet or market - clear margin data
+    if (!walletAddress || !coin) {
+      useMarginStore.getState().clear();
+      return;
     }
 
-    // Cleanup on unmount
+    let subscription: SubscriptionHandle | undefined;
+    let isCancelled = false;
+
+    (async () => {
+      try {
+        useMarginStore.getState().setLoading(true);
+
+        // Subscribe to activeAssetData via Gateway
+        // Gateway handles HTTP + WS hybrid strategy internally
+        subscription = await gateway.subscribeActiveAssetData(
+          { user: walletAddress, coin },
+          (data: any) => {
+            // Don't process if effect was cancelled
+            if (!isCancelled) {
+              try {
+                // Get current markets for enrichment
+                const markets = marketStore.getState().markets;
+
+                // Extract and enrich margin data
+                const marginData = extractMarginData(data, coin, markets);
+
+                // Update store
+                useMarginStore.getState().setMarginLeverage(marginData);
+              } catch (error) {
+                console.error('[useMarginSubscription] Failed to process margin data:', error);
+                useMarginStore
+                  .getState()
+                  .setError(error instanceof Error ? error : new Error(String(error)));
+              }
+            }
+          },
+        );
+      } catch (error) {
+        console.error('[useMarginSubscription] Failed to start subscription:', error);
+        if (!isCancelled) {
+          useMarginStore
+            .getState()
+            .setError(error instanceof Error ? error : new Error(String(error)));
+        }
+      }
+    })();
+
+    // Cleanup function
     return () => {
-      unsubscribeMarket();
-      unsubscribeActiveAssetData();
+      isCancelled = true;
+      subscription?.unsubscribe();
       useMarginStore.getState().clear();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  /**
-   * Subscribe to activeAssetData for a specific market
-   */
-  async function subscribeToMarket(coin: string): Promise<void> {
-    // Avoid redundant subscriptions
-    if (currentCoin.current === coin && activeAssetDataSubscription.current) {
-      return;
-    }
-
-    // Clean up previous subscription
-    await unsubscribeActiveAssetData();
-
-    // Update current coin
-    currentCoin.current = coin;
-
-    // Get wallet
-    const wallet = await walletPort.active();
-    if (!wallet) {
-      useMarginStore.getState().clear();
-      return;
-    }
-
-    try {
-      useMarginStore.getState().setLoading(true);
-
-      // Subscribe to activeAssetData (HTTP+WS hybrid)
-      activeAssetDataSubscription.current = await hyperliquidGateway.subscribeActiveAssetData(
-        { user: wallet.address, coin },
-        (data: any) => {
-          // Get maxLeverage from market data
-          const markets = marketStore.getState().markets;
-          const market = markets.find(m => m.coin.toUpperCase() === coin.toUpperCase());
-
-          // Update useMarginStore with new data
-          useMarginStore.getState().setMarginLeverage({
-            leverage: data.leverage.value,
-            marginMode: data.leverage.type,
-            minLeverage: 1,
-            maxLeverage: market?.maxLeverage || 1,
-          });
-        },
-      );
-    } catch (error) {
-      console.error('[useMarginSubscription] Failed to subscribe to activeAssetData:', error);
-      useMarginStore.getState().setError(error instanceof Error ? error : new Error(String(error)));
-    }
-  }
-
-  /**
-   * Unsubscribe from activeAssetData
-   */
-  async function unsubscribeActiveAssetData(): Promise<void> {
-    if (activeAssetDataSubscription.current) {
-      await activeAssetDataSubscription.current.unsubscribe();
-      activeAssetDataSubscription.current = undefined;
-      currentCoin.current = undefined;
-    }
-  }
+  }, [walletAddress, coin, gateway]);
 }

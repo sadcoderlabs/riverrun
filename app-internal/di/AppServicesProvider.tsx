@@ -105,12 +105,10 @@ export function AppServicesProvider({ children }: AppServicesProviderProps) {
   // Run Subscription Hooks
   // ==========================================================================
 
-  const walletPort = container.resolve('walletService');
-  const hyperliquidGateway = container.resolve('hyperliquidGateway');
   const marketService = container.resolve('marketService');
 
   // Margin subscription (auto-manages margin/leverage WebSocket)
-  useMarginSubscription(walletPort, hyperliquidGateway);
+  useMarginSubscription();
 
   // History subscription (auto-manages history fills)
   useHistorySubscription();
