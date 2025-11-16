@@ -1,5 +1,5 @@
 import { Button } from '@/components/global/Button';
-import { useAgent, useAgentComposition, useAgentStore } from '@/core/composition';
+import { useAgent, useAgentStore, useContainer } from '@/core/composition';
 import { DEFAULT_AGENT_NAME } from '@/core/contexts/agent/constants';
 import { ArrowLeft } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
@@ -18,8 +18,8 @@ function shortenAddress(address: string | undefined): string {
 export default function AgentStatus() {
   const router = useRouter();
 
-  // Agent service composition
-  const { agentService } = useAgentComposition();
+  // Agent service from DI container
+  const agentService = useContainer((c) => c.agentService);
 
   // Agent state - precise subscriptions
   const agentAddress = useAgentStore(state => state.agentAddress);

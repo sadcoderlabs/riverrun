@@ -1,6 +1,3 @@
-// Export composition and context
-export * from './orderComposition';
-
 // Export business operations hook
 export * from './useOrder';
 

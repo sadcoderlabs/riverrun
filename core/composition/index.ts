@@ -80,59 +80,41 @@ export {
 export { useWalletContext } from '../contexts/wallet/reactNative/useWalletContext';
 export type { UseWalletContextResult } from '../contexts/wallet/reactNative/useWalletContext';
 
-export { MarketCompositionProvider } from '../contexts/market/reactNative/marketComposition';
+// Market Context
 export { useMarket } from '../contexts/market/reactNative/useMarket';
 export type { UseMarketResult } from '../contexts/market/reactNative/useMarket';
 export { useMarketStore } from '../contexts/market/reactNative/useMarketStore';
 
-export {
-  AgentCompositionProvider,
-  useAgentComposition,
-} from '../contexts/agent/reactNative/agentComposition';
+// Agent Context
 export { useAgent } from '../contexts/agent/reactNative/useAgent';
 export type { UseAgentResult } from '../contexts/agent/reactNative/useAgent';
 export { useAgentStore } from '../contexts/agent/reactNative/useAgentStore';
 
-export {
-  BuilderFeeCompositionProvider,
-  useBuilderFeeComposition,
-} from '../contexts/builderFee/reactNative/builderFeeComposition';
+// Builder Fee Context
 export { useBuilderFee } from '../contexts/builderFee/reactNative/useBuilderFee';
 export type { UseBuilderFeeResult } from '../contexts/builderFee/reactNative/useBuilderFee';
 export { useBuilderFeeStore } from '../contexts/builderFee/reactNative/useBuilderFeeStore';
 export { getBuilderParam } from '../contexts/builderFee/config';
 
-export {
-  ReferralCompositionProvider,
-  useReferralComposition,
-} from '../contexts/referral/reactNative/referralComposition';
+// Referral Context
 export { useReferral } from '../contexts/referral/reactNative/useReferral';
 export type { UseReferralResult } from '../contexts/referral/reactNative/useReferral';
 export { useReferralStore } from '../contexts/referral/reactNative/useReferralStore';
 export { useReferralHintsStore } from '../contexts/referral/adapters/referralHintsStore';
 export { REFERRAL_CONFIG } from '../contexts/referral/config';
 
-export {
-  BridgeCompositionProvider,
-  useBridgeComposition,
-} from '../contexts/bridge/reactNative/bridgeComposition';
+// Bridge Context
 export { useBridge } from '../contexts/bridge/reactNative/useBridge';
 export type { UseBridgeResult } from '../contexts/bridge/reactNative/useBridge';
 export { useBridgeStore } from '../contexts/bridge/reactNative/useBridgeStore';
 export { ARBITRUM_CONFIG, BRIDGE_LIMITS, BRIDGE_FEES } from '../contexts/bridge/config';
 
-export {
-  MarginCompositionProvider,
-  useMarginComposition,
-} from '../contexts/margin/reactNative/marginComposition';
+// Margin Context
 export { useMargin } from '../contexts/margin/reactNative/useMargin';
 export type { UseMarginResult } from '../contexts/margin/reactNative/useMargin';
 export { useMarginStore } from '../contexts/margin/reactNative/useMarginStore';
 
-export {
-  OrderCompositionProvider,
-  useOrderContext,
-} from '../contexts/order/reactNative/orderComposition';
+// Order Context
 export { useOrder } from '../contexts/order/reactNative/useOrder';
 export type { UseOrderResult } from '../contexts/order/reactNative/useOrder';
 export { useOrderStore } from '../contexts/order/reactNative/useOrderStore';
