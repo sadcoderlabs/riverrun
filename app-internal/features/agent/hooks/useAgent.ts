@@ -1,6 +1,45 @@
+/**
+ * useAgent - Agent business operations hook
+ *
+ * This hook provides agent-related business operations using UseCases.
+ * For state access, use useAgentStore instead for better performance.
+ *
+ * IMPORTANT: This hook does NOT auto-load data. Use useAgentAutoSync for auto-sync,
+ * or call loadAllAgents() manually to initialize.
+ *
+ * Note: Agent approval confirmation is handled automatically by ApproveAgentUseCase
+ * through the injected AgentApprovalConfirmationPort. All operations that require
+ * an agent wallet (order placement, closing positions, TP/SL, etc.) will
+ * automatically trigger user confirmation when needed.
+ *
+ * @example
+ * ```tsx
+ * import { useAgent } from '@/app-internal/features/agent/hooks/useAgent';
+ *
+ * const { loadAllAgents, revoke, approve, isLoading } = useAgent();
+ *
+ * // Load agents manually
+ * const handleRefresh = async () => {
+ *   await loadAllAgents();
+ * };
+ *
+ * // Revoke an agent
+ * const handleRevoke = async (agentName: string) => {
+ *   const success = await revoke(agentName);
+ *   if (success) {
+ *     // Refresh after revoke
+ *     await loadAllAgents();
+ *   }
+ * };
+ * ```
+ */
+
 import { useCallback, useState } from 'react';
 
 import { useContainer } from '@/app-internal/di';
+import { useWalletContext } from '@/app-internal';
+import { DEFAULT_AGENT_NAME } from '@/contexts/agent/constants';
+import { agentStateStore } from '../agentStateStore';
 
 export interface UseAgentResult {
   /**
@@ -24,69 +63,154 @@ export interface UseAgentResult {
   loadAllAgents: () => Promise<void>;
 
   /**
+   * Approve the Riverrun Agent (manual approval)
+   *
+   * This is different from automatic approval during tryGetAgentWallet.
+   * Use this when user explicitly wants to approve the agent in settings.
+   *
+   * @returns True if approved successfully, false if user cancelled
+   */
+  approve: () => Promise<boolean>;
+
+  /**
    * Revoke a named agent from blockchain
    * @param agentName - Name of the agent to revoke
-   * Throws error if revocation fails
+   * @returns True if revoked successfully, false otherwise
    */
   revoke: (agentName: string) => Promise<boolean>;
 }
 
 /**
- * useAgent - Agent business operations hook
- *
- * This hook provides agent-related business operations.
- * For state access, use useAgentStore instead for better performance.
- *
- * IMPORTANT: This hook does NOT auto-load data. Call loadAllAgents() to initialize.
- *
- * Note: Agent approval confirmation is handled automatically by the service layer
- * through the injected AgentApprovalConfirmationPort. All operations that require
- * an agent wallet (order placement, closing positions, TP/SL, etc.) will
- * automatically trigger user confirmation when needed.
- *
- * @example
- * ```tsx
- * import { useAgent } from '@/app-internal/di';
- *
- * const { loadAllAgents, isLoading } = useAgent();
- *
- * // Load agents on mount
- * useEffect(() => {
- *   loadAllAgents();
- * }, [loadAllAgents]);
- * ```
+ * Hook for agent business operations
  */
 export function useAgent(): UseAgentResult {
-  const agentService = useContainer(c => c.agentService);
+  // Get UseCases from DI container
+  const getAgentStatus = useContainer(c => c.getAgentStatusUseCase);
+  const approveAgent = useContainer(c => c.approveAgentUseCase);
+  const revokeAgent = useContainer(c => c.revokeAgentUseCase);
+
+  // Get wallet context
+  const { wallet, getSigner } = useWalletContext();
 
   // UI state management (presentation layer only)
   const [isLoading, setIsLoading] = useState(false);
 
-  // Wrap agentService methods with loading management
+  /**
+   * Load all agents and update store
+   */
   const loadAllAgents = useCallback(async () => {
+    if (!wallet) {
+      // No wallet connected - clear state
+      agentStateStore.getState().clear();
+      return;
+    }
+
     setIsLoading(true);
     try {
-      await agentService.loadAllAgents();
+      const provider = await wallet.getProvider();
+
+      // Call GetAgentStatusUseCase
+      const status = await getAgentStatus.execute({
+        masterAddress: wallet.address,
+        provider,
+      });
+
+      // Update store with results
+      agentStateStore.getState().updateState({
+        agentAddress: status.agentAddress,
+        allAgents: status.allAgents,
+      });
+    } catch (error) {
+      console.error('[useAgent] Failed to load agents:', error);
+      agentStateStore.getState().clear();
     } finally {
       setIsLoading(false);
     }
-  }, [agentService]);
+  }, [wallet, getAgentStatus]);
 
+  /**
+   * Approve Riverrun Agent (manual approval)
+   */
+  const approve = useCallback(async () => {
+    if (!wallet) {
+      return false;
+    }
+
+    setIsLoading(true);
+    try {
+      const provider = await wallet.getProvider();
+      const signer = await getSigner();
+
+      // Get or create agent wallet to get agent address
+      const status = await getAgentStatus.execute({
+        masterAddress: wallet.address,
+        provider,
+      });
+
+      if (!status.agentAddress) {
+        console.error('[useAgent] No agent address available');
+        return false;
+      }
+
+      // Call ApproveAgentUseCase
+      const success = await approveAgent.execute({
+        signer,
+        agentAddress: status.agentAddress,
+        agentName: DEFAULT_AGENT_NAME,
+      });
+
+      if (success) {
+        // Refresh agents after approval
+        await loadAllAgents();
+      }
+
+      return success;
+    } catch (error) {
+      console.error('[useAgent] Failed to approve agent:', error);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [wallet, getSigner, getAgentStatus, approveAgent, loadAllAgents]);
+
+  /**
+   * Revoke an agent
+   */
   const revoke = useCallback(
     async (agentName: string) => {
+      if (!wallet) {
+        return false;
+      }
+
       setIsLoading(true);
       try {
-        return await agentService.revoke(agentName);
+        const signer = await getSigner();
+
+        // Call RevokeAgentUseCase
+        await revokeAgent.execute({
+          signer,
+          agentName,
+          masterAddress: wallet.address,
+        });
+
+        // Refresh agents after revocation
+        await loadAllAgents();
+
+        return true;
+      } catch (error) {
+        console.error('[useAgent] Failed to revoke agent:', error);
+        return false;
       } finally {
         setIsLoading(false);
       }
     },
-    [agentService],
+    [wallet, getSigner, revokeAgent, loadAllAgents],
   );
 
   return {
     isLoading,
     loadAllAgents,
+    approve,
     revoke,
   };
 }

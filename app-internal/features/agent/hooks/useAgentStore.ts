@@ -6,7 +6,7 @@
  */
 
 import { useStore } from 'zustand';
-import { agentStateStore } from '../../../../contexts/agent/adapters/agentStateStore';
+import { agentStateStore } from '../agentStateStore';
 
 /**
  * Hook to access agent store

@@ -27,7 +27,6 @@ import { ArbitrumBridgeAdapter } from '@/contexts/bridge/adapters/arbitrumBridge
 // Services
 import { TelemetryService } from '@/contexts/telemetry/application/telemetryService';
 import { MarketService } from '@/contexts/market/application/marketService';
-import { AgentService } from '@/contexts/agent/application/agentService';
 import { MarginService } from '@/contexts/margin/application/marginService';
 import { OrderCommandService } from '@/contexts/order/application/orderCommandService';
 
@@ -129,13 +128,7 @@ export function createAppContainer(options: CreateContainerOptions): AppContaine
       return new MarketService(hyperliquidGateway);
     }).singleton(),
 
-    // Agent Service (depends on Wallet + HyperliquidGateway + Approval Confirmation)
-    agentService: asFunction(({ walletService, hyperliquidGateway }) => {
-      const approvalConfirmation = new AlertAgentApprovalConfirmationAdapter(walletService);
-      return new AgentService(walletService, hyperliquidGateway, approvalConfirmation);
-    }).singleton(),
-
-    // Bridge Service removed - replaced with UseCases pattern
+    // Agent Service removed - replaced with UseCases pattern
 
     // Margin Service (depends on Wallet + Agent UseCase + HyperliquidGateway)
     marginService: asFunction(({ walletService, tryGetAgentWalletUseCase, hyperliquidGateway }) => {

@@ -1,5 +1,5 @@
 import { Button } from '@/app-internal/components/global/Button';
-import { useAgent, useAgentStore, useContainer } from '@/app-internal';
+import { useAgent, useAgentStore } from '@/app-internal';
 import { DEFAULT_AGENT_NAME } from '@/contexts/agent/constants';
 import { ArrowLeft } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
@@ -18,9 +18,6 @@ function shortenAddress(address: string | undefined): string {
 export default function AgentStatus() {
   const router = useRouter();
 
-  // Agent service from DI container
-  const agentService = useContainer(c => c.agentService);
-
   // Agent state - precise subscriptions
   const agentAddress = useAgentStore(state => state.agentAddress);
   const allAgents = useAgentStore(state => state.allAgents);
@@ -34,6 +31,7 @@ export default function AgentStatus() {
   const {
     isLoading: isAgentLoading,
     loadAllAgents: loadAgentStatus,
+    approve: approveAgent,
     revoke: revokeAgent,
   } = useAgent();
 
@@ -87,27 +85,16 @@ export default function AgentStatus() {
       return;
     }
 
-    // Call tryGetAgentWallet - it will automatically show confirmation dialog
+    // Call approve - it will automatically show confirmation dialog
     // via the injected AgentApprovalConfirmationPort (AlertAgentApprovalConfirmationAdapter)
-    try {
-      const result = await agentService.tryGetAgentWallet();
+    const success = await approveAgent();
 
-      if (result.agentWallet) {
-        // Success - agent is now approved
-        Alert.alert('Success', `${DEFAULT_AGENT_NAME} approved successfully`);
-        await loadAgentStatus();
-      } else if (result.errorReason) {
-        // User cancelled or error occurred
-        if (result.errorReason !== 'User cancelled agent approval') {
-          // Only show error if it's not user cancellation
-          Alert.alert('Error', result.errorReason);
-        }
-      }
-    } catch (error) {
-      console.error('Failed to approve agent:', error);
-      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to approve agent');
+    if (success) {
+      // Success - agent is now approved
+      Alert.alert('Success', `${DEFAULT_AGENT_NAME} approved successfully`);
     }
-  }, [allAgents, isAgentApproved, agentService, loadAgentStatus]);
+    // Note: approveAgent already calls loadAgentStatus internally on success
+  }, [allAgents, isAgentApproved, approveAgent]);
 
   /**
    * Handle revoke agent (Riverrun Agent or other named agents)

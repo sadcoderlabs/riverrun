@@ -9,7 +9,6 @@ import type { AwilixContainer } from 'awilix';
 import type { TelemetryPort } from '@/contexts/telemetry/ports/telemetryPort';
 import type { WalletPort } from '@/contexts/wallet/ports/walletPort';
 import type { MarketPort } from '@/contexts/market/ports/marketPort';
-import type { AgentPort } from '@/contexts/agent/ports/agentPort';
 import type { MarginPort } from '@/contexts/margin/ports/marginPort';
 import type { OrderCommandPort } from '@/contexts/order/ports/orderCommandPort';
 import type { HyperliquidGateway } from '@/infra/hyperliquid/hyperliquidGateway';
@@ -69,7 +68,6 @@ export interface AppCradle {
   marketService: MarketPort;
 
   // Domain Services
-  agentService: AgentPort;
   marginService: MarginPort;
 
   // Command Services
