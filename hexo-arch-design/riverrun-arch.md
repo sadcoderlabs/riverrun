@@ -36,6 +36,19 @@
         - orderComposition.tsx
         - useOrderStatus.ts
         - usePlaceOrder.ts
+    - builderFee/
+      - config/
+        - builderFeeConfig.ts
+      - application/
+        - ports/
+          - BuilderFeeExchangePort.ts
+          - BuilderFeeConfirmationPort.ts
+          - BuilderFeeStatePort.ts
+          - WalletPort.ts
+        - usecases/
+          - EnsureBuilderFeeApprovalUseCase.ts
+        - services/
+          - BuilderFeeApprovalAdapter.ts
   - infra/ # 對外 adapter，實作 ports
     - hyperliquid/
       - HyperliquidExchangeGateway.ts
@@ -45,6 +58,9 @@
       - di/
         - container.ts # 組裝 Contexts + infra
         - AppServicesProvider.tsx
+      - builderFee/
+        - hooks/
+          - useBuilderFeeApproval.ts
       - order/
         - hooks/
           - usePlaceOrder.ts
@@ -77,6 +93,13 @@
 - `reactNative/`：放有狀態的 hooks（`useOrderStatus`、`usePlaceOrder`）與 `orderComposition.tsx`（對 React tree 提供 context）。
 - `app-internal/features/di/`：`container.ts` 使用 Awilix 組裝 contexts + infra，`AppServicesProvider.tsx` 透過 container Provider 提供 React hook。
 - `app-internal/features/order/`：UI glue，包含 hooks（下單、取消、管理 TP/SL）、view model mapper（`orderFormMapper.ts`）與 facade/hook 組裝（把多個 usecase 組起來給畫面使用）。
+- `builderFee/`：負責 builder fee approval 狀態管理與 Hyperliquid approval 流程，提供 usecase + adapter 供 order context 注入。
+
+## BuilderFee bounded context
+
+- 負責確認/更新 Hyperliquid builder fee allowance，對外提供 `BuilderFeeApprovalPort` 的實作。
+- 透過 `WalletPort` 取得當前 signer、`BuilderFeeExchangePort` 讀寫 builder fee、`BuilderFeeConfirmationPort` 確認 UI、`BuilderFeeStatePort` 更新 UI 狀態。
+- 提供 `EnsureBuilderFeeApprovalUseCase`（檢查、提示、執行 approval）與 `BuilderFeeApprovalAdapter`（實作 order context 所需的 port）。
 
 ### Sample
 
@@ -88,23 +111,42 @@
 // app-internal/features/di/container.ts
 
 import { createContainer, asValue, asFunction } from 'awilix';
-import { PlaceOrderUseCase } from '@/contexts/order/application/usecases/PlaceOrderUseCase';
 
 export function createAppContainer(deps: {
   exchangePort: OrderExchangePort;
-  builderFeePort: BuilderFeeApprovalPort;
   telemetryPort: OrderTelemetryPort;
+  builderFeePort?: BuilderFeeApprovalPort;
+  builderFeeDeps?: BuilderFeeDeps;
 }) {
   const container = createContainer();
   container.register({
     exchangePort: asValue(deps.exchangePort),
-    builderFeePort: asValue(deps.builderFeePort),
     telemetryPort: asValue(deps.telemetryPort),
+  });
+
+  if (deps.builderFeePort) {
+    container.register({ builderFeePort: asValue(deps.builderFeePort) });
+  } else if (deps.builderFeeDeps) {
+    container.register({
+      walletPort: asValue(deps.builderFeeDeps.walletPort),
+      builderFeeExchangePort: asValue(deps.builderFeeDeps.builderFeeExchangePort),
+      builderFeeConfirmationPort: asValue(deps.builderFeeDeps.builderFeeConfirmationPort),
+      builderFeeStatePort: asValue(deps.builderFeeDeps.builderFeeStatePort),
+      ensureBuilderFeeApprovalUseCase: asFunction(/* ... */).singleton(),
+      builderFeePort: asFunction(
+        ({ ensureBuilderFeeApprovalUseCase }) =>
+          new BuilderFeeApprovalAdapter(ensureBuilderFeeApprovalUseCase),
+      ).singleton(),
+    });
+  }
+
+  container.register({
     placeOrderUseCase: asFunction(
       ({ exchangePort, builderFeePort, telemetryPort }) =>
         new PlaceOrderUseCase(exchangePort, builderFeePort, telemetryPort),
     ).singleton(),
   });
+
   return container;
 }
 ```
@@ -330,5 +372,125 @@ export function usePlaceOrder(signer: Signer) {
   );
 
   return { placeOrder, isSubmitting, lastResult };
+}
+```
+
+```ts
+// contexts/builderFee/config/builderFeeConfig.ts
+
+export const BUILDER_FEE_CONFIG = {
+  builderAddress: '0xBuilderContract',
+  requiredFeeRateBps: 5,
+  maxFeeRateBps: 50,
+};
+```
+
+```ts
+// contexts/builderFee/application/ports/BuilderFeeExchangePort.ts
+
+import type { Signer } from 'ethers';
+
+export interface BuilderFeeExchangePort {
+  getMaxFeeBps(walletAddress: string, builderAddress: string): Promise<number>;
+  approveFee(params: {
+    signer: Signer;
+    builderAddress: string;
+    maxFeeRateBps: number;
+  }): Promise<void>;
+}
+```
+
+```ts
+// contexts/builderFee/application/usecases/EnsureBuilderFeeApprovalUseCase.ts
+
+import { BUILDER_FEE_CONFIG } from '../../config/builderFeeConfig';
+
+export class EnsureBuilderFeeApprovalUseCase {
+  constructor(
+    private readonly wallet: WalletPort,
+    private readonly exchange: BuilderFeeExchangePort,
+    private readonly confirmation: BuilderFeeConfirmationPort,
+    private readonly state: BuilderFeeStatePort,
+  ) {}
+
+  private async refreshStatus(address: string) {
+    const maxFee = await this.exchange.getMaxFeeBps(address, BUILDER_FEE_CONFIG.builderAddress);
+    const status = {
+      isApproved: maxFee >= BUILDER_FEE_CONFIG.requiredFeeRateBps,
+      maxApprovedFeeBps: maxFee,
+    };
+    this.state.updateStatus(status);
+    return status;
+  }
+
+  async execute() {
+    const active = await this.wallet.getActiveWallet();
+    if (!active) {
+      const status = { isApproved: false, maxApprovedFeeBps: 0 };
+      this.state.updateStatus(status);
+      return status;
+    }
+
+    const status = await this.refreshStatus(active.address);
+    if (status.isApproved) return status;
+
+    const confirmed = await this.confirmation.confirmApproval({
+      requiredFeeRateBps: BUILDER_FEE_CONFIG.requiredFeeRateBps,
+    });
+    if (!confirmed) return status;
+
+    await this.exchange.approveFee({
+      signer: active.signer,
+      builderAddress: BUILDER_FEE_CONFIG.builderAddress,
+      maxFeeRateBps: BUILDER_FEE_CONFIG.maxFeeRateBps,
+    });
+
+    return this.refreshStatus(active.address);
+  }
+}
+```
+
+```ts
+// contexts/builderFee/application/services/BuilderFeeApprovalAdapter.ts
+
+import type { BuilderFeeApprovalPort } from '@/contexts/order/application/ports/BuilderFeeApprovalPort';
+
+export class BuilderFeeApprovalAdapter implements BuilderFeeApprovalPort {
+  constructor(private readonly ensureUseCase: EnsureBuilderFeeApprovalUseCase) {}
+
+  async ensureApproved(): Promise<void> {
+    const status = await this.ensureUseCase.execute();
+    if (!status.isApproved) {
+      throw new Error('Builder fee approval rejected by user');
+    }
+  }
+}
+```
+
+```ts
+// app-internal/features/builderFee/hooks/useBuilderFeeApproval.ts
+
+import { useCallback, useState } from 'react';
+import { useContainer } from '@/app-internal/features/di/AppServicesProvider';
+
+export function useBuilderFeeApproval() {
+  const ensureUseCase = useContainer(container =>
+    container.resolve('ensureBuilderFeeApprovalUseCase'),
+  );
+  const [status, setStatus] = useState<BuilderFeeStatus | undefined>();
+  const [isLoading, setLoading] = useState(false);
+
+  const ensureApproval = useCallback(async () => {
+    setLoading(true);
+    try {
+      const next = await ensureUseCase.execute();
+      setStatus(next);
+      return next;
+    } finally {
+      setLoading(false);
+    }
+  }, [ensureUseCase]);
+
+  return { status, isLoading, ensureApproval };
 }
 ```
