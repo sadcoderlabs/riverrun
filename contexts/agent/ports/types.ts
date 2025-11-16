@@ -44,3 +44,79 @@ export interface TryGetAgentResult {
   /** Error reason if agent wallet is unavailable */
   errorReason?: string;
 }
+
+//
+// UseCase Command Types
+//
+
+/**
+ * Command for GetOrCreateAgentWalletUseCase
+ */
+export type GetOrCreateAgentWalletCommand = {
+  /** Master wallet address */
+  masterAddress: string;
+  /** Provider for creating wallet */
+  provider: any; // BrowserProvider from ethers
+};
+
+/**
+ * Command for GetAgentStatusUseCase
+ */
+export type GetAgentStatusCommand = {
+  /** Master wallet address */
+  masterAddress: string;
+  /** Provider for creating wallet */
+  provider: any; // BrowserProvider from ethers
+};
+
+/**
+ * Result for GetAgentStatusUseCase
+ */
+export type GetAgentStatusResult = {
+  /** Current agent address (from storage) */
+  agentAddress: string | undefined;
+  /** All agents for the user (from blockchain) */
+  allAgents: AgentInfo[];
+  /** Whether the current agent is approved */
+  isApproved: boolean;
+};
+
+/**
+ * Command for CheckAgentApprovalUseCase
+ */
+export type CheckAgentApprovalCommand = {
+  /** Agent address to check */
+  agentAddress: string;
+  /** Master wallet address */
+  masterAddress: string;
+};
+
+/**
+ * Command for ApproveAgentUseCase
+ */
+export type ApproveAgentCommand = {
+  /** Master wallet signer */
+  signer: any; // Signer from ethers
+  /** Agent address to approve */
+  agentAddress: string;
+  /** Agent name */
+  agentName: string;
+};
+
+/**
+ * Command for RevokeAgentUseCase
+ */
+export type RevokeAgentCommand = {
+  /** Master wallet signer */
+  signer: any; // Signer from ethers
+  /** Agent name to revoke */
+  agentName: string;
+  /** Master wallet address (for storage cleanup) */
+  masterAddress: string;
+};
+
+/**
+ * Command for TryGetAgentWalletUseCase (high-level composition)
+ * Empty command - UseCase obtains wallet info from WalletPort
+ */
+export type TryGetAgentWalletCommand = Record<string, never>;

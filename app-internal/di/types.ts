@@ -40,6 +40,19 @@ import type { WithdrawUsdcUseCase } from '@/contexts/bridge/application/usecases
 import type { ArbitrumBridgePort } from '@/contexts/bridge/application/ports/ArbitrumBridgePort';
 import type { HyperliquidBridgePort } from '@/contexts/bridge/application/ports/HyperliquidBridgePort';
 
+// Agent UseCases
+import type { GetOrCreateAgentWalletUseCase } from '@/contexts/agent/application/usecases/GetOrCreateAgentWalletUseCase';
+import type { GetAgentStatusUseCase } from '@/contexts/agent/application/usecases/GetAgentStatusUseCase';
+import type { CheckAgentApprovalUseCase } from '@/contexts/agent/application/usecases/CheckAgentApprovalUseCase';
+import type { ApproveAgentUseCase } from '@/contexts/agent/application/usecases/ApproveAgentUseCase';
+import type { RevokeAgentUseCase } from '@/contexts/agent/application/usecases/RevokeAgentUseCase';
+import type { TryGetAgentWalletUseCase } from '@/contexts/agent/application/usecases/TryGetAgentWalletUseCase';
+
+// Agent Ports
+import type { AgentExchangePort } from '@/contexts/agent/application/ports/AgentExchangePort';
+import type { AgentStoragePort } from '@/contexts/agent/application/ports/AgentStoragePort';
+import type { AgentApprovalConfirmationPort } from '@/contexts/agent/ports/agentApprovalConfirmationPort';
+
 /**
  * AppCradle - Type-safe container cradle
  *
@@ -87,6 +100,21 @@ export interface AppCradle {
   getWithdrawableBalanceUseCase: GetWithdrawableBalanceUseCase;
   depositUsdcUseCase: DepositUsdcUseCase;
   withdrawUsdcUseCase: WithdrawUsdcUseCase;
+
+  // Agent Context - Out Ports
+  agentExchangePort: AgentExchangePort;
+  agentStoragePort: AgentStoragePort;
+  agentApprovalConfirmationPort: AgentApprovalConfirmationPort;
+
+  // Agent Context - Fine-grained UseCases
+  getOrCreateAgentWalletUseCase: GetOrCreateAgentWalletUseCase;
+  getAgentStatusUseCase: GetAgentStatusUseCase;
+  checkAgentApprovalUseCase: CheckAgentApprovalUseCase;
+  approveAgentUseCase: ApproveAgentUseCase;
+  revokeAgentUseCase: RevokeAgentUseCase;
+
+  // Agent Context - High-level Composition UseCase
+  tryGetAgentWalletUseCase: TryGetAgentWalletUseCase;
 }
 
 /**

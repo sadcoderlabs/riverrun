@@ -27,6 +27,7 @@ import type { Signer } from 'ethers';
 import type { BuilderFeeExchangePort } from '@/contexts/builderFee/application/ports/BuilderFeeExchangePort';
 import type { ReferralExchangePort } from '@/contexts/referral/application/ports/ReferralExchangePort';
 import type { HyperliquidBridgePort } from '@/contexts/bridge/application/ports/HyperliquidBridgePort';
+import type { AgentExchangePort } from '@/contexts/agent/application/ports/AgentExchangePort';
 import * as infoClient from './client/infoClient';
 import { getMasterExchangeClient, getAgentExchangeClient } from './client/getter';
 import { subscriptionManager } from './subscription';
@@ -48,9 +49,10 @@ export interface SubscriptionHandle {
  * - BuilderFeeExchangePort: Builder fee approval operations
  * - ReferralExchangePort: Referral code operations
  * - HyperliquidBridgePort: Bridge withdrawal operations
+ * - AgentExchangePort: Agent approval and management operations
  */
 export class HyperliquidGateway
-  implements BuilderFeeExchangePort, ReferralExchangePort, HyperliquidBridgePort
+  implements BuilderFeeExchangePort, ReferralExchangePort, HyperliquidBridgePort, AgentExchangePort
 {
   /**
    * Subscribe to WebData2 stream with HTTP+WS hybrid strategy

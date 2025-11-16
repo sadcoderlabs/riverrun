@@ -16,7 +16,7 @@
  */
 
 import { roundPrice } from '@/app-internal/components/trade/priceUtils';
-import type { AgentPort } from '@/contexts/agent/ports/agentPort';
+import type { TryGetAgentWalletUseCase } from '@/contexts/agent/application/usecases/TryGetAgentWalletUseCase';
 import { getBuilderParam } from '@/contexts/builderFee/config';
 import type { GetBuilderFeeStatusUseCase } from '@/contexts/builderFee/application/usecases/GetBuilderFeeStatusUseCase';
 import type { ApproveBuilderFeeUseCase } from '@/contexts/builderFee/application/usecases/ApproveBuilderFeeUseCase';
@@ -72,7 +72,7 @@ interface OrderContext {
 
 export class OrderCommandService implements OrderCommandPort {
   constructor(
-    private readonly agentPort: AgentPort,
+    private readonly tryGetAgentWallet: TryGetAgentWalletUseCase,
     private readonly getBuilderFeeStatus: GetBuilderFeeStatusUseCase,
     private readonly approveBuilderFee: ApproveBuilderFeeUseCase,
     private readonly walletPort: WalletPort,
@@ -121,7 +121,7 @@ export class OrderCommandService implements OrderCommandPort {
    */
   private async getOrderContext(coin: string): Promise<OrderContext | undefined> {
     // Get approved agent wallet
-    const { agentWallet } = await this.agentPort.tryGetAgentWallet();
+    const { agentWallet } = await this.tryGetAgentWallet.execute();
     if (!agentWallet) {
       return undefined;
     }
@@ -548,7 +548,7 @@ export class OrderCommandService implements OrderCommandPort {
   async cancelOrder(params: CancelOrderParams): Promise<OrderResult> {
     try {
       // 1. Get approved agent wallet
-      const { agentWallet, errorReason } = await this.agentPort.tryGetAgentWallet();
+      const { agentWallet, errorReason } = await this.tryGetAgentWallet.execute();
       if (!agentWallet) {
         return {
           success: false,
@@ -592,7 +592,7 @@ export class OrderCommandService implements OrderCommandPort {
   async cancelOrders(params: CancelOrdersParams): Promise<OrderResult> {
     try {
       // 1. Get approved agent wallet
-      const { agentWallet, errorReason } = await this.agentPort.tryGetAgentWallet();
+      const { agentWallet, errorReason } = await this.tryGetAgentWallet.execute();
       if (!agentWallet) {
         return {
           success: false,

@@ -46,6 +46,17 @@ import { GetWithdrawableBalanceUseCase } from '@/contexts/bridge/application/use
 import { DepositUsdcUseCase } from '@/contexts/bridge/application/usecases/DepositUsdcUseCase';
 import { WithdrawUsdcUseCase } from '@/contexts/bridge/application/usecases/WithdrawUsdcUseCase';
 
+// Agent UseCases
+import { GetOrCreateAgentWalletUseCase } from '@/contexts/agent/application/usecases/GetOrCreateAgentWalletUseCase';
+import { GetAgentStatusUseCase } from '@/contexts/agent/application/usecases/GetAgentStatusUseCase';
+import { CheckAgentApprovalUseCase } from '@/contexts/agent/application/usecases/CheckAgentApprovalUseCase';
+import { ApproveAgentUseCase } from '@/contexts/agent/application/usecases/ApproveAgentUseCase';
+import { RevokeAgentUseCase } from '@/contexts/agent/application/usecases/RevokeAgentUseCase';
+import { TryGetAgentWalletUseCase } from '@/contexts/agent/application/usecases/TryGetAgentWalletUseCase';
+
+// Agent Adapters
+import { AgentPkStore } from '@/contexts/agent/adapters/agentPkStore';
+
 // Ports (for interface injection)
 import type { WalletPort } from '@/contexts/wallet/ports/walletPort';
 
@@ -126,15 +137,15 @@ export function createAppContainer(options: CreateContainerOptions): AppContaine
 
     // Bridge Service removed - replaced with UseCases pattern
 
-    // Margin Service (depends on Wallet + Agent + HyperliquidGateway)
-    marginService: asFunction(({ walletService, agentService, hyperliquidGateway }) => {
-      return new MarginService(walletService, agentService, hyperliquidGateway);
+    // Margin Service (depends on Wallet + Agent UseCase + HyperliquidGateway)
+    marginService: asFunction(({ walletService, tryGetAgentWalletUseCase, hyperliquidGateway }) => {
+      return new MarginService(walletService, tryGetAgentWalletUseCase, hyperliquidGateway);
     }).singleton(),
 
     // Order Command Service (depends on Agent + BuilderFee UseCases + Wallet + Market + HyperliquidGateway)
     orderCommandService: asFunction(
       ({
-        agentService,
+        tryGetAgentWalletUseCase,
         getBuilderFeeStatusUseCase,
         approveBuilderFeeUseCase,
         walletService,
@@ -142,7 +153,7 @@ export function createAppContainer(options: CreateContainerOptions): AppContaine
         hyperliquidGateway,
       }) => {
         return new OrderCommandService(
-          agentService,
+          tryGetAgentWalletUseCase,
           getBuilderFeeStatusUseCase,
           approveBuilderFeeUseCase,
           walletService,
@@ -259,6 +270,82 @@ export function createAppContainer(options: CreateContainerOptions): AppContaine
     withdrawUsdcUseCase: asFunction(({ hyperliquidBridgePort }) => {
       return new WithdrawUsdcUseCase(hyperliquidBridgePort);
     }).singleton(),
+  });
+
+  // ==========================================================================
+  // Agent Context - Out Ports
+  // ==========================================================================
+
+  container.register({
+    // AgentExchangePort: Implemented by HyperliquidGateway directly
+    agentExchangePort: asFunction(({ hyperliquidGateway }) => {
+      return hyperliquidGateway;
+    }).singleton(),
+
+    // AgentStoragePort: Implemented by AgentPkStore
+    agentStoragePort: asFunction(() => {
+      return new AgentPkStore();
+    }).singleton(),
+
+    // AgentApprovalConfirmationPort: React Native Alert adapter
+    agentApprovalConfirmationPort: asFunction(({ walletService }) => {
+      return new AlertAgentApprovalConfirmationAdapter(walletService);
+    }).singleton(),
+  });
+
+  // ==========================================================================
+  // Agent Context - UseCases (Fine-grained)
+  // ==========================================================================
+
+  container.register({
+    // GetOrCreateAgentWalletUseCase: Get or create agent wallet from storage
+    getOrCreateAgentWalletUseCase: asFunction(({ agentStoragePort }) => {
+      return new GetOrCreateAgentWalletUseCase(agentStoragePort);
+    }).singleton(),
+
+    // GetAgentStatusUseCase: Query complete agent status
+    getAgentStatusUseCase: asFunction(({ agentStoragePort, agentExchangePort }) => {
+      return new GetAgentStatusUseCase(agentStoragePort, agentExchangePort);
+    }).singleton(),
+
+    // CheckAgentApprovalUseCase: Check if agent is approved
+    checkAgentApprovalUseCase: asFunction(({ agentExchangePort }) => {
+      return new CheckAgentApprovalUseCase(agentExchangePort);
+    }).singleton(),
+
+    // ApproveAgentUseCase: Approve agent on blockchain
+    approveAgentUseCase: asFunction(({ agentExchangePort, agentApprovalConfirmationPort }) => {
+      return new ApproveAgentUseCase(agentExchangePort, agentApprovalConfirmationPort);
+    }).singleton(),
+
+    // RevokeAgentUseCase: Revoke agent from blockchain
+    revokeAgentUseCase: asFunction(({ agentExchangePort, agentStoragePort }) => {
+      return new RevokeAgentUseCase(agentExchangePort, agentStoragePort);
+    }).singleton(),
+  });
+
+  // ==========================================================================
+  // Agent Context - High-level Composition UseCase
+  // ==========================================================================
+
+  container.register({
+    // TryGetAgentWalletUseCase: High-level UseCase for cross-context usage
+    // Composes fine-grained UseCases to provide one-stop agent wallet retrieval
+    tryGetAgentWalletUseCase: asFunction(
+      ({
+        walletService,
+        getOrCreateAgentWalletUseCase,
+        approveAgentUseCase,
+        getAgentStatusUseCase,
+      }) => {
+        return new TryGetAgentWalletUseCase(
+          walletService,
+          getOrCreateAgentWalletUseCase,
+          approveAgentUseCase,
+          getAgentStatusUseCase,
+        );
+      },
+    ).singleton(),
   });
 
   return container;

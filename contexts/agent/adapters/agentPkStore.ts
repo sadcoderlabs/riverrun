@@ -3,9 +3,12 @@
  * Wraps SecureStore for agent private key persistence
  *
  * This is a stateless adapter - all methods require masterAddress parameter.
+ * Implements AgentStoragePort.
  */
 
 import * as SecureStore from 'expo-secure-store';
+
+import type { AgentStoragePort } from '../application/ports/AgentStoragePort';
 
 /** Storage key prefix for agent private keys in SecureStore */
 const AGENT_STORAGE_PREFIX = 'riverrun-agent-pk-';
@@ -13,8 +16,9 @@ const AGENT_STORAGE_PREFIX = 'riverrun-agent-pk-';
 /**
  * Agent Private Key Store (Stateless)
  * Manages persistence of agent private keys in SecureStore
+ * Implements AgentStoragePort for dependency injection
  */
-export class AgentPkStore {
+export class AgentPkStore implements AgentStoragePort {
   /**
    * Generate storage key for the master address
    */

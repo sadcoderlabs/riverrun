@@ -15,7 +15,7 @@ import type { MarginLeverage, SetMarginLeverageParams } from '../ports/types';
 import { marginStore } from '../adapters/marginStore';
 import { marketStore } from '../../market/adapters/marketStore';
 import type { WalletPort } from '../../wallet/ports/walletPort';
-import type { AgentPort } from '../../agent/ports/agentPort';
+import type { TryGetAgentWalletUseCase } from '../../agent/application/usecases/TryGetAgentWalletUseCase';
 import type {
   HyperliquidGateway,
   SubscriptionHandle,
@@ -33,7 +33,7 @@ export class MarginService implements MarginPort {
 
   constructor(
     private readonly walletService: WalletPort,
-    private readonly agentPort: AgentPort,
+    private readonly tryGetAgentWallet: TryGetAgentWalletUseCase,
     private readonly hyperliquidGateway: HyperliquidGateway,
   ) {}
 
@@ -138,7 +138,7 @@ export class MarginService implements MarginPort {
     }
 
     // Get agent wallet and exchange client
-    const { agentWallet } = await this.agentPort.tryGetAgentWallet();
+    const { agentWallet } = await this.tryGetAgentWallet.execute();
     if (!agentWallet) {
       throw new Error('Agent wallet not available');
     }
