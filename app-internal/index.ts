@@ -44,7 +44,6 @@ export { useAgentStore } from './features/agent/hooks/useAgentStore';
 // Builder Fee
 export { useBuilderFee } from './features/builderFee/hooks/useBuilderFee';
 export type { UseBuilderFeeResult } from './features/builderFee/hooks/useBuilderFee';
-export { useBuilderFeeStore } from './features/builderFee/hooks/useBuilderFeeStore';
 export { getBuilderParam } from '@/contexts/builderFee/config';
 
 // Referral

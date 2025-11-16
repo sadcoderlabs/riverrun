@@ -1,7 +1,7 @@
 import { ListButton, ListItem } from '@/app-internal/components/global/ListItem';
 import { ListSection } from '@/app-internal/components/global/ListSection';
 import { BUILDER_CONFIG } from '@/contexts/builderFee/config';
-import { useBuilderFee, useBuilderFeeStore } from '@/app-internal';
+import { useBuilderFee } from '@/app-internal';
 import { ArrowLeft } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
@@ -11,12 +11,10 @@ import { PortalProvider, ScrollView, Spinner, Text, View, XStack, YStack } from 
 export default function BuilderFeeStatus() {
   const router = useRouter();
 
-  // Builder fee state - precise subscriptions
-  const maxApprovedFee = useBuilderFeeStore(state => state.maxApprovedFee);
-  const isBuilderFeeApproved = useBuilderFeeStore(state => state.isApproved);
-
-  // Builder fee operations
+  // Builder fee state and operations
   const {
+    maxApprovedFee,
+    isApproved: isBuilderFeeApproved,
     isLoading: isBuilderFeeLoading,
     loadBuilderFeeStatus,
     approveBuilderFee,

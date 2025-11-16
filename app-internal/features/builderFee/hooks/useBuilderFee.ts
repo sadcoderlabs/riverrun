@@ -3,10 +3,20 @@ import { Alert } from 'react-native';
 
 import { useContainer } from '@/app-internal/di';
 import { useWalletContext } from '@/app-internal/features/wallet/hooks/useWalletContext';
+import type { BuilderFeeStatus } from '@/contexts/builderFee/ports/types';
 import { BUILDER_CONFIG } from '../../../../contexts/builderFee/config';
-import { builderFeeStateStore } from '../builderFeeStateStore';
 
 export interface UseBuilderFeeResult {
+  /**
+   * Maximum approved fee in 0.1bps units
+   */
+  maxApprovedFee: number;
+
+  /**
+   * Whether the approved fee meets the required fee rate
+   */
+  isApproved: boolean;
+
   /**
    * Loading state for builder fee operations (UI state only)
    */
@@ -15,7 +25,7 @@ export interface UseBuilderFeeResult {
   /**
    * Load builder fee approval status from blockchain
    *
-   * Updates the builderFeeStateStore with the current approval status.
+   * Fetches the current approval status and updates the hook's state.
    * This method must be called manually to initialize or refresh builder fee state.
    *
    * @returns Promise resolving to the max approved fee amount
@@ -53,14 +63,14 @@ export interface UseBuilderFeeResult {
 }
 
 /**
- * useBuilderFee - Builder fee business operations hook
+ * useBuilderFee - Builder fee business operations and state hook
  *
- * This hook provides builder fee-related business operations.
- * For state access, use useBuilderFeeStore instead for better performance.
+ * This hook provides builder fee-related business operations and state management.
  *
  * IMPORTANT: This hook does NOT auto-load data. Call loadBuilderFeeStatus() to initialize.
  *
  * Provides:
+ * - Builder fee state (maxApprovedFee, isApproved)
  * - Builder fee operations (approve, revoke, load status, ensure approval)
  * - UI interactions (confirmation dialogs)
  * - UI loading state
@@ -68,18 +78,19 @@ export interface UseBuilderFeeResult {
  * Architecture:
  * - Uses BuilderFee UseCases from DI container
  * - Provides UI-level confirmation dialogs (in addition to business logic confirmations)
- * - Manages presentation-layer loading state
+ * - Manages presentation-layer state and loading state
  *
  * @example
  * ```tsx
- * import { useBuilderFeeStore, useBuilderFee } from '@/app-internal/di';
+ * import { useBuilderFee } from '@/app-internal';
  *
- * // State access - precise subscriptions
- * const isApproved = useBuilderFeeStore(state => state.isApproved);
- * const maxApprovedFee = useBuilderFeeStore(state => state.maxApprovedFee);
- *
- * // Business operations
- * const { approveBuilderFee, loadBuilderFeeStatus, isLoading } = useBuilderFee();
+ * const {
+ *   isApproved,
+ *   maxApprovedFee,
+ *   approveBuilderFee,
+ *   loadBuilderFeeStatus,
+ *   isLoading,
+ * } = useBuilderFee();
  *
  * // Load data on mount
  * useEffect(() => {
@@ -103,27 +114,32 @@ export function useBuilderFee(): UseBuilderFeeResult {
   // Wallet access (for getting wallet address and signer)
   const { wallet, getSigner } = useWalletContext();
 
+  // State management - builder fee status (presentation layer)
+  const [status, setStatus] = useState<BuilderFeeStatus>({
+    maxApprovedFee: 0,
+    isApproved: false,
+  });
+
   // UI state management (presentation layer only)
   const [isLoading, setIsLoading] = useState(false);
 
   /**
    * Load builder fee status from blockchain
-   * Updates UI state store after fetching (UI layer responsibility)
+   * Updates hook's state after fetching (UI layer responsibility)
    */
   const loadBuilderFeeStatus = useCallback(async () => {
     if (!wallet) {
       // No wallet connected - set to default state
-      const status = { maxApprovedFee: 0, isApproved: false };
-      builderFeeStateStore.getState().updateStatus(status);
+      setStatus({ maxApprovedFee: 0, isApproved: false });
       return 0;
     }
 
     setIsLoading(true);
     try {
-      const status = await getStatusUseCase.execute({ walletAddress: wallet.address });
-      // UI layer responsibility: update state store
-      builderFeeStateStore.getState().updateStatus(status);
-      return status.maxApprovedFee;
+      const newStatus = await getStatusUseCase.execute({ walletAddress: wallet.address });
+      // UI layer responsibility: update state
+      setStatus(newStatus);
+      return newStatus.maxApprovedFee;
     } finally {
       setIsLoading(false);
     }
@@ -296,7 +312,14 @@ export function useBuilderFee(): UseBuilderFeeResult {
   }, [revokeUseCase, loadBuilderFeeStatus, getSigner]);
 
   return {
+    // State
+    maxApprovedFee: status.maxApprovedFee,
+    isApproved: status.isApproved,
+
+    // UI state
     isLoading,
+
+    // Operations
     loadBuilderFeeStatus,
     approveBuilderFee,
     ensureBuilderFeeApproval,
