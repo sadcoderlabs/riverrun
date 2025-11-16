@@ -42,7 +42,6 @@ import type { HyperliquidBridgePort } from '@/contexts/bridge/application/ports/
 // Agent UseCases
 import type { GetOrCreateAgentWalletUseCase } from '@/contexts/agent/application/usecases/GetOrCreateAgentWalletUseCase';
 import type { GetAgentStatusUseCase } from '@/contexts/agent/application/usecases/GetAgentStatusUseCase';
-import type { CheckAgentApprovalUseCase } from '@/contexts/agent/application/usecases/CheckAgentApprovalUseCase';
 import type { ApproveAgentUseCase } from '@/contexts/agent/application/usecases/ApproveAgentUseCase';
 import type { RevokeAgentUseCase } from '@/contexts/agent/application/usecases/RevokeAgentUseCase';
 import type { TryGetAgentWalletUseCase } from '@/contexts/agent/application/usecases/TryGetAgentWalletUseCase';
@@ -107,7 +106,6 @@ export interface AppCradle {
   // Agent Context - Fine-grained UseCases
   getOrCreateAgentWalletUseCase: GetOrCreateAgentWalletUseCase;
   getAgentStatusUseCase: GetAgentStatusUseCase;
-  checkAgentApprovalUseCase: CheckAgentApprovalUseCase;
   approveAgentUseCase: ApproveAgentUseCase;
   revokeAgentUseCase: RevokeAgentUseCase;
 

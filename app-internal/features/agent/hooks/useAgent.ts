@@ -1,11 +1,11 @@
 /**
- * useAgent - Agent business operations hook
+ * useAgent - Agent business operations and state management hook
  *
- * This hook provides agent-related business operations using UseCases.
- * For state access, use useAgentStore instead for better performance.
+ * This hook provides agent-related business operations using UseCases
+ * and manages agent state using local useState (similar to BuilderFee/Referral).
  *
- * IMPORTANT: This hook does NOT auto-load data. Use useAgentAutoSync for auto-sync,
- * or call loadAllAgents() manually to initialize.
+ * IMPORTANT: This hook does NOT auto-load data. Call loadAllAgents() manually
+ * to initialize or refresh agent state.
  *
  * Note: Agent approval confirmation is handled automatically by ApproveAgentUseCase
  * through the injected AgentApprovalConfirmationPort. All operations that require
@@ -16,41 +16,56 @@
  * ```tsx
  * import { useAgent } from '@/app-internal/features/agent/hooks/useAgent';
  *
- * const { loadAllAgents, revoke, approve, isLoading } = useAgent();
+ * const { loadAllAgents, revoke, approve, isLoading, agentAddress, allAgents, isApproved } = useAgent();
  *
- * // Load agents manually
- * const handleRefresh = async () => {
- *   await loadAllAgents();
- * };
+ * // Load agents on mount
+ * useEffect(() => {
+ *   loadAllAgents();
+ * }, [loadAllAgents]);
  *
  * // Revoke an agent
  * const handleRevoke = async (agentName: string) => {
  *   const success = await revoke(agentName);
  *   if (success) {
- *     // Refresh after revoke
- *     await loadAllAgents();
+ *     // State is automatically refreshed after revoke
  *   }
  * };
  * ```
  */
 
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useMemo } from 'react';
 
 import { useContainer } from '@/app-internal/di';
 import { useWalletContext } from '@/app-internal';
 import { DEFAULT_AGENT_NAME } from '@/contexts/agent/constants';
-import { agentStateStore } from '../agentStateStore';
+import type { AgentInfo } from '@/contexts/agent/ports/types';
 
 export interface UseAgentResult {
   /**
-   * Loading state for agent operations (UI state only)
+   * Current agent address (from storage)
+   */
+  agentAddress: string | undefined;
+
+  /**
+   * All agents for the current user (from blockchain)
+   */
+  allAgents: AgentInfo[];
+
+  /**
+   * Whether the current agent is approved on blockchain
+   * Derived state: true if agentAddress exists in allAgents
+   */
+  isApproved: boolean;
+
+  /**
+   * Loading state for agent operations
    */
   isLoading: boolean;
 
   /**
    * Load all agents from blockchain
    *
-   * Updates the agentStateStore with agentAddress and allAgents.
+   * Fetches agent data and updates local state.
    * This method must be called manually to initialize or refresh agent state.
    *
    * @example
@@ -81,7 +96,7 @@ export interface UseAgentResult {
 }
 
 /**
- * Hook for agent business operations
+ * Hook for agent business operations and state management
  */
 export function useAgent(): UseAgentResult {
   // Get UseCases from DI container
@@ -92,16 +107,27 @@ export function useAgent(): UseAgentResult {
   // Get wallet context
   const { wallet, getSigner } = useWalletContext();
 
-  // UI state management (presentation layer only)
+  // Local state management (similar to BuilderFee/Referral pattern)
+  const [agentAddress, setAgentAddress] = useState<string | undefined>(undefined);
+  const [allAgents, setAllAgents] = useState<AgentInfo[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Derived state: Calculate isApproved
+  const isApproved = useMemo(() => {
+    if (!agentAddress || allAgents.length === 0) {
+      return false;
+    }
+    return allAgents.some(agent => agent.address.toLowerCase() === agentAddress.toLowerCase());
+  }, [agentAddress, allAgents]);
+
   /**
-   * Load all agents and update store
+   * Load all agents and update local state
    */
   const loadAllAgents = useCallback(async () => {
     if (!wallet) {
       // No wallet connected - clear state
-      agentStateStore.getState().clear();
+      setAgentAddress(undefined);
+      setAllAgents([]);
       return;
     }
 
@@ -115,14 +141,13 @@ export function useAgent(): UseAgentResult {
         provider,
       });
 
-      // Update store with results
-      agentStateStore.getState().updateState({
-        agentAddress: status.agentAddress,
-        allAgents: status.allAgents,
-      });
+      // Update local state with results
+      setAgentAddress(status.agentAddress);
+      setAllAgents(status.allAgents);
     } catch (error) {
       console.error('[useAgent] Failed to load agents:', error);
-      agentStateStore.getState().clear();
+      setAgentAddress(undefined);
+      setAllAgents([]);
     } finally {
       setIsLoading(false);
     }
@@ -208,6 +233,9 @@ export function useAgent(): UseAgentResult {
   );
 
   return {
+    agentAddress,
+    allAgents,
+    isApproved,
     isLoading,
     loadAllAgents,
     approve,

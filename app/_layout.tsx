@@ -29,7 +29,6 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/infra/reactQuery';
 import { initializeSentry } from '@/infra/sentry/sentryConfig';
 import { initializeSegment } from '@/infra/segment/segmentConfig';
-import { useAgentAutoSync } from '@/app-internal/features/agent/hooks/useAgentAutoSync';
 
 // Initialize Sentry for error tracking, performance monitoring, and session replay
 // Must be called before any other code runs
@@ -55,10 +54,6 @@ SplashScreen.preventAutoHideAsync();
 function WalletInfoDisplay() {
   const { wallet } = useWalletContext();
   const appState = useAppLifecycle();
-
-  // Auto-sync agent state when wallet changes
-  // This replaces the auto-sync logic that was previously in AgentService constructor
-  useAgentAutoSync();
 
   // App Lifecycle management for subscription systems
   // When app goes to background, pause all subscriptions to save battery and data

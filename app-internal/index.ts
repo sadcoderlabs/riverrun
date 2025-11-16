@@ -39,7 +39,6 @@ export { useMarketStore } from './features/market/hooks/useMarketStore';
 // Agent
 export { useAgent } from './features/agent/hooks/useAgent';
 export type { UseAgentResult } from './features/agent/hooks/useAgent';
-export { useAgentStore } from './features/agent/hooks/useAgentStore';
 
 // Builder Fee
 export { useBuilderFee } from './features/builderFee/hooks/useBuilderFee';

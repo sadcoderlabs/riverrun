@@ -48,7 +48,6 @@ import { WithdrawUsdcUseCase } from '@/contexts/bridge/application/usecases/With
 // Agent UseCases
 import { GetOrCreateAgentWalletUseCase } from '@/contexts/agent/application/usecases/GetOrCreateAgentWalletUseCase';
 import { GetAgentStatusUseCase } from '@/contexts/agent/application/usecases/GetAgentStatusUseCase';
-import { CheckAgentApprovalUseCase } from '@/contexts/agent/application/usecases/CheckAgentApprovalUseCase';
 import { ApproveAgentUseCase } from '@/contexts/agent/application/usecases/ApproveAgentUseCase';
 import { RevokeAgentUseCase } from '@/contexts/agent/application/usecases/RevokeAgentUseCase';
 import { TryGetAgentWalletUseCase } from '@/contexts/agent/application/usecases/TryGetAgentWalletUseCase';
@@ -299,11 +298,6 @@ export function createAppContainer(options: CreateContainerOptions): AppContaine
     // GetAgentStatusUseCase: Query complete agent status
     getAgentStatusUseCase: asFunction(({ agentStoragePort, agentExchangePort }) => {
       return new GetAgentStatusUseCase(agentStoragePort, agentExchangePort);
-    }).singleton(),
-
-    // CheckAgentApprovalUseCase: Check if agent is approved
-    checkAgentApprovalUseCase: asFunction(({ agentExchangePort }) => {
-      return new CheckAgentApprovalUseCase(agentExchangePort);
     }).singleton(),
 
     // ApproveAgentUseCase: Approve agent on blockchain

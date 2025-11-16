@@ -1,5 +1,5 @@
 import { Button } from '@/app-internal/components/global/Button';
-import { useAgent, useAgentStore } from '@/app-internal';
+import { useAgent } from '@/app-internal';
 import { DEFAULT_AGENT_NAME } from '@/contexts/agent/constants';
 import { ArrowLeft } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
@@ -18,17 +18,11 @@ function shortenAddress(address: string | undefined): string {
 export default function AgentStatus() {
   const router = useRouter();
 
-  // Agent state - precise subscriptions
-  const agentAddress = useAgentStore(state => state.agentAddress);
-  const allAgents = useAgentStore(state => state.allAgents);
-
-  // Calculate isApproved from state
-  const isAgentApproved = allAgents.some(
-    agent => agent.address.toLowerCase() === agentAddress?.toLowerCase(),
-  );
-
-  // Agent operations
+  // Agent state and operations (all from useAgent hook)
   const {
+    agentAddress,
+    allAgents,
+    isApproved: isAgentApproved,
     isLoading: isAgentLoading,
     loadAllAgents: loadAgentStatus,
     approve: approveAgent,

@@ -82,16 +82,6 @@ export type GetAgentStatusResult = {
 };
 
 /**
- * Command for CheckAgentApprovalUseCase
- */
-export type CheckAgentApprovalCommand = {
-  /** Agent address to check */
-  agentAddress: string;
-  /** Master wallet address */
-  masterAddress: string;
-};
-
-/**
  * Command for ApproveAgentUseCase
  */
 export type ApproveAgentCommand = {
