@@ -9,7 +9,6 @@ import type { AwilixContainer } from 'awilix';
 import type { TelemetryPort } from '@/contexts/telemetry/ports/telemetryPort';
 import type { WalletPort } from '@/contexts/wallet/ports/walletPort';
 import type { MarketPort } from '@/contexts/market/ports/marketPort';
-import type { OrderCommandPort } from '@/contexts/order/ports/orderCommandPort';
 import type { HyperliquidGateway } from '@/infra/hyperliquid/hyperliquidGateway';
 
 // BuilderFee UseCases
@@ -57,6 +56,17 @@ import type { SetMarginLeverageUseCase } from '@/contexts/margin/application/use
 // Margin Ports
 import type { MarginExchangePort } from '@/contexts/margin/application/ports/MarginExchangePort';
 
+// Order UseCases
+import type { PlaceOrderUseCase } from '@/contexts/order/application/usecases/PlaceOrderUseCase';
+import type { PlaceCloseMarketOrderUseCase } from '@/contexts/order/application/usecases/PlaceCloseMarketOrderUseCase';
+import type { PlaceCloseLimitOrderUseCase } from '@/contexts/order/application/usecases/PlaceCloseLimitOrderUseCase';
+import type { PlaceTpSlOrdersUseCase } from '@/contexts/order/application/usecases/PlaceTpSlOrdersUseCase';
+import type { CancelOrderUseCase } from '@/contexts/order/application/usecases/CancelOrderUseCase';
+import type { CancelOrdersUseCase } from '@/contexts/order/application/usecases/CancelOrdersUseCase';
+
+// Order Ports
+import type { OrderExchangePort } from '@/contexts/order/application/ports/OrderExchangePort';
+
 /**
  * AppCradle - Type-safe container cradle
  *
@@ -71,9 +81,6 @@ export interface AppCradle {
   walletService: WalletPort;
   telemetryService: TelemetryPort;
   marketService: MarketPort;
-
-  // Command Services
-  orderCommandService: OrderCommandPort;
 
   // BuilderFee Context - Out Ports
   builderFeeExchangePort: BuilderFeeExchangePort;
@@ -123,6 +130,17 @@ export interface AppCradle {
 
   // Margin Context - UseCases
   setMarginLeverageUseCase: SetMarginLeverageUseCase;
+
+  // Order Context - Out Ports
+  orderExchangePort: OrderExchangePort;
+
+  // Order Context - UseCases
+  placeOrderUseCase: PlaceOrderUseCase;
+  placeCloseMarketOrderUseCase: PlaceCloseMarketOrderUseCase;
+  placeCloseLimitOrderUseCase: PlaceCloseLimitOrderUseCase;
+  placeTpSlOrdersUseCase: PlaceTpSlOrdersUseCase;
+  cancelOrderUseCase: CancelOrderUseCase;
+  cancelOrdersUseCase: CancelOrdersUseCase;
 }
 
 /**

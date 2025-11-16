@@ -27,7 +27,6 @@ import { ArbitrumBridgeAdapter } from '@/contexts/bridge/adapters/arbitrumBridge
 // Services
 import { TelemetryService } from '@/contexts/telemetry/application/telemetryService';
 import { MarketService } from '@/contexts/market/application/marketService';
-import { OrderCommandService } from '@/contexts/order/application/orderCommandService';
 
 // BuilderFee UseCases
 import { GetBuilderFeeStatusUseCase } from '@/contexts/builderFee/application/usecases/GetBuilderFeeStatusUseCase';
@@ -54,6 +53,14 @@ import { TryGetAgentWalletUseCase } from '@/contexts/agent/application/usecases/
 
 // Margin UseCases
 import { SetMarginLeverageUseCase } from '@/contexts/margin/application/usecases/SetMarginLeverageUseCase';
+
+// Order UseCases
+import { PlaceOrderUseCase } from '@/contexts/order/application/usecases/PlaceOrderUseCase';
+import { PlaceCloseMarketOrderUseCase } from '@/contexts/order/application/usecases/PlaceCloseMarketOrderUseCase';
+import { PlaceCloseLimitOrderUseCase } from '@/contexts/order/application/usecases/PlaceCloseLimitOrderUseCase';
+import { PlaceTpSlOrdersUseCase } from '@/contexts/order/application/usecases/PlaceTpSlOrdersUseCase';
+import { CancelOrderUseCase } from '@/contexts/order/application/usecases/CancelOrderUseCase';
+import { CancelOrdersUseCase } from '@/contexts/order/application/usecases/CancelOrdersUseCase';
 
 // Agent Adapters
 import { AgentPkStore } from '@/contexts/agent/adapters/agentPkStore';
@@ -132,27 +139,7 @@ export function createAppContainer(options: CreateContainerOptions): AppContaine
 
     // Agent Service removed - replaced with UseCases pattern
     // Margin Service removed - replaced with UseCases pattern (WebSocket subscription moved to React layer)
-
-    // Order Command Service (depends on Agent + BuilderFee UseCases + Wallet + Market + HyperliquidGateway)
-    orderCommandService: asFunction(
-      ({
-        tryGetAgentWalletUseCase,
-        getBuilderFeeStatusUseCase,
-        approveBuilderFeeUseCase,
-        walletService,
-        marketService,
-        hyperliquidGateway,
-      }) => {
-        return new OrderCommandService(
-          tryGetAgentWalletUseCase,
-          getBuilderFeeStatusUseCase,
-          approveBuilderFeeUseCase,
-          walletService,
-          marketService,
-          hyperliquidGateway,
-        );
-      },
-    ).singleton(),
+    // Order Command Service removed - replaced with UseCases pattern
   });
 
   // ==========================================================================
@@ -361,6 +348,113 @@ export function createAppContainer(options: CreateContainerOptions): AppContaine
     setMarginLeverageUseCase: asFunction(({ marginExchangePort }) => {
       return new SetMarginLeverageUseCase(marginExchangePort);
     }).singleton(),
+  });
+
+  // ==========================================================================
+  // Order Context - Out Ports
+  // ==========================================================================
+
+  container.register({
+    // OrderExchangePort: Implemented by HyperliquidGateway directly
+    orderExchangePort: asFunction(({ hyperliquidGateway }) => {
+      return hyperliquidGateway;
+    }).singleton(),
+  });
+
+  // ==========================================================================
+  // Order Context - UseCases
+  // ==========================================================================
+
+  container.register({
+    // PlaceOrderUseCase: Unified order placement (Market/Limit with optional TP/SL)
+    placeOrderUseCase: asFunction(
+      ({
+        orderExchangePort,
+        tryGetAgentWalletUseCase,
+        ensureBuilderFeeUseCase,
+        marketService,
+        walletService,
+      }) => {
+        return new PlaceOrderUseCase(
+          orderExchangePort,
+          tryGetAgentWalletUseCase,
+          ensureBuilderFeeUseCase,
+          marketService,
+          walletService,
+        );
+      },
+    ).singleton(),
+
+    // PlaceCloseMarketOrderUseCase: Close position with market order
+    placeCloseMarketOrderUseCase: asFunction(
+      ({
+        orderExchangePort,
+        tryGetAgentWalletUseCase,
+        ensureBuilderFeeUseCase,
+        marketService,
+        walletService,
+      }) => {
+        return new PlaceCloseMarketOrderUseCase(
+          orderExchangePort,
+          tryGetAgentWalletUseCase,
+          ensureBuilderFeeUseCase,
+          marketService,
+          walletService,
+        );
+      },
+    ).singleton(),
+
+    // PlaceCloseLimitOrderUseCase: Close position with limit order
+    placeCloseLimitOrderUseCase: asFunction(
+      ({
+        orderExchangePort,
+        tryGetAgentWalletUseCase,
+        ensureBuilderFeeUseCase,
+        marketService,
+        walletService,
+      }) => {
+        return new PlaceCloseLimitOrderUseCase(
+          orderExchangePort,
+          tryGetAgentWalletUseCase,
+          ensureBuilderFeeUseCase,
+          marketService,
+          walletService,
+        );
+      },
+    ).singleton(),
+
+    // PlaceTpSlOrdersUseCase: Place TP/SL orders on existing position
+    placeTpSlOrdersUseCase: asFunction(
+      ({
+        orderExchangePort,
+        tryGetAgentWalletUseCase,
+        ensureBuilderFeeUseCase,
+        marketService,
+        walletService,
+      }) => {
+        return new PlaceTpSlOrdersUseCase(
+          orderExchangePort,
+          tryGetAgentWalletUseCase,
+          ensureBuilderFeeUseCase,
+          marketService,
+          walletService,
+        );
+      },
+    ).singleton(),
+
+    // CancelOrderUseCase: Cancel single order (no BuilderFee required)
+    cancelOrderUseCase: asFunction(
+      ({ orderExchangePort, tryGetAgentWalletUseCase, marketService }) => {
+        return new CancelOrderUseCase(orderExchangePort, tryGetAgentWalletUseCase, marketService);
+      },
+    ).singleton(),
+
+    // CancelOrdersUseCase: Batch cancel orders (no BuilderFee required)
+    cancelOrdersUseCase: asFunction(
+      ({ orderExchangePort, tryGetAgentWalletUseCase, marketService }) => {
+        return new CancelOrdersUseCase(orderExchangePort, tryGetAgentWalletUseCase, marketService);
+      },
+    ).singleton(),
   });
 
   return container;

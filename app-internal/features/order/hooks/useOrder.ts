@@ -128,7 +128,13 @@ function buildTpSlSuccessMessage(params: TpSlOrderParams): string {
  * ```
  */
 export function useOrder(): UseOrderResult {
-  const orderCommandService = useContainer(c => c.orderCommandService);
+  // Order UseCases from DI container
+  const placeOrderUseCase = useContainer(c => c.placeOrderUseCase);
+  const placeCloseMarketOrderUseCase = useContainer(c => c.placeCloseMarketOrderUseCase);
+  const placeCloseLimitOrderUseCase = useContainer(c => c.placeCloseLimitOrderUseCase);
+  const placeTpSlOrdersUseCase = useContainer(c => c.placeTpSlOrdersUseCase);
+  const cancelOrderUseCase = useContainer(c => c.cancelOrderUseCase);
+  const cancelOrdersUseCase = useContainer(c => c.cancelOrdersUseCase);
 
   // UI state only
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
@@ -148,7 +154,7 @@ export function useOrder(): UseOrderResult {
       setError(undefined);
 
       try {
-        const result = await orderCommandService.placeOrder(params);
+        const result = await placeOrderUseCase.execute(params);
 
         if (result.success) {
           const successMessage = buildPlaceOrderSuccessMessage(params);
@@ -167,7 +173,7 @@ export function useOrder(): UseOrderResult {
         setIsPlacingOrder(false);
       }
     },
-    [orderCommandService],
+    [placeOrderUseCase],
   );
 
   /**
@@ -179,7 +185,7 @@ export function useOrder(): UseOrderResult {
       setError(undefined);
 
       try {
-        const result = await orderCommandService.placeCloseMarketOrder(params);
+        const result = await placeCloseMarketOrderUseCase.execute(params);
 
         if (result.success) {
           toast.success('Market Close Order Placed', {
@@ -197,7 +203,7 @@ export function useOrder(): UseOrderResult {
         setIsPlacingOrder(false);
       }
     },
-    [orderCommandService],
+    [placeCloseMarketOrderUseCase],
   );
 
   /**
@@ -209,7 +215,7 @@ export function useOrder(): UseOrderResult {
       setError(undefined);
 
       try {
-        const result = await orderCommandService.placeCloseLimitOrder(params);
+        const result = await placeCloseLimitOrderUseCase.execute(params);
 
         if (result.success) {
           toast.success('Limit Close Order Placed', {
@@ -227,7 +233,7 @@ export function useOrder(): UseOrderResult {
         setIsPlacingOrder(false);
       }
     },
-    [orderCommandService],
+    [placeCloseLimitOrderUseCase],
   );
 
   /**
@@ -239,7 +245,7 @@ export function useOrder(): UseOrderResult {
       setError(undefined);
 
       try {
-        const result = await orderCommandService.placeTpSlOrders(params);
+        const result = await placeTpSlOrdersUseCase.execute(params);
 
         if (result.success) {
           const description = buildTpSlSuccessMessage(params);
@@ -258,7 +264,7 @@ export function useOrder(): UseOrderResult {
         setIsPlacingOrder(false);
       }
     },
-    [orderCommandService],
+    [placeTpSlOrdersUseCase],
   );
 
   // ==========================================================================
@@ -274,7 +280,7 @@ export function useOrder(): UseOrderResult {
       setError(undefined);
 
       try {
-        const result = await orderCommandService.cancelOrder(params);
+        const result = await cancelOrderUseCase.execute(params);
 
         if (result.success) {
           toast.success('Order Cancelled', {
@@ -292,7 +298,7 @@ export function useOrder(): UseOrderResult {
         setIsCanceling(false);
       }
     },
-    [orderCommandService],
+    [cancelOrderUseCase],
   );
 
   /**
@@ -304,7 +310,7 @@ export function useOrder(): UseOrderResult {
       setError(undefined);
 
       try {
-        const result = await orderCommandService.cancelOrders(params);
+        const result = await cancelOrdersUseCase.execute(params);
 
         if (result.success) {
           toast.success('Orders Cancelled', {
@@ -322,7 +328,7 @@ export function useOrder(): UseOrderResult {
         setIsCanceling(false);
       }
     },
-    [orderCommandService],
+    [cancelOrdersUseCase],
   );
 
   // ==========================================================================

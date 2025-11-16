@@ -590,3 +590,122 @@ export interface OrderResult {
   success: boolean;
   error?: string;
 }
+
+// ============================================================================
+// Helper Functions - Order Building & Validation
+// ============================================================================
+
+/**
+ * Validate that a size string has the correct number of decimal places
+ *
+ * @param size - Order size as string
+ * @param maxDecimals - Maximum allowed decimal places for the asset
+ * @param coin - Coin symbol (for error messages)
+ * @throws Error if size has too many decimals or invalid format
+ */
+export function validateSizeDecimals(size: string, maxDecimals: number, coin: string): void {
+  const parts = size.split('.');
+  if (parts.length > 2) {
+    throw new Error(`Invalid size format for ${coin}: ${size}`);
+  }
+  if (parts.length === 2) {
+    const decimalPlaces = parts[1].length;
+    if (decimalPlaces > maxDecimals) {
+      throw new Error(
+        `Size for ${coin} has too many decimal places. Maximum allowed: ${maxDecimals}, got: ${decimalPlaces}`,
+      );
+    }
+  }
+}
+
+/**
+ * Parse order response and extract errors
+ *
+ * Hyperliquid API returns statuses array where each element can be:
+ * - null (success)
+ * - { error: string } (failure)
+ *
+ * @param response - Order response from exchange API
+ * @returns Array of error messages (empty if all successful)
+ */
+export function parseOrderResponse(response: any): string[] {
+  if (!response?.response?.data?.statuses || response.response.data.statuses.length === 0) {
+    return [];
+  }
+
+  return response.response.data.statuses
+    .filter(
+      (status: any) =>
+        status !== null &&
+        typeof status === 'object' &&
+        'error' in status &&
+        typeof status.error === 'string',
+    )
+    .map((status: any) => status.error);
+}
+
+/**
+ * Build TP/SL order structures
+ *
+ * Creates trigger orders for Take Profit and Stop Loss based on provided parameters
+ *
+ * @param params - TP/SL parameters (can be from PlaceOrderParams.tpSl or TpSlOrderParams)
+ * @param options - Build options (asset info, position info, size)
+ * @returns Array of TP/SL order objects ready for API submission
+ */
+export function buildTpSlOrdersHelper(
+  params: {
+    tpTriggerPrice?: string;
+    tpLimitPrice?: string;
+    slTriggerPrice?: string;
+    slLimitPrice?: string;
+  },
+  options: {
+    assetId: number;
+    isLong: boolean;
+    size: string;
+    szDecimals: number;
+  },
+): any[] {
+  const orders: any[] = [];
+  const { assetId, isLong, size, szDecimals } = options;
+  const roundedSize = parseFloat(size).toFixed(szDecimals);
+
+  // Build TP order if provided
+  if (params.tpTriggerPrice) {
+    orders.push({
+      a: assetId,
+      b: !isLong, // Close position (opposite side)
+      p: params.tpLimitPrice || params.tpTriggerPrice, // Use limit price or trigger price
+      s: roundedSize,
+      r: true, // Reduce-only
+      t: {
+        trigger: {
+          isMarket: !params.tpLimitPrice, // Market if no limit price
+          triggerPx: params.tpTriggerPrice,
+          tpsl: 'tp' as const,
+        },
+      },
+    });
+  }
+
+  // Build SL order if provided
+  if (params.slTriggerPrice) {
+    orders.push({
+      a: assetId,
+      b: !isLong, // Close position (opposite side)
+      p: params.slLimitPrice || params.slTriggerPrice, // Use limit price or trigger price
+      s: roundedSize,
+      r: true, // Reduce-only
+      t: {
+        trigger: {
+          isMarket: !params.slLimitPrice, // Market if no limit price
+          triggerPx: params.slTriggerPrice,
+          tpsl: 'sl' as const,
+        },
+      },
+    });
+  }
+
+  return orders;
+}
