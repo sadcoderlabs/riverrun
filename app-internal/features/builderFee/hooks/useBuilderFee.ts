@@ -63,6 +63,11 @@ export interface UseBuilderFeeResult {
  * - UI interactions (confirmation dialogs)
  * - UI loading state
  *
+ * Architecture:
+ * - Uses BuilderFee UseCases from DI container
+ * - Provides UI-level confirmation dialogs (in addition to business logic confirmations)
+ * - Manages presentation-layer loading state
+ *
  * @example
  * ```tsx
  * import { useBuilderFeeStore, useBuilderFee } from '@/app-internal/di';
@@ -89,7 +94,9 @@ export interface UseBuilderFeeResult {
  * ```
  */
 export function useBuilderFee(): UseBuilderFeeResult {
-  const builderFeeService = useContainer(c => c.builderFeeService);
+  const checkStatusUseCase = useContainer(c => c.checkBuilderFeeStatusUseCase);
+  const ensureApprovalUseCase = useContainer(c => c.ensureBuilderFeeApprovalUseCase);
+  const revokeUseCase = useContainer(c => c.revokeBuilderFeeUseCase);
 
   // UI state management (presentation layer only)
   const [isLoading, setIsLoading] = useState(false);
@@ -100,21 +107,22 @@ export function useBuilderFee(): UseBuilderFeeResult {
   const loadBuilderFeeStatus = useCallback(async () => {
     setIsLoading(true);
     try {
-      const status = await builderFeeService.checkApprovalStatus();
+      const status = await checkStatusUseCase.execute();
       return status.maxApprovedFee;
     } finally {
       setIsLoading(false);
     }
-  }, [builderFeeService]);
+  }, [checkStatusUseCase]);
 
   /**
-   * Core approval logic - executes the approval transaction and verifies success
+   * Core approval logic - executes the approval use case
+   * Use case handles confirmation dialog internally
    * Does not show success alert, only error alerts
    */
   const executeApproval = useCallback(async (): Promise<boolean> => {
     try {
       setIsLoading(true);
-      const success = await builderFeeService.approveBuilderFee();
+      const success = await ensureApprovalUseCase.execute();
 
       if (!success) {
         Alert.alert('Approval Failed', 'Builder fee approval was not confirmed. Please try again.');
@@ -131,7 +139,7 @@ export function useBuilderFee(): UseBuilderFeeResult {
     } finally {
       setIsLoading(false);
     }
-  }, [builderFeeService]);
+  }, [ensureApprovalUseCase]);
 
   /**
    * Approve builder fee
@@ -167,43 +175,15 @@ export function useBuilderFee(): UseBuilderFeeResult {
 
   /**
    * Ensure builder fee is approved before proceeding
-   * If not approved, automatically shows approval dialog
+   * If not approved, automatically shows approval dialog (handled by use case)
+   * Use case handles the complete flow including confirmation
    */
   const ensureBuilderFeeApproval = useCallback(async (): Promise<boolean> => {
     try {
       setIsLoading(true);
-
-      // Check if builder fee is already approved with sufficient amount
-      const status = await builderFeeService.checkApprovalStatus();
-      const isApproved = status.isApproved;
-
-      if (isApproved) {
-        return true;
-      }
-
-      // Builder fee not approved or insufficient - show confirmation dialog
-      return await new Promise<boolean>(resolve => {
-        const feePercentage = (BUILDER_CONFIG.feeRate / 1000).toFixed(3);
-
-        Alert.alert(
-          'Builder Fee Approval Required',
-          `This app collects a ${feePercentage}% builder fee on trades to support development. You will be redirected to your wallet app to approve the maximum fee. Do you want to continue?`,
-          [
-            {
-              text: 'Cancel',
-              style: 'cancel',
-              onPress: () => resolve(false),
-            },
-            {
-              text: 'Approve',
-              onPress: async () => {
-                const success = await executeApproval();
-                resolve(success);
-              },
-            },
-          ],
-        );
-      });
+      // Use case handles: check status → request confirmation → execute approval
+      const success = await ensureApprovalUseCase.execute();
+      return success;
     } catch (error) {
       console.error('Failed to ensure builder fee approval:', error);
       Alert.alert(
@@ -214,7 +194,7 @@ export function useBuilderFee(): UseBuilderFeeResult {
     } finally {
       setIsLoading(false);
     }
-  }, [builderFeeService, executeApproval]);
+  }, [ensureApprovalUseCase]);
 
   /**
    * Revoke builder fee
@@ -237,7 +217,7 @@ export function useBuilderFee(): UseBuilderFeeResult {
             onPress: async () => {
               try {
                 setIsLoading(true);
-                const success = await builderFeeService.revokeBuilderFee();
+                const success = await revokeUseCase.execute();
 
                 if (success) {
                   Alert.alert('Success', 'Builder fee revoked successfully');
@@ -261,7 +241,7 @@ export function useBuilderFee(): UseBuilderFeeResult {
         ],
       );
     });
-  }, [builderFeeService]);
+  }, [revokeUseCase]);
 
   return {
     isLoading,

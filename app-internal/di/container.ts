@@ -22,16 +22,23 @@ import { SentryAdapter } from '@/contexts/telemetry/adapters/sentryAdapter';
 import { SegmentAdapter } from '@/contexts/telemetry/adapters/segmentAdapter';
 import { AlertAgentApprovalConfirmationAdapter } from '@/contexts/agent/adapters/alertAgentApprovalConfirmationAdapter';
 import { AlertBuilderFeeApprovalConfirmationAdapter } from '@/contexts/builderFee/adapters/alertBuilderFeeApprovalConfirmationAdapter';
+import { HyperliquidBuilderFeeAdapter } from '@/contexts/builderFee/adapters/hyperliquidBuilderFeeAdapter';
+import { BuilderFeeStateAdapter } from '@/contexts/builderFee/adapters/builderFeeStateAdapter';
+import { BuilderFeeApprovalAdapter } from '@/contexts/builderFee/adapters/builderFeeApprovalAdapter';
 
 // Services
 import { TelemetryService } from '@/contexts/telemetry/application/telemetryService';
 import { MarketService } from '@/contexts/market/application/marketService';
 import { AgentService } from '@/contexts/agent/application/agentService';
-import { BuilderFeeService } from '@/contexts/builderFee/application/builderFeeService';
 import { ReferralService } from '@/contexts/referral/application/referralService';
 import { BridgeService } from '@/contexts/bridge/application/bridgeService';
 import { MarginService } from '@/contexts/margin/application/marginService';
 import { OrderCommandService } from '@/contexts/order/application/orderCommandService';
+
+// BuilderFee UseCases
+import { EnsureBuilderFeeApprovalUseCase } from '@/contexts/builderFee/application/usecases/EnsureBuilderFeeApprovalUseCase';
+import { CheckBuilderFeeStatusUseCase } from '@/contexts/builderFee/application/usecases/CheckBuilderFeeStatusUseCase';
+import { RevokeBuilderFeeUseCase } from '@/contexts/builderFee/application/usecases/RevokeBuilderFeeUseCase';
 
 // Ports (for interface injection)
 import type { WalletPort } from '@/contexts/wallet/ports/walletPort';
@@ -111,12 +118,6 @@ export function createAppContainer(options: CreateContainerOptions): AppContaine
       return new AgentService(walletService, hyperliquidGateway, approvalConfirmation);
     }).singleton(),
 
-    // Builder Fee Service (depends on Wallet + HyperliquidGateway + Approval Confirmation)
-    builderFeeService: asFunction(({ walletService, hyperliquidGateway }) => {
-      const approvalConfirmation = new AlertBuilderFeeApprovalConfirmationAdapter(walletService);
-      return new BuilderFeeService(walletService, hyperliquidGateway, approvalConfirmation);
-    }).singleton(),
-
     // Referral Service (depends on Wallet + HyperliquidGateway)
     referralService: asFunction(({ walletService, hyperliquidGateway }) => {
       return new ReferralService(walletService, hyperliquidGateway);
@@ -134,15 +135,92 @@ export function createAppContainer(options: CreateContainerOptions): AppContaine
 
     // Order Command Service (depends on Agent + BuilderFee + Market + HyperliquidGateway)
     orderCommandService: asFunction(
-      ({ agentService, builderFeeService, marketService, hyperliquidGateway }) => {
+      ({ agentService, builderFeeApprovalPort, marketService, hyperliquidGateway }) => {
         return new OrderCommandService(
           agentService,
-          builderFeeService,
+          builderFeeApprovalPort,
           marketService,
           hyperliquidGateway,
         );
       },
     ).singleton(),
+  });
+
+  // ==========================================================================
+  // BuilderFee Context - Out Ports (Adapters)
+  // ==========================================================================
+
+  container.register({
+    // BuilderFeeExchangePort: Hyperliquid exchange adapter
+    builderFeeExchangePort: asFunction(({ hyperliquidGateway }) => {
+      return new HyperliquidBuilderFeeAdapter(hyperliquidGateway);
+    }).singleton(),
+
+    // BuilderFeeStatePort: Zustand state adapter
+    builderFeeStatePort: asFunction(() => {
+      return new BuilderFeeStateAdapter();
+    }).singleton(),
+
+    // BuilderFeeConfirmationPort: React Native Alert adapter
+    builderFeeConfirmationPort: asFunction(({ walletService }) => {
+      return new AlertBuilderFeeApprovalConfirmationAdapter(walletService);
+    }).singleton(),
+  });
+
+  // ==========================================================================
+  // BuilderFee Context - UseCases
+  // ==========================================================================
+
+  container.register({
+    // EnsureBuilderFeeApprovalUseCase: Main approval flow
+    ensureBuilderFeeApprovalUseCase: asFunction(
+      ({
+        walletService,
+        builderFeeExchangePort,
+        builderFeeConfirmationPort,
+        builderFeeStatePort,
+      }) => {
+        return new EnsureBuilderFeeApprovalUseCase(
+          walletService,
+          builderFeeExchangePort,
+          builderFeeConfirmationPort,
+          builderFeeStatePort,
+        );
+      },
+    ).singleton(),
+
+    // CheckBuilderFeeStatusUseCase: Query approval status
+    checkBuilderFeeStatusUseCase: asFunction(
+      ({ walletService, builderFeeExchangePort, builderFeeStatePort }) => {
+        return new CheckBuilderFeeStatusUseCase(
+          walletService,
+          builderFeeExchangePort,
+          builderFeeStatePort,
+        );
+      },
+    ).singleton(),
+
+    // RevokeBuilderFeeUseCase: Revoke approval
+    revokeBuilderFeeUseCase: asFunction(
+      ({ walletService, builderFeeExchangePort, builderFeeStatePort }) => {
+        return new RevokeBuilderFeeUseCase(
+          walletService,
+          builderFeeExchangePort,
+          builderFeeStatePort,
+        );
+      },
+    ).singleton(),
+  });
+
+  // ==========================================================================
+  // BuilderFee Context - Cross-context Adapter
+  // ==========================================================================
+
+  container.register({
+    // BuilderFeeApprovalPort: Adapter for order context to use
+    builderFeeApprovalPort: asFunction(({ ensureBuilderFeeApprovalUseCase }) => {
+      return new BuilderFeeApprovalAdapter(ensureBuilderFeeApprovalUseCase);
+    }).singleton(),
   });
 
   return container;

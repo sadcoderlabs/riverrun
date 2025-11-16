@@ -1,16 +1,23 @@
 /**
- * Builder Fee Approval Confirmation Port
+ * BuilderFeeConfirmationPort
  *
- * Defines the contract for confirming builder fee approval with the user.
- * This is a domain-level interface that abstracts away UI implementation details.
+ * Out port for requesting user confirmation before builder fee approval.
+ * This port abstracts the UI confirmation mechanism (Alert, Modal, Toast, etc.)
+ *
+ * Implementations should:
+ * - Present clear information about builder fees
+ * - Show the fee percentage and maximum fee
+ * - Handle wallet-specific messaging (Reown vs Privy)
+ * - Allow user to confirm or cancel
+ * - Return the user's decision
  *
  * Design Pattern: Port (Hexagonal Architecture)
- * - Domain layer defines the interface
+ * - Application layer defines the interface
  * - Presentation layer provides implementations (Adapters)
- * - Service layer depends on this port, not on concrete implementations
+ * - Use cases depend on this port, not on concrete implementations
  */
 
-export interface BuilderFeeApprovalConfirmationPort {
+export interface BuilderFeeConfirmationPort {
   /**
    * Request user confirmation for builder fee approval
    *
@@ -20,16 +27,11 @@ export interface BuilderFeeApprovalConfirmationPort {
    * 3. Allow the user to confirm or cancel
    * 4. Return the user's decision
    *
-   * Implementation notes:
-   * - Should be non-blocking (async)
-   * - Should handle wallet-specific messaging (Reown vs Privy)
-   * - Should provide clear information about fees
-   *
    * @returns Promise<boolean> - true if user confirmed, false if cancelled
    *
    * @example
    * ```typescript
-   * const confirmed = await approvalConfirmation.confirmApproval();
+   * const confirmed = await confirmation.confirmApproval();
    * if (confirmed) {
    *   // Proceed with approval transaction
    * } else {

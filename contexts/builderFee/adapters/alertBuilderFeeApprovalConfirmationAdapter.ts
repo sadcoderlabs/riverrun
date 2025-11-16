@@ -12,12 +12,10 @@
 
 import { Alert } from 'react-native';
 import type { WalletPort } from '../../wallet/ports/walletPort';
-import type { BuilderFeeApprovalConfirmationPort } from '../ports/builderFeeApprovalConfirmationPort';
+import type { BuilderFeeConfirmationPort } from '../application/ports/BuilderFeeConfirmationPort';
 import { BUILDER_CONFIG } from '../config';
 
-export class AlertBuilderFeeApprovalConfirmationAdapter
-  implements BuilderFeeApprovalConfirmationPort
-{
+export class AlertBuilderFeeApprovalConfirmationAdapter implements BuilderFeeConfirmationPort {
   constructor(private readonly walletService: WalletPort) {}
 
   async confirmApproval(): Promise<boolean> {

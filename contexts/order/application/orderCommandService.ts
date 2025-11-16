@@ -18,7 +18,7 @@
 import { roundPrice } from '@/app-internal/components/trade/priceUtils';
 import type { AgentPort } from '@/contexts/agent/ports/agentPort';
 import { getBuilderParam } from '@/contexts/builderFee/config';
-import type { BuilderFeePort } from '@/contexts/builderFee/ports/builderFeePort';
+import type { BuilderFeeApprovalPort } from './ports/BuilderFeeApprovalPort';
 import type { MarketPort } from '@/contexts/market/ports/marketPort';
 import type { HyperliquidGateway } from '@/infra/hyperliquid/hyperliquidGateway';
 import * as hl from '@nktkas/hyperliquid';
@@ -71,7 +71,7 @@ interface OrderContext {
 export class OrderCommandService implements OrderCommandPort {
   constructor(
     private readonly agentPort: AgentPort,
-    private readonly builderFeePort: BuilderFeePort,
+    private readonly builderFeePort: BuilderFeeApprovalPort,
     private readonly marketPort: MarketPort,
     private readonly hyperliquidGateway: HyperliquidGateway,
   ) {}
