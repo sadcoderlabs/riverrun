@@ -26,6 +26,7 @@ import type * as hl from '@nktkas/hyperliquid';
 import type { Signer } from 'ethers';
 import type { BuilderFeeExchangePort } from '@/contexts/builderFee/application/ports/BuilderFeeExchangePort';
 import type { ReferralExchangePort } from '@/contexts/referral/application/ports/ReferralExchangePort';
+import type { HyperliquidBridgePort } from '@/contexts/bridge/application/ports/HyperliquidBridgePort';
 import * as infoClient from './client/infoClient';
 import { getMasterExchangeClient, getAgentExchangeClient } from './client/getter';
 import { subscriptionManager } from './subscription';
@@ -46,8 +47,11 @@ export interface SubscriptionHandle {
  * This gateway also implements domain ports directly without additional adapter layers:
  * - BuilderFeeExchangePort: Builder fee approval operations
  * - ReferralExchangePort: Referral code operations
+ * - HyperliquidBridgePort: Bridge withdrawal operations
  */
-export class HyperliquidGateway implements BuilderFeeExchangePort, ReferralExchangePort {
+export class HyperliquidGateway
+  implements BuilderFeeExchangePort, ReferralExchangePort, HyperliquidBridgePort
+{
   /**
    * Subscribe to WebData2 stream with HTTP+WS hybrid strategy
    *
@@ -637,5 +641,39 @@ export class HyperliquidGateway implements BuilderFeeExchangePort, ReferralExcha
     });
 
     return { status: response.status };
+  }
+
+  // ============================================================================
+  // HyperliquidBridgePort implementation
+  // ============================================================================
+
+  /**
+   * Get withdrawable USDC balance on Hyperliquid (HyperliquidBridgePort)
+   *
+   * @param walletAddress - User's wallet address
+   * @returns Formatted withdrawable balance (e.g., "10.5") or undefined if unavailable
+   */
+  async getWithdrawableBalance(walletAddress: string): Promise<string | undefined> {
+    try {
+      const state = await this.getClearinghouseState(walletAddress);
+      return state.withdrawable;
+    } catch (error) {
+      console.error('[HyperliquidGateway] Failed to get withdrawable balance:', error);
+      return undefined;
+    }
+  }
+
+  /**
+   * Withdraw USDC from Hyperliquid to Arbitrum (HyperliquidBridgePort)
+   *
+   * @param signer - Ethers.js signer for signing the withdrawal request
+   * @param destinationAddress - Arbitrum address to receive USDC
+   * @param amount - Amount in USDC (human-readable, e.g., "10.5")
+   * @returns Withdrawal status (e.g., "ok")
+   * @throws Error if withdrawal fails
+   */
+  async withdrawUsdc(signer: Signer, destinationAddress: string, amount: string): Promise<string> {
+    const response = await this.withdraw(signer, destinationAddress, amount);
+    return response.status;
   }
 }

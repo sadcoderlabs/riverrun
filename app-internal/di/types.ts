@@ -10,7 +10,6 @@ import type { TelemetryPort } from '@/contexts/telemetry/ports/telemetryPort';
 import type { WalletPort } from '@/contexts/wallet/ports/walletPort';
 import type { MarketPort } from '@/contexts/market/ports/marketPort';
 import type { AgentPort } from '@/contexts/agent/ports/agentPort';
-import type { BridgePort } from '@/contexts/bridge/ports/bridgePort';
 import type { MarginPort } from '@/contexts/margin/ports/marginPort';
 import type { OrderCommandPort } from '@/contexts/order/ports/orderCommandPort';
 import type { HyperliquidGateway } from '@/infra/hyperliquid/hyperliquidGateway';
@@ -31,6 +30,16 @@ import type { SetReferrerUseCase } from '@/contexts/referral/application/usecase
 // Referral Ports
 import type { ReferralExchangePort } from '@/contexts/referral/application/ports/ReferralExchangePort';
 
+// Bridge UseCases
+import type { GetArbitrumBalanceUseCase } from '@/contexts/bridge/application/usecases/GetArbitrumBalanceUseCase';
+import type { GetWithdrawableBalanceUseCase } from '@/contexts/bridge/application/usecases/GetWithdrawableBalanceUseCase';
+import type { DepositUsdcUseCase } from '@/contexts/bridge/application/usecases/DepositUsdcUseCase';
+import type { WithdrawUsdcUseCase } from '@/contexts/bridge/application/usecases/WithdrawUsdcUseCase';
+
+// Bridge Ports
+import type { ArbitrumBridgePort } from '@/contexts/bridge/application/ports/ArbitrumBridgePort';
+import type { HyperliquidBridgePort } from '@/contexts/bridge/application/ports/HyperliquidBridgePort';
+
 /**
  * AppCradle - Type-safe container cradle
  *
@@ -48,7 +57,6 @@ export interface AppCradle {
 
   // Domain Services
   agentService: AgentPort;
-  bridgeService: BridgePort;
   marginService: MarginPort;
 
   // Command Services
@@ -69,6 +77,16 @@ export interface AppCradle {
   // Referral Context - UseCases
   getReferralStatusUseCase: GetReferralStatusUseCase;
   setReferrerUseCase: SetReferrerUseCase;
+
+  // Bridge Context - Out Ports
+  arbitrumBridgePort: ArbitrumBridgePort;
+  hyperliquidBridgePort: HyperliquidBridgePort;
+
+  // Bridge Context - UseCases
+  getArbitrumBalanceUseCase: GetArbitrumBalanceUseCase;
+  getWithdrawableBalanceUseCase: GetWithdrawableBalanceUseCase;
+  depositUsdcUseCase: DepositUsdcUseCase;
+  withdrawUsdcUseCase: WithdrawUsdcUseCase;
 }
 
 /**

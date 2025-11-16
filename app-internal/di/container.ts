@@ -22,12 +22,12 @@ import { SentryAdapter } from '@/contexts/telemetry/adapters/sentryAdapter';
 import { SegmentAdapter } from '@/contexts/telemetry/adapters/segmentAdapter';
 import { AlertAgentApprovalConfirmationAdapter } from '@/contexts/agent/adapters/alertAgentApprovalConfirmationAdapter';
 import { AlertBuilderFeeApprovalConfirmationAdapter } from '@/contexts/builderFee/adapters/alertBuilderFeeApprovalConfirmationAdapter';
+import { ArbitrumBridgeAdapter } from '@/contexts/bridge/adapters/arbitrumBridgeAdapter';
 
 // Services
 import { TelemetryService } from '@/contexts/telemetry/application/telemetryService';
 import { MarketService } from '@/contexts/market/application/marketService';
 import { AgentService } from '@/contexts/agent/application/agentService';
-import { BridgeService } from '@/contexts/bridge/application/bridgeService';
 import { MarginService } from '@/contexts/margin/application/marginService';
 import { OrderCommandService } from '@/contexts/order/application/orderCommandService';
 
@@ -39,6 +39,12 @@ import { RevokeBuilderFeeUseCase } from '@/contexts/builderFee/application/useca
 // Referral UseCases
 import { GetReferralStatusUseCase } from '@/contexts/referral/application/usecases/GetReferralStatusUseCase';
 import { SetReferrerUseCase } from '@/contexts/referral/application/usecases/SetReferrerUseCase';
+
+// Bridge UseCases
+import { GetArbitrumBalanceUseCase } from '@/contexts/bridge/application/usecases/GetArbitrumBalanceUseCase';
+import { GetWithdrawableBalanceUseCase } from '@/contexts/bridge/application/usecases/GetWithdrawableBalanceUseCase';
+import { DepositUsdcUseCase } from '@/contexts/bridge/application/usecases/DepositUsdcUseCase';
+import { WithdrawUsdcUseCase } from '@/contexts/bridge/application/usecases/WithdrawUsdcUseCase';
 
 // Ports (for interface injection)
 import type { WalletPort } from '@/contexts/wallet/ports/walletPort';
@@ -118,10 +124,7 @@ export function createAppContainer(options: CreateContainerOptions): AppContaine
       return new AgentService(walletService, hyperliquidGateway, approvalConfirmation);
     }).singleton(),
 
-    // Bridge Service (depends on Wallet + HyperliquidGateway)
-    bridgeService: asFunction(({ walletService, hyperliquidGateway }) => {
-      return new BridgeService(walletService, hyperliquidGateway);
-    }).singleton(),
+    // Bridge Service removed - replaced with UseCases pattern
 
     // Margin Service (depends on Wallet + Agent + HyperliquidGateway)
     marginService: asFunction(({ walletService, agentService, hyperliquidGateway }) => {
@@ -213,6 +216,48 @@ export function createAppContainer(options: CreateContainerOptions): AppContaine
     // SetReferrerUseCase: Set referrer code
     setReferrerUseCase: asFunction(({ referralExchangePort }) => {
       return new SetReferrerUseCase(referralExchangePort);
+    }).singleton(),
+  });
+
+  // ==========================================================================
+  // Bridge Context - Out Ports
+  // ==========================================================================
+
+  container.register({
+    // ArbitrumBridgePort: Implemented by ArbitrumBridgeAdapter
+    arbitrumBridgePort: asFunction(() => {
+      return new ArbitrumBridgeAdapter();
+    }).singleton(),
+
+    // HyperliquidBridgePort: Implemented by HyperliquidGateway directly
+    hyperliquidBridgePort: asFunction(({ hyperliquidGateway }) => {
+      return hyperliquidGateway;
+    }).singleton(),
+  });
+
+  // ==========================================================================
+  // Bridge Context - UseCases
+  // ==========================================================================
+
+  container.register({
+    // GetArbitrumBalanceUseCase: Query USDC balance on Arbitrum
+    getArbitrumBalanceUseCase: asFunction(({ arbitrumBridgePort }) => {
+      return new GetArbitrumBalanceUseCase(arbitrumBridgePort);
+    }).singleton(),
+
+    // GetWithdrawableBalanceUseCase: Query withdrawable USDC on Hyperliquid
+    getWithdrawableBalanceUseCase: asFunction(({ hyperliquidBridgePort }) => {
+      return new GetWithdrawableBalanceUseCase(hyperliquidBridgePort);
+    }).singleton(),
+
+    // DepositUsdcUseCase: Deposit USDC from Arbitrum to Hyperliquid
+    depositUsdcUseCase: asFunction(({ arbitrumBridgePort }) => {
+      return new DepositUsdcUseCase(arbitrumBridgePort);
+    }).singleton(),
+
+    // WithdrawUsdcUseCase: Withdraw USDC from Hyperliquid to Arbitrum
+    withdrawUsdcUseCase: asFunction(({ hyperliquidBridgePort }) => {
+      return new WithdrawUsdcUseCase(hyperliquidBridgePort);
     }).singleton(),
   });
 
