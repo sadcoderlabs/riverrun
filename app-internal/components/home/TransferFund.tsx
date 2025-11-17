@@ -1,8 +1,8 @@
 import { ArrowDown, ArrowUp } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Text, XStack, YStack } from 'tamagui';
-import { CardContainer } from '../global/CardContainer';
+import { XStack } from 'tamagui';
+import { Button } from '../global/Button';
 
 /**
  * Transfer Fund Component
@@ -10,6 +10,8 @@ import { CardContainer } from '../global/CardContainer';
  * Provides quick access to fund management actions:
  * - Deposit: Transfer USDC from Arbitrum to Hyperliquid
  * - Withdraw: Transfer USDC from Hyperliquid to Arbitrum
+ *
+ * Now designed as a row of action buttons rather than a card container
  */
 export function TransferFund() {
   const router = useRouter();
@@ -35,44 +37,32 @@ export function TransferFund() {
   };
 
   return (
-    <CardContainer>
-      <XStack gap="$3" justifyContent="space-between">
-        {/* Deposit Button */}
-        <YStack
-          flex={1}
-          alignItems="center"
-          gap="$2"
-          padding="$3"
-          borderRadius="$4"
-          backgroundColor="$background02"
-          pressStyle={{ opacity: 0.7, scale: 0.98 }}
-          onPress={handleDeposit}
-          cursor="pointer"
-        >
-          <ArrowDown size={24} color="$color" />
-          <Text fontFamily="$interMedium" fontSize="$3">
-            Deposit
-          </Text>
-        </YStack>
+    <XStack gap="$3" justifyContent="space-between" marginTop="$3">
+      {/* Deposit Button - More eye-catching with Filled variant */}
+      <Button.Filled
+        onPress={handleDeposit}
+        flex={1}
+        level="md"
+        height="$5"
+        fontSize="$3"
+        pressStyle={{ opacity: 0.85, scale: 0.98 }}
+      >
+        Deposit
+        <ArrowDown size={18} color="$color1" marginLeft="$1.5" />
+      </Button.Filled>
 
-        {/* Withdraw Button */}
-        <YStack
-          flex={1}
-          alignItems="center"
-          gap="$2"
-          padding="$3"
-          borderRadius="$4"
-          backgroundColor="$background02"
-          pressStyle={{ opacity: 0.7, scale: 0.98 }}
-          onPress={handleWithdraw}
-          cursor="pointer"
-        >
-          <ArrowUp size={24} color="$color" />
-          <Text fontFamily="$interMedium" fontSize="$3">
-            Withdraw
-          </Text>
-        </YStack>
-      </XStack>
-    </CardContainer>
+      {/* Withdraw Button - Less prominent with Gray variant */}
+      <Button.Gray
+        onPress={handleWithdraw}
+        flex={1}
+        level="md"
+        height="$5"
+        fontSize="$3" // Slightly larger text
+        pressStyle={{ opacity: 0.85, scale: 0.98 }}
+      >
+        Withdraw
+        <ArrowUp size={18} color="$accent9" marginLeft="$1.5" />
+      </Button.Gray>
+    </XStack>
   );
 }
