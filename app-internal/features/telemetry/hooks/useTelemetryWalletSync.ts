@@ -6,12 +6,12 @@
  *
  * Design:
  * - Extracted from TelemetryService to keep the service pure and stateless
- * - Uses React hooks for lifecycle management instead of constructor subscriptions
- * - Subscribes to activeWalletStore changes and updates telemetry accordingly
+ * - Uses React hooks for lifecycle management
+ * - Monitors activeWallet from React Context and updates telemetry accordingly
  */
 
-import { useEffect } from 'react';
-import { activeWalletStore } from '../../../../contexts/wallet/adapters/activeWalletStore';
+import { useEffect, useRef } from 'react';
+import { useWallet } from '../../wallet/hooks/useWallet';
 import type { TelemetryPort } from '../../../../contexts/telemetry/ports/telemetryPort';
 
 /**
@@ -37,29 +37,30 @@ import type { TelemetryPort } from '../../../../contexts/telemetry/ports/telemet
  * ```
  */
 export function useTelemetryWalletSync(telemetryService: TelemetryPort): void {
+  // Get active wallet from React Context
+  const { wallet: activeWallet } = useWallet();
+
+  // Track previous wallet address to detect changes
+  const prevAddressRef = useRef<string | undefined>(undefined);
+
   useEffect(() => {
-    // Subscribe to wallet changes
-    const unsubscribe = activeWalletStore.subscribe((state, prevState) => {
-      const currentAddress = state.wallet?.address;
-      const previousAddress = prevState.wallet?.address;
+    const currentAddress = activeWallet?.address;
+    const previousAddress = prevAddressRef.current;
 
-      // User connected wallet (or switched to a different wallet)
-      if (currentAddress && currentAddress !== previousAddress) {
-        void telemetryService.identifyUser({
-          address: currentAddress,
-          walletSource: state.wallet?.source,
-        });
-      }
+    // User connected wallet (or switched to a different wallet)
+    if (currentAddress && currentAddress !== previousAddress) {
+      void telemetryService.identifyUser({
+        address: currentAddress,
+        walletSource: activeWallet?.source,
+      });
+    }
 
-      // User disconnected wallet
-      if (!currentAddress && previousAddress) {
-        void telemetryService.resetUser();
-      }
-    });
+    // User disconnected wallet
+    if (!currentAddress && previousAddress) {
+      void telemetryService.resetUser();
+    }
 
-    // Cleanup subscription on unmount
-    return () => {
-      unsubscribe();
-    };
-  }, [telemetryService]);
+    // Update ref for next comparison
+    prevAddressRef.current = currentAddress;
+  }, [activeWallet, telemetryService]);
 }

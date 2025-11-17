@@ -2,7 +2,7 @@ import { formatPercent } from '@/infra/hyperliquid/format/formatPercent';
 import { formatPrice } from '@/infra/hyperliquid/format/formatPrice';
 import { formatSize } from '@/infra/hyperliquid/format/formatSize';
 import { formatValue } from '@/infra/hyperliquid/format/formatValue';
-import { useWalletContext, useMarket } from '@/app-internal';
+import { useWallet, useMarket } from '@/app-internal';
 import { usePositionStore } from '@/app-internal';
 import type { EnrichedPosition } from '@/contexts/position/types';
 import { calculatePositionMetrics } from '@/contexts/position/types';
@@ -12,7 +12,7 @@ import ClosePositionModal from './ClosePositionModal';
 import TpSlModal from './TpSlModal';
 
 export default function PositionsTab() {
-  const { wallet } = useWalletContext();
+  const { wallet } = useWallet();
   const { setSelectedMarketByCoin } = useMarket();
 
   // Get positions from position context (business logic handled by PositionService)

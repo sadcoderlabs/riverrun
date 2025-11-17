@@ -3,7 +3,7 @@
  * Displays user's fill history (executed trades)
  */
 
-import { useMarket, useMarketStore, useWalletContext } from '@/app-internal';
+import { useMarket, useMarketStore, useWallet } from '@/app-internal';
 import { useHistory, type Fill } from '@/app-internal';
 import { formatTimestamp } from '@/contexts/order/ports';
 import { formatPrice } from '@/infra/hyperliquid/format/formatPrice';
@@ -144,7 +144,7 @@ type FillFilter = 'all' | 'long' | 'short';
 const ITEMS_PER_PAGE = 20;
 
 export function HistoryTabContent() {
-  const { wallet } = useWalletContext();
+  const { wallet } = useWallet();
   const { setSelectedMarketByCoin } = useMarket();
   const markets = useMarketStore(state => state.markets);
 

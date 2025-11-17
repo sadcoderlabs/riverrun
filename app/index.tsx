@@ -1,8 +1,8 @@
-import { useWalletContext } from '@/app-internal';
+import { useWallet } from '@/app-internal';
 import { Redirect } from 'expo-router';
 
 export default function Index() {
-  const { wallet } = useWalletContext();
+  const { wallet } = useWallet();
 
   if (wallet) {
     return <Redirect href="/(tabs)/home" />;

@@ -1,20 +1,37 @@
-import React, { createContext, useContext, useMemo, useEffect } from 'react';
+import React, { createContext, useContext, useMemo, useEffect, useState } from 'react';
 import { usePrivy, useEmbeddedEthereumWallet } from '@privy-io/expo';
 import { useLogin } from '@privy-io/expo/ui';
 import { useAccount, useWalletInfo, useProvider, useAppKit } from '@reown/appkit-react-native';
+import { useStore } from 'zustand';
 
 import { PrivyWalletAdapter } from '../../../../contexts/wallet/adapters/privyWalletAdapter';
 import { ReownWalletAdapter } from '../../../../contexts/wallet/adapters/reownWalletAdapter';
 import { WalletService } from '../../../../contexts/wallet/application/walletService';
-import { activeWalletStore } from '../../../../contexts/wallet/adapters/activeWalletStore';
+import { walletSelectionStore } from '../../../../contexts/wallet/adapters/walletSelectionStore';
 import type { WalletPort } from '../../../../contexts/wallet/ports/walletPort';
+import type { ActiveWallet } from '../../../../contexts/wallet/ports/types';
 
+/**
+ * WalletCompositionContext - Provides wallet service and active wallet state
+ *
+ * This context provides:
+ * - walletService: For wallet operations (connect, disconnect, sign, etc.)
+ * - activeWallet: Reactive state computed from walletService.active()
+ *
+ * Single source of truth for active wallet: walletService.active()
+ */
 interface WalletCompositionContextValue {
   /**
    * Wallet service for business operations.
    * Always available when the provider has rendered children.
    */
   walletService: WalletPort;
+
+  /**
+   * The currently active wallet.
+   * Computed by walletService.active() and updated reactively.
+   */
+  activeWallet: ActiveWallet | undefined;
 }
 
 const WalletCompositionContext = createContext<WalletCompositionContextValue | undefined>(
@@ -105,44 +122,61 @@ export function WalletCompositionProvider({ children }: { children: React.ReactN
   ]);
 
   // ==========================
-  // Initialize and handle state changes (business logic in service)
+  // Active Wallet State Management (React)
   // ==========================
 
-  // Initialize active wallet store when walletService is created/updated
-  useEffect(() => {
-    // Sync active wallet to store on mount and when walletService changes
-    walletService.active().then(wallet => {
-      activeWalletStore.getState().setWallet(wallet);
-    });
-  }, [walletService]);
+  // React state for active wallet (computed from walletService.active())
+  const [activeWallet, setActiveWallet] = useState<ActiveWallet | undefined>(undefined);
 
-  // Handle connection state changes
+  // Subscribe to walletSelectionStore changes
+  const selectedWalletSource = useStore(walletSelectionStore, state => state.selectedWalletSource);
+
+  // Recompute active wallet when dependencies change
+  useEffect(() => {
+    // Recompute when:
+    // - walletService changes (adapter updates)
+    // - selectedWalletSource changes (user switches wallet)
+    // - isConnected changes (Reown connection state)
+    // - embeddedWallets changes (Privy wallet state)
+    walletService.active().then(wallet => {
+      setActiveWallet(wallet);
+    });
+  }, [walletService, selectedWalletSource, isConnected, embeddedWallets]);
+
+  // Handle connection state changes (business logic)
   useEffect(() => {
     walletService.handleConnectionStateChange();
   }, [walletService, isConnected]);
+
+  // Prepare context value (must be before early return)
+  const contextValue = useMemo(
+    () => ({
+      walletService,
+      activeWallet,
+    }),
+    [walletService, activeWallet],
+  );
 
   // Don't render children until Privy is ready
   if (!privyReady) {
     return null;
   }
 
-  const value = useMemo(
-    () => ({
-      walletService,
-    }),
-    [walletService],
-  );
-
   return (
-    <WalletCompositionContext.Provider value={value}>{children}</WalletCompositionContext.Provider>
+    <WalletCompositionContext.Provider value={contextValue}>
+      {children}
+    </WalletCompositionContext.Provider>
   );
 }
 
 /**
- * useWalletComposition - Access the wallet service from context
+ * useWalletComposition - Access wallet service and active wallet from context
  *
- * This is an internal hook used by the public wallet hooks.
- * Components should use useWallet() or useWalletConnection() instead.
+ * This is an internal hook that provides both:
+ * - walletService: For wallet operations
+ * - activeWallet: Reactive state computed from walletService.active()
+ *
+ * This is an internal hook. Components should use useWallet() instead.
  */
 export function useWalletComposition(): WalletCompositionContextValue {
   const context = useContext(WalletCompositionContext);

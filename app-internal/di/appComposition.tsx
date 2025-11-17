@@ -2,17 +2,17 @@
  * AppCompositionProvider - Unified Composition Root
  *
  * This provider now uses a hybrid architecture:
- * 1. TelemetryCompositionProvider - Telemetry initialization (React Context)
- * 2. WalletCompositionProvider - Wallet management with Privy/Reown hooks (React Context)
+ * 1. WalletCompositionProvider - Wallet management with Privy/Reown hooks (React Context)
+ * 2. TelemetryCompositionProvider - Telemetry initialization (React Context, depends on Wallet)
  * 3. AppServicesProvider - All other services via DI Container (Awilix)
  *
  * Architecture Migration:
  * - BEFORE: 11+ nested React Context providers
- * - AFTER: 3 providers (Telemetry + Wallet + DI Container)
+ * - AFTER: 3 providers (Wallet + Telemetry + DI Container)
  *
  * Why Hybrid?
- * - TelemetryCompositionProvider: Sets up error tracking early
  * - WalletCompositionProvider: Requires React hooks (usePrivy, useAccount, etc.)
+ * - TelemetryCompositionProvider: Depends on WalletCompositionProvider (uses useWallet)
  * - AppServicesProvider: Pure business logic services via DI
  *
  * Services in DI Container:
@@ -59,10 +59,10 @@ interface AppCompositionProviderProps {
  */
 export function AppCompositionProvider({ children }: AppCompositionProviderProps) {
   return (
-    <TelemetryCompositionProvider>
-      <WalletCompositionProvider>
+    <WalletCompositionProvider>
+      <TelemetryCompositionProvider>
         <AppServicesProvider>{children}</AppServicesProvider>
-      </WalletCompositionProvider>
-    </TelemetryCompositionProvider>
+      </TelemetryCompositionProvider>
+    </WalletCompositionProvider>
   );
 }

@@ -1,7 +1,7 @@
 import { Button } from '@/app-internal/components/global/Button';
 import { Heading } from '@/app-internal/components/global/Heading';
 import { useThemePreference } from '@/app-internal/components/shared/theme/useThemePreference';
-import { useWalletContext } from '@/app-internal';
+import { useWallet } from '@/app-internal';
 import { Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { toast } from 'sonner-native';
@@ -10,7 +10,7 @@ import { Text, View, YStack } from 'tamagui';
 export default function Login() {
   const insets = useSafeAreaInsets();
   const { effectiveTheme } = useThemePreference();
-  const { connect } = useWalletContext();
+  const { connect } = useWallet();
 
   // Handle email login via Privy
   const handleEmailLogin = async () => {

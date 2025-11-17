@@ -14,9 +14,8 @@
  */
 
 import { useEffect, useMemo } from 'react';
-import { useStore } from 'zustand';
 
-import { activeWalletStore } from '@/contexts/wallet/adapters/activeWalletStore';
+import { useWallet } from '../../wallet/hooks/useWallet';
 import {
   HyperliquidGateway,
   type SubscriptionHandle,
@@ -158,8 +157,8 @@ export async function handleOrderUpdates(
  * ```
  */
 export function useOrderSubscription() {
-  const wallet = useStore(activeWalletStore, state => state.wallet);
-  const walletAddress = wallet?.address;
+  // Get active wallet address from React Context
+  const { address: walletAddress } = useWallet();
   const gateway = useMemo(() => new HyperliquidGateway(), []);
 
   useEffect(() => {

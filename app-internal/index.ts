@@ -23,8 +23,8 @@ export {
 } from './features/telemetry/components/telemetryComposition';
 
 // Wallet
-export { useWalletContext } from './features/wallet/hooks/useWalletContext';
-export type { UseWalletContextResult } from './features/wallet/hooks/useWalletContext';
+export { useWallet } from './features/wallet/hooks/useWallet';
+export type { UseWalletResult } from './features/wallet/hooks/useWallet';
 export {
   WalletCompositionProvider,
   useWalletComposition,

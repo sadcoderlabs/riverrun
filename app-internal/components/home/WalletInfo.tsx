@@ -1,4 +1,4 @@
-import { useWalletContext } from '@/app-internal';
+import { useWallet } from '@/app-internal';
 import { Copy, Settings, Wallet } from '@tamagui/lucide-icons';
 import * as Clipboard from 'expo-clipboard';
 import { Link } from 'expo-router';
@@ -32,7 +32,7 @@ function shortenAddress(address: string): string {
 
 export function WalletInfo() {
   const theme = useTheme();
-  const { wallet } = useWalletContext();
+  const { wallet } = useWallet();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Use the unified wallet address and name from useWallet

@@ -1,7 +1,5 @@
 import { useCallback } from 'react';
 import { useWalletComposition } from '../components/walletComposition';
-import { useStore } from 'zustand';
-import { activeWalletStore } from '../../../../contexts/wallet/adapters/activeWalletStore';
 import type {
   ActiveWallet,
   WalletSource,
@@ -12,12 +10,23 @@ import type {
 } from '../../../../contexts/wallet/ports/types';
 import type { Signer } from 'ethers';
 
-export interface UseWalletContextResult {
+export interface UseWalletResult {
   /**
-   * Active wallet information and operations.
+   * Active wallet information.
    * undefined when no wallet is connected.
    */
   wallet: ActiveWallet | undefined;
+
+  /**
+   * Wallet address (convenience accessor).
+   * undefined when no wallet is connected.
+   */
+  address: string | undefined;
+
+  /**
+   * Whether a wallet is currently connected.
+   */
+  isConnected: boolean;
 
   /**
    * Connect to a wallet (Privy or Reown)
@@ -56,39 +65,40 @@ export interface UseWalletContextResult {
 }
 
 /**
- * useWalletContext - Comprehensive wallet management hook
+ * useWallet - Comprehensive wallet management hook
  *
- * This is the main hook for wallet operations. It provides:
- * - Reactive access to the active wallet
+ * This is the main hook for all wallet operations. It provides:
+ * - Reactive access to the active wallet (via React Context)
+ * - Convenience accessors (address, isConnected)
  * - All wallet operations (connect, disconnect, switch, sign, etc.)
  *
- * The hook automatically tracks wallet state changes and provides
- * stable callback references for all operations.
+ * The active wallet is computed by walletService.active() and updated reactively
+ * by WalletCompositionProvider when any relevant state changes.
  *
  * @example
  * ```tsx
- * const { wallet, connect, disconnect, setActive } = useWalletContext();
+ * const { wallet, address, isConnected, connect, disconnect } = useWallet();
  *
  * // Check if connected
- * if (!wallet) {
+ * if (!isConnected) {
  *   return <Button onPress={() => connect('privy')}>Connect</Button>;
  * }
  *
  * // Display wallet info and disconnect button
  * return (
  *   <View>
- *     <Text>Connected: {wallet.address}</Text>
+ *     <Text>Connected: {address}</Text>
  *     <Button onPress={() => disconnect(wallet.source)}>Disconnect</Button>
  *   </View>
  * );
  * ```
  */
-export function useWalletContext(): UseWalletContextResult {
-  const { walletService } = useWalletComposition();
+export function useWallet(): UseWalletResult {
+  const { walletService, activeWallet } = useWalletComposition();
 
-  // Subscribe to activeWalletStore for reactive updates
-  // WalletService automatically updates this store whenever active wallet changes
-  const wallet = useStore(activeWalletStore, state => state.wallet);
+  // Derive convenience values from activeWallet
+  const address = activeWallet?.address;
+  const isConnected = activeWallet !== undefined;
 
   // Wrap walletService methods with useCallback for stable references
   const connect = useCallback(
@@ -121,7 +131,9 @@ export function useWalletContext(): UseWalletContextResult {
   const getSigner = useCallback(() => walletService.getSigner(), [walletService]);
 
   return {
-    wallet,
+    wallet: activeWallet,
+    address,
+    isConnected,
     connect,
     disconnect,
     setActive,

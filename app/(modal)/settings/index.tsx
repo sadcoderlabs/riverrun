@@ -2,7 +2,7 @@ import AdaptiveSelect from '@/app-internal/components/global/AdaptiveSelect';
 import { ListItem } from '@/app-internal/components/global/ListItem';
 import { ListSection } from '@/app-internal/components/global/ListSection';
 import { useThemePreference } from '@/app-internal/components/shared/theme/useThemePreference';
-import { useWalletContext } from '@/app-internal';
+import { useWallet } from '@/app-internal';
 import { type ThemePreference } from '@/app-internal/components/shared/theme/theme.store';
 import { features } from '@/config/environment';
 import { ArrowLeft, ArrowUpRight } from '@tamagui/lucide-icons';
@@ -16,7 +16,7 @@ import { useVersion } from '@/app-internal/features/version/hooks/useVersion';
 export default function Index() {
   const router = useRouter();
   const { preference, setPreference } = useThemePreference();
-  const { wallet } = useWalletContext();
+  const { wallet } = useWallet();
   const [showExportModal, setShowExportModal] = useState(false);
   const { displayVersion, checkForUpdate, isChecking, isDownloading } = useVersion();
 

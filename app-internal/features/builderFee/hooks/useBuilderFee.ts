@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { Alert } from 'react-native';
 
 import { useContainer } from '@/app-internal/di';
-import { useWalletContext } from '@/app-internal/features/wallet/hooks/useWalletContext';
+import { useWallet } from '@/app-internal/features/wallet/hooks/useWallet';
 import type { BuilderFeeStatus } from '@/contexts/builderFee/ports/types';
 import { BUILDER_CONFIG } from '../../../../contexts/builderFee/config';
 
@@ -112,7 +112,7 @@ export function useBuilderFee(): UseBuilderFeeResult {
   const revokeUseCase = useContainer(c => c.revokeBuilderFeeUseCase);
 
   // Wallet access (for getting wallet address and signer)
-  const { wallet, getSigner } = useWalletContext();
+  const { wallet, getSigner } = useWallet();
 
   // State management - builder fee status (presentation layer)
   const [status, setStatus] = useState<BuilderFeeStatus>({

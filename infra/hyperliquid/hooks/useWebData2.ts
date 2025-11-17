@@ -1,4 +1,4 @@
-import { useWalletContext } from '@/app-internal/features/wallet/hooks/useWalletContext';
+import { useWallet } from '@/app-internal/features/wallet/hooks/useWallet';
 import { useSubscription, type WebData2Data } from '../subscription';
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -30,7 +30,7 @@ export interface UseWebData2Result {
  * @returns Raw webData2 with loading and error states
  */
 export function useWebData2(): UseWebData2Result {
-  const { wallet } = useWalletContext();
+  const { wallet } = useWallet();
   const [mergedData, setMergedData] = useState<WebData2Data | undefined>();
 
   // Step 1: HTTP fetch initial data using TanStack Query

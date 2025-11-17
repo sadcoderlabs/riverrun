@@ -15,10 +15,9 @@
  */
 
 import { useEffect, useMemo } from 'react';
-import { useStore } from 'zustand';
 import type * as hl from '@nktkas/hyperliquid';
 
-import { activeWalletStore } from '@/contexts/wallet/adapters/activeWalletStore';
+import { useWallet } from '../../wallet/hooks/useWallet';
 import {
   HyperliquidGateway,
   type SubscriptionHandle,
@@ -84,8 +83,8 @@ export function enrichPositions(
  * ```
  */
 export function usePositionSubscription(marketAdapter: MarketPort) {
-  const wallet = useStore(activeWalletStore, state => state.wallet);
-  const walletAddress = wallet?.address;
+  // Get active wallet address from useWallet hook
+  const { address: walletAddress } = useWallet();
   const gateway = useMemo(() => new HyperliquidGateway(), []);
 
   useEffect(() => {

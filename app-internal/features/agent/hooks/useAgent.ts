@@ -36,7 +36,7 @@
 import { useCallback, useState, useMemo } from 'react';
 
 import { useContainer } from '@/app-internal/di';
-import { useWalletContext } from '@/app-internal/features/wallet/hooks/useWalletContext';
+import { useWallet } from '@/app-internal/features/wallet/hooks/useWallet';
 import { DEFAULT_AGENT_NAME } from '@/contexts/agent/constants';
 import type { AgentInfo } from '@/contexts/agent/ports/types';
 
@@ -105,7 +105,7 @@ export function useAgent(): UseAgentResult {
   const revokeAgent = useContainer(c => c.revokeAgentUseCase);
 
   // Get wallet context
-  const { wallet, getSigner } = useWalletContext();
+  const { wallet, getSigner } = useWallet();
 
   // Local state management (similar to BuilderFee/Referral pattern)
   const [agentAddress, setAgentAddress] = useState<string | undefined>(undefined);

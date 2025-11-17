@@ -4,7 +4,7 @@
  * Returns real-time count from orderStore.
  */
 
-import { useWalletContext } from '@/app-internal/features/wallet/hooks/useWalletContext';
+import { useWallet } from '@/app-internal/features/wallet/hooks/useWallet';
 import { useMemo } from 'react';
 import { useOrderStore } from './useOrderStore';
 
@@ -14,7 +14,7 @@ import { useOrderStore } from './useOrderStore';
  * @returns number of open orders
  */
 export function useOrderCount(): number {
-  const { wallet } = useWalletContext();
+  const { wallet } = useWallet();
   const orders = useOrderStore(state => state.orders);
 
   const count = useMemo(() => {

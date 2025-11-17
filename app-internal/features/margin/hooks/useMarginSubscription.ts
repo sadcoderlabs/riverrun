@@ -18,7 +18,7 @@
 import { useEffect, useMemo } from 'react';
 import { useStore } from 'zustand';
 import { useMarginStore } from './useMarginStore';
-import { activeWalletStore } from '@/contexts/wallet/adapters/activeWalletStore';
+import { useWallet } from '../../wallet/hooks/useWallet';
 import { marketStore } from '@/contexts/market/adapters/marketStore';
 import {
   HyperliquidGateway,
@@ -66,9 +66,9 @@ export function extractMarginData(
  * ```
  */
 export function useMarginSubscription() {
-  const wallet = useStore(activeWalletStore, state => state.wallet);
+  // Get active wallet address from React Context
+  const { address: walletAddress } = useWallet();
   const selectedMarket = useStore(marketStore, state => state.selectedMarket);
-  const walletAddress = wallet?.address;
   const coin = selectedMarket?.coin;
   const gateway = useMemo(() => new HyperliquidGateway(), []);
 
