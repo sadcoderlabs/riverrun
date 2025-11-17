@@ -1,13 +1,6 @@
 import type { Signer } from 'ethers';
 import type { WalletPort } from '../ports/walletPort';
-import type {
-  WalletInfo,
-  WalletSource,
-  SignMessageInput,
-  SignTxInput,
-  TxResult,
-  ActiveWallet,
-} from '../ports/types';
+import type { WalletInfo, WalletSource, ActiveWallet } from '../ports/types';
 import type { PrivyWalletAdapter } from '../adapters/privyWalletAdapter';
 import type { ReownWalletAdapter } from '../adapters/reownWalletAdapter';
 import { walletSelectionStore } from '../adapters/walletSelectionStore';
@@ -181,38 +174,6 @@ export class WalletService implements WalletPort {
     }
 
     walletSelectionStore.getState().setSelectedWalletSource(source);
-  }
-
-  /**
-   * Sign a message with the active wallet
-   */
-  async signMessage(input: SignMessageInput): Promise<`0x${string}`> {
-    const activeWallet = await this.active();
-    if (!activeWallet) {
-      throw new Error('No active wallet');
-    }
-
-    if (activeWallet.source === 'privy') {
-      return this.privyAdapter.signMessage(input.message);
-    } else {
-      return this.reownAdapter.signMessage(input.message);
-    }
-  }
-
-  /**
-   * Sign and send a transaction with the active wallet
-   */
-  async signAndSendTx(input: SignTxInput): Promise<TxResult> {
-    const activeWallet = await this.active();
-    if (!activeWallet) {
-      throw new Error('No active wallet');
-    }
-
-    if (activeWallet.source === 'privy') {
-      return this.privyAdapter.signAndSendTx(input);
-    } else {
-      return this.reownAdapter.signAndSendTx(input);
-    }
   }
 
   /**

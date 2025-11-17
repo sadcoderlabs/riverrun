@@ -4,9 +4,6 @@ import type {
   ActiveWallet,
   WalletSource,
   WalletInfo,
-  SignMessageInput,
-  SignTxInput,
-  TxResult,
 } from '../../../../contexts/wallet/ports/types';
 import type { Signer } from 'ethers';
 
@@ -47,16 +44,6 @@ export interface UseWalletResult {
    * List all available (connected) wallets
    */
   listAvailable: () => Promise<WalletInfo[]>;
-
-  /**
-   * Sign a message with the active wallet
-   */
-  signMessage: (input: SignMessageInput) => Promise<`0x${string}`>;
-
-  /**
-   * Sign and send a transaction with the active wallet
-   */
-  signAndSendTx: (input: SignTxInput) => Promise<TxResult>;
 
   /**
    * Get an ethers.js Signer for the active wallet
@@ -118,16 +105,6 @@ export function useWallet(): UseWalletResult {
 
   const listAvailable = useCallback(() => walletService.listAvailable(), [walletService]);
 
-  const signMessage = useCallback(
-    (input: SignMessageInput) => walletService.signMessage(input),
-    [walletService],
-  );
-
-  const signAndSendTx = useCallback(
-    (input: SignTxInput) => walletService.signAndSendTx(input),
-    [walletService],
-  );
-
   const getSigner = useCallback(() => walletService.getSigner(), [walletService]);
 
   return {
@@ -138,8 +115,6 @@ export function useWallet(): UseWalletResult {
     disconnect,
     setActive,
     listAvailable,
-    signMessage,
-    signAndSendTx,
     getSigner,
   };
 }
