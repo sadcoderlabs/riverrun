@@ -40,6 +40,13 @@
 - 給使用者與 Store 顯示的版本號
 - 格式：`MAJOR.MINOR.PATCH`
 - **只在「要出新 binary 並送審」前才 bump**
+- 由於使用 `runtimeVersion: { policy: "appVersion" }`，每次 bump version 都會同時更新 runtime version
+
+⚠️ **重要警告**：
+
+- **不要隨意 bump `expo.version`**，除非真的要出新的 native build
+- 每次 bump version 會改變 runtime version，導致已安裝舊版 app 的使用者**無法收到新的 OTA 更新**
+- OTA 只會推送給相同 runtime version 的使用者
 
 ### 1.2 `ios.buildNumber` / `android.versionCode`
 
@@ -50,8 +57,9 @@
 ### 1.3 `expo.runtimeVersion`
 
 - 決定 OTA 是否相容
-- 使用日期字串（`2024.11.18`）
-- **只在 native module/config 變更時更新**
+- **使用 `policy: "appVersion"` 自動管理**
+- Runtime version 自動與 `expo.version` 同步
+- 這意味著每次 bump `expo.version` 時，runtime version 也會自動更新
 
 ### 1.4 Git Commit Hash
 
@@ -74,38 +82,61 @@
 
 ---
 
-## 3. `app.config.ts` 範例
+## 3. `app.json` / `app.config.ts` 範例
 
-```ts
-import type { ExpoConfig } from 'expo/config';
+### `app.json`
 
-const config: ExpoConfig = {
-  name: 'MyApp',
-  slug: 'my-app',
-
-  version: '1.2.3', // expo.version
-  runtimeVersion: '2024.11.18', // native 介面版本
-
-  ios: {
-    buildNumber: '45',
-    bundleIdentifier: 'com.mycompany.myapp',
-  },
-  android: {
-    versionCode: 45,
-    package: 'com.mycompany.myapp',
-  },
-
-  extra: {
-    // 注意：不要在這裡放 commitHash
-    // commitHash 透過 EXPO_PUBLIC_GIT_COMMIT_HASH 注入
-    sentryDsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
-  },
-};
-
-export default config;
+```json
+{
+  "expo": {
+    "version": "1.2.3",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "ios": {
+      "buildNumber": "45"
+    },
+    "android": {
+      "versionCode": 45
+    },
+    "extra": {
+      "sentryDsn": "https://..."
+    }
+  }
+}
 ```
 
-**重要**：Git commit hash 不應該放在 `app.config.ts` 的 `extra` 中，因為 `eas update` 執行時無法存取 shell 環境變數。改用 `EXPO_PUBLIC_` 前綴的環境變數，直接注入到 JavaScript bundle 中。
+### `app.config.ts`
+
+```ts
+import type { ExpoConfig, ConfigContext } from 'expo/config';
+
+export default ({ config }: ConfigContext): ExpoConfig => {
+  return {
+    ...config,
+    name: 'MyApp',
+    ios: {
+      ...config.ios,
+      bundleIdentifier: 'com.mycompany.myapp',
+    },
+    android: {
+      ...config.android,
+      package: 'com.mycompany.myapp',
+    },
+    extra: {
+      ...config.extra,
+      // 注意：不要在這裡放 commitHash
+      // commitHash 透過 EXPO_PUBLIC_GIT_COMMIT_HASH 注入
+    },
+  };
+};
+```
+
+**重要注意事項**：
+
+1. **Runtime Version**：使用 `policy: "appVersion"` 自動與 `expo.version` 同步，不需手動維護
+2. **Git Commit Hash**：不應該放在 `app.config.ts` 的 `extra` 中，因為 `eas update` 執行時無法存取 shell 環境變數。改用 `EXPO_PUBLIC_` 前綴的環境變數，直接注入到 JavaScript bundle 中
+3. **⚠️ 不要輕易修改 `expo.version`**：由於 runtime version 與 `expo.version` 綁定，每次修改版本號都會建立新的 runtime version，導致舊版使用者無法收到 OTA 更新
 
 ---
 
@@ -157,6 +188,7 @@ jobs:
 ```
 
 **關鍵要點**：
+
 - 使用 `EXPO_PUBLIC_GIT_COMMIT_HASH=$COMMIT_HASH` 在指令前綴設定環境變數
 - 這會將 commit hash 注入到 JavaScript bundle 中
 - 不使用 `--channel` 參數，channel 由 build 時的設定決定
@@ -260,11 +292,13 @@ Debug：runtimeVersion=2024.11.18, commit=a1b2c3d
 import Constants from 'expo-constants';
 
 const version = Constants.expoConfig?.version; // 1.2.3
-const runtimeVersion = Constants.expoConfig?.runtimeVersion; // 2024.11.18
+const runtimeVersion = Constants.expoConfig?.runtimeVersion; // { policy: 'appVersion' } 或實際值 1.2.3
 const commitHash = process.env.EXPO_PUBLIC_GIT_COMMIT_HASH; // a1b2c3d
-const buildNumber = Constants.expoConfig?.ios?.buildNumber ||
-                    Constants.expoConfig?.android?.versionCode;
+const buildNumber =
+  Constants.expoConfig?.ios?.buildNumber || Constants.expoConfig?.android?.versionCode;
 ```
+
+**注意**：由於使用 `policy: "appVersion"`，runtime version 實際上會等於 `expo.version`。
 
 ### 5.2 Sentry 設定
 
@@ -287,15 +321,14 @@ Sentry.init({
 
 - 修改 develop → 自動更新 preview
 - merge main → 自動更新 production
-- 不改 `expo.version`
-- 不改 `runtimeVersion`
+- **不改 `expo.version`**（⚠️ 重要：改了會導致舊版使用者收不到 OTA）
+- runtime version 自動維持不變
 - commitHash 用於追蹤
 
 ### 6.2 Native 變更 + 新 binary
 
 - bump：
-  - `expo.version`
-  - `runtimeVersion`
+  - `expo.version`（runtime version 會自動跟著更新）
   - `buildNumber` / `versionCode`
 - build → submit → Store 上架
 
@@ -303,10 +336,13 @@ Sentry.init({
 
 ## 7. 選擇背後的原則
 
-1. `expo.version` 表示 Store release，不用來標記 OTA
-2. `runtimeVersion` 用於「native 相容性」
-3. git tag 非必要，小團隊降低維護成本
-4. 使用 commitHash + Sentry 追蹤 OTA 來源
-5. main / develop 分離，強制確保只有 production branch 能被使用者取得
+1. **`expo.version` 表示 Store release**：不用來標記 OTA，只在出新 binary 時才 bump
+2. **`runtimeVersion` 使用 `policy: "appVersion"` 自動管理**：
+   - 自動與 `expo.version` 同步，無需手動維護
+   - 確保 OTA 只會推送給相同 app version 的使用者
+   - 每次出新 binary 並 bump version 時，runtime version 自動更新
+3. **Git tag 非必要**：小團隊降低維護成本
+4. **使用 `EXPO_PUBLIC_GIT_COMMIT_HASH` + Sentry 追蹤 OTA 來源**：透過 commit hash 精確識別每個 OTA 版本
+5. **main / develop 分離**：強制確保只有 production branch 能被使用者取得
 
 ---
