@@ -53,10 +53,12 @@
 - 使用日期字串（`2024.11.18`）
 - **只在 native module/config 變更時更新**
 
-### 1.4 `expo.extra.commitHash`
+### 1.4 Git Commit Hash
 
 - 用於工程師 debug / Sentry dist
-- CI 注入 `git rev-parse --short HEAD`
+- **不儲存在 `expo.extra`**，改用 `EXPO_PUBLIC_GIT_COMMIT_HASH` 環境變數
+- CI 在執行 `eas update` 時注入 `git rev-parse --short HEAD`
+- 透過 `process.env.EXPO_PUBLIC_GIT_COMMIT_HASH` 在 App 中存取
 
 ---
 
@@ -94,12 +96,16 @@ const config: ExpoConfig = {
   },
 
   extra: {
-    commitHash: process.env.GIT_COMMIT_HASH,
+    // 注意：不要在這裡放 commitHash
+    // commitHash 透過 EXPO_PUBLIC_GIT_COMMIT_HASH 注入
+    sentryDsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
   },
 };
 
 export default config;
 ```
+
+**重要**：Git commit hash 不應該放在 `app.config.ts` 的 `extra` 中，因為 `eas update` 執行時無法存取 shell 環境變數。改用 `EXPO_PUBLIC_` 前綴的環境變數，直接注入到 JavaScript bundle 中。
 
 ---
 
@@ -107,38 +113,89 @@ export default config;
 
 ### 4.1 在 CI 取得 commit hash
 
+在 GitHub Actions 中取得 commit hash 並設為環境變數：
+
 ```bash
-export GIT_COMMIT_HASH=$(git rev-parse --short HEAD)
+COMMIT_HASH=$(git rev-parse --short HEAD)
 ```
 
 ### 4.2 develop → preview（自動 OTA）
 
 ```yaml
+name: Publish EAS Update (Preview)
+
 on:
   push:
     branches: [develop]
 
-steps:
-  - uses: actions/checkout@v4
-  - run: echo "GIT_COMMIT_HASH=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
-  - run: npm install -g eas-cli && npm ci
-  - run: eas update --branch develop --channel preview --message "Preview ($GIT_COMMIT_HASH)"
-    env:
-      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.16.1
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Publish Update
+        run: |
+          COMMIT_HASH=$(git rev-parse --short HEAD)
+          EXPO_PUBLIC_GIT_COMMIT_HASH=$COMMIT_HASH pnpm exec eas update \
+            --branch develop \
+            --message "Preview: $COMMIT_HASH"
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 ```
+
+**關鍵要點**：
+- 使用 `EXPO_PUBLIC_GIT_COMMIT_HASH=$COMMIT_HASH` 在指令前綴設定環境變數
+- 這會將 commit hash 注入到 JavaScript bundle 中
+- 不使用 `--channel` 參數，channel 由 build 時的設定決定
 
 ### 4.3 main → production（自動 OTA）
 
 ```yaml
+name: Publish EAS Update (Production)
+
 on:
   push:
     branches: [main]
-```
 
-與 preview 同樣流程，只是 channel 變成：
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-```bash
-eas update --branch main --channel production
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.16.1
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Publish Update
+        run: |
+          COMMIT_HASH=$(git rev-parse --short HEAD)
+          EXPO_PUBLIC_GIT_COMMIT_HASH=$COMMIT_HASH pnpm exec eas update \
+            --branch main \
+            --message "Production: $COMMIT_HASH"
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 ```
 
 ### 4.4 新 binary 的手動 build + submit
@@ -197,27 +254,28 @@ on:
 Debug：runtimeVersion=2024.11.18, commit=a1b2c3d
 ```
 
-來源：
+取得版本資訊：
 
 ```ts
 import Constants from 'expo-constants';
 
-const expoConfig = Constants.expoConfig;
-
-expoConfig.version; // 1.2.3
-expoConfig.runtimeVersion; // 2024.11.18
-expoConfig.extra.commitHash; // a1b2c3d
-expoConfig.ios.buildNumber;
-expoConfig.android.versionCode;
+const version = Constants.expoConfig?.version; // 1.2.3
+const runtimeVersion = Constants.expoConfig?.runtimeVersion; // 2024.11.18
+const commitHash = process.env.EXPO_PUBLIC_GIT_COMMIT_HASH; // a1b2c3d
+const buildNumber = Constants.expoConfig?.ios?.buildNumber ||
+                    Constants.expoConfig?.android?.versionCode;
 ```
 
 ### 5.2 Sentry 設定
+
+在 `Sentry.init()` 中加入版本追蹤：
 
 ```ts
 Sentry.init({
   dsn: '...',
   release: `${bundleId}@${version}+${buildNumber}`,
-  dist: commitHash,
+  commit: commitHash, // 用 commit hash 識別 OTA 版本
+  // ... 其他設定
 });
 ```
 
