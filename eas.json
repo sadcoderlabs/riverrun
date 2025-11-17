@@ -36,7 +36,8 @@
       "environment": "preview",
       "env": {
         "APP_VARIANT": "preview"
-      }
+      },
+      "channel": "preview"
     },
     "production": {
       "extends": "base",
@@ -44,7 +45,8 @@
       "environment": "production",
       "env": {
         "APP_VARIANT": "production"
-      }
+      },
+      "channel": "production"
     }
   },
   "submit": {
