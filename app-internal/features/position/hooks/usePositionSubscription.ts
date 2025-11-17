@@ -22,9 +22,9 @@ import {
   HyperliquidGateway,
   type SubscriptionHandle,
 } from '@/infra/hyperliquid/hyperliquidGateway';
-import type { MarketPort } from '../../../../contexts/market/ports/marketPort';
-import { positionStore } from '../../../../contexts/position/adapters/positionStore';
-import type { EnrichedPosition, Position } from '../../../../contexts/position/types';
+import type { MarketPort } from '@/contexts/market/ports/marketPort';
+import { positionStore } from '../adapters/positionStore';
+import type { EnrichedPosition, Position } from '../types/position';
 
 // ============================================================================
 // Data Processing Functions (Testable)

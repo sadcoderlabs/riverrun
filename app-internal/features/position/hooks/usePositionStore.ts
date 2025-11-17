@@ -6,7 +6,7 @@
  */
 
 import { useStore } from 'zustand';
-import { positionStore } from '../../../../contexts/position/adapters/positionStore';
+import { positionStore } from '../adapters/positionStore';
 
 /**
  * Hook to access position store
