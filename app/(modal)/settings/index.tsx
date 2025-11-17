@@ -145,12 +145,6 @@ export default function Index() {
                     showIosChevron={true}
                     onPress={() => router.push('/settings/builder-fee-status')}
                   />
-                  <ListItem
-                    title="Telemetry"
-                    subTitle="Test Sentry error tracking and monitoring"
-                    showIosChevron={true}
-                    onPress={() => router.push('/settings/telemetry')}
-                  />
                 </ListSection>
               </YStack>
             )}

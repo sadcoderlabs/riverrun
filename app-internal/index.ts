@@ -17,7 +17,6 @@ export type { AppContainer, AppCradle } from './di';
 // Telemetry
 export { useTelemetry } from './features/telemetry/hooks/useTelemetry';
 export type { UseTelemetryResult } from './features/telemetry/hooks/useTelemetry';
-export { useTelemetryStore } from './features/telemetry/hooks/useTelemetryStore';
 export {
   TelemetryCompositionProvider,
   useTelemetryComposition,

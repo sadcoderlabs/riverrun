@@ -110,17 +110,6 @@ export interface UseTelemetryResult {
    * ```
    */
   withSpan: <T>(spanName: SpanName, fn: () => Promise<T>, context?: SpanContext) => Promise<T>;
-
-  /**
-   * Enable or disable telemetry
-   * @param enabled Whether telemetry should be enabled
-   */
-  setEnabled: (enabled: boolean) => Promise<void>;
-
-  /**
-   * Check if telemetry is currently enabled
-   */
-  isEnabled: () => boolean;
 }
 
 /**
@@ -128,8 +117,6 @@ export interface UseTelemetryResult {
  *
  * This hook provides type-safe telemetry operations.
  * All operations use predefined, typed events and screens to prevent event sprawl.
- *
- * For state access (userAddress, isEnabled), use useTelemetryStore instead.
  *
  * @example
  * ```tsx
@@ -211,17 +198,6 @@ export function useTelemetry(): UseTelemetryResult {
     [telemetryService],
   );
 
-  const setEnabled = useCallback(
-    (enabled: boolean) => {
-      return telemetryService.setEnabled(enabled);
-    },
-    [telemetryService],
-  );
-
-  const isEnabled = useCallback(() => {
-    return telemetryService.isEnabled();
-  }, [telemetryService]);
-
   return {
     identifyUser,
     resetUser,
@@ -230,7 +206,5 @@ export function useTelemetry(): UseTelemetryResult {
     captureError,
     captureWarning,
     withSpan,
-    setEnabled,
-    isEnabled,
   };
 }

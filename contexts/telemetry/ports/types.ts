@@ -290,23 +290,3 @@ export interface SpanContext {
    */
   tags?: Record<string, string>;
 }
-
-// ============================================================================
-// Telemetry State
-// ============================================================================
-
-/**
- * Telemetry state stored in the store
- * Only stores user preferences (isEnabled)
- */
-export interface TelemetryState {
-  /**
-   * Whether telemetry is enabled (user preference)
-   */
-  isEnabled: boolean;
-
-  /**
-   * Set enabled status
-   */
-  setEnabled: (enabled: boolean) => void;
-}
