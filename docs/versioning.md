@@ -19,16 +19,16 @@
    - 使用者在 App 內看到的版本號 = Store 後台的版本號
    - 方便客服 / debug / 查 release 紀錄
 
-3. **runtimeVersion 只用來表示「native 介面版本」**
-   - 手動維護，僅在 **native 有變更** 時才更新
-   - 使用日期字串（例如 `2024.11.18`）方便閱讀
+3. **runtimeVersion 使用 `policy: "appVersion"` 自動管理**
+   - 不需要手動維護，自動與 `expo.version` 同步
+   - 確保 OTA 更新只會推送給相同 app version 的使用者
 
 4. **每次送新 binary，都會遞增 `buildNumber` / `versionCode`**
    - 這是 Store 的硬性規定
    - 版本號的主體資訊交由 `expo.version` 呈現
 
-5. **不維護 git tag，追蹤 OTA 只靠 commit hash + Sentry release/dist**
-   - CI 在 build / update 時，把 `git short hash` 注入 `extra.commitHash`
+5. **不維護 git tag，追蹤 OTA 只靠 commit hash + Sentry**
+   - CI 在 build / update 時，透過 `EXPO_PUBLIC_GIT_COMMIT_HASH` 注入 git commit hash
    - App 啟動時把 commitHash 傳給 Sentry，方便錯誤追蹤與客服排查
 
 ---
