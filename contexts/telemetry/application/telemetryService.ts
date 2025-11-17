@@ -13,7 +13,6 @@
  * - Segment: Analytics events forwarded to Amplitude and other destinations
  */
 
-import { activeWalletStore } from '../../wallet/adapters/activeWalletStore';
 import type { SegmentAdapter } from '../adapters/segmentAdapter';
 import type { SentryAdapter } from '../adapters/sentryAdapter';
 import type { TelemetryPort } from '../ports/telemetryPort';
@@ -35,10 +34,7 @@ export class TelemetryService implements TelemetryPort {
   constructor(
     private readonly sentryAdapter: SentryAdapter,
     private readonly segmentAdapter: SegmentAdapter,
-  ) {
-    // Subscribe to wallet changes to auto-identify users
-    this.setupWalletSubscription();
-  }
+  ) {}
 
   // ==========================================================================
   // User Identification
@@ -144,33 +140,5 @@ export class TelemetryService implements TelemetryPort {
    */
   async withSpan<T>(spanName: SpanName, fn: () => Promise<T>, context?: SpanContext): Promise<T> {
     return await this.sentryAdapter.withSpan(spanName, fn, context);
-  }
-
-  // ==========================================================================
-  // Private Methods
-  // ==========================================================================
-
-  /**
-   * Setup subscription to wallet changes
-   * Auto-identify users when wallet connects/disconnects
-   */
-  private setupWalletSubscription(): void {
-    activeWalletStore.subscribe((state, prevState) => {
-      const currentAddress = state.wallet?.address;
-      const previousAddress = prevState.wallet?.address;
-
-      // User connected wallet
-      if (currentAddress && currentAddress !== previousAddress) {
-        void this.identifyUser({
-          address: currentAddress,
-          walletSource: state.wallet?.source,
-        });
-      }
-
-      // User disconnected wallet
-      if (!currentAddress && previousAddress) {
-        void this.resetUser();
-      }
-    });
   }
 }
