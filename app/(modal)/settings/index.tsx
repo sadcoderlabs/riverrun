@@ -18,7 +18,7 @@ export default function Index() {
   const { preference, setPreference } = useThemePreference();
   const { wallet } = useWalletContext();
   const [showExportModal, setShowExportModal] = useState(false);
-  const { displayVersion } = useVersion();
+  const { displayVersion, checkForUpdate, isChecking, isDownloading } = useVersion();
 
   const getThemeDisplayName = (theme: ThemePreference) => {
     const themeMap: Record<ThemePreference, string> = {
@@ -122,11 +122,15 @@ export default function Index() {
                 <ListItem title="App Version" subTitle={displayVersion} />
                 <ListItem
                   title="Check for Updates"
-                  subTitle="Check if a new version is available"
+                  subTitle={
+                    isChecking
+                      ? 'Checking for updates...'
+                      : isDownloading
+                        ? 'Downloading update...'
+                        : 'Check if a new version is available'
+                  }
                   showIosChevron={true}
-                  onPress={() => {
-                    // TODO: Implement update check functionality
-                  }}
+                  onPress={checkForUpdate}
                 />
               </ListSection>
             </YStack>
