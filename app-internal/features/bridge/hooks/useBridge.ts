@@ -23,7 +23,8 @@
  */
 
 import { useCallback, useState } from 'react';
-import { useContainer, useWalletContext } from '@/app-internal';
+import { useContainer } from '@/app-internal/di';
+import { useWalletContext } from '@/app-internal/features/wallet/hooks/useWalletContext';
 import type { DepositResult, WithdrawalResult } from '../../../../contexts/bridge/ports/types';
 
 /**

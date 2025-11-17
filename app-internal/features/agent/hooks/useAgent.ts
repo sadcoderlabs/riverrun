@@ -36,7 +36,7 @@
 import { useCallback, useState, useMemo } from 'react';
 
 import { useContainer } from '@/app-internal/di';
-import { useWalletContext } from '@/app-internal';
+import { useWalletContext } from '@/app-internal/features/wallet/hooks/useWalletContext';
 import { DEFAULT_AGENT_NAME } from '@/contexts/agent/constants';
 import type { AgentInfo } from '@/contexts/agent/ports/types';
 
