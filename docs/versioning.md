@@ -264,40 +264,74 @@ jobs:
 
 ### 4.4 新 binary 的手動 build + submit
 
-當需要更新 native code 或發佈新版本到 Store 時：
+當需要更新 native code 或發佈新版本到 Store 時，**務必遵循以下流程**：
 
-**準備工作**：
+#### 流程概覽
 
-1. **Bump version**（在 `app.json` 中）：
+```
+develop branch → 測試 → merge to main → build & submit → Store 上架
+```
+
+#### 詳細步驟
+
+**步驟 1: 在 develop branch 上開發和測試**
+
+1. 在 `develop` branch 進行 native 相關的開發
+2. **Bump version**（在 `app.json` 中）：
    - 更新 `expo.version`（例如 `1.2.3` → `1.3.0`）
    - 更新 `ios.buildNumber` 和 `android.versionCode`
    - ⚠️ **注意**：runtime version 會自動跟著 `expo.version` 更新
 
-2. **Build**：
+3. **建立 preview build 進行測試**：
 
    ```bash
-   # 建立 production build
-   eas build --profile production --platform all
+   # 在 develop branch
+   eas build --profile preview --platform all
    ```
 
-3. **Submit to Store**（手動流程）：
+4. 使用 preview build 進行內部測試，確保 native 變更正常運作
 
-   ```bash
-   # iOS
-   eas submit --platform ios --latest
+**步驟 2: Merge to main branch**
 
-   # Android
-   eas submit --platform android --latest
-   ```
+測試完成後，將 `develop` merge 到 `main`：
 
-   或使用 GitHub Actions workflow_dispatch 觸發。
+```bash
+git checkout main
+git merge develop
+git push origin main
+```
 
-4. **等待審核**：Store 審核通過後進入 Ready for Sale / Available
+⚠️ **重要**：必須先 merge 到 `main` 再 build production，確保：
 
-5. **更新 latest-build.json**（依照 4.5 的流程）
+- Production build 包含最新的程式碼
+- `main` branch 保持為唯一的 production 程式碼來源
+- 版本號與 Store 上的版本保持同步
 
-**重要提醒**：
+**步驟 3: 建立 production build 並 submit**
 
+```bash
+# 在 main branch
+eas build --profile production --platform all
+
+# Submit to Store
+eas submit --platform ios --latest
+eas submit --platform android --latest
+```
+
+或使用 GitHub Actions workflow_dispatch 觸發。
+
+**步驟 4: 等待審核與上架**
+
+Store 審核通過後進入 Ready for Sale / Available
+
+**步驟 5: 更新 latest-build.json**
+
+依照 4.5 的流程更新 S3 上的版本資訊
+
+#### 重要提醒
+
+- ✅ **正確流程**：develop 測試 → merge to main → build production from main
+- ❌ **錯誤流程**：在 develop build production，或 build 後才 merge
 - Native build 的流程**不應該自動化**（需要手動觸發），確保版本號變更是有意識的決定
 - 一旦 bump `expo.version`，舊版使用者將無法收到後續的 OTA 更新
 - Production builds 會自動訂閱 `production` channel，推送到 `main` branch 的 OTA 更新會自動送達
