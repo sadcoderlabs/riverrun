@@ -11,12 +11,14 @@ import { Linking, Pressable } from 'react-native';
 import { PortalProvider, ScrollView, Text, View, XStack, YStack } from 'tamagui';
 import { useState } from 'react';
 import ExportWalletModal from '@/app-internal/components/settings/ExportWalletModal';
+import { useVersion } from '@/app-internal/features/version/hooks/useVersion';
 
 export default function Index() {
   const router = useRouter();
   const { preference, setPreference } = useThemePreference();
   const { wallet } = useWalletContext();
   const [showExportModal, setShowExportModal] = useState(false);
+  const { displayVersion } = useVersion();
 
   const getThemeDisplayName = (theme: ThemePreference) => {
     const themeMap: Record<ThemePreference, string> = {
@@ -110,6 +112,21 @@ export default function Index() {
                     </View>
                   }
                   onPress={() => Linking.openURL('https://x.com/perpprotocol')}
+                />
+              </ListSection>
+            </YStack>
+
+            {/* Version Section */}
+            <YStack>
+              <ListSection label="Version">
+                <ListItem title="App Version" subTitle={displayVersion} />
+                <ListItem
+                  title="Check for Updates"
+                  subTitle="Check if a new version is available"
+                  showIosChevron={true}
+                  onPress={() => {
+                    // TODO: Implement update check functionality
+                  }}
                 />
               </ListSection>
             </YStack>
