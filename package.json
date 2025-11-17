@@ -38,7 +38,7 @@
     "@reown/appkit-react-native": "2.0.1",
     "@segment/analytics-react-native": "^2.21.3",
     "@segment/sovran-react-native": "^1.1.3",
-    "@sentry/react-native": "~7.2.0",
+    "@sentry/react-native": "7.6.0",
     "@tamagui/animations-moti": "1.132.24",
     "@tamagui/checkbox": "1.132.24",
     "@tamagui/colors": "1.132.24",
@@ -102,7 +102,7 @@
     "zustand": "^5.0.8"
   },
   "devDependencies": {
-    "@sentry/cli": "^2.58.2",
+    "@sentry/cli": "2.58.2",
     "@types/jest": "29.5.14",
     "@types/react": "19.1.13",
     "eslint": "9.35.0",
