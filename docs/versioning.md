@@ -72,12 +72,34 @@
 
 ## 2. Git Branch / EAS Channel 策略
 
-| Git branch | EAS branch | Channel    | 用途       |
-| ---------- | ---------- | ---------- | ---------- |
-| develop    | develop    | preview    | 內部測試   |
-| main       | main       | production | 使用者版本 |
+| Git branch | EAS Update branch | Channel    | Build Profile | 用途                 |
+| ---------- | ----------------- | ---------- | ------------- | -------------------- |
+| develop    | develop           | preview    | preview       | 內部測試（內部分發） |
+| main       | main              | production | production    | 使用者版本（Store）  |
 
-- Store 安裝的 App 永遠指向 `production` channel
+### Channel 設定
+
+在 `eas.json` 中配置 channel：
+
+```json
+{
+  "build": {
+    "preview": {
+      "channel": "preview",
+      "distribution": "internal"
+    },
+    "production": {
+      "channel": "production"
+    }
+  }
+}
+```
+
+### 運作方式
+
+- 執行 `eas build --profile preview` 產生的 binary 會訂閱 `preview` channel
+- 執行 `eas build --profile production` 產生的 binary 會訂閱 `production` channel
+- Store 安裝的 App（production build）永遠指向 `production` channel
 - 只有 `main` branch 的程式碼能送達使用者
 
 ---
@@ -182,6 +204,7 @@ jobs:
           COMMIT_HASH=$(git rev-parse --short HEAD)
           EXPO_PUBLIC_GIT_COMMIT_HASH=$COMMIT_HASH pnpm exec eas update \
             --branch develop \
+            --channel preview \
             --message "Preview: $COMMIT_HASH"
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
@@ -191,7 +214,9 @@ jobs:
 
 - 使用 `EXPO_PUBLIC_GIT_COMMIT_HASH=$COMMIT_HASH` 在指令前綴設定環境變數
 - 這會將 commit hash 注入到 JavaScript bundle 中
-- 不使用 `--channel` 參數，channel 由 build 時的設定決定
+- `--branch develop` 指定 EAS Update branch（用於版本管理）
+- `--channel preview` 指定推送到 preview channel（對應到 `eas.json` 中的 preview build profile）
+- Preview builds（`eas build --profile preview`）訂閱 `preview` channel，會收到這個更新
 
 ### 4.3 main → production（自動 OTA）
 
@@ -225,27 +250,57 @@ jobs:
           COMMIT_HASH=$(git rev-parse --short HEAD)
           EXPO_PUBLIC_GIT_COMMIT_HASH=$COMMIT_HASH pnpm exec eas update \
             --branch main \
+            --channel production \
             --message "Production: $COMMIT_HASH"
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 ```
 
+**關鍵要點**：
+
+- `--branch main` 指定 EAS Update branch
+- `--channel production` 指定推送到 production channel
+- Production builds（從 Store 下載的 App）訂閱 `production` channel，會收到這個更新
+
 ### 4.4 新 binary 的手動 build + submit
 
-```yaml
-on:
-  workflow_dispatch:
-```
+當需要更新 native code 或發佈新版本到 Store 時：
 
-流程：
+**準備工作**：
 
-1. bump version / runtimeVersion
-2. build
-3. submit
-4. Store 審核通過後進入 Ready for Sale / Available
-5. 依照 4.5 的流程更新 `latest-build.json`
+1. **Bump version**（在 `app.json` 中）：
+   - 更新 `expo.version`（例如 `1.2.3` → `1.3.0`）
+   - 更新 `ios.buildNumber` 和 `android.versionCode`
+   - ⚠️ **注意**：runtime version 會自動跟著 `expo.version` 更新
 
-補充：Step 4 建議由值班工程師或自動腳本輪詢 App Store Connect / Play Console API，一旦確認最新 build 已發佈給使用者，就觸發 Step 5 將對應的 `minSupportedBuild` 與 `storeUrl` 更新至 S3
+2. **Build**：
+
+   ```bash
+   # 建立 production build
+   eas build --profile production --platform all
+   ```
+
+3. **Submit to Store**（手動流程）：
+
+   ```bash
+   # iOS
+   eas submit --platform ios --latest
+
+   # Android
+   eas submit --platform android --latest
+   ```
+
+   或使用 GitHub Actions workflow_dispatch 觸發。
+
+4. **等待審核**：Store 審核通過後進入 Ready for Sale / Available
+
+5. **更新 latest-build.json**（依照 4.5 的流程）
+
+**重要提醒**：
+
+- Native build 的流程**不應該自動化**（需要手動觸發），確保版本號變更是有意識的決定
+- 一旦 bump `expo.version`，舊版使用者將無法收到後續的 OTA 更新
+- Production builds 會自動訂閱 `production` channel，推送到 `main` branch 的 OTA 更新會自動送達
 
 ### 4.5 App Store 上架後同步 S3 JSON
 
