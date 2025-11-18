@@ -4,6 +4,10 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  '@noble/hashes': 2.0.1
+  multiformats: ^13.0.0
+
 packageExtensionsChecksum: sha256-3XmKVG/8MJdXYUEwGGtSccPNyiC4qSXqwAxNiRH9IDA=
 
 importers:
@@ -911,7 +915,7 @@ packages:
 
   '@expo/bunyan@4.0.1':
     resolution: {integrity: sha512-+Lla7nYSiHZirgK+U/uYzsLv/X+HaJienbD5AKX1UQZHYfWaP+9uuQluRB4GrEVWF0GZ7vEVp/jzaOT9k/SQlg==}
-    engines: {node: '>=0.10.0'}
+    engines: {'0': node >=0.10.0}
 
   '@expo/cli@54.0.16':
     resolution: {integrity: sha512-hY/OdRaJMs5WsVPuVSZ+RLH3VObJmL/pv5CGCHEZHN2PxZjSZSdctyKV8UcFBXTF0yIKNAJ9XLs1dlNYXHh4Cw==}
@@ -1338,18 +1342,6 @@ packages:
 
   '@noble/curves@1.9.7':
     resolution: {integrity: sha512-gbKGcRUYIjA3/zCCNaWDciTMFI0dCkvou3TL8Zmy5Nc7sJ47a0jtOeZoTaMxkuqRo9cRhjOdZJXegxYE5FN/xw==}
-    engines: {node: ^14.21.3 || >=16}
-
-  '@noble/hashes@1.3.2':
-    resolution: {integrity: sha512-MVC8EAQp7MvEcm30KWENFjgR+Mkmf+D189XJTkFIlwohU5hcBbn1ZkKq7KVTi2Hme3PMGF390DaL52beVrIihQ==}
-    engines: {node: '>= 16'}
-
-  '@noble/hashes@1.7.0':
-    resolution: {integrity: sha512-HXydb0DgzTpDPwbVeDGCG1gIu7X6+AuU6Zl6av/E/KG8LMsvPntvq+w17CHRpKBmN6Ybdrt1eP3k4cj8DJa78w==}
-    engines: {node: ^14.21.3 || >=16}
-
-  '@noble/hashes@1.8.0':
-    resolution: {integrity: sha512-jCs9ldd7NwzpgXDIf6P3+NrHh9/sD6CQdxHyjQI+h/6rDNo88ypBxxz45UDuZHz9r3tNz7N/VInSVoVdtXEI4A==}
     engines: {node: ^14.21.3 || >=16}
 
   '@noble/hashes@2.0.1':
@@ -6246,8 +6238,8 @@ packages:
   ms@2.1.3:
     resolution: {integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==}
 
-  multiformats@9.9.0:
-    resolution: {integrity: sha512-HoMUjhH9T8DDBNT+6xzkrd9ga/XiBI4xLr58LJACwK6G3HTOPeMz4nB4KJs33L2BelrIJa7P0VuNaVF3hMYfjg==}
+  multiformats@13.4.1:
+    resolution: {integrity: sha512-VqO6OSvLrFVAYYjgsr8tyv62/rCQhPgsZUXLTqoFLSgdkgiUYKYeArbt1uWLlEpkjxQe+P0+sHlbPEte1Bi06Q==}
 
   multipasta@0.2.7:
     resolution: {integrity: sha512-KPA58d68KgGil15oDqXjkUBEBYc00XvbPj5/X+dyzeo/lWm9Nc25pQRlf1D+gv4OpK7NM0J1odrbu9JNNGvynA==}
@@ -9805,29 +9797,23 @@ snapshots:
 
   '@noble/curves@1.2.0':
     dependencies:
-      '@noble/hashes': 1.3.2
+      '@noble/hashes': 2.0.1
 
   '@noble/curves@1.8.0':
     dependencies:
-      '@noble/hashes': 1.7.0
+      '@noble/hashes': 2.0.1
 
   '@noble/curves@1.9.1':
     dependencies:
-      '@noble/hashes': 1.8.0
+      '@noble/hashes': 2.0.1
 
   '@noble/curves@1.9.2':
     dependencies:
-      '@noble/hashes': 1.8.0
+      '@noble/hashes': 2.0.1
 
   '@noble/curves@1.9.7':
     dependencies:
-      '@noble/hashes': 1.8.0
-
-  '@noble/hashes@1.3.2': {}
-
-  '@noble/hashes@1.7.0': {}
-
-  '@noble/hashes@1.8.0': {}
+      '@noble/hashes': 2.0.1
 
   '@noble/hashes@2.0.1': {}
 
@@ -10505,12 +10491,12 @@ snapshots:
   '@scure/bip32@1.7.0':
     dependencies:
       '@noble/curves': 1.9.7
-      '@noble/hashes': 1.8.0
+      '@noble/hashes': 2.0.1
       '@scure/base': 1.2.6
 
   '@scure/bip39@1.6.0':
     dependencies:
-      '@noble/hashes': 1.8.0
+      '@noble/hashes': 2.0.1
       '@scure/base': 1.2.6
 
   '@segment/ajv-human-errors@2.15.0(ajv@8.11.0)':
@@ -12869,7 +12855,7 @@ snapshots:
   '@walletconnect/relay-auth@1.1.0':
     dependencies:
       '@noble/curves': 1.8.0
-      '@noble/hashes': 1.7.0
+      '@noble/hashes': 2.0.1
       '@walletconnect/safe-json': 1.0.2
       '@walletconnect/time': 1.0.2
       uint8arrays: 3.1.1
@@ -13097,7 +13083,7 @@ snapshots:
       '@msgpack/msgpack': 3.1.2
       '@noble/ciphers': 1.3.0
       '@noble/curves': 1.9.7
-      '@noble/hashes': 1.8.0
+      '@noble/hashes': 2.0.1
       '@scure/base': 1.2.6
       '@walletconnect/jsonrpc-utils': 1.0.8
       '@walletconnect/keyvaluestorage': 1.1.1(@react-native-async-storage/async-storage@2.2.0(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.1.13)(bufferutil@4.0.9)(react@19.1.0)(utf-8-validate@5.0.10)))
@@ -13141,7 +13127,7 @@ snapshots:
       '@msgpack/msgpack': 3.1.2
       '@noble/ciphers': 1.3.0
       '@noble/curves': 1.9.2
-      '@noble/hashes': 1.8.0
+      '@noble/hashes': 2.0.1
       '@scure/base': 1.2.6
       '@walletconnect/jsonrpc-utils': 1.0.8
       '@walletconnect/keyvaluestorage': 1.1.1(@react-native-async-storage/async-storage@2.2.0(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.1.13)(bufferutil@4.0.9)(react@19.1.0)(utf-8-validate@5.0.10)))
@@ -14661,7 +14647,7 @@ snapshots:
     dependencies:
       '@adraffy/ens-normalize': 1.10.1
       '@noble/curves': 1.2.0
-      '@noble/hashes': 1.3.2
+      '@noble/hashes': 2.0.1
       '@types/node': 22.7.5
       aes-js: 4.0.0-beta.5
       tslib: 2.7.0
@@ -16626,7 +16612,7 @@ snapshots:
 
   ms@2.1.3: {}
 
-  multiformats@9.9.0: {}
+  multiformats@13.4.1: {}
 
   multipasta@0.2.7: {}
 
@@ -16851,7 +16837,7 @@ snapshots:
       '@adraffy/ens-normalize': 1.11.0
       '@noble/ciphers': 1.3.0
       '@noble/curves': 1.9.7
-      '@noble/hashes': 1.8.0
+      '@noble/hashes': 2.0.1
       '@scure/bip32': 1.7.0
       '@scure/bip39': 1.6.0
       abitype: 1.1.0(typescript@5.9.2)(zod@4.1.12)
@@ -16866,7 +16852,7 @@ snapshots:
       '@adraffy/ens-normalize': 1.11.0
       '@noble/ciphers': 1.3.0
       '@noble/curves': 1.9.1
-      '@noble/hashes': 1.8.0
+      '@noble/hashes': 2.0.1
       '@scure/bip32': 1.7.0
       '@scure/bip39': 1.6.0
       abitype: 1.1.0(typescript@5.9.2)(zod@4.1.12)
@@ -18238,7 +18224,7 @@ snapshots:
 
   uint8arrays@3.1.1:
     dependencies:
-      multiformats: 9.9.0
+      multiformats: 13.4.1
 
   unbox-primitive@1.1.0:
     dependencies:
@@ -18405,7 +18391,7 @@ snapshots:
   viem@2.31.0(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.1.12):
     dependencies:
       '@noble/curves': 1.9.1
-      '@noble/hashes': 1.8.0
+      '@noble/hashes': 2.0.1
       '@scure/bip32': 1.7.0
       '@scure/bip39': 1.6.0
       abitype: 1.0.8(typescript@5.9.2)(zod@4.1.12)
@@ -18422,7 +18408,7 @@ snapshots:
   viem@2.37.6(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.1.12):
     dependencies:
       '@noble/curves': 1.9.1
-      '@noble/hashes': 1.8.0
+      '@noble/hashes': 2.0.1
       '@scure/bip32': 1.7.0
       '@scure/bip39': 1.6.0
       abitype: 1.1.0(typescript@5.9.2)(zod@4.1.12)
