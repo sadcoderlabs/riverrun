@@ -3,6 +3,7 @@ import { LogOut } from '@tamagui/lucide-icons';
 import { Modal, Pressable, StyleSheet, ScrollView } from 'react-native';
 import { toast } from 'sonner-native';
 import { Button, Text, YStack } from 'tamagui';
+import { CustomHeader } from '../global';
 import { WalletListItem } from './WalletListItem';
 import { useState, useEffect } from 'react';
 import type { WalletInfo } from '@/contexts/wallet/ports/types';
@@ -127,11 +128,7 @@ export function WalletSelectorModal({ visible, onClose }: WalletSelectorModalPro
             />
 
             {/* Header */}
-            <YStack paddingHorizontal="$4" paddingTop="$2" paddingBottom="$3">
-              <Text fontSize={20} fontFamily="$interSemiBold" color="$color12">
-                Wallets
-              </Text>
-            </YStack>
+            <CustomHeader title="Wallets" showBackButton={false} />
 
             {/* Content */}
             <ScrollView

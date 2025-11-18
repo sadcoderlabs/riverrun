@@ -1,16 +1,13 @@
+import { useBuilderFee } from '@/app-internal';
+import { CustomHeader } from '@/app-internal/components/global';
 import { ListButton, ListItem } from '@/app-internal/components/global/ListItem';
 import { ListSection } from '@/app-internal/components/global/ListSection';
 import { BUILDER_CONFIG } from '@/contexts/builderFee/config';
-import { useBuilderFee } from '@/app-internal';
-import { ArrowLeft } from '@tamagui/lucide-icons';
-import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, RefreshControl } from 'react-native';
-import { PortalProvider, ScrollView, Spinner, Text, View, XStack, YStack } from 'tamagui';
+import { RefreshControl } from 'react-native';
+import { PortalProvider, ScrollView, Spinner, Text, View, YStack } from 'tamagui';
 
 export default function BuilderFeeStatus() {
-  const router = useRouter();
-
   // Builder fee state and operations
   const {
     maxApprovedFee,
@@ -69,26 +66,17 @@ export default function BuilderFeeStatus() {
     <PortalProvider>
       <YStack flex={1} backgroundColor="$background">
         {/* Header */}
-        <XStack
-          alignItems="center"
-          gap="$3"
-          paddingHorizontal="$4"
-          paddingVertical="$3"
-          borderBottomWidth={1}
-          borderBottomColor="$borderColor"
-        >
-          <Pressable onPress={() => router.back()} style={{ padding: 4 }}>
-            <ArrowLeft size={24} color="$color" />
-          </Pressable>
-          <Text fontFamily="$interSemiBold" fontSize="$6">
-            Builder Fee Status
-          </Text>
-          {isBuilderFeeLoading && (
-            <View marginLeft="auto">
-              <Spinner size="small" />
-            </View>
-          )}
-        </XStack>
+        <CustomHeader
+          title="Builder Fee Status"
+          style={{
+            position: 'relative',
+          }}
+        />
+        {isBuilderFeeLoading && (
+          <View position="absolute" right={16} top={16}>
+            <Spinner size="small" />
+          </View>
+        )}
 
         {/* Content */}
         <ScrollView
