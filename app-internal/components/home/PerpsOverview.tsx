@@ -1,7 +1,8 @@
 import { Info } from '@tamagui/lucide-icons';
 import React, { useState } from 'react';
-import { Button, Popover, Spinner, Text, XStack, YStack } from 'tamagui';
+import { Button, Popover, Text, XStack, YStack } from 'tamagui';
 import { CardContainer } from '../global/CardContainer';
+import { Skeleton } from '../global/Skeleton';
 import { useAccountMetrics } from './hooks/useAccountMetrics';
 
 interface MetricRowProps {
@@ -115,12 +116,14 @@ export function PerpsOverview() {
       </Text>
 
       {isLoading ? (
-        <XStack alignItems="center" gap="$2">
-          <Spinner size="small" color="$color9" />
-          <Text fontSize="$4" color="$color9">
-            Loading...
-          </Text>
-        </XStack>
+        <YStack gap="$3">
+          {/* Skeleton for metric rows */}
+          <Skeleton.MetricRow />
+          <Skeleton.MetricRow />
+          <Skeleton.MetricRow />
+          <Skeleton.MetricRow />
+          <Skeleton.MetricRow />
+        </YStack>
       ) : error ? (
         <Text fontSize="$4" color="$red10" fontFamily="$interMedium">
           Failed to load

@@ -99,7 +99,7 @@ export function WalletInfo() {
         {/* Settings Icon - More prominent with color12 (white in dark theme) */}
         <Link href="/settings" asChild>
           <IconButton>
-            <Settings size={24} color={theme.color12} />
+            <Settings size={24} color="$color9" />
           </IconButton>
         </Link>
       </XStack>

@@ -1,7 +1,8 @@
 import { Eye, EyeOff } from '@tamagui/lucide-icons';
 import React, { useState } from 'react';
-import { Spinner, Text, XStack, YStack, useTheme } from 'tamagui';
+import { Text, XStack, YStack, useTheme } from 'tamagui';
 import { CardContainer } from '../global/CardContainer';
+import { Skeleton } from '../global/Skeleton';
 import { useAccountMetrics } from './hooks/useAccountMetrics';
 import { TransferFund } from './TransferFund';
 
@@ -25,7 +26,7 @@ export function AccountEquity() {
 
   return (
     <CardContainer>
-      <XStack alignItems="center" justifyContent="space-between" marginBottom="$2.5">
+      <XStack alignItems="center" justifyContent="flex-start" gap="$2" marginBottom="$2.5">
         <Text color="$color12" fontFamily="$interSemiBold" fontSize="$3">
           Account Equity
         </Text>
@@ -37,20 +38,24 @@ export function AccountEquity() {
           bg="$background02"
         >
           {isHidden ? (
-            <EyeOff size={18} color={theme.color12} />
+            <EyeOff size={16} color={theme.color12} />
           ) : (
-            <Eye size={18} color={theme.color12} />
+            <Eye size={16} color={theme.color12} />
           )}
         </XStack>
       </XStack>
 
       {isLoading ? (
-        <XStack alignItems="center" gap="$2">
-          <Spinner size="small" color="$color9" />
-          <Text fontSize="$5" color="$color9">
-            Loading...
-          </Text>
-        </XStack>
+        <YStack gap="$3">
+          {/* Skeleton for account value */}
+          <Skeleton.AccountValue width="60%" height={40} />
+
+          {/* Skeleton for action buttons */}
+          <XStack gap="$3" marginTop="$2">
+            <Skeleton.Box flex={1} height={48} borderRadius="$12" />
+            <Skeleton.Box flex={1} height={48} borderRadius="$12" />
+          </XStack>
+        </YStack>
       ) : error ? (
         <Text fontSize="$5" color="$red10">
           Failed to load
