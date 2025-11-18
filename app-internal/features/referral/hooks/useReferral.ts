@@ -158,7 +158,7 @@ export function useReferral(): UseReferralResult {
       return new Promise<boolean>(resolve => {
         Alert.alert(
           'Set Referral Code',
-          `Setting referral code to "${referralCode}" will give you fee discounts. This is a one-time operation and cannot be changed. Continue?`,
+          `Setting referral code to "${referralCode}" will give you 4% fee discounts on first $25M volume. This is a one-time operation and cannot be changed. Continue?`,
           [
             {
               text: 'Cancel',

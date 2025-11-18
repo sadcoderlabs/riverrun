@@ -133,7 +133,6 @@ export function useOrder(): UseOrderResult {
   const placeCloseMarketOrderUseCase = useContainer(c => c.placeCloseMarketOrderUseCase);
   const placeCloseLimitOrderUseCase = useContainer(c => c.placeCloseLimitOrderUseCase);
   const placeTpSlOrdersUseCase = useContainer(c => c.placeTpSlOrdersUseCase);
-  const cancelOrderUseCase = useContainer(c => c.cancelOrderUseCase);
   const cancelOrdersUseCase = useContainer(c => c.cancelOrdersUseCase);
 
   // UI state only
@@ -280,7 +279,10 @@ export function useOrder(): UseOrderResult {
       setError(undefined);
 
       try {
-        const result = await cancelOrderUseCase.execute(params);
+        // Use batch cancel with single order
+        const result = await cancelOrdersUseCase.execute({
+          orders: [{ coin: params.coin, orderId: params.orderId }],
+        });
 
         if (result.success) {
           toast.success('Order Cancelled', {
@@ -298,7 +300,7 @@ export function useOrder(): UseOrderResult {
         setIsCanceling(false);
       }
     },
-    [cancelOrderUseCase],
+    [cancelOrdersUseCase],
   );
 
   /**

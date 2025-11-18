@@ -6,20 +6,18 @@ import { ListSection } from '@/app-internal/components/global/ListSection';
 import ExportWalletModal from '@/app-internal/components/settings/ExportWalletModal';
 import { type ThemePreference } from '@/app-internal/components/shared/theme/theme.store';
 import { useThemePreference } from '@/app-internal/components/shared/theme/useThemePreference';
-import { useVersion } from '@/app-internal/features/version/hooks/useVersion';
+import { useAutoUpdate } from '@/app-internal/features/version/hooks/useAutoUpdate';
 import { features } from '@/config/environment';
 import { ArrowUpRight } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Linking } from 'react-native';
-import { PortalProvider, ScrollView, View, YStack } from 'tamagui';
 
 export default function Index() {
   const router = useRouter();
   const { preference, setPreference } = useThemePreference();
   const { wallet } = useWallet();
   const [showExportModal, setShowExportModal] = useState(false);
-  const { displayVersion, checkForUpdate, isChecking, isDownloading } = useVersion();
+  const { displayVersion, checkForUpdate, isChecking, isDownloading } = useAutoUpdate();
 
   const getThemeDisplayName = (theme: ThemePreference) => {
     const themeMap: Record<ThemePreference, string> = {

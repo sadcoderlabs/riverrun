@@ -3,16 +3,14 @@
   "main": "index.ts",
   "version": "1.0.0",
   "scripts": {
-    "dev": "APP_VARIANT=development pnpm expo start",
     "start": "expo start",
     "start:log": "expo start 2>&1 | tee expo-server.log",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
-    "web": "expo start --web",
     "lint": "expo lint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "jest"
+    "test": "jest",
+    "update:preview": "./scripts/update-preview.sh",
+    "update:production": "./scripts/update-production.sh"
   },
   "jest": {
     "preset": "jest-expo"
@@ -110,7 +108,8 @@
     "@sentry/cli": "2.58.2",
     "@types/jest": "29.5.14",
     "@types/react": "19.1.13",
-    "dotenv": "^17.2.3",
+    "babel-preset-expo": "^54.0.7",
+    "eas-cli": "^16.27.0",
     "eslint": "9.35.0",
     "eslint-config-expo": "10.0.0",
     "eslint-config-prettier": "^10.1.8",
@@ -121,5 +120,5 @@
     "typescript": "5.9.2"
   },
   "private": true,
-  "packageManager": "pnpm@10.14.0+sha512.ad27a79641b49c3e481a16a805baa71817a04bbe06a38d17e60e2eaee83f6a146c6a688125f5792e48dd5ba30e7da52a5cda4c3992b9ccf333f9ce223af84748"
+  "packageManager": "pnpm@10.16.1"
 }
