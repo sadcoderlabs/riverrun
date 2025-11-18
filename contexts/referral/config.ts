@@ -11,7 +11,7 @@
  * Default referral code to suggest to users who don't have a referrer
  * Users who set this referral code receive 4% fee discount for first $25M volume
  */
-export const DEFAULT_REFERRAL_CODE = 'MOCK_REFERRER_CODE' as const;
+export const DEFAULT_REFERRAL_CODE = 'PERPGO' as const;
 
 /**
  * Referral configuration object

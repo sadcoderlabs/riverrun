@@ -124,7 +124,7 @@ export default function ApprovalStatus() {
                       onPress={handleSetReferrer}
                       disabled={isReferralLoading}
                     >
-                      {isReferralLoading ? 'Setting...' : 'Set Referral Code'}
+                      {isReferralLoading ? 'Setting...' : 'Get 4% Fee Discount'}
                     </ListButton>
                     <ListItem
                       title="Don't hint me when trading"
