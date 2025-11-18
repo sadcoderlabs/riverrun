@@ -156,16 +156,16 @@ export async function performOTAUpdateFlow(options: OTAUpdateFlowOptions = {}): 
     if (showPrompt) {
       const shouldUpdate = await new Promise<boolean>(resolve => {
         Alert.alert(
-          '有新版本可用',
-          '是否要立即更新到最新版本？',
+          'New Version Available',
+          'Would you like to update to the latest version now?',
           [
             {
-              text: '稍後',
+              text: 'Later',
               style: 'cancel',
               onPress: () => resolve(false),
             },
             {
-              text: '更新',
+              text: 'Update',
               onPress: () => resolve(true),
             },
           ],
