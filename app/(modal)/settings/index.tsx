@@ -11,14 +11,14 @@ import { Linking, Pressable } from 'react-native';
 import { PortalProvider, ScrollView, Text, View, XStack, YStack } from 'tamagui';
 import { useState } from 'react';
 import ExportWalletModal from '@/app-internal/components/settings/ExportWalletModal';
-import { useVersion } from '@/app-internal/features/version/hooks/useVersion';
+import { useAutoUpdate } from '@/app-internal/features/version/hooks/useAutoUpdate';
 
 export default function Index() {
   const router = useRouter();
   const { preference, setPreference } = useThemePreference();
   const { wallet } = useWallet();
   const [showExportModal, setShowExportModal] = useState(false);
-  const { displayVersion, checkForUpdate, isChecking, isDownloading } = useVersion();
+  const { displayVersion, checkForUpdate, isChecking, isDownloading } = useAutoUpdate();
 
   const getThemeDisplayName = (theme: ThemePreference) => {
     const themeMap: Record<ThemePreference, string> = {

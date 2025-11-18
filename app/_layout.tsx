@@ -29,6 +29,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/infra/reactQuery';
 import { initializeSentry } from '@/infra/sentry/sentryConfig';
 import { initializeSegment } from '@/infra/segment/segmentConfig';
+import { useAutoUpdate } from '@/app-internal/features/version/hooks/useAutoUpdate';
 
 // Initialize Sentry for error tracking, performance monitoring, and session replay
 // Must be called before any other code runs
@@ -54,6 +55,9 @@ SplashScreen.preventAutoHideAsync();
 function WalletInfoDisplay() {
   const { wallet } = useWallet();
   const appState = useAppLifecycle();
+
+  // Automatic OTA update check on cold boot (preview/production builds only)
+  useAutoUpdate();
 
   // App Lifecycle management for subscription systems
   // When app goes to background, pause all subscriptions to save battery and data
