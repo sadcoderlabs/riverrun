@@ -1,12 +1,11 @@
 import { useWallet } from '@/app-internal';
-import { LogOut } from '@tamagui/lucide-icons';
-import { Modal, Pressable, StyleSheet, ScrollView } from 'react-native';
-import { toast } from 'sonner-native';
-import { Button, Text, YStack } from 'tamagui';
-import { CustomHeader } from '../global';
-import { WalletListItem } from './WalletListItem';
-import { useState, useEffect } from 'react';
 import type { WalletInfo } from '@/contexts/wallet/ports/types';
+import { useEffect, useState } from 'react';
+import { Image, Modal, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { toast } from 'sonner-native';
+import { Text, XStack, YStack } from 'tamagui';
+import { Button, CustomHeader } from '../global';
+import { WalletListItem } from './WalletListItem';
 
 interface WalletSelectorModalProps {
   visible: boolean;
@@ -136,9 +135,39 @@ export function WalletSelectorModal({ visible, onClose }: WalletSelectorModalPro
               showsVerticalScrollIndicator={false}
               contentContainerStyle={{ paddingBottom: 16 }}
             >
+              {/* Reown Section */}
+              <YStack gap="$2" paddingHorizontal="$4" marginBottom="$6">
+                <Text fontSize={14} fontFamily="$interSemiBold" color="$color11" marginBottom="$1">
+                  External Wallets
+                </Text>
+                {reownWallet ? (
+                  <YStack gap="$2">
+                    <WalletListItem
+                      wallet={reownWallet}
+                      isSelected={reownWallet.address === wallet?.address}
+                      onPress={() => handleSwitchWallet('reown')}
+                      isLastItem={true}
+                    />
+                    <Button.Gray
+                      level="md"
+                      height="$5"
+                      color="$red10"
+                      borderColor="$red8"
+                      onPress={handleDisconnectReown}
+                    >
+                      Disconnect External Wallets
+                    </Button.Gray>
+                  </YStack>
+                ) : (
+                  <Button.Filled level="md" height="$5" onPress={handleConnectReown}>
+                    Connect
+                  </Button.Filled>
+                )}
+              </YStack>
+
               {/* Privy Section */}
-              <YStack gap="$2" paddingHorizontal="$4" marginBottom="$4">
-                <Text fontSize={16} fontFamily="$interSemiBold" color="$color11" marginBottom="$1">
+              <YStack gap="$2" paddingHorizontal="$4">
+                <Text fontSize={14} fontFamily="$interSemiBold" color="$color11" marginBottom="$4">
                   Privy Wallet
                 </Text>
                 {privyWallet ? (
@@ -147,68 +176,34 @@ export function WalletSelectorModal({ visible, onClose }: WalletSelectorModalPro
                       wallet={privyWallet}
                       isSelected={privyWallet.address === wallet?.address}
                       onPress={() => handleSwitchWallet('privy')}
+                      isLastItem={true}
                     />
-                    <Button
-                      size="$3"
-                      backgroundColor="$red4"
+                    <Button.Gray
+                      level="md"
+                      height="$5"
                       color="$red10"
-                      borderWidth={1}
                       borderColor="$red8"
-                      pressStyle={{ opacity: 0.8 }}
                       onPress={handleDisconnectPrivy}
-                      icon={<LogOut size={16} color="$red10" />}
                     >
-                      Disconnect from Privy
-                    </Button>
+                      Disconnect
+                    </Button.Gray>
                   </YStack>
                 ) : (
-                  <Button
-                    size="$3"
-                    backgroundColor="$accent9"
-                    color="white"
-                    pressStyle={{ opacity: 0.8 }}
+                  <Button.Filled
+                    level="md"
+                    height="$5"
                     onPress={handleConnectPrivy}
+                    alignItems="center"
                   >
-                    Connect from Privy
-                  </Button>
-                )}
-              </YStack>
-
-              {/* Reown Section */}
-              <YStack gap="$2" paddingHorizontal="$4">
-                <Text fontSize={16} fontFamily="$interSemiBold" color="$color11" marginBottom="$1">
-                  External Wallet
-                </Text>
-                {reownWallet ? (
-                  <YStack gap="$2">
-                    <WalletListItem
-                      wallet={reownWallet}
-                      isSelected={reownWallet.address === wallet?.address}
-                      onPress={() => handleSwitchWallet('reown')}
-                    />
-                    <Button
-                      size="$3"
-                      backgroundColor="$red4"
-                      color="$red10"
-                      borderWidth={1}
-                      borderColor="$red8"
-                      pressStyle={{ opacity: 0.8 }}
-                      onPress={handleDisconnectReown}
-                      icon={<LogOut size={16} color="$red10" />}
-                    >
-                      Disconnect from Reown
-                    </Button>
-                  </YStack>
-                ) : (
-                  <Button
-                    size="$3"
-                    backgroundColor="$accent9"
-                    color="white"
-                    pressStyle={{ opacity: 0.8 }}
-                    onPress={handleConnectReown}
-                  >
-                    Connect from Reown
-                  </Button>
+                    <XStack alignItems="center">
+                      <Text color="$color1">Create or Connect via</Text>
+                      <Image
+                        source={require('../../assets/images/Privy-logo.png')}
+                        style={{ width: 74, height: 16, marginLeft: 4 }}
+                        resizeMode="contain"
+                      />
+                    </XStack>
+                  </Button.Filled>
                 )}
               </YStack>
             </ScrollView>

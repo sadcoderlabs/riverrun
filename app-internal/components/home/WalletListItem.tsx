@@ -6,8 +6,6 @@ import { styled, Text, useTheme, XStack, YStack } from 'tamagui';
 const StyledPressable = styled(XStack, {
   paddingHorizontal: '$4',
   paddingVertical: '$4',
-  borderBottomWidth: 1,
-  borderBottomColor: '$borderColor',
   pressStyle: { backgroundColor: '$color3', opacity: 0.9 },
   cursor: 'pointer',
 });
@@ -25,6 +23,7 @@ interface WalletListItemProps {
   wallet: WalletInfo;
   isSelected: boolean;
   onPress: () => void;
+  isLastItem?: boolean;
 }
 
 function shortenAddress(address: string): string {
@@ -32,11 +31,22 @@ function shortenAddress(address: string): string {
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
 
-export function WalletListItem({ wallet, isSelected, onPress }: WalletListItemProps) {
+export function WalletListItem({
+  wallet,
+  isSelected,
+  onPress,
+  isLastItem = false,
+}: WalletListItemProps) {
   const theme = useTheme();
 
   return (
-    <StyledPressable onPress={onPress} alignItems="center" gap="$3">
+    <StyledPressable
+      onPress={onPress}
+      alignItems="center"
+      gap="$3"
+      borderBottomWidth={isLastItem ? 0 : 1}
+      borderBottomColor="$borderColor"
+    >
       {/* Wallet Icon */}
       <WalletIcon>
         {wallet.address ? (
@@ -48,7 +58,7 @@ export function WalletListItem({ wallet, isSelected, onPress }: WalletListItemPr
 
       {/* Wallet Info */}
       <YStack flex={1} gap="$1">
-        <Text fontSize={16} fontFamily="$interSemiBold" color="$color12">
+        <Text fontSize={14} fontFamily="$interSemiBold" color="$color12">
           {wallet.name}
         </Text>
         <Text fontSize={14} color="$color9">
@@ -59,14 +69,16 @@ export function WalletListItem({ wallet, isSelected, onPress }: WalletListItemPr
       {/* Selected Indicator */}
       {isSelected && (
         <XStack
-          width={24}
-          height={24}
+          width={18}
+          height={18}
           borderRadius={12}
           backgroundColor="$accent9"
           alignItems="center"
           justifyContent="center"
         >
-          <Check size={16} color="white" />
+          <Text color="$color1">
+            <Check size={14} color="$color1" />
+          </Text>
         </XStack>
       )}
     </StyledPressable>

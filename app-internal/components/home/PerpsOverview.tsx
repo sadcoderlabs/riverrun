@@ -22,7 +22,7 @@ function MetricRow({ label, value, valueColor = '$color', tooltip }: MetricRowPr
           {label}
         </Text>
         {tooltip && (
-          <Popover size="$5" allowFlip placement="top" open={open} onOpenChange={setOpen}>
+          <Popover size="$3" allowFlip placement="top-start" open={open} onOpenChange={setOpen}>
             <Popover.Trigger asChild>
               <Button
                 size="$1"
@@ -52,8 +52,8 @@ function MetricRow({ label, value, valueColor = '$color', tooltip }: MetricRowPr
               ]}
             >
               <Popover.Arrow borderWidth={1} borderColor="$borderColor" />
-              <YStack padding="$3" gap="$2" maxWidth={280}>
-                <Text fontSize="$3" lineHeight="$3" fontFamily="$interMedium">
+              <YStack padding="$2" gap="$2" maxWidth={200}>
+                <Text fontSize="$2" lineHeight="$3">
                   {tooltip}
                 </Text>
               </YStack>
