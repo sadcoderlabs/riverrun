@@ -1,12 +1,5 @@
 import type { Signer } from 'ethers';
-import type {
-  WalletInfo,
-  WalletSource,
-  SignMessageInput,
-  SignTxInput,
-  TxResult,
-  ActiveWallet,
-} from './types';
+import type { WalletInfo, WalletSource, ActiveWallet } from './types';
 
 /**
  * WalletPort - Core wallet interface for hexagonal architecture
@@ -55,22 +48,6 @@ export interface WalletPort {
    * @param source - The wallet source to set as active
    */
   setActive(source: WalletSource): Promise<void>;
-
-  /**
-   * Sign a message with the active wallet
-   *
-   * @param input - Message signing input
-   * @returns Signed message as hex string
-   */
-  signMessage(input: SignMessageInput): Promise<`0x${string}`>;
-
-  /**
-   * Sign and send a transaction with the active wallet
-   *
-   * @param input - Transaction input
-   * @returns Transaction result with hash
-   */
-  signAndSendTx(input: SignTxInput): Promise<TxResult>;
 
   /**
    * Get an ethers.js Signer for the active wallet

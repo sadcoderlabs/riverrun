@@ -1,4 +1,4 @@
-import { useWalletContext } from '@/app-internal';
+import { useWallet } from '@/app-internal';
 import { LogOut } from '@tamagui/lucide-icons';
 import { Modal, Pressable, StyleSheet, ScrollView } from 'react-native';
 import { toast } from 'sonner-native';
@@ -13,7 +13,7 @@ interface WalletSelectorModalProps {
 }
 
 export function WalletSelectorModal({ visible, onClose }: WalletSelectorModalProps) {
-  const { wallet, connect, disconnect, setActive, listAvailable } = useWalletContext();
+  const { wallet, connect, disconnect, setActive, listAvailable } = useWallet();
   const [availableWallets, setAvailableWallets] = useState<WalletInfo[]>([]);
 
   // Fetch available wallets

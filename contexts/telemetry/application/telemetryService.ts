@@ -13,10 +13,8 @@
  * - Segment: Analytics events forwarded to Amplitude and other destinations
  */
 
-import { activeWalletStore } from '../../wallet/adapters/activeWalletStore';
 import type { SegmentAdapter } from '../adapters/segmentAdapter';
 import type { SentryAdapter } from '../adapters/sentryAdapter';
-import { telemetryStore } from '../adapters/telemetryStore';
 import type { TelemetryPort } from '../ports/telemetryPort';
 import type {
   ScreenName,
@@ -36,10 +34,7 @@ export class TelemetryService implements TelemetryPort {
   constructor(
     private readonly sentryAdapter: SentryAdapter,
     private readonly segmentAdapter: SegmentAdapter,
-  ) {
-    // Subscribe to wallet changes to auto-identify users
-    this.setupWalletSubscription();
-  }
+  ) {}
 
   // ==========================================================================
   // User Identification
@@ -51,10 +46,6 @@ export class TelemetryService implements TelemetryPort {
    * - Segment: Call analytics.identify()
    */
   async identifyUser(user: TelemetryUser): Promise<void> {
-    if (!this.isEnabled()) {
-      return;
-    }
-
     // Identify in Sentry
     this.sentryAdapter.identifyUser(user);
 
@@ -88,11 +79,6 @@ export class TelemetryService implements TelemetryPort {
     event: E,
     props: TelemetryEventProps[E],
   ): Promise<void> {
-    if (!this.isEnabled()) {
-      console.log(`[Telemetry] Event tracked (disabled): ${event}`, props);
-      return;
-    }
-
     // Send all events to Segment (forwarded to Amplitude and other destinations)
     this.segmentAdapter.track(event, props);
 
@@ -110,10 +96,6 @@ export class TelemetryService implements TelemetryPort {
    * - Sentry: Set tag for error filtering
    */
   async trackScreen<S extends ScreenName>(screen: S, props: ScreenProps[S]): Promise<void> {
-    if (!this.isEnabled()) {
-      return;
-    }
-
     // Track screen view in Segment
     this.segmentAdapter.screen(screen, props);
 
@@ -131,11 +113,6 @@ export class TelemetryService implements TelemetryPort {
    * - Segment: Not sent (errors are tracked in Sentry only)
    */
   async captureError(error: unknown, context?: TelemetryErrorContext): Promise<void> {
-    if (!this.isEnabled()) {
-      console.error('[Telemetry] Error captured (telemetry disabled):', error);
-      return;
-    }
-
     // Capture in Sentry (errors are not sent to Segment)
     this.sentryAdapter.captureError(error, context);
   }
@@ -146,11 +123,6 @@ export class TelemetryService implements TelemetryPort {
    * - Segment: Not sent (errors only)
    */
   async captureWarning(message: string, context?: TelemetryErrorContext): Promise<void> {
-    if (!this.isEnabled()) {
-      console.warn('[Telemetry] Warning captured (telemetry disabled):', message);
-      return;
-    }
-
     // Capture in Sentry
     this.sentryAdapter.captureWarning(message, context);
 
@@ -167,56 +139,6 @@ export class TelemetryService implements TelemetryPort {
    * - Segment: Not applicable
    */
   async withSpan<T>(spanName: SpanName, fn: () => Promise<T>, context?: SpanContext): Promise<T> {
-    if (!this.isEnabled()) {
-      return await fn();
-    }
-
     return await this.sentryAdapter.withSpan(spanName, fn, context);
-  }
-
-  // ==========================================================================
-  // System Controls
-  // ==========================================================================
-
-  /**
-   * Enable or disable telemetry
-   */
-  async setEnabled(enabled: boolean): Promise<void> {
-    telemetryStore.getState().setEnabled(enabled);
-  }
-
-  /**
-   * Check if telemetry is enabled
-   */
-  isEnabled(): boolean {
-    return telemetryStore.getState().isEnabled;
-  }
-
-  // ==========================================================================
-  // Private Methods
-  // ==========================================================================
-
-  /**
-   * Setup subscription to wallet changes
-   * Auto-identify users when wallet connects/disconnects
-   */
-  private setupWalletSubscription(): void {
-    activeWalletStore.subscribe((state, prevState) => {
-      const currentAddress = state.wallet?.address;
-      const previousAddress = prevState.wallet?.address;
-
-      // User connected wallet
-      if (currentAddress && currentAddress !== previousAddress) {
-        void this.identifyUser({
-          address: currentAddress,
-          walletSource: state.wallet?.source,
-        });
-      }
-
-      // User disconnected wallet
-      if (!currentAddress && previousAddress) {
-        void this.resetUser();
-      }
-    });
   }
 }

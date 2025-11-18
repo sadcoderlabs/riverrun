@@ -13,7 +13,7 @@ import type { BuilderConfig, BuilderParam } from './ports/types';
  * Builder address that will receive the fees
  * This address must have at least 100 USDC in perps account value
  */
-export const BUILDER_ADDRESS = '0x818C4fBd8Eb992f9506a899E61B2c49EE9514D85' as const;
+export const BUILDER_ADDRESS = '0x016f127b609c7933624fb0f48c368d0a04dce37c' as const;
 
 /**
  * Builder fee rate in tenths of a basis point

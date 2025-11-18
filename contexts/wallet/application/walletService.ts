@@ -1,17 +1,9 @@
 import type { Signer } from 'ethers';
 import type { WalletPort } from '../ports/walletPort';
-import type {
-  WalletInfo,
-  WalletSource,
-  SignMessageInput,
-  SignTxInput,
-  TxResult,
-  ActiveWallet,
-} from '../ports/types';
+import type { WalletInfo, WalletSource, ActiveWallet } from '../ports/types';
 import type { PrivyWalletAdapter } from '../adapters/privyWalletAdapter';
 import type { ReownWalletAdapter } from '../adapters/reownWalletAdapter';
 import { walletSelectionStore } from '../adapters/walletSelectionStore';
-import { activeWalletStore } from '../adapters/activeWalletStore';
 
 /**
  * WalletService - Core business logic for wallet operations
@@ -34,17 +26,6 @@ export class WalletService implements WalletPort {
   ) {}
 
   /**
-   * Sync the current active wallet to the store
-   *
-   * This private helper ensures the activeWalletStore is always up-to-date.
-   * It should be called after any operation that might change the active wallet.
-   */
-  private async syncActiveWallet(): Promise<void> {
-    const wallet = await this.active();
-    activeWalletStore.getState().setWallet(wallet);
-  }
-
-  /**
    * Handle connection state changes (should be called when adapters change)
    *
    * Business rule: When Reown wallet connects, automatically switch to it.
@@ -57,8 +38,6 @@ export class WalletService implements WalletPort {
     if (!this.previousReownConnected && isReownConnected) {
       // Auto-switch to the newly connected Reown wallet
       walletSelectionStore.getState().setSelectedWalletSource('reown');
-      // Sync the new active wallet to store
-      void this.syncActiveWallet();
     }
 
     // Update the previous state
@@ -138,11 +117,9 @@ export class WalletService implements WalletPort {
       await this.privyAdapter.connect();
       // Auto-switch to Privy wallet after successful connection
       walletSelectionStore.getState().setSelectedWalletSource('privy');
-      await this.syncActiveWallet();
     } else if (source === 'reown') {
       await this.reownAdapter.connect();
       // Note: Auto-switch will happen via handleConnectionStateChange
-      // which will call syncActiveWallet
     }
   }
 
@@ -182,9 +159,6 @@ export class WalletService implements WalletPort {
     } else if (source === 'reown') {
       await this.reownAdapter.disconnect();
     }
-
-    // Sync the updated active wallet to store
-    await this.syncActiveWallet();
   }
 
   /**
@@ -200,39 +174,6 @@ export class WalletService implements WalletPort {
     }
 
     walletSelectionStore.getState().setSelectedWalletSource(source);
-    await this.syncActiveWallet();
-  }
-
-  /**
-   * Sign a message with the active wallet
-   */
-  async signMessage(input: SignMessageInput): Promise<`0x${string}`> {
-    const activeWallet = await this.active();
-    if (!activeWallet) {
-      throw new Error('No active wallet');
-    }
-
-    if (activeWallet.source === 'privy') {
-      return this.privyAdapter.signMessage(input.message);
-    } else {
-      return this.reownAdapter.signMessage(input.message);
-    }
-  }
-
-  /**
-   * Sign and send a transaction with the active wallet
-   */
-  async signAndSendTx(input: SignTxInput): Promise<TxResult> {
-    const activeWallet = await this.active();
-    if (!activeWallet) {
-      throw new Error('No active wallet');
-    }
-
-    if (activeWallet.source === 'privy') {
-      return this.privyAdapter.signAndSendTx(input);
-    } else {
-      return this.reownAdapter.signAndSendTx(input);
-    }
   }
 
   /**

@@ -2,7 +2,7 @@ import AdaptiveSelect from '@/app-internal/components/global/AdaptiveSelect';
 import { ListItem } from '@/app-internal/components/global/ListItem';
 import { ListSection } from '@/app-internal/components/global/ListSection';
 import { useThemePreference } from '@/app-internal/components/shared/theme/useThemePreference';
-import { useWalletContext } from '@/app-internal';
+import { useWallet } from '@/app-internal';
 import { type ThemePreference } from '@/app-internal/components/shared/theme/theme.store';
 import { features } from '@/config/environment';
 import { ArrowLeft, ArrowUpRight } from '@tamagui/lucide-icons';
@@ -11,12 +11,14 @@ import { Linking, Pressable } from 'react-native';
 import { PortalProvider, ScrollView, Text, View, XStack, YStack } from 'tamagui';
 import { useState } from 'react';
 import ExportWalletModal from '@/app-internal/components/settings/ExportWalletModal';
+import { useVersion } from '@/app-internal/features/version/hooks/useVersion';
 
 export default function Index() {
   const router = useRouter();
   const { preference, setPreference } = useThemePreference();
-  const { wallet } = useWalletContext();
+  const { wallet } = useWallet();
   const [showExportModal, setShowExportModal] = useState(false);
+  const { displayVersion, checkForUpdate, isChecking, isDownloading } = useVersion();
 
   const getThemeDisplayName = (theme: ThemePreference) => {
     const themeMap: Record<ThemePreference, string> = {
@@ -114,6 +116,25 @@ export default function Index() {
               </ListSection>
             </YStack>
 
+            {/* Version Section */}
+            <YStack>
+              <ListSection label="Version">
+                <ListItem title="App Version" subTitle={displayVersion} />
+                <ListItem
+                  title="Check for Updates"
+                  subTitle={
+                    isChecking
+                      ? 'Checking for updates...'
+                      : isDownloading
+                        ? 'Downloading update...'
+                        : 'Check if a new version is available'
+                  }
+                  showIosChevron={true}
+                  onPress={checkForUpdate}
+                />
+              </ListSection>
+            </YStack>
+
             {/* Developer Tools Section - Only in Development */}
             {features.showDeveloperTools && (
               <YStack>
@@ -123,12 +144,6 @@ export default function Index() {
                     subTitle="Manage builder fee approval"
                     showIosChevron={true}
                     onPress={() => router.push('/settings/builder-fee-status')}
-                  />
-                  <ListItem
-                    title="Telemetry"
-                    subTitle="Test Sentry error tracking and monitoring"
-                    showIosChevron={true}
-                    onPress={() => router.push('/settings/telemetry')}
                   />
                 </ListSection>
               </YStack>

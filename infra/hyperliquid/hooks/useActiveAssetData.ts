@@ -1,4 +1,4 @@
-import { useWalletContext } from '@/app-internal/features/wallet/hooks/useWalletContext';
+import { useWallet } from '@/app-internal/features/wallet/hooks/useWallet';
 import { useSubscription, type ActiveAssetData } from '../subscription';
 import { useMemo, useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -32,7 +32,7 @@ interface UseActiveAssetDataResult {
  * @returns activeAssetData with loading and error states
  */
 export function useActiveAssetData({ coin }: UseActiveAssetDataParams): UseActiveAssetDataResult {
-  const { wallet } = useWalletContext();
+  const { wallet } = useWallet();
   const [mergedData, setMergedData] = useState<ActiveAssetData | undefined>();
 
   // Step 1: HTTP fetch initial data using TanStack Query

@@ -23,7 +23,8 @@
  */
 
 import { useCallback, useState } from 'react';
-import { useContainer, useWalletContext } from '@/app-internal';
+import { useContainer } from '@/app-internal/di';
+import { useWallet } from '@/app-internal/features/wallet/hooks/useWallet';
 import type { DepositResult, WithdrawalResult } from '../../../../contexts/bridge/ports/types';
 
 /**
@@ -123,7 +124,7 @@ export function useBridge(): UseBridgeResult {
   const withdrawUsdcUseCase = useContainer(c => c.withdrawUsdcUseCase);
 
   // Get wallet from React Context
-  const { wallet, getSigner } = useWalletContext();
+  const { wallet, getSigner } = useWallet();
 
   // State management - useState (not Zustand)
   // Follows BuilderFee/Referral pattern for consistency

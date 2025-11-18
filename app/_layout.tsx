@@ -11,7 +11,7 @@ import {
 } from '@expo-google-fonts/inter';
 
 import { useThemePreference } from '@/app-internal/components/shared/theme/useThemePreference';
-import { AppCompositionProvider, useWalletContext } from '@/app-internal';
+import { AppCompositionProvider, useWallet } from '@/app-internal';
 import { ActionSheetProvider } from '@expo/react-native-action-sheet';
 import { PrivyProvider } from '@privy-io/expo';
 import { PrivyElements } from '@privy-io/expo/ui';
@@ -52,7 +52,7 @@ LogBox.ignoreLogs([
 SplashScreen.preventAutoHideAsync();
 
 function WalletInfoDisplay() {
-  const { wallet } = useWalletContext();
+  const { wallet } = useWallet();
   const appState = useAppLifecycle();
 
   // App Lifecycle management for subscription systems

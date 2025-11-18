@@ -14,7 +14,7 @@ import {
   getOrderDirection,
   isMarketOrder,
 } from '@/contexts/order/ports';
-import { useWalletContext, useMarketStore, useMarket } from '@/app-internal';
+import { useWallet, useMarketStore, useMarket } from '@/app-internal';
 import { useMemo, useState } from 'react';
 import { Button, Spinner, Text, View, XStack, YStack } from 'tamagui';
 
@@ -193,7 +193,7 @@ function OrderCard({ order, onCancel, onPress, canceling }: OrderCardProps) {
 type OrderFilter = 'all' | 'long' | 'short';
 
 export function OrdersTabContent() {
-  const { wallet } = useWalletContext();
+  const { wallet } = useWallet();
   const { setSelectedMarketByCoin } = useMarket();
 
   // Get orders from orderStore (simplified flat structure)

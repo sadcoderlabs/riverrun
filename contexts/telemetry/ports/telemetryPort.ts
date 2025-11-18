@@ -156,19 +156,4 @@ export interface TelemetryPort {
    * ```
    */
   withSpan<T>(spanName: SpanName, fn: () => Promise<T>, context?: SpanContext): Promise<T>;
-
-  // ==========================================================================
-  // System Controls
-  // ==========================================================================
-
-  /**
-   * Enable or disable telemetry
-   * @param enabled Whether telemetry should be enabled
-   */
-  setEnabled(enabled: boolean): Promise<void>;
-
-  /**
-   * Check if telemetry is currently enabled
-   */
-  isEnabled(): boolean;
 }

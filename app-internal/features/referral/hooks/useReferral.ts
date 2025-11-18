@@ -9,7 +9,7 @@ import { useCallback, useState } from 'react';
 import { Alert } from 'react-native';
 
 import { useContainer } from '@/app-internal/di';
-import { useWalletContext } from '@/app-internal/features/wallet/hooks/useWalletContext';
+import { useWallet } from '@/app-internal/features/wallet/hooks/useWallet';
 import { REFERRAL_CONFIG } from '@/contexts/referral/config';
 import type { ReferralInfo } from '@/contexts/referral/ports/types';
 
@@ -92,7 +92,7 @@ export function useReferral(): UseReferralResult {
   const setReferrerUseCase = useContainer(c => c.setReferrerUseCase);
 
   // Wallet access (UI layer responsibility)
-  const { wallet, getSigner } = useWalletContext();
+  const { wallet, getSigner } = useWallet();
 
   // State management - referral information (presentation layer)
   const [referralInfo, setReferralInfo] = useState<ReferralInfo>({
