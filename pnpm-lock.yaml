@@ -281,6 +281,9 @@ importers:
       '@types/react':
         specifier: 19.1.13
         version: 19.1.13
+      babel-preset-expo:
+        specifier: ^54.0.7
+        version: 54.0.7(@babel/core@7.28.4)(@babel/runtime@7.28.4)(expo@54.0.23)(react-refresh@0.14.2)
       dotenv:
         specifier: ^17.2.3
         version: 17.2.3
