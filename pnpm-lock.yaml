@@ -257,6 +257,21 @@ importers:
         specifier: ^5.0.8
         version: 5.0.8(@types/react@19.1.13)(react@19.1.0)(use-sync-external-store@1.5.0(react@19.1.0))
     devDependencies:
+      '@babel/generator':
+        specifier: ^7.28.5
+        version: 7.28.5
+      '@babel/parser':
+        specifier: ^7.28.5
+        version: 7.28.5
+      '@babel/template':
+        specifier: ^7.27.2
+        version: 7.27.2
+      '@babel/traverse':
+        specifier: ^7.28.5
+        version: 7.28.5
+      '@babel/types':
+        specifier: ^7.28.5
+        version: 7.28.5
       '@sentry/cli':
         specifier: 2.58.2
         version: 2.58.2
