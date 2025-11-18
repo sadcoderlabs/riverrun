@@ -27,6 +27,12 @@ else
   echo "🔑 EXPO_TOKEN detected. Using token-based authentication."
 fi
 
+# Ensure bundler has enough memory (especially on CI runners)
+if [[ "${NODE_OPTIONS:-}" != *"--max-old-space-size="* ]]; then
+  export NODE_OPTIONS="--max-old-space-size=4096 ${NODE_OPTIONS:-}"
+  echo "🧠 NODE_OPTIONS updated for higher memory limit (--max-old-space-size=4096)."
+fi
+
 # Get current git commit hash (short version)
 COMMIT_HASH=$(git rev-parse --short HEAD)
 
