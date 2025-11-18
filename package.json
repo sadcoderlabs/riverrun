@@ -123,9 +123,7 @@
     "typescript": "5.9.2"
   },
   "pnpm": {
-    "overrides": {
-      "multiformats": "^13.0.0"
-    }
+    "overrides": {}
   },
   "private": true,
   "packageManager": "pnpm@10.16.1"
