@@ -7,18 +7,27 @@ on:
       - completed
     branches:
       - develop
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Branch, tag, or commit SHA to publish"
+        required: false
+        default: develop
 
 jobs:
   update:
     name: Publish Preview Update
     runs-on: ubuntu-latest
     environment: develop
-    # Only run if tests passed
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    # Run automatically only when tests succeed on a push, or manually via dispatch
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push') }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.ref || github.event.workflow_run.head_sha }}
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4

@@ -14,15 +14,17 @@
 
 set -e  # Exit immediately if any command fails
 
-# Validate EXPO_TOKEN is available (required for CI authentication)
+# CI requires EXPO_TOKEN, but local developers can rely on `eas login`
 if [[ -z "${EXPO_TOKEN:-}" ]]; then
-  echo "❌ EXPO_TOKEN environment variable is not set."
-  echo "   Make sure secrets.EXPO_TOKEN is configured for this workflow."
-  exit 1
+  if [[ "${CI:-}" == "true" ]]; then
+    echo "❌ EXPO_TOKEN environment variable is not set."
+    echo "   Make sure secrets.EXPO_TOKEN is configured for this workflow."
+    exit 1
+  fi
+  echo "⚠️ EXPO_TOKEN not set. Using local EAS session (run 'eas login' if needed)."
+else
+  echo "🔑 EXPO_TOKEN detected. Using token-based authentication."
 fi
-
-# Indicate whether the script detected the token (value stays masked in logs)
-echo "🔑 EXPO_TOKEN detected. Using token-based authentication."
 
 # Get current git commit hash (short version)
 COMMIT_HASH=$(git rev-parse --short HEAD)
@@ -50,11 +52,17 @@ echo ""
 #   - Only preview builds will receive this update
 #
 # - --message: Commit message for tracking this update
-EXPO_PUBLIC_GIT_COMMIT_HASH=$COMMIT_HASH pnpm exec eas update \
-  --environment preview \
-  --channel preview \
-  --message "Preview: $COMMIT_HASH" \
-  --non-interactive
+# - --non-interactive: Added automatically for CI runs to prevent prompts
+EAS_UPDATE_ARGS=(
+  --environment preview
+  --channel preview
+  --message "Preview: $COMMIT_HASH"
+)
+if [[ "${CI:-}" == "true" ]]; then
+  EAS_UPDATE_ARGS+=(--non-interactive)
+fi
+
+EXPO_PUBLIC_GIT_COMMIT_HASH=$COMMIT_HASH pnpm exec eas update "${EAS_UPDATE_ARGS[@]}"
 
 echo ""
 echo "✅ Update published successfully"
