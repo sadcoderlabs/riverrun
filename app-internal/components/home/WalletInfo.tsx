@@ -4,7 +4,7 @@ import * as Clipboard from 'expo-clipboard';
 import { Link } from 'expo-router';
 import { useState } from 'react';
 import { Pressable } from 'react-native';
-import Jazzicon from 'react-native-jazzicon';
+import { Jazzicon } from '@/app-internal/components/shared/Jazzicon';
 import { toast } from 'sonner-native';
 import { styled, Text, useTheme, XStack, YStack } from 'tamagui';
 import { WalletSelectorModal } from './WalletSelectorModal';

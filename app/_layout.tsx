@@ -10,11 +10,18 @@ import {
   useFonts,
 } from '@expo-google-fonts/inter';
 
-import { useThemePreference } from '@/app-internal/components/shared/theme/useThemePreference';
 import { AppCompositionProvider, useWallet } from '@/app-internal';
+import { useAppLifecycle } from '@/app-internal/components/shared/hooks/useAppLifecycle';
+import { useThemePreference } from '@/app-internal/components/shared/theme/useThemePreference';
+import { useAutoUpdate } from '@/app-internal/features/version/hooks/useAutoUpdate';
+import { subscriptionManager } from '@/infra/hyperliquid/subscription';
+import { queryClient } from '@/infra/reactQuery';
+import { initializeSegment } from '@/infra/segment/segmentConfig';
+import { initializeSentry } from '@/infra/sentry/sentryConfig';
 import { ActionSheetProvider } from '@expo/react-native-action-sheet';
 import { PrivyProvider } from '@privy-io/expo';
 import { PrivyElements } from '@privy-io/expo/ui';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { SplashScreen, Stack } from 'expo-router';
 import { useEffect } from 'react';
 import { LogBox } from 'react-native';
@@ -23,13 +30,6 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Toaster } from 'sonner-native';
 import { TamaguiProvider, View } from 'tamagui';
 import { arbitrum } from 'viem/chains';
-import { useAppLifecycle } from '@/app-internal/components/shared/hooks/useAppLifecycle';
-import { subscriptionManager } from '@/infra/hyperliquid/subscription';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { queryClient } from '@/infra/reactQuery';
-import { initializeSentry } from '@/infra/sentry/sentryConfig';
-import { initializeSegment } from '@/infra/segment/segmentConfig';
-import { useAutoUpdate } from '@/app-internal/features/version/hooks/useAutoUpdate';
 
 // Initialize Sentry for error tracking, performance monitoring, and session replay
 // Must be called before any other code runs
@@ -44,9 +44,6 @@ LogBox.ignoreLogs([
   // WalletConnect warnings during session restoration
   'emitting session_request',
   'without any listeners',
-  // react-native-jazzicon uses deprecated componentWillReceiveProps
-  // This is a third-party library issue and doesn't affect functionality
-  'componentWillReceiveProps has been renamed',
 ]);
 
 // Prevent the splash screen from auto-hiding

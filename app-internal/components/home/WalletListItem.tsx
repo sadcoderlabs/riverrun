@@ -1,6 +1,6 @@
 import type { WalletInfo } from '@/contexts/wallet/ports/types';
 import { Check, Wallet } from '@tamagui/lucide-icons';
-import Jazzicon from 'react-native-jazzicon';
+import { Jazzicon } from '@/app-internal/components/shared/Jazzicon';
 import { styled, Text, useTheme, XStack, YStack } from 'tamagui';
 
 const StyledPressable = styled(XStack, {
