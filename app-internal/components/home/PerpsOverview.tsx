@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { Spinner, Text, XStack, YStack, Popover, Button } from 'tamagui';
 import { Info } from '@tamagui/lucide-icons';
+import React, { useState } from 'react';
+import { Button, Popover, Text, XStack, YStack } from 'tamagui';
 import { CardContainer } from '../global/CardContainer';
+import { Skeleton } from '../global/Skeleton';
 import { useAccountMetrics } from './hooks/useAccountMetrics';
 
 interface MetricRowProps {
@@ -17,7 +18,7 @@ function MetricRow({ label, value, valueColor = '$color', tooltip }: MetricRowPr
   return (
     <XStack justifyContent="space-between" alignItems="center">
       <XStack alignItems="center" gap="$1.5">
-        <Text color="$color9" fontSize="$3" fontFamily="$interMedium">
+        <Text color="$color11" fontSize="$3" fontFamily="$interMedium">
           {label}
         </Text>
         {tooltip && (
@@ -31,7 +32,7 @@ function MetricRow({ label, value, valueColor = '$color', tooltip }: MetricRowPr
                 onPress={() => setOpen(!open)}
                 pressStyle={{ opacity: 0.7 }}
               >
-                <Info size={14} color="$color9" />
+                <Info size={14} color="$color10" />
               </Button>
             </Popover.Trigger>
 
@@ -52,7 +53,7 @@ function MetricRow({ label, value, valueColor = '$color', tooltip }: MetricRowPr
             >
               <Popover.Arrow borderWidth={1} borderColor="$borderColor" />
               <YStack padding="$3" gap="$2" maxWidth={280}>
-                <Text fontSize="$3" lineHeight="$3">
+                <Text fontSize="$3" lineHeight="$3" fontFamily="$interMedium">
                   {tooltip}
                 </Text>
               </YStack>
@@ -60,7 +61,7 @@ function MetricRow({ label, value, valueColor = '$color', tooltip }: MetricRowPr
           </Popover>
         )}
       </XStack>
-      <Text fontFamily="$interMedium" fontSize="$4" color={valueColor}>
+      <Text fontFamily="$interMedium" fontSize="$3" color={valueColor}>
         {value}
       </Text>
     </XStack>
@@ -110,23 +111,25 @@ export function PerpsOverview() {
 
   return (
     <CardContainer>
-      <Text color="$color9" fontFamily="$interMedium" fontSize="$3" marginBottom="$3">
+      <Text color="$color12" fontFamily="$interSemiBold" fontSize="$3" marginBottom="$3.5">
         Perps Overview
       </Text>
 
       {isLoading ? (
-        <XStack alignItems="center" gap="$2">
-          <Spinner size="small" color="$color9" />
-          <Text fontSize="$5" color="$color9">
-            Loading...
-          </Text>
-        </XStack>
+        <YStack gap="$3">
+          {/* Skeleton for metric rows */}
+          <Skeleton.MetricRow />
+          <Skeleton.MetricRow />
+          <Skeleton.MetricRow />
+          <Skeleton.MetricRow />
+          <Skeleton.MetricRow />
+        </YStack>
       ) : error ? (
-        <Text fontSize="$5" color="$red10">
+        <Text fontSize="$4" color="$red10" fontFamily="$interMedium">
           Failed to load
         </Text>
       ) : (
-        <YStack gap="$2.5">
+        <YStack gap="$3">
           <MetricRow
             label="Balance"
             value={formatCurrency(perpBalance)}

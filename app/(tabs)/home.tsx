@@ -1,6 +1,5 @@
 import { AccountEquity } from '@/app-internal/components/home/AccountEquity';
 import { PerpsOverview } from '@/app-internal/components/home/PerpsOverview';
-import { TransferFund } from '@/app-internal/components/home/TransferFund';
 import { WalletInfo } from '@/app-internal/components/home/WalletInfo';
 import { ScrollView, YStack } from 'tamagui';
 
@@ -21,7 +20,6 @@ export default function Index() {
         <YStack padding="$4" gap="$4" backgroundColor="$gray3">
           <AccountEquity />
           <PerpsOverview />
-          <TransferFund />
         </YStack>
       </ScrollView>
     </YStack>

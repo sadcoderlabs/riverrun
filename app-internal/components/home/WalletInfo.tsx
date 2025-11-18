@@ -16,13 +16,18 @@ const Avatar = styled(XStack, {
   backgroundColor: '$color6',
   alignItems: 'center',
   justifyContent: 'center',
+  // Add subtle highlight to make the avatar more prominent
+  borderWidth: 1,
+  borderColor: '$color7',
 });
 
 const IconButton = styled(XStack, {
   alignItems: 'center',
   justifyContent: 'center',
   padding: '$2',
-  pressStyle: { opacity: 0.7 },
+  borderRadius: '$4',
+  pressStyle: { opacity: 0.7, backgroundColor: '$color3' },
+  hoverStyle: { backgroundColor: '$color2' },
 });
 
 function shortenAddress(address: string): string {
@@ -57,13 +62,13 @@ export function WalletInfo() {
         justifyContent="space-between"
         alignItems="center"
         paddingHorizontal="$4"
-        paddingTop={12}
-        paddingBottom={12}
+        paddingTop={14}
+        paddingBottom={14}
         shadowColor="$shadowColor"
         shadowOffset={{ width: 0, height: 2 }}
-        shadowOpacity={0.1}
-        shadowRadius={3}
-        elevation={3}
+        shadowOpacity={0.15}
+        shadowRadius={4}
+        elevation={4}
       >
         {/* Avatar - Now Pressable */}
         <Pressable onPress={() => setIsModalOpen(true)}>
@@ -77,13 +82,13 @@ export function WalletInfo() {
         </Pressable>
 
         {/* Wallet Address and Name */}
-        <YStack gap="$1" flex={1} marginLeft="$3">
-          <XStack gap="$2" alignItems="center">
-            <Text fontSize={16} fontWeight="600" color="$color12">
+        <YStack flex={1} marginLeft="$3">
+          <XStack gap="$1" alignItems="center">
+            <Text fontSize={14} fontWeight="700" color="$color12">
               {shortenAddress(walletAddress)}
             </Text>
             <IconButton onPress={handleCopyAddress}>
-              <Copy size={16} color={theme.color9} />
+              <Copy size={16} color={theme.color11} />
             </IconButton>
           </XStack>
           <Text fontSize={14} color="$color9">
@@ -91,10 +96,10 @@ export function WalletInfo() {
           </Text>
         </YStack>
 
-        {/* Settings Icon */}
+        {/* Settings Icon - More prominent with color12 (white in dark theme) */}
         <Link href="/settings" asChild>
           <IconButton>
-            <Settings size={24} color={theme.color9} />
+            <Settings size={24} color="$color9" />
           </IconButton>
         </Link>
       </XStack>
