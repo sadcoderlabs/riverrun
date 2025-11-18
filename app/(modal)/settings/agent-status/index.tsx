@@ -1,10 +1,9 @@
-import { Button } from '@/app-internal/components/global/Button';
 import { useAgent } from '@/app-internal';
+import { CustomHeader } from '@/app-internal/components/global';
+import { Button } from '@/app-internal/components/global/Button';
 import { DEFAULT_AGENT_NAME } from '@/contexts/agent/constants';
-import { ArrowLeft } from '@tamagui/lucide-icons';
-import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Pressable, RefreshControl } from 'react-native';
+import { Alert, RefreshControl } from 'react-native';
 import { PortalProvider, ScrollView, Spinner, Text, View, XStack, YStack } from 'tamagui';
 
 /**
@@ -16,8 +15,6 @@ function shortenAddress(address: string | undefined): string {
 }
 
 export default function AgentStatus() {
-  const router = useRouter();
-
   // Agent state and operations (all from useAgent hook)
   const {
     agentAddress,
@@ -146,26 +143,17 @@ export default function AgentStatus() {
     <PortalProvider>
       <YStack flex={1} backgroundColor="$background">
         {/* Header */}
-        <XStack
-          alignItems="center"
-          gap="$3"
-          paddingHorizontal="$4"
-          paddingVertical="$3"
-          borderBottomWidth={1}
-          borderBottomColor="$borderColor"
-        >
-          <Pressable onPress={() => router.back()} style={{ padding: 4 }}>
-            <ArrowLeft size={24} color="$color" />
-          </Pressable>
-          <Text fontFamily="$interSemiBold" fontSize="$6">
-            Agent Status
-          </Text>
-          {isAgentLoading && (
-            <View marginLeft="auto">
-              <Spinner size="small" />
-            </View>
-          )}
-        </XStack>
+        <CustomHeader
+          title="Agent Status"
+          style={{
+            position: 'relative',
+          }}
+        />
+        {isAgentLoading && (
+          <View position="absolute" right={16} top={16}>
+            <Spinner size="small" />
+          </View>
+        )}
 
         {/* Content */}
         <ScrollView

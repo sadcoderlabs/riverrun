@@ -1,11 +1,11 @@
 import { useWallet } from '@/app-internal';
-import { LogOut } from '@tamagui/lucide-icons';
-import { Modal, Pressable, StyleSheet, ScrollView } from 'react-native';
-import { toast } from 'sonner-native';
-import { Button, Text, YStack } from 'tamagui';
-import { WalletListItem } from './WalletListItem';
-import { useState, useEffect } from 'react';
 import type { WalletInfo } from '@/contexts/wallet/ports/types';
+import { useEffect, useState } from 'react';
+import { Image, ScrollView } from 'react-native';
+import { toast } from 'sonner-native';
+import { Sheet, Text, XStack, YStack } from 'tamagui';
+import { Button } from '../global';
+import { WalletListItem } from './WalletListItem';
 
 interface WalletSelectorModalProps {
   visible: boolean;
@@ -41,7 +41,7 @@ export function WalletSelectorModal({ visible, onClose }: WalletSelectorModalPro
     try {
       await disconnect('privy');
       toast.success('Wallet Disconnected', {
-        description: 'Successfully disconnected from Privy',
+        description: 'Your Privy wallet has been disconnected',
       });
     } catch (error) {
       console.error('Error disconnecting Privy wallet:', error);
@@ -55,7 +55,7 @@ export function WalletSelectorModal({ visible, onClose }: WalletSelectorModalPro
     try {
       await disconnect('reown');
       toast.success('Wallet Disconnected', {
-        description: 'Successfully disconnected from Reown',
+        description: 'Your external wallet has been disconnected',
       });
     } catch (error) {
       console.error('Error disconnecting Reown wallet:', error);
@@ -96,140 +96,122 @@ export function WalletSelectorModal({ visible, onClose }: WalletSelectorModalPro
   };
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
-      statusBarTranslucent
+    <Sheet
+      modal
+      native
+      open={visible}
+      onOpenChange={(open: boolean) => {
+        if (!open) onClose();
+      }}
+      snapPoints={[50]}
+      position={0}
+      dismissOnSnapToBottom
+      dismissOnOverlayPress
+      zIndex={100000}
     >
-      {/* Overlay */}
-      <Pressable style={styles.overlay} onPress={onClose}>
-        {/* Content Container */}
-        <Pressable style={styles.contentContainer} onPress={e => e.stopPropagation()}>
+      <Sheet.Overlay
+        enterStyle={{ opacity: 0 }}
+        exitStyle={{ opacity: 0 }}
+        backgroundColor="rgba(0,0,0,0.6)"
+      />
+      <Sheet.Frame
+        padding="$2"
+        backgroundColor="$background"
+        borderTopLeftRadius="$6"
+        borderTopRightRadius="$6"
+      >
+        <YStack paddingTop="$2" paddingBottom="$6">
           <YStack
-            flex={1}
-            backgroundColor="$background"
-            borderTopLeftRadius="$6"
-            borderTopRightRadius="$6"
-            gap="$2"
+            height={5}
+            width={40}
+            backgroundColor="$gray9"
+            opacity={0.5}
+            alignSelf="center"
+            borderRadius="$12"
+          />
+        </YStack>
+        <YStack flex={1} gap="$2" backgroundColor="$background">
+          {/* Content */}
+          <ScrollView
+            style={{ flex: 1 }}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 16 }}
           >
-            {/* Handle */}
-            <YStack
-              opacity={0.5}
-              backgroundColor="$gray9"
-              height={3}
-              width={32}
-              alignSelf="center"
-              marginTop="$2"
-              marginBottom="$1"
-              borderRadius="$12"
-            />
-
-            {/* Header */}
-            <YStack paddingHorizontal="$4" paddingTop="$2" paddingBottom="$3">
-              <Text fontSize={20} fontFamily="$interSemiBold" color="$color12">
-                Wallets
+            {/* Reown Section */}
+            <YStack gap="$2" paddingHorizontal="$4" marginBottom="$6">
+              <Text fontSize={14} fontFamily="$interSemiBold" color="$color11" marginBottom="$1">
+                External Wallet
               </Text>
+              {reownWallet ? (
+                <YStack gap="$2">
+                  <WalletListItem
+                    wallet={reownWallet}
+                    isSelected={reownWallet.address === wallet?.address}
+                    onPress={() => handleSwitchWallet('reown')}
+                    isLastItem={true}
+                  />
+                  <Button.Gray
+                    level="md"
+                    height="$5"
+                    color="$red10"
+                    borderColor="$red8"
+                    onPress={handleDisconnectReown}
+                  >
+                    Disconnect
+                  </Button.Gray>
+                </YStack>
+              ) : (
+                <Button.Filled level="md" height="$5" onPress={handleConnectReown}>
+                  Connect
+                </Button.Filled>
+              )}
             </YStack>
 
-            {/* Content */}
-            <ScrollView
-              style={{ flex: 1 }}
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingBottom: 16 }}
-            >
-              {/* Privy Section */}
-              <YStack gap="$2" paddingHorizontal="$4" marginBottom="$4">
-                <Text fontSize={16} fontFamily="$interSemiBold" color="$color11" marginBottom="$1">
-                  Privy Wallet
-                </Text>
-                {privyWallet ? (
-                  <YStack gap="$2">
-                    <WalletListItem
-                      wallet={privyWallet}
-                      isSelected={privyWallet.address === wallet?.address}
-                      onPress={() => handleSwitchWallet('privy')}
-                    />
-                    <Button
-                      size="$3"
-                      backgroundColor="$red4"
-                      color="$red10"
-                      borderWidth={1}
-                      borderColor="$red8"
-                      pressStyle={{ opacity: 0.8 }}
-                      onPress={handleDisconnectPrivy}
-                      icon={<LogOut size={16} color="$red10" />}
-                    >
-                      Disconnect from Privy
-                    </Button>
-                  </YStack>
-                ) : (
-                  <Button
-                    size="$3"
-                    backgroundColor="$accent9"
-                    color="white"
-                    pressStyle={{ opacity: 0.8 }}
-                    onPress={handleConnectPrivy}
+            {/* Privy Section */}
+            <YStack gap="$2" paddingHorizontal="$4">
+              <Text fontSize={14} fontFamily="$interSemiBold" color="$color11" marginBottom="$4">
+                Privy Wallet
+              </Text>
+              {privyWallet ? (
+                <YStack gap="$2">
+                  <WalletListItem
+                    wallet={privyWallet}
+                    isSelected={privyWallet.address === wallet?.address}
+                    onPress={() => handleSwitchWallet('privy')}
+                    isLastItem={true}
+                  />
+                  <Button.Gray
+                    level="md"
+                    height="$5"
+                    color="$red10"
+                    borderColor="$red8"
+                    onPress={handleDisconnectPrivy}
                   >
-                    Connect from Privy
-                  </Button>
-                )}
-              </YStack>
-
-              {/* Reown Section */}
-              <YStack gap="$2" paddingHorizontal="$4">
-                <Text fontSize={16} fontFamily="$interSemiBold" color="$color11" marginBottom="$1">
-                  External Wallet
-                </Text>
-                {reownWallet ? (
-                  <YStack gap="$2">
-                    <WalletListItem
-                      wallet={reownWallet}
-                      isSelected={reownWallet.address === wallet?.address}
-                      onPress={() => handleSwitchWallet('reown')}
+                    Disconnect
+                  </Button.Gray>
+                </YStack>
+              ) : (
+                <Button.Filled
+                  level="md"
+                  height="$5"
+                  backgroundColor="$color12"
+                  onPress={handleConnectPrivy}
+                  alignItems="center"
+                >
+                  <XStack alignItems="center">
+                    <Text color="$color1">Create or connect via</Text>
+                    <Image
+                      source={require('../../assets/images/Privy-logo.png')}
+                      style={{ width: 64, height: 14, marginLeft: 6 }}
+                      resizeMode="contain"
                     />
-                    <Button
-                      size="$3"
-                      backgroundColor="$red4"
-                      color="$red10"
-                      borderWidth={1}
-                      borderColor="$red8"
-                      pressStyle={{ opacity: 0.8 }}
-                      onPress={handleDisconnectReown}
-                      icon={<LogOut size={16} color="$red10" />}
-                    >
-                      Disconnect from Reown
-                    </Button>
-                  </YStack>
-                ) : (
-                  <Button
-                    size="$3"
-                    backgroundColor="$accent9"
-                    color="white"
-                    pressStyle={{ opacity: 0.8 }}
-                    onPress={handleConnectReown}
-                  >
-                    Connect from Reown
-                  </Button>
-                )}
-              </YStack>
-            </ScrollView>
-          </YStack>
-        </Pressable>
-      </Pressable>
-    </Modal>
+                  </XStack>
+                </Button.Filled>
+              )}
+            </YStack>
+          </ScrollView>
+        </YStack>
+      </Sheet.Frame>
+    </Sheet>
   );
 }
-
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  contentContainer: {
-    height: '60%',
-    width: '100%',
-  },
-});

@@ -1,12 +1,13 @@
-import { AlertTriangle, ArrowLeft, Copy, Loader } from '@tamagui/lucide-icons';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { useState, useEffect } from 'react';
-import { Alert, Pressable, ScrollView } from 'react-native';
-import * as Clipboard from 'expo-clipboard';
-import { Button, Input, Spinner, Text, XStack, YStack } from 'tamagui';
-import { toast } from 'sonner-native';
-import { useWallet, useBridge, ARBITRUM_CONFIG, BRIDGE_LIMITS } from '@/app-internal';
+import { ARBITRUM_CONFIG, BRIDGE_LIMITS, useBridge, useWallet } from '@/app-internal';
+import { CustomHeader } from '@/app-internal/components/global';
 import { DEPOSIT_TOKENS, type ChainName } from '@/contexts/bridge/depositTokens';
+import { AlertTriangle, Copy, Loader } from '@tamagui/lucide-icons';
+import * as Clipboard from 'expo-clipboard';
+import { useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { Alert, Pressable, ScrollView } from 'react-native';
+import { toast } from 'sonner-native';
+import { Button, Input, Spinner, Text, XStack, YStack } from 'tamagui';
 
 // Helper function to shorten address (first 5 and last 5 characters)
 function shortenAddress(address: string, chars: number = 5): string {
@@ -22,7 +23,6 @@ function shortenAddress(address: string, chars: number = 5): string {
  * Safe area is handled by parent layout
  */
 export default function HyperliquidBridgePage() {
-  const router = useRouter();
   const params = useLocalSearchParams<{ symbol: string; chain: string }>();
 
   // Wallet and bridge hooks
@@ -112,21 +112,7 @@ export default function HyperliquidBridgePage() {
   return (
     <YStack flex={1} backgroundColor="$background">
       {/* Header */}
-      <XStack
-        alignItems="center"
-        gap="$3"
-        paddingHorizontal="$4"
-        paddingVertical="$3"
-        borderBottomWidth={1}
-        borderBottomColor="$borderColor"
-      >
-        <Pressable onPress={() => router.back()} style={{ padding: 4 }}>
-          <ArrowLeft size={24} color="$color" />
-        </Pressable>
-        <Text fontFamily="$interSemiBold" fontSize="$6">
-          Deposit {token.symbol}
-        </Text>
-      </XStack>
+      <CustomHeader title={`Deposit ${token.symbol}`} />
 
       {/* Scrollable Content */}
       <ScrollView

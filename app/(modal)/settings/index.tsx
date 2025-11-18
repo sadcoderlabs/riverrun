@@ -1,17 +1,18 @@
+import { useWallet } from '@/app-internal';
+import { CustomHeader } from '@/app-internal/components/global';
 import AdaptiveSelect from '@/app-internal/components/global/AdaptiveSelect';
 import { ListItem } from '@/app-internal/components/global/ListItem';
 import { ListSection } from '@/app-internal/components/global/ListSection';
-import { useThemePreference } from '@/app-internal/components/shared/theme/useThemePreference';
-import { useWallet } from '@/app-internal';
-import { type ThemePreference } from '@/app-internal/components/shared/theme/theme.store';
-import { features } from '@/config/environment';
-import { ArrowLeft, ArrowUpRight } from '@tamagui/lucide-icons';
-import { useRouter } from 'expo-router';
-import { Linking, Pressable } from 'react-native';
-import { PortalProvider, ScrollView, Text, View, XStack, YStack } from 'tamagui';
-import { useState } from 'react';
 import ExportWalletModal from '@/app-internal/components/settings/ExportWalletModal';
+import { type ThemePreference } from '@/app-internal/components/shared/theme/theme.store';
+import { useThemePreference } from '@/app-internal/components/shared/theme/useThemePreference';
 import { useAutoUpdate } from '@/app-internal/features/version/hooks/useAutoUpdate';
+import { features } from '@/config/environment';
+import { ArrowUpRight } from '@tamagui/lucide-icons';
+import { useRouter } from 'expo-router';
+import { useState } from 'react';
+import { Linking } from 'react-native';
+import { PortalProvider, ScrollView, View, YStack } from 'tamagui';
 
 export default function Index() {
   const router = useRouter();
@@ -33,21 +34,7 @@ export default function Index() {
     <PortalProvider>
       <YStack flex={1} backgroundColor="$background">
         {/* Header */}
-        <XStack
-          alignItems="center"
-          gap="$3"
-          paddingHorizontal="$4"
-          paddingVertical="$3"
-          borderBottomWidth={1}
-          borderBottomColor="$borderColor"
-        >
-          <Pressable onPress={() => router.back()} style={{ padding: 4 }}>
-            <ArrowLeft size={24} color="$color" />
-          </Pressable>
-          <Text fontFamily="$interSemiBold" fontSize="$6">
-            Settings
-          </Text>
-        </XStack>
+        <CustomHeader title="Settings" />
 
         {/* Content */}
         <ScrollView contentInsetAdjustmentBehavior="automatic" backgroundColor="$gray3">

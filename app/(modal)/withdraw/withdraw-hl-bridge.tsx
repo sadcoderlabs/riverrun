@@ -1,9 +1,10 @@
-import { AlertTriangle, ArrowLeft, ClipboardPaste } from '@tamagui/lucide-icons';
+import { AlertTriangle, ClipboardPaste } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { Alert, Pressable, ScrollView } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { Button, Input, Spinner, Text, XStack, YStack } from 'tamagui';
+import { CustomHeader } from '@/app-internal/components/global';
 import { toast } from 'sonner-native';
 import { useWallet, useBridge, BRIDGE_LIMITS, BRIDGE_FEES } from '@/app-internal';
 
@@ -109,24 +110,7 @@ export default function HyperliquidBridgeWithdrawPage() {
   return (
     <YStack flex={1} backgroundColor="$background">
       {/* Header */}
-      <XStack
-        alignItems="center"
-        gap="$3"
-        paddingHorizontal="$4"
-        paddingVertical="$3"
-        borderBottomWidth={1}
-        borderBottomColor="$borderColor"
-      >
-        <Pressable onPress={() => router.back()} style={{ padding: 4 }}>
-          <ArrowLeft size={24} color="$color" />
-        </Pressable>
-        <Text fontFamily="$interSemiBold" fontSize="$6">
-          Withdraw USDC
-        </Text>
-        <Text fontSize="$3" color="$gray11">
-          to arbitrum
-        </Text>
-      </XStack>
+      <CustomHeader title="Withdraw USDC" subtitle="to arbitrum" />
 
       {/* Scrollable Content */}
       <ScrollView
