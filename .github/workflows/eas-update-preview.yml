@@ -1,0 +1,50 @@
+name: EAS Update (Preview)
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  update:
+    name: Publish Preview Update
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.16.1
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Get commit hash
+        id: commit
+        run: echo "hash=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Publish EAS Update
+        run: |
+          echo "📦 Publishing EAS Update for preview channel"
+          echo "📍 Commit: ${{ steps.commit.outputs.hash }}"
+          echo "🌍 Environment: preview (from EAS platform)"
+          echo ""
+
+          EXPO_PUBLIC_GIT_COMMIT_HASH=${{ steps.commit.outputs.hash }} pnpm exec eas update \
+            --environment preview \
+            --channel preview \
+            --message "Preview: ${{ steps.commit.outputs.hash }}" \
+            --non-interactive
+
+          echo ""
+          echo "✅ Update published successfully"
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}

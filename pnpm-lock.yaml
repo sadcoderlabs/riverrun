@@ -284,9 +284,6 @@ importers:
       babel-preset-expo:
         specifier: ^54.0.7
         version: 54.0.7(@babel/core@7.28.4)(@babel/runtime@7.28.4)(expo@54.0.23)(react-refresh@0.14.2)
-      dotenv:
-        specifier: ^17.2.3
-        version: 17.2.3
       eslint:
         specifier: 9.35.0
         version: 9.35.0
@@ -4118,10 +4115,6 @@ packages:
 
   dotenv@16.4.7:
     resolution: {integrity: sha512-47qPchRCykZC03FhkYAhrvwU4xDBFIj1QPqaarj6mdM/hgUzfPHcpkHJOn3mJAufFeeAxAzeGsr5X0M4k6fLZQ==}
-    engines: {node: '>=12'}
-
-  dotenv@17.2.3:
-    resolution: {integrity: sha512-JVUnt+DUIzu87TABbhPmNfVdBDt18BLOWjMUFJMSi/Qqg7NTYtabbvSNJGOJ7afbRuv9D/lngizHtP7QyLQ+9w==}
     engines: {node: '>=12'}
 
   dset@3.1.4:
@@ -12967,8 +12960,6 @@ snapshots:
       dotenv: 16.4.7
 
   dotenv@16.4.7: {}
-
-  dotenv@17.2.3: {}
 
   dset@3.1.4: {}
 

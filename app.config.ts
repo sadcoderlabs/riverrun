@@ -1,8 +1,4 @@
 import { ExpoConfig, ConfigContext } from 'expo/config';
-import * as dotenv from 'dotenv';
-
-// Load environment variables from .env.local
-dotenv.config({ path: '.env.local' });
 
 const IS_DEV = process.env.APP_VARIANT === 'development';
 const IS_PREVIEW = process.env.APP_VARIANT === 'preview';
@@ -53,8 +49,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     // Pass app variant to runtime
     extra: {
       ...config.extra,
-      appVariant: process.env.APP_VARIANT || 'development',
-      // Segment write key - set via environment variable for each build profile
+      appVariant: process.env.APP_VARIANT,
+      // Segment write key - build-time variable from EAS environment (not EXPO_PUBLIC_ to keep it private)
       segmentWriteKey: process.env.SEGMENT_WRITE_KEY,
     },
   };
