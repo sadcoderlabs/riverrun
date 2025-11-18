@@ -59,7 +59,6 @@ import { PlaceOrderUseCase } from '@/contexts/order/application/usecases/PlaceOr
 import { PlaceCloseMarketOrderUseCase } from '@/contexts/order/application/usecases/PlaceCloseMarketOrderUseCase';
 import { PlaceCloseLimitOrderUseCase } from '@/contexts/order/application/usecases/PlaceCloseLimitOrderUseCase';
 import { PlaceTpSlOrdersUseCase } from '@/contexts/order/application/usecases/PlaceTpSlOrdersUseCase';
-import { CancelOrderUseCase } from '@/contexts/order/application/usecases/CancelOrderUseCase';
 import { CancelOrdersUseCase } from '@/contexts/order/application/usecases/CancelOrdersUseCase';
 
 // Agent Adapters
@@ -439,13 +438,6 @@ export function createAppContainer(options: CreateContainerOptions): AppContaine
           marketService,
           walletService,
         );
-      },
-    ).singleton(),
-
-    // CancelOrderUseCase: Cancel single order (no BuilderFee required)
-    cancelOrderUseCase: asFunction(
-      ({ orderExchangePort, tryGetAgentWalletUseCase, marketService }) => {
-        return new CancelOrderUseCase(orderExchangePort, tryGetAgentWalletUseCase, marketService);
       },
     ).singleton(),
 

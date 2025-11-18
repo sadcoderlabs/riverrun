@@ -61,7 +61,6 @@ import type { PlaceOrderUseCase } from '@/contexts/order/application/usecases/Pl
 import type { PlaceCloseMarketOrderUseCase } from '@/contexts/order/application/usecases/PlaceCloseMarketOrderUseCase';
 import type { PlaceCloseLimitOrderUseCase } from '@/contexts/order/application/usecases/PlaceCloseLimitOrderUseCase';
 import type { PlaceTpSlOrdersUseCase } from '@/contexts/order/application/usecases/PlaceTpSlOrdersUseCase';
-import type { CancelOrderUseCase } from '@/contexts/order/application/usecases/CancelOrderUseCase';
 import type { CancelOrdersUseCase } from '@/contexts/order/application/usecases/CancelOrdersUseCase';
 
 // Order Ports
@@ -139,7 +138,6 @@ export interface AppCradle {
   placeCloseMarketOrderUseCase: PlaceCloseMarketOrderUseCase;
   placeCloseLimitOrderUseCase: PlaceCloseLimitOrderUseCase;
   placeTpSlOrdersUseCase: PlaceTpSlOrdersUseCase;
-  cancelOrderUseCase: CancelOrderUseCase;
   cancelOrdersUseCase: CancelOrdersUseCase;
 }
 
