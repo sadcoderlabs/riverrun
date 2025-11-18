@@ -124,7 +124,6 @@
   },
   "pnpm": {
     "overrides": {
-      "@noble/hashes": "2.0.1",
       "multiformats": "^13.0.0"
     }
   },
