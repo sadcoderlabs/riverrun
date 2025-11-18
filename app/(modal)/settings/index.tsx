@@ -11,6 +11,8 @@ import { features } from '@/config/environment';
 import { ArrowUpRight } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
+import { Linking } from 'react-native';
+import { PortalProvider, ScrollView, View, YStack } from 'tamagui';
 
 export default function Index() {
   const router = useRouter();
