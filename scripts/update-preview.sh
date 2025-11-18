@@ -1,7 +1,20 @@
 #!/bin/bash
-set -e
+# Script: update-preview.sh
+# Purpose: Publish EAS OTA update to preview channel
+# Usage: ./scripts/update-preview.sh or pnpm update:preview
+#
+# Prerequisites:
+# - EAS CLI authenticated (via eas login or EXPO_TOKEN env var)
+# - Environment variables configured on EAS platform for "preview" environment
+#
+# Environment Variables:
+# - EXPO_TOKEN: EAS authentication token (auto-used by EAS CLI if set)
+#   - In CI: Set via GitHub Secrets
+#   - Locally: Not needed if logged in via `eas login`
 
-# Get current git commit hash
+set -e  # Exit immediately if any command fails
+
+# Get current git commit hash (short version)
 COMMIT_HASH=$(git rev-parse --short HEAD)
 
 echo "📦 Publishing EAS Update for preview channel"
@@ -9,10 +22,24 @@ echo "📍 Commit: $COMMIT_HASH"
 echo "🌍 Environment: preview (from EAS platform)"
 echo ""
 
-# Publish update with:
-# - EXPO_PUBLIC_GIT_COMMIT_HASH: injected dynamically
-# - --environment preview: uses EAS platform variables (ignores local .env files)
-# - --channel preview: targets preview builds (defined in eas.json)
+# Publish OTA update with:
+#
+# Environment Variable:
+# - EXPO_PUBLIC_GIT_COMMIT_HASH: Injected dynamically at build time
+#   - This will be embedded in the JavaScript bundle
+#   - Available in app code via process.env.EXPO_PUBLIC_GIT_COMMIT_HASH
+#
+# Flags:
+# - --environment preview: Uses environment variables from EAS "preview" environment
+#   - Loads: APP_VARIANT, SEGMENT_WRITE_KEY, SENTRY_AUTH_TOKEN, etc.
+#   - Ignores local .env files
+#   - Ensures consistency with preview builds
+#
+# - --channel preview: Targets builds subscribed to "preview" channel
+#   - Defined in eas.json build.preview.channel
+#   - Only preview builds will receive this update
+#
+# - --message: Commit message for tracking this update
 EXPO_PUBLIC_GIT_COMMIT_HASH=$COMMIT_HASH pnpm exec eas update \
   --environment preview \
   --channel preview \

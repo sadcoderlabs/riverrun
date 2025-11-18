@@ -1,19 +1,19 @@
-name: EAS Update (Preview)
+name: Test
 
 on:
-  workflow_run:
-    workflows: ["Test"]
-    types:
-      - completed
+  push:
     branches:
       - develop
+      - main
+  pull_request:
+    branches:
+      - develop
+      - main
 
 jobs:
-  update:
-    name: Publish Preview Update
+  test:
+    name: Run Tests
     runs-on: ubuntu-latest
-    # Only run if tests passed
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     steps:
       - name: Checkout code
@@ -32,7 +32,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Publish EAS Update
-        run: ./scripts/update-preview.sh
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      - name: Run linter
+        run: pnpm lint
+
+      - name: Run tests
+        run: pnpm test
