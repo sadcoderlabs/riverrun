@@ -6,7 +6,7 @@ import { ListSection } from '@/app-internal/components/global/ListSection';
 import ExportWalletModal from '@/app-internal/components/settings/ExportWalletModal';
 import { type ThemePreference } from '@/app-internal/components/shared/theme/theme.store';
 import { useThemePreference } from '@/app-internal/components/shared/theme/useThemePreference';
-import { useAutoUpdate } from '@/app-internal/features/version/hooks/useAutoUpdate';
+import { useVersionInfo } from '@/app-internal/features/version/hooks/useVersionInfo';
 import { features } from '@/config/environment';
 import { ArrowUpRight } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
@@ -19,7 +19,7 @@ export default function Index() {
   const { preference, setPreference } = useThemePreference();
   const { wallet } = useWallet();
   const [showExportModal, setShowExportModal] = useState(false);
-  const { displayVersion, checkForUpdate, isChecking, isDownloading } = useAutoUpdate();
+  const { displayVersion, checkForUpdate, isChecking, isDownloading } = useVersionInfo();
 
   const getThemeDisplayName = (theme: ThemePreference) => {
     const themeMap: Record<ThemePreference, string> = {
