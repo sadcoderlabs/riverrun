@@ -1,10 +1,20 @@
+import { useBridge, useWallet } from '@/app-internal';
 import { Button, CustomHeader } from '@/app-internal/components/global';
 import { CardContainer } from '@/app-internal/components/global/CardContainer';
 import { Text } from '@/app-internal/components/global/Text';
-import { Copy } from '@tamagui/lucide-icons';
+import { AlertTriangle, Copy } from '@tamagui/lucide-icons';
+import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
-import { Pressable, ScrollView } from 'react-native';
-import { XStack, YStack } from 'tamagui';
+import { useEffect } from 'react';
+import { Image, Pressable, ScrollView } from 'react-native';
+import { toast } from 'sonner-native';
+import { Spinner, XStack, YStack } from 'tamagui';
+
+// Helper function to shorten address (first 5 and last 5 characters)
+function shortenAddress(address: string, chars: number = 5): string {
+  if (!address || address.length < chars * 2) return address;
+  return `${address.slice(0, chars + 2)}...${address.slice(-chars)}`;
+}
 
 /**
  * Deposit Checkpoint Page
@@ -15,14 +25,57 @@ import { XStack, YStack } from 'tamagui';
 export default function DepositCheckpointPage() {
   const router = useRouter();
 
-  // Mock data - will be replaced with actual data later
-  const mockWalletAddress = '0x123456789';
-  const mockUSDCBalance = '0.00';
+  // Wallet and bridge hooks
+  const { wallet } = useWallet();
+  const { arbitrumBalance, refreshBalances, isLoadingBalances } = useBridge();
+
+  // Mock ETH balance - not available in useBridge yet
   const mockETHBalance = '0.00';
 
-  const handleCopyAddress = () => {
-    // TODO: Implement copy functionality
-    console.log('Copy address');
+  // Validation constants
+  const MINIMUM_ETH = 0;
+  const MINIMUM_USDC = 5;
+
+  // Parse balances
+  const numUSDCBalance = parseFloat(arbitrumBalance || '0');
+  const numETHBalance = parseFloat(mockETHBalance || '0');
+
+  // Check if user can continue
+  const hasEnoughETH = numETHBalance > MINIMUM_ETH;
+  const hasEnoughUSDC = numUSDCBalance >= MINIMUM_USDC;
+  const canContinue = hasEnoughETH && hasEnoughUSDC;
+
+  // Determine warning message
+  const getWarningMessage = () => {
+    if (!hasEnoughETH && !hasEnoughUSDC) {
+      return 'ETH required for gas fees and minimum 5 USDC needed to proceed';
+    }
+    if (!hasEnoughETH) {
+      return 'ETH required for gas fees to proceed';
+    }
+    if (!hasEnoughUSDC) {
+      return 'Minimum 5 USDC required to proceed';
+    }
+    return '';
+  };
+
+  // Refresh balances on mount
+  useEffect(() => {
+    refreshBalances();
+  }, [refreshBalances]);
+
+  const handleCopyAddress = async () => {
+    if (!wallet) return;
+
+    try {
+      await Clipboard.setStringAsync(wallet.address);
+      toast.success('Copied!', {
+        description: 'Wallet address copied to clipboard',
+      });
+    } catch (error) {
+      console.error('Failed to copy address:', error);
+      toast.error('Failed to copy address');
+    }
   };
 
   const handleContinue = () => {
@@ -36,6 +89,20 @@ export default function DepositCheckpointPage() {
     });
   };
 
+  // Show loading or error state if wallet is not connected
+  if (!wallet) {
+    return (
+      <YStack flex={1} backgroundColor="$background">
+        <CustomHeader title="Deposit 1/2" />
+        <YStack flex={1} justifyContent="center" alignItems="center" paddingHorizontal="$4">
+          <Text color="$color12" textAlign="center">
+            Please connect your wallet
+          </Text>
+        </YStack>
+      </YStack>
+    );
+  }
+
   return (
     <YStack flex={1} backgroundColor="$background">
       {/* Header */}
@@ -48,7 +115,7 @@ export default function DepositCheckpointPage() {
           {/* Instruction Heading */}
           <YStack paddingHorizontal="$4" paddingTop="$6" paddingBottom="$4">
             <Text textAlign="center" color="$color12" fontSize="$4">
-              You&#39;ll need USDC & ETH on Arbitrum
+              USDC & ETH on Arbitrum Required
             </Text>
           </YStack>
 
@@ -56,26 +123,40 @@ export default function DepositCheckpointPage() {
           <YStack paddingHorizontal="$4" paddingTop="$2">
             <CardContainer gap="$4">
               {/* Card Title */}
-              <Text.Subhead color="$color11" fontWeight="500">
-                Your Arbitrum Balance
-              </Text.Subhead>
+              <Text.Subhead color="$color11">Your Arbitrum Balance</Text.Subhead>
 
               {/* Asset Balances */}
               <YStack gap="$2">
                 {/* USDC Balance */}
                 <XStack justifyContent="space-between" alignItems="center">
-                  <Text.Subhead color="$color11">USDC</Text.Subhead>
-                  <XStack alignItems="baseline" gap="$1">
-                    <Text fontSize="$3" fontWeight="500" color="$color12">
-                      {mockUSDCBalance}
-                    </Text>
-                    <Text.Subhead color="$color10">USDC</Text.Subhead>
+                  <XStack alignItems="center" gap="$2">
+                    <Image
+                      source={require('@/app-internal/assets/images/arbitrum.png')}
+                      style={{ width: 16, height: 16 }}
+                    />
+                    <Text.Subhead color="$color11">USDC</Text.Subhead>
                   </XStack>
+                  {isLoadingBalances ? (
+                    <Spinner size="small" color="$color12" />
+                  ) : (
+                    <XStack alignItems="baseline" gap="$1">
+                      <Text fontSize="$3" fontWeight="500" color="$color12">
+                        {arbitrumBalance || '0.00'}
+                      </Text>
+                      <Text.Subhead color="$color10">USDC</Text.Subhead>
+                    </XStack>
+                  )}
                 </XStack>
 
                 {/* ETH Balance */}
                 <XStack justifyContent="space-between" alignItems="center">
-                  <Text.Subhead color="$color11">ETH</Text.Subhead>
+                  <XStack alignItems="center" gap="$2">
+                    <Image
+                      source={require('@/app-internal/assets/images/arbitrum.png')}
+                      style={{ width: 16, height: 16 }}
+                    />
+                    <Text.Subhead color="$color11">ETH</Text.Subhead>
+                  </XStack>
                   <XStack alignItems="baseline" gap="$1">
                     <Text fontSize="$3" fontWeight="500" color="$color12">
                       {mockETHBalance}
@@ -100,13 +181,13 @@ export default function DepositCheckpointPage() {
                   gap="$2"
                 >
                   <Text
-                    fontSize="$4"
                     fontFamily="$skMono"
+                    fontSize="$3"
                     color="$color12"
                     flex={1}
                     numberOfLines={1}
                   >
-                    {mockWalletAddress}
+                    {shortenAddress(wallet.address, 6)}
                   </Text>
                   <Pressable
                     onPress={handleCopyAddress}
@@ -120,9 +201,37 @@ export default function DepositCheckpointPage() {
           </YStack>
         </ScrollView>
 
-        {/* Continue Button - Fixed at bottom with safe zone padding */}
-        <YStack paddingHorizontal="$4" paddingBottom="$4" marginTop="$3">
-          <Button.Filled level="lg" height="$5" onPress={handleContinue}>
+        {/* Warning and Continue Button - Fixed at bottom with safe zone padding */}
+        <YStack paddingHorizontal="$4" paddingBottom="$4" marginTop="$3" gap="$3">
+          {/* Warning Message */}
+          {!canContinue && (
+            <XStack
+              padding="$4"
+              backgroundColor="$yellow2"
+              borderRadius="$3"
+              gap="$3"
+              alignItems="flex-start"
+            >
+              <AlertTriangle size={16} color="$yellow9" />
+              <YStack flex={1}>
+                <YStack gap="$1" alignItems="flex-start" style={{ marginTop: -3 }}>
+                  <Text.Footnote color="$yellow9" fontWeight="700">
+                    Insufficient Balance
+                  </Text.Footnote>
+                  <Text.Footnote color="$yellow9">{getWarningMessage()}</Text.Footnote>
+                </YStack>
+              </YStack>
+            </XStack>
+          )}
+
+          {/* Continue Button */}
+          <Button.Filled
+            level="lg"
+            height="$5"
+            onPress={handleContinue}
+            disabled={!canContinue}
+            opacity={!canContinue ? 0.5 : 1}
+          >
             Continue
           </Button.Filled>
         </YStack>
