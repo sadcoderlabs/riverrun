@@ -33,6 +33,11 @@ export function useWebData2(): UseWebData2Result {
   const { wallet } = useWallet();
   const [mergedData, setMergedData] = useState<WebData2Data | undefined>();
 
+  // Clear data when wallet changes to prevent showing stale data from previous wallet
+  useEffect(() => {
+    setMergedData(undefined);
+  }, [wallet?.address]);
+
   // Step 1: HTTP fetch initial data using TanStack Query
   const {
     data: httpData,
