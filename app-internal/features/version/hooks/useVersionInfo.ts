@@ -56,6 +56,7 @@ export function useVersionInfo(): VersionInfo {
   const checkForUpdate = useCallback(async () => {
     await performOTAUpdateFlow({
       showPrompt: true,
+      showToast: true,
       onStatusChange: status => {
         setIsChecking(status === UpdateStatus.CHECKING);
         setIsDownloading(status === UpdateStatus.DOWNLOADING);

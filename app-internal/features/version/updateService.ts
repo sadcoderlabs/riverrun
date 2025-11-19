@@ -56,6 +56,10 @@ export interface OTAUpdateFlowOptions {
    */
   showPrompt?: boolean;
   /**
+   * Whether to show toast notifications during update process
+   */
+  showToast: boolean;
+  /**
    * Callback for status changes during update process
    */
   onStatusChange?: (status: UpdateStatus) => void;
@@ -125,14 +129,16 @@ export async function downloadAndApplyOTAUpdate(): Promise<boolean> {
  *
  * @param options - Configuration for the update flow
  */
-export async function performOTAUpdateFlow(options: OTAUpdateFlowOptions = {}): Promise<void> {
-  const { showPrompt = true, onStatusChange } = options;
+export async function performOTAUpdateFlow(options: OTAUpdateFlowOptions): Promise<void> {
+  const { showPrompt = true, showToast, onStatusChange } = options;
 
   // Skip in development mode
   if (!isEnabled) {
-    toast.info('Updates Disabled', {
-      description: 'Updates are not available in development mode',
-    });
+    if (showToast) {
+      toast.info('Updates Disabled', {
+        description: 'Updates are not available in development mode',
+      });
+    }
     console.log('[OTA] Updates disabled');
     return;
   }
@@ -144,9 +150,11 @@ export async function performOTAUpdateFlow(options: OTAUpdateFlowOptions = {}): 
 
     if (!checkResult.isAvailable) {
       onStatusChange?.(UpdateStatus.UP_TO_DATE);
-      toast.success('Up to Date', {
-        description: 'You have the latest version',
-      });
+      if (showToast) {
+        toast.success('Up to Date', {
+          description: 'You have the latest version',
+        });
+      }
       return;
     }
 
@@ -181,17 +189,21 @@ export async function performOTAUpdateFlow(options: OTAUpdateFlowOptions = {}): 
 
     // Step 3: Download update
     onStatusChange?.(UpdateStatus.DOWNLOADING);
-    toast.info('Update Available', {
-      description: 'Downloading new version...',
-    });
+    if (showToast) {
+      toast.info('Update Available', {
+        description: 'Downloading new version...',
+      });
+    }
 
     const success = await downloadAndApplyOTAUpdate();
 
     if (success) {
       onStatusChange?.(UpdateStatus.READY);
-      toast.success('Update Ready', {
-        description: 'Restarting app to apply update...',
-      });
+      if (showToast) {
+        toast.success('Update Ready', {
+          description: 'Restarting app to apply update...',
+        });
+      }
       // Note: reloadAsync() is called inside downloadAndApplyOTAUpdate
       // so we won't reach here in normal flow
     }
@@ -199,9 +211,11 @@ export async function performOTAUpdateFlow(options: OTAUpdateFlowOptions = {}): 
     const errorMessage = error?.message || 'Failed to check for updates';
     onStatusChange?.(UpdateStatus.ERROR);
 
-    toast.error('Update Check Failed', {
-      description: errorMessage,
-    });
+    if (showToast) {
+      toast.error('Update Check Failed', {
+        description: errorMessage,
+      });
+    }
 
     console.error('[OTA] Update flow failed:', error);
   }
