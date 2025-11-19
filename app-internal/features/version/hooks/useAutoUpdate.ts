@@ -72,6 +72,7 @@ export function useAutoUpdate(): VersionInfo {
   const checkForUpdate = useCallback(async () => {
     await performOTAUpdateFlow({
       showPrompt: true,
+      showToast: true,
       onStatusChange: status => {
         setIsChecking(status === UpdateStatus.CHECKING);
         setIsDownloading(status === UpdateStatus.DOWNLOADING);
@@ -113,6 +114,7 @@ export function useAutoUpdate(): VersionInfo {
     // Perform update check asynchronously (don't block render)
     performOTAUpdateFlow({
       showPrompt: true,
+      showToast: false,
       onStatusChange: status => {
         setIsChecking(status === UpdateStatus.CHECKING);
         setIsDownloading(status === UpdateStatus.DOWNLOADING);
