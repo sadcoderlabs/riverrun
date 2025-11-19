@@ -1,5 +1,8 @@
 import { ARBITRUM_CONFIG, BRIDGE_LIMITS, useBridge, useWallet } from '@/app-internal';
-import { CustomHeader } from '@/app-internal/components/global';
+import { Button, CustomHeader } from '@/app-internal/components/global';
+import { CardContainer } from '@/app-internal/components/global/CardContainer';
+import { Input } from '@/app-internal/components/global/Input';
+import { Text } from '@/app-internal/components/global/Text';
 import { DEPOSIT_TOKENS, type ChainName } from '@/contexts/bridge/depositTokens';
 import { AlertTriangle, Copy, Loader } from '@tamagui/lucide-icons';
 import * as Clipboard from 'expo-clipboard';
@@ -7,7 +10,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView } from 'react-native';
 import { toast } from 'sonner-native';
-import { Button, Input, Spinner, Text, XStack, YStack } from 'tamagui';
+import { Spinner, XStack, YStack } from 'tamagui';
 
 // Helper function to shorten address (first 5 and last 5 characters)
 function shortenAddress(address: string, chars: number = 5): string {
@@ -122,49 +125,42 @@ export default function HyperliquidBridgePage() {
         {/* Main Card */}
         <YStack paddingHorizontal="$4" paddingTop="$4" gap="$4">
           {/* Call to Action Card */}
-          <YStack
-            backgroundColor="$background02"
-            borderRadius="$4"
-            padding="$4"
-            borderWidth={1}
-            borderColor="$borderColor"
-            gap="$3"
-          >
+          <CardContainer gap="$3">
             {/* Title */}
-            <Text fontFamily="$interSemiBold" fontSize="$5" color="$color" textAlign="center">
+            <Text fontFamily="$interSemiBold" fontSize="$5" color="$color12" textAlign="center">
               Deposit USDC to your wallet on Arbitrum
             </Text>
 
             {/* Wallet Address */}
             <XStack
-              backgroundColor="#F97316"
+              backgroundColor="$accent9"
               borderRadius="$3"
               padding="$3"
               alignItems="center"
               gap="$2"
               justifyContent="center"
             >
-              <Text fontSize="$5" fontFamily="$skMono" color="white" fontWeight="600">
+              <Text fontSize="$5" fontFamily="$skMono" color="$color1" fontWeight="600">
                 {shortenAddress(wallet.address, 4)}
               </Text>
               <Pressable onPress={() => handleCopyAddress(wallet.address, 'Wallet address')}>
-                <Copy size={20} color="white" />
+                <Copy size={20} color="$color1" />
               </Pressable>
             </XStack>
 
             {/* USDC Contract Address */}
-            <Text fontSize="$2" color="$gray10" textAlign="center">
+            <Text.Footnote color="$color10" textAlign="center">
               USDC Contract: {shortenAddress(ARBITRUM_CONFIG.usdcAddress, 3)}
-            </Text>
+            </Text.Footnote>
 
             {/* Monitoring Status */}
             <XStack alignItems="center" gap="$2" justifyContent="center">
-              <Loader size={16} color="#F97316" animation="slow" />
-              <Text fontSize="$3" color="#F97316" fontFamily="$interMedium">
+              <Loader size={16} color="$accent9" animation="slow" />
+              <Text.Subhead color="$accent9" fontFamily="$interMedium">
                 Monitoring for deposits...
-              </Text>
+              </Text.Subhead>
             </XStack>
-          </YStack>
+          </CardContainer>
         </YStack>
 
         {/* Balance Display */}
@@ -174,24 +170,18 @@ export default function HyperliquidBridgePage() {
           justifyContent="space-between"
           alignItems="center"
         >
-          <Text fontSize="$3" color="$gray11">
-            Your USDC Balance on Arbitrum:
-          </Text>
+          <Text.Subhead color="$color11">Your USDC Balance on Arbitrum:</Text.Subhead>
           <XStack alignItems="baseline" gap="$1">
-            <Text fontSize="$5" fontFamily="$interSemiBold" color="$color">
+            <Text fontSize="$5" fontFamily="$interSemiBold" color="$color12">
               {balance || '0.0'}
             </Text>
-            <Text fontSize="$3" color="$gray10">
-              USDC
-            </Text>
+            <Text.Subhead color="$color10">USDC</Text.Subhead>
           </XStack>
         </XStack>
 
         {/* Amount Input Section */}
         <YStack paddingHorizontal="$4" gap="$2" paddingTop="$2">
-          <Text fontSize="$3" color="$gray11">
-            Deposit Amount
-          </Text>
+          <Text.Subhead color="$color11">Deposit Amount</Text.Subhead>
 
           <YStack gap="$2">
             {/* Input with Max Button */}
@@ -200,7 +190,7 @@ export default function HyperliquidBridgePage() {
               borderRadius="$3"
               borderWidth={1}
               borderColor={
-                amount && numAmount < BRIDGE_LIMITS.minimumDeposit ? '#F97316' : '$borderColor'
+                amount && numAmount < BRIDGE_LIMITS.minimumDeposit ? '$accent9' : '$borderColor'
               }
               alignItems="center"
               paddingRight="$3"
@@ -223,48 +213,40 @@ export default function HyperliquidBridgePage() {
                 <Pressable onPress={handleMaxPress} disabled={isDepositing}>
                   <Text
                     fontSize="$3"
-                    color={isDepositing ? '$gray10' : '#F97316'}
+                    color={isDepositing ? '$color10' : '$accent9'}
                     fontFamily="$interSemiBold"
                   >
                     MAX
                   </Text>
                 </Pressable>
-                <Text fontSize="$4" color="$gray10">
-                  USDC
-                </Text>
+                <Text color="$color10">USDC</Text>
               </XStack>
             </XStack>
 
             {/* Validation Message */}
             {amount && numAmount < BRIDGE_LIMITS.minimumDeposit && (
-              <Text fontSize="$2" color="#F97316" fontFamily="$interMedium">
+              <Text.Footnote color="$accent9" fontFamily="$interMedium">
                 Amount must be at least {BRIDGE_LIMITS.minimumDeposit} USDC
-              </Text>
+              </Text.Footnote>
             )}
             {amount && numAmount > numBalance && (
-              <Text fontSize="$2" color="#F97316" fontFamily="$interMedium">
+              <Text.Footnote color="$accent9" fontFamily="$interMedium">
                 Insufficient balance
-              </Text>
+              </Text.Footnote>
             )}
           </YStack>
 
           {/* Deposit Button */}
-          <Button
-            size="$5"
-            backgroundColor="$background"
-            borderWidth={1}
-            borderColor="$borderColor"
-            color="$color"
-            fontFamily="$interSemiBold"
+          <Button.Filled
+            level="lg"
             onPress={handleDeposit}
             disabled={!isValidAmount || !amount || isDepositing}
             opacity={!isValidAmount || !amount || isDepositing ? 0.5 : 1}
-            pressStyle={{ opacity: 0.8 }}
             marginTop="$3"
-            icon={isDepositing ? <Spinner size="small" color="$color" /> : undefined}
+            icon={isDepositing ? <Spinner size="small" color="$color1" /> : undefined}
           >
             {isDepositing ? 'Processing...' : 'Deposit USDC'}
-          </Button>
+          </Button.Filled>
         </YStack>
 
         {/* Minimum Deposit Info */}
@@ -272,15 +254,15 @@ export default function HyperliquidBridgePage() {
           marginHorizontal="$4"
           marginTop="$4"
           padding="$3"
-          backgroundColor="rgba(59, 130, 246, 0.1)"
+          backgroundColor="$yellow2"
           borderRadius="$3"
           alignItems="center"
           gap="$2"
         >
-          <AlertTriangle size={20} color="#3B82F6" />
-          <Text fontSize="$3" color="#3B82F6" flex={1}>
+          <AlertTriangle size={20} color="$yellow9" />
+          <Text.Subhead color="$yellow9" flex={1}>
             Minimum deposit amount: {BRIDGE_LIMITS.minimumDeposit} USDC
-          </Text>
+          </Text.Subhead>
         </XStack>
 
         {/* Warning Section */}
@@ -288,17 +270,17 @@ export default function HyperliquidBridgePage() {
           marginHorizontal="$4"
           marginTop="$3"
           padding="$3"
-          backgroundColor="rgba(251, 191, 36, 0.1)"
+          backgroundColor="$yellow2"
           borderRadius="$3"
           gap="$3"
         >
-          <AlertTriangle size={20} color="#F59E0B" style={{ marginTop: 2 }} />
+          <AlertTriangle size={20} color="$yellow9" style={{ marginTop: 2 }} />
           <YStack flex={1}>
-            <Text fontSize="$2" color="#F59E0B" lineHeight="$1">
+            <Text.Footnote color="$yellow9" lineHeight="$1">
               Important: This will transfer USDC from your Arbitrum wallet to the Hyperliquid bridge
               contract at {shortenAddress(ARBITRUM_CONFIG.bridgeAddress, 3)}. Depositing any amount
               less than minimum deposit amount will result in loss of funds.
-            </Text>
+            </Text.Footnote>
           </YStack>
         </XStack>
       </ScrollView>
