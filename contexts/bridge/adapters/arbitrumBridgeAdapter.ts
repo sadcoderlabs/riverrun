@@ -4,6 +4,7 @@
  * This adapter implements the ArbitrumBridgePort interface and handles
  * all Arbitrum L2 interactions:
  * - Query USDC balance from ERC20 contract
+ * - Query ETH balance from Arbitrum L2
  * - Transfer USDC to Hyperliquid bridge contract
  * - Handle different wallet types (Privy embedded vs external wallets)
  * - Network switching to Arbitrum if needed
@@ -45,6 +46,29 @@ export class ArbitrumBridgeAdapter implements ArbitrumBridgePort {
       return formattedBalance;
     } catch (err) {
       console.error('[ArbitrumBridgeAdapter] Failed to fetch USDC balance:', err);
+      return undefined;
+    }
+  }
+
+  /**
+   * Get ETH balance on Arbitrum
+   *
+   * @param walletAddress - User's wallet address
+   * @returns Formatted ETH balance (e.g., "0.5") or undefined if unavailable
+   */
+  async getArbitrumEthBalance(walletAddress: string): Promise<string | undefined> {
+    try {
+      // Use public RPC provider for read-only operation
+      const provider = new JsonRpcProvider(ARBITRUM_CONFIG.rpcUrl);
+
+      // Get native ETH balance (no contract needed)
+      const balanceRaw = await provider.getBalance(walletAddress);
+
+      // Format balance to human-readable string (ETH has 18 decimals)
+      const formattedBalance = formatUnits(balanceRaw, 18);
+      return formattedBalance;
+    } catch (err) {
+      console.error('[ArbitrumBridgeAdapter] Failed to fetch ETH balance:', err);
       return undefined;
     }
   }

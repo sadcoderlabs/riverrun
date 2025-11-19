@@ -27,10 +27,7 @@ export default function DepositCheckpointPage() {
 
   // Wallet and bridge hooks
   const { wallet } = useWallet();
-  const { arbitrumBalance, refreshBalances, isLoadingBalances } = useBridge();
-
-  // Mock ETH balance - not available in useBridge yet
-  const mockETHBalance = '0.00';
+  const { arbitrumBalance, arbitrumEthBalance, refreshBalances, isLoadingBalances } = useBridge();
 
   // Validation constants
   const MINIMUM_ETH = 0;
@@ -38,7 +35,7 @@ export default function DepositCheckpointPage() {
 
   // Parse balances
   const numUSDCBalance = parseFloat(arbitrumBalance || '0');
-  const numETHBalance = parseFloat(mockETHBalance || '0');
+  const numETHBalance = parseFloat(arbitrumEthBalance || '0');
 
   // Check if user can continue
   const hasEnoughETH = numETHBalance > MINIMUM_ETH;
@@ -157,12 +154,16 @@ export default function DepositCheckpointPage() {
                     />
                     <Text.Subhead color="$color11">ETH</Text.Subhead>
                   </XStack>
-                  <XStack alignItems="baseline" gap="$1">
-                    <Text fontSize="$3" fontWeight="500" color="$color12">
-                      {mockETHBalance}
-                    </Text>
-                    <Text.Subhead color="$color10">ETH</Text.Subhead>
-                  </XStack>
+                  {isLoadingBalances ? (
+                    <Spinner size="small" color="$color12" />
+                  ) : (
+                    <XStack alignItems="baseline" gap="$1">
+                      <Text fontSize="$3" fontWeight="500" color="$color12">
+                        {arbitrumEthBalance || '0.00'}
+                      </Text>
+                      <Text.Subhead color="$color10">ETH</Text.Subhead>
+                    </XStack>
+                  )}
                 </XStack>
               </YStack>
 

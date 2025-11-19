@@ -30,6 +30,7 @@ import type { ReferralExchangePort } from '@/contexts/referral/application/ports
 
 // Bridge UseCases
 import type { GetArbitrumBalanceUseCase } from '@/contexts/bridge/application/usecases/GetArbitrumBalanceUseCase';
+import type { GetArbitrumEthBalanceUseCase } from '@/contexts/bridge/application/usecases/GetArbitrumEthBalanceUseCase';
 import type { GetWithdrawableBalanceUseCase } from '@/contexts/bridge/application/usecases/GetWithdrawableBalanceUseCase';
 import type { DepositUsdcUseCase } from '@/contexts/bridge/application/usecases/DepositUsdcUseCase';
 import type { WithdrawUsdcUseCase } from '@/contexts/bridge/application/usecases/WithdrawUsdcUseCase';
@@ -106,6 +107,7 @@ export interface AppCradle {
 
   // Bridge Context - UseCases
   getArbitrumBalanceUseCase: GetArbitrumBalanceUseCase;
+  getArbitrumEthBalanceUseCase: GetArbitrumEthBalanceUseCase;
   getWithdrawableBalanceUseCase: GetWithdrawableBalanceUseCase;
   depositUsdcUseCase: DepositUsdcUseCase;
   withdrawUsdcUseCase: WithdrawUsdcUseCase;

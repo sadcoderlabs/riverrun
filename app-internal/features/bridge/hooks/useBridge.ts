@@ -33,6 +33,8 @@ import type { DepositResult, WithdrawalResult } from '../../../../contexts/bridg
 export interface UseBridgeResult {
   /** USDC balance on Arbitrum */
   arbitrumBalance: string | undefined;
+  /** ETH balance on Arbitrum */
+  arbitrumEthBalance: string | undefined;
   /** Withdrawable USDC balance on Hyperliquid */
   withdrawableBalance: string | undefined;
   /** Loading state for balance fetching */
@@ -46,8 +48,8 @@ export interface UseBridgeResult {
   /**
    * Refresh balances on both chains
    *
-   * Composes GetArbitrumBalanceUseCase and GetWithdrawableBalanceUseCase.
-   * Updates local state with current Arbitrum and Hyperliquid balances.
+   * Composes GetArbitrumBalanceUseCase, GetArbitrumEthBalanceUseCase, and GetWithdrawableBalanceUseCase.
+   * Updates local state with current Arbitrum (USDC/ETH) and Hyperliquid balances.
    *
    * @returns Promise that resolves when balances are refreshed
    *
@@ -90,6 +92,7 @@ export interface UseBridgeResult {
  * // Single hook provides both state and operations
  * const {
  *   arbitrumBalance,
+ *   arbitrumEthBalance,
  *   withdrawableBalance,
  *   isLoadingBalances,
  *   error,
@@ -119,6 +122,7 @@ export interface UseBridgeResult {
 export function useBridge(): UseBridgeResult {
   // Get UseCases from DI container
   const getArbitrumBalanceUseCase = useContainer(c => c.getArbitrumBalanceUseCase);
+  const getArbitrumEthBalanceUseCase = useContainer(c => c.getArbitrumEthBalanceUseCase);
   const getWithdrawableBalanceUseCase = useContainer(c => c.getWithdrawableBalanceUseCase);
   const depositUsdcUseCase = useContainer(c => c.depositUsdcUseCase);
   const withdrawUsdcUseCase = useContainer(c => c.withdrawUsdcUseCase);
@@ -129,6 +133,7 @@ export function useBridge(): UseBridgeResult {
   // State management - useState (not Zustand)
   // Follows BuilderFee/Referral pattern for consistency
   const [arbitrumBalance, setArbitrumBalance] = useState<string | undefined>(undefined);
+  const [arbitrumEthBalance, setArbitrumEthBalance] = useState<string | undefined>(undefined);
   const [withdrawableBalance, setWithdrawableBalance] = useState<string | undefined>(undefined);
   const [isLoadingBalances, setIsLoadingBalances] = useState(false);
   const [error, setError] = useState<Error | undefined>(undefined);
@@ -140,7 +145,7 @@ export function useBridge(): UseBridgeResult {
   /**
    * Refresh balances on both chains
    *
-   * UI Layer composition: Orchestrates two Query UseCases in parallel.
+   * UI Layer composition: Orchestrates three Query UseCases in parallel.
    */
   const refreshBalances = useCallback(async (): Promise<void> => {
     try {
@@ -151,19 +156,22 @@ export function useBridge(): UseBridgeResult {
       if (!wallet) {
         // No wallet - clear balances
         setArbitrumBalance(undefined);
+        setArbitrumEthBalance(undefined);
         setWithdrawableBalance(undefined);
         return;
       }
 
-      // UI Layer: Compose two Query UseCases
-      // Execute both queries in parallel for better performance
-      const [arbitrumBal, withdrawableBal] = await Promise.all([
+      // UI Layer: Compose three Query UseCases
+      // Execute all queries in parallel for better performance
+      const [arbitrumBal, arbitrumEthBal, withdrawableBal] = await Promise.all([
         getArbitrumBalanceUseCase.execute({ walletAddress: wallet.address }),
+        getArbitrumEthBalanceUseCase.execute({ walletAddress: wallet.address }),
         getWithdrawableBalanceUseCase.execute({ walletAddress: wallet.address }),
       ]);
 
       // UI Layer: Update state with results
       setArbitrumBalance(arbitrumBal);
+      setArbitrumEthBalance(arbitrumEthBal);
       setWithdrawableBalance(withdrawableBal);
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err));
@@ -172,7 +180,12 @@ export function useBridge(): UseBridgeResult {
     } finally {
       setIsLoadingBalances(false);
     }
-  }, [getArbitrumBalanceUseCase, getWithdrawableBalanceUseCase, wallet]);
+  }, [
+    getArbitrumBalanceUseCase,
+    getArbitrumEthBalanceUseCase,
+    getWithdrawableBalanceUseCase,
+    wallet,
+  ]);
 
   /**
    * Deposit USDC from Arbitrum to Hyperliquid
@@ -252,6 +265,7 @@ export function useBridge(): UseBridgeResult {
 
   return {
     arbitrumBalance,
+    arbitrumEthBalance,
     withdrawableBalance,
     isLoadingBalances,
     error,

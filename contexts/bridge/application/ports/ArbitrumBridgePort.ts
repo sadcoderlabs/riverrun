@@ -3,6 +3,7 @@
  *
  * This port defines the interface for Arbitrum-related bridge operations:
  * - Query USDC balance on Arbitrum
+ * - Query ETH balance on Arbitrum
  * - Deposit USDC from Arbitrum to Hyperliquid
  *
  * Implementation responsibility:
@@ -29,6 +30,14 @@ export interface ArbitrumBridgePort {
    * @returns Formatted USDC balance (e.g., "10.5") or undefined if unavailable
    */
   getArbitrumBalance(walletAddress: string): Promise<string | undefined>;
+
+  /**
+   * Get ETH balance on Arbitrum
+   *
+   * @param walletAddress - User's wallet address
+   * @returns Formatted ETH balance (e.g., "0.5") or undefined if unavailable
+   */
+  getArbitrumEthBalance(walletAddress: string): Promise<string | undefined>;
 
   /**
    * Deposit USDC from Arbitrum to Hyperliquid

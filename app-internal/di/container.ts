@@ -40,6 +40,7 @@ import { SetReferrerUseCase } from '@/contexts/referral/application/usecases/Set
 
 // Bridge UseCases
 import { GetArbitrumBalanceUseCase } from '@/contexts/bridge/application/usecases/GetArbitrumBalanceUseCase';
+import { GetArbitrumEthBalanceUseCase } from '@/contexts/bridge/application/usecases/GetArbitrumEthBalanceUseCase';
 import { GetWithdrawableBalanceUseCase } from '@/contexts/bridge/application/usecases/GetWithdrawableBalanceUseCase';
 import { DepositUsdcUseCase } from '@/contexts/bridge/application/usecases/DepositUsdcUseCase';
 import { WithdrawUsdcUseCase } from '@/contexts/bridge/application/usecases/WithdrawUsdcUseCase';
@@ -238,6 +239,11 @@ export function createAppContainer(options: CreateContainerOptions): AppContaine
     // GetArbitrumBalanceUseCase: Query USDC balance on Arbitrum
     getArbitrumBalanceUseCase: asFunction(({ arbitrumBridgePort }) => {
       return new GetArbitrumBalanceUseCase(arbitrumBridgePort);
+    }).singleton(),
+
+    // GetArbitrumEthBalanceUseCase: Query ETH balance on Arbitrum
+    getArbitrumEthBalanceUseCase: asFunction(({ arbitrumBridgePort }) => {
+      return new GetArbitrumEthBalanceUseCase(arbitrumBridgePort);
     }).singleton(),
 
     // GetWithdrawableBalanceUseCase: Query withdrawable USDC on Hyperliquid
