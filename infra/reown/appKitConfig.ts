@@ -2,7 +2,7 @@ import '@walletconnect/react-native-compat';
 
 import { EthersAdapter } from '@reown/appkit-ethers-react-native';
 import { createAppKit } from '@reown/appkit-react-native';
-import { arbitrum, mainnet } from 'viem/chains';
+import { arbitrum } from 'viem/chains';
 import { storage } from './storageUtil';
 
 /**
@@ -33,8 +33,8 @@ const ethersAdapter = new EthersAdapter();
 export const appKit = createAppKit({
   projectId,
   metadata,
-  networks: [mainnet, arbitrum],
-  defaultNetwork: mainnet,
+  networks: [arbitrum],
+  defaultNetwork: arbitrum,
   adapters: [ethersAdapter],
   storage,
   enableAnalytics: true,
