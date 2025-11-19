@@ -1,11 +1,9 @@
 import { ARBITRUM_CONFIG, BRIDGE_LIMITS, useBridge, useWallet } from '@/app-internal';
 import { Button, CustomHeader } from '@/app-internal/components/global';
-import { CardContainer } from '@/app-internal/components/global/CardContainer';
 import { Input } from '@/app-internal/components/global/Input';
 import { Text } from '@/app-internal/components/global/Text';
 import { DEPOSIT_TOKENS, type ChainName } from '@/contexts/bridge/depositTokens';
-import { AlertTriangle, Copy, Loader } from '@tamagui/lucide-icons';
-import * as Clipboard from 'expo-clipboard';
+import { AlertTriangle } from '@tamagui/lucide-icons';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView } from 'react-native';
@@ -72,18 +70,6 @@ export default function HyperliquidBridgePage() {
     }
   };
 
-  const handleCopyAddress = async (addressToCopy: string, label: string) => {
-    try {
-      await Clipboard.setStringAsync(addressToCopy);
-      toast.success('Copied!', {
-        description: `${label} copied to clipboard`,
-      });
-    } catch (error) {
-      console.error('Failed to copy address:', error);
-      toast.error('Failed to copy address');
-    }
-  };
-
   const handleDeposit = async () => {
     if (!isValidAmount) {
       Alert.alert(
@@ -117,173 +103,145 @@ export default function HyperliquidBridgePage() {
       {/* Header */}
       <CustomHeader title="Deposit 2/2" />
 
-      {/* Scrollable Content */}
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 20 }}
-      >
-        {/* Main Card */}
-        <YStack paddingHorizontal="$4" paddingTop="$4" gap="$4">
-          {/* Call to Action Card */}
-          <CardContainer gap="$3">
-            {/* Title */}
-            <Text fontFamily="$interSemiBold" fontSize="$5" color="$color12" textAlign="center">
-              Deposit USDC to your wallet on Arbitrum
-            </Text>
-
-            {/* Wallet Address */}
-            <XStack
-              backgroundColor="$accent9"
-              borderRadius="$3"
-              padding="$3"
-              alignItems="center"
-              gap="$2"
-              justifyContent="center"
-            >
-              <Text fontSize="$5" fontFamily="$skMono" color="$color1" fontWeight="600">
-                {shortenAddress(wallet.address, 4)}
-              </Text>
-              <Pressable onPress={() => handleCopyAddress(wallet.address, 'Wallet address')}>
-                <Copy size={20} color="$color1" />
-              </Pressable>
+      {/* Main Content Area - Flex to push submit section to bottom */}
+      <YStack flex={1} justifyContent="space-between">
+        {/* Scrollable Content */}
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
+          {/* Balance & Policy Display Section */}
+          <YStack paddingHorizontal="$4" paddingTop="$4" gap="$2">
+            <XStack padding="$3" marginTop="$3" backgroundColor="$gray2" borderRadius="$3">
+              <YStack flex={1} gap="$2">
+                <XStack alignItems="center" justifyContent="space-between">
+                  <Text.Footnote color="$color10">Available</Text.Footnote>
+                  <Text.Footnote color="$color12" fontWeight="500">
+                    {balance || '0.00'} USDC
+                  </Text.Footnote>
+                </XStack>
+                <XStack alignItems="center" justifyContent="space-between">
+                  <Text.Footnote color="$color10">Minimum</Text.Footnote>
+                  <Text.Footnote color="$color12" fontWeight="500">
+                    {BRIDGE_LIMITS.minimumDeposit} USDC
+                  </Text.Footnote>
+                </XStack>
+                <XStack alignItems="center" justifyContent="space-between">
+                  <Text.Footnote color="$color10">Processing time</Text.Footnote>
+                  <Text.Footnote color="$color12" fontWeight="500">
+                    ~5 minutes
+                  </Text.Footnote>
+                </XStack>
+              </YStack>
             </XStack>
-
-            {/* USDC Contract Address */}
-            <Text.Footnote color="$color10" textAlign="center">
-              USDC Contract: {shortenAddress(ARBITRUM_CONFIG.usdcAddress, 3)}
-            </Text.Footnote>
-
-            {/* Monitoring Status */}
-            <XStack alignItems="center" gap="$2" justifyContent="center">
-              <Loader size={16} color="$accent9" animation="slow" />
-              <Text.Subhead color="$accent9" fontFamily="$interMedium">
-                Monitoring for deposits...
-              </Text.Subhead>
-            </XStack>
-          </CardContainer>
-        </YStack>
-
-        {/* Balance Display */}
-        <XStack
-          paddingHorizontal="$4"
-          paddingVertical="$3"
-          justifyContent="space-between"
-          alignItems="center"
-        >
-          <Text.Subhead color="$color11">Your USDC Balance on Arbitrum:</Text.Subhead>
-          <XStack alignItems="baseline" gap="$1">
-            <Text fontSize="$5" fontFamily="$interSemiBold" color="$color12">
-              {balance || '0.0'}
-            </Text>
-            <Text.Subhead color="$color10">USDC</Text.Subhead>
-          </XStack>
-        </XStack>
-
-        {/* Amount Input Section */}
-        <YStack paddingHorizontal="$4" gap="$2" paddingTop="$2">
-          <Text.Subhead color="$color11">Deposit Amount</Text.Subhead>
-
-          <YStack gap="$2">
-            {/* Input with Max Button */}
-            <XStack
-              backgroundColor="$background02"
-              borderRadius="$3"
-              borderWidth={1}
-              borderColor={
-                amount && numAmount < BRIDGE_LIMITS.minimumDeposit ? '$accent9' : '$borderColor'
-              }
-              alignItems="center"
-              paddingRight="$3"
-            >
-              <Input
-                flex={1}
-                placeholder="0.00"
-                placeholderTextColor="$gray10"
-                value={amount}
-                onChangeText={setAmount}
-                keyboardType="decimal-pad"
-                fontSize="$5"
-                fontFamily="$interMedium"
-                backgroundColor="transparent"
-                borderWidth={0}
-                paddingVertical="$3"
-                editable={!isDepositing}
-              />
-              <XStack gap="$2" alignItems="center">
-                <Pressable onPress={handleMaxPress} disabled={isDepositing}>
-                  <Text
-                    fontSize="$3"
-                    color={isDepositing ? '$color10' : '$accent9'}
-                    fontFamily="$interSemiBold"
-                  >
-                    MAX
-                  </Text>
-                </Pressable>
-                <Text color="$color10">USDC</Text>
-              </XStack>
-            </XStack>
-
-            {/* Validation Message */}
-            {amount && numAmount < BRIDGE_LIMITS.minimumDeposit && (
-              <Text.Footnote color="$accent9" fontFamily="$interMedium">
-                Amount must be at least {BRIDGE_LIMITS.minimumDeposit} USDC
-              </Text.Footnote>
-            )}
-            {amount && numAmount > numBalance && (
-              <Text.Footnote color="$accent9" fontFamily="$interMedium">
-                Insufficient balance
-              </Text.Footnote>
-            )}
           </YStack>
 
-          {/* Deposit Button */}
+          {/* Deposit Details Section */}
+          {/* Amount Input */}
+          <YStack paddingHorizontal="$4" gap="$2" marginTop="$5">
+            <Text.Subhead color="$color11">Amount</Text.Subhead>
+
+            <YStack gap="$1">
+              {/* Input with Max Button */}
+              <XStack
+                backgroundColor="$background02"
+                borderRadius="$3"
+                borderWidth={1}
+                borderColor={
+                  amount && (numAmount <= 0 || numAmount < BRIDGE_LIMITS.minimumDeposit)
+                    ? '$red9'
+                    : '$borderColor'
+                }
+                alignItems="center"
+                paddingRight="$3"
+              >
+                <Input
+                  flex={1}
+                  placeholder="0.0"
+                  placeholderTextColor="$gray10"
+                  value={amount}
+                  onChangeText={setAmount}
+                  keyboardType="decimal-pad"
+                  fontSize="$3"
+                  backgroundColor="transparent"
+                  borderWidth={0}
+                  paddingVertical="$2"
+                  editable={!isDepositing}
+                />
+                <XStack gap="$2" alignItems="center">
+                  <Pressable onPress={handleMaxPress} disabled={isDepositing}>
+                    <XStack
+                      backgroundColor="$gray5"
+                      paddingVertical="$1"
+                      paddingHorizontal="$2"
+                      borderRadius="$1"
+                    >
+                      <Text
+                        fontSize="$2"
+                        color={isDepositing ? '$color9' : '$color12'}
+                        fontWeight="500"
+                      >
+                        MAX
+                      </Text>
+                    </XStack>
+                  </Pressable>
+                  <Text.Footnote color="$color10">USDC</Text.Footnote>
+                </XStack>
+              </XStack>
+
+              {/* Validation Message */}
+              {amount && numAmount > 0 && numAmount < BRIDGE_LIMITS.minimumDeposit && (
+                <Text.Footnote color="$red9">
+                  Minimum deposit amount: {BRIDGE_LIMITS.minimumDeposit} USDC
+                </Text.Footnote>
+              )}
+              {amount && numAmount > numBalance && (
+                <Text.Footnote color="$red9">Insufficient balance</Text.Footnote>
+              )}
+            </YStack>
+          </YStack>
+        </ScrollView>
+
+        {/* Submit Section - Fixed at bottom with safe zone padding */}
+        <YStack paddingHorizontal="$4" paddingBottom="$4" marginTop="$2" gap="$3">
+          <XStack
+            padding="$4"
+            backgroundColor="$yellow2"
+            borderRadius="$3"
+            gap="$3"
+            alignItems="flex-start"
+          >
+            <AlertTriangle size={16} color="$yellow9" />
+            <YStack flex={1}>
+              <YStack gap="$1" alignItems="flex-start" style={{ marginTop: -3 }}>
+                <Text.Footnote color="$yellow9" fontWeight="700">
+                  Important Information
+                </Text.Footnote>
+                <XStack gap="$2" alignItems="flex-start">
+                  <Text.Caption color="$yellow9">•</Text.Caption>
+                  <Text.Footnote color="$yellow9">
+                    This transfers USDC to the Hyperliquid bridge contract{' '}
+                    {shortenAddress(ARBITRUM_CONFIG.bridgeAddress, 3)}
+                  </Text.Footnote>
+                </XStack>
+                <XStack gap="$2" alignItems="flex-start">
+                  <Text.Caption color="$yellow9">•</Text.Caption>
+                  <Text.Footnote color="$yellow9">
+                    Deposits below minimum required will result in loss of funds
+                  </Text.Footnote>
+                </XStack>
+              </YStack>
+            </YStack>
+          </XStack>
           <Button.Filled
             level="lg"
+            height="$5"
             onPress={handleDeposit}
             disabled={!isValidAmount || !amount || isDepositing}
             opacity={!isValidAmount || !amount || isDepositing ? 0.5 : 1}
-            marginTop="$3"
             icon={isDepositing ? <Spinner size="small" color="$color1" /> : undefined}
           >
-            {isDepositing ? 'Processing...' : 'Deposit USDC'}
+            {isDepositing ? 'Processing...' : 'Confirm'}
           </Button.Filled>
         </YStack>
-
-        {/* Minimum Deposit Info */}
-        <XStack
-          marginHorizontal="$4"
-          marginTop="$4"
-          padding="$3"
-          backgroundColor="$yellow2"
-          borderRadius="$3"
-          alignItems="center"
-          gap="$2"
-        >
-          <AlertTriangle size={20} color="$yellow9" />
-          <Text.Subhead color="$yellow9" flex={1}>
-            Minimum deposit amount: {BRIDGE_LIMITS.minimumDeposit} USDC
-          </Text.Subhead>
-        </XStack>
-
-        {/* Warning Section */}
-        <XStack
-          marginHorizontal="$4"
-          marginTop="$3"
-          padding="$3"
-          backgroundColor="$yellow2"
-          borderRadius="$3"
-          gap="$3"
-        >
-          <AlertTriangle size={20} color="$yellow9" style={{ marginTop: 2 }} />
-          <YStack flex={1}>
-            <Text.Footnote color="$yellow9" lineHeight="$1">
-              Important: This will transfer USDC from your Arbitrum wallet to the Hyperliquid bridge
-              contract at {shortenAddress(ARBITRUM_CONFIG.bridgeAddress, 3)}. Depositing any amount
-              less than minimum deposit amount will result in loss of funds.
-            </Text.Footnote>
-          </YStack>
-        </XStack>
-      </ScrollView>
+      </YStack>
     </YStack>
   );
 }
