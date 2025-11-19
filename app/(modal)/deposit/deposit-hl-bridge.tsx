@@ -115,7 +115,7 @@ export default function HyperliquidBridgePage() {
   return (
     <YStack flex={1} backgroundColor="$background">
       {/* Header */}
-      <CustomHeader title={`Deposit ${token.symbol}`} />
+      <CustomHeader title="Deposit 2/2" />
 
       {/* Scrollable Content */}
       <ScrollView
