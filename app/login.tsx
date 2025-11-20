@@ -1,7 +1,7 @@
-import { Button } from '@/app-internal/components/global/Button';
-import { Heading } from '@/app-internal/components/global/Heading';
-import { useThemePreference } from '@/app-internal/components/shared/theme/useThemePreference';
 import { useWallet } from '@/app-internal';
+import { Button } from '@/app-internal/components/global/Button';
+import { CustomIcons } from '@/app-internal/components/global/icons/CustomIcons';
+import { useThemePreference } from '@/app-internal/components/shared/theme/useThemePreference';
 import { Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { toast } from 'sonner-native';
@@ -51,39 +51,42 @@ export default function Login() {
       }}
     >
       {/* Main content - centered vertically */}
-      <YStack flex={1} justifyContent="center" alignItems="center" gap="$4" width="100%">
+      <YStack flex={1} justifyContent="center" alignItems="center" gap="$2" width="100%">
         {/* App Logo */}
-        <Heading.H1 fontFamily="$interSemiBold" fontSize="$10" lineHeight={70} paddingVertical="$2">
-          RVR
-        </Heading.H1>
-
-        {/* Tagline */}
-        <Text
-          fontFamily="$interRegular"
-          fontSize={16}
-          color="$color9"
-          textAlign="center"
-          marginBottom="$4"
-        >
-          Futures Trading In Motion
-        </Text>
+        <YStack marginTop="$2" alignItems="center" justifyContent="flex-start" width="100%">
+          <CustomIcons.PerpgoLogo width={280} height={80} fillColor="white" />
+        </YStack>
 
         {/* Login Buttons */}
-        <YStack gap="$3" width="100%" maxWidth={400} paddingHorizontal="$4">
-          <Button.Filled level="lg" onPress={handleEmailLogin}>
-            Continue with Email
+        <YStack gap="$3" width="100%" maxWidth={400} paddingHorizontal="$4" marginTop="$4">
+          {/* Tagline */}
+          <Text
+            fontFamily="$interMedium"
+            fontSize={18}
+            color="$color12"
+            textAlign="center"
+            marginTop="$0"
+            marginBottom="$3"
+          >
+            Futures Trading In Motion
+          </Text>
+          {/* Connect Wallet Button */}
+          <Button.Filled level="lg" onPress={handleWalletConnect}>
+            Connect Wallet via Reown
           </Button.Filled>
 
-          {/* Divider */}
-          <YStack alignItems="center" gap="$2" marginVertical="$2">
-            <Text color="$color9" fontSize={14}>
-              or
-            </Text>
+          {/* Divider with horizontal lines */}
+          <YStack alignItems="center" marginVertical="$4">
+            <View flexDirection="row" alignItems="center" width="100%">
+              <View flex={1} height={1} backgroundColor="$color6" />
+              <Text color="$color9" fontSize={14} marginHorizontal="$3">
+                or
+              </Text>
+              <View flex={1} height={1} backgroundColor="$color6" />
+            </View>
           </YStack>
-
-          {/* Connect Wallet Button */}
-          <Button.Tinted level="lg" onPress={handleWalletConnect}>
-            Continue with Wallet
+          <Button.Tinted level="lg" onPress={handleEmailLogin}>
+            Continue with Email
           </Button.Tinted>
         </YStack>
       </YStack>
@@ -96,7 +99,7 @@ export default function Login() {
               ? require('@/app-internal/assets/images/PoweredByHL-light.png')
               : require('@/app-internal/assets/images/PoweredByHL-dark.png')
           }
-          style={{ width: 200 }}
+          style={{ width: 160 }}
           resizeMode="contain"
         />
       </YStack>
