@@ -26,6 +26,13 @@ export class WalletService implements WalletPort {
   ) {}
 
   /**
+   * Check if Privy is ready to be used
+   */
+  isPrivyReady(): boolean {
+    return this.privyAdapter.isReady();
+  }
+
+  /**
    * Handle connection state changes (should be called when adapters change)
    *
    * Business rule: When Reown wallet connects, automatically switch to it.

@@ -59,4 +59,22 @@ export interface WalletPort {
    * @throws Error if no wallet is active
    */
   getSigner(): Promise<Signer>;
+
+  /**
+   * Check if Privy wallet is ready to be used
+   *
+   * This checks whether the Privy SDK has been fully initialized and
+   * is ready to handle login/authentication operations.
+   *
+   * @returns true if Privy is ready, false otherwise
+   */
+  isPrivyReady(): boolean;
+
+  /**
+   * Handle connection state changes
+   *
+   * Should be called when wallet adapters' connection states change.
+   * Implements business logic like auto-switching to newly connected wallets.
+   */
+  handleConnectionStateChange(): void;
 }

@@ -26,6 +26,11 @@ export interface UseWalletResult {
   isConnected: boolean;
 
   /**
+   * Whether Privy is ready to be used.
+   */
+  isPrivyReady: boolean;
+
+  /**
    * Connect to a wallet (Privy or Reown)
    */
   connect: (source: WalletSource) => Promise<void>;
@@ -86,6 +91,7 @@ export function useWallet(): UseWalletResult {
   // Derive convenience values from activeWallet
   const address = activeWallet?.address;
   const isConnected = activeWallet !== undefined;
+  const isPrivyReady = walletService.isPrivyReady();
 
   // Wrap walletService methods with useCallback for stable references
   const connect = useCallback(
@@ -111,6 +117,7 @@ export function useWallet(): UseWalletResult {
     wallet: activeWallet,
     address,
     isConnected,
+    isPrivyReady,
     connect,
     disconnect,
     setActive,

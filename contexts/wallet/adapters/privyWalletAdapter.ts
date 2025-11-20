@@ -19,6 +19,9 @@ export interface PrivyHooksData {
   // User state
   user: any | undefined;
 
+  // Ready state
+  isReady: boolean;
+
   // Operations
   login: (options: any) => Promise<unknown>;
   logout: () => Promise<void>;
@@ -35,6 +38,8 @@ export interface PrivyHooksData {
  * from React components.
  */
 export class PrivyWalletAdapter {
+  private isConnecting = false;
+
   constructor(private hooksData: PrivyHooksData) {}
 
   /**
@@ -92,14 +97,40 @@ export class PrivyWalletAdapter {
   }
 
   /**
+   * Check if Privy is ready to be used
+   */
+  isReady(): boolean {
+    return this.hooksData.isReady;
+  }
+
+  /**
    * Connect via Privy (email login)
+   *
+   * This method includes concurrency protection to prevent multiple simultaneous login attempts.
+   * If a login is already in progress, subsequent calls will be silently ignored.
    */
   async connect(): Promise<void> {
+    // Check if Privy is ready before attempting to connect
+    if (!this.hooksData.isReady) {
+      throw new Error('Privy is not ready');
+    }
+
+    // Concurrency protection: if already connecting, throw a specific error
+    if (this.isConnecting) {
+      const error = new Error('A login flow is already in progress');
+      (error as any).code = 'ALREADY_CONNECTING';
+      throw error;
+    }
+
+    // Set the lock
+    this.isConnecting = true;
+
     try {
       await this.hooksData.login({ loginMethods: ['email'] });
     } catch (error: any) {
-      // Check if user cancelled the modal
       const errorMessage = error?.message || error?.toString() || '';
+
+      // Check if user cancelled the modal
       const isCancelled =
         errorMessage.includes('cancelled') ||
         errorMessage.includes('dismissed') ||
@@ -107,10 +138,28 @@ export class PrivyWalletAdapter {
         errorMessage.includes('User cancelled') ||
         error?.code === 'USER_CANCELLED';
 
-      // Re-throw if it's not a cancellation
-      if (!isCancelled) {
-        throw error;
+      if (isCancelled) {
+        // Throw a specific error for user cancellation
+        const cancelError = new Error('User cancelled login');
+        (cancelError as any).code = 'USER_CANCELLED';
+        throw cancelError;
       }
+
+      // Check if it's a concurrent login attempt from Privy itself
+      // This shouldn't happen with our lock, but handle it just in case
+      const isAlreadyInProgress = errorMessage.includes('A login flow is already in progress');
+
+      if (isAlreadyInProgress) {
+        const concurrentError = new Error('A login flow is already in progress');
+        (concurrentError as any).code = 'ALREADY_CONNECTING';
+        throw concurrentError;
+      }
+
+      // Re-throw other errors
+      throw error;
+    } finally {
+      // Always release the lock
+      this.isConnecting = false;
     }
   }
 

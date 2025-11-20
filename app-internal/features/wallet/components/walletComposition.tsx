@@ -91,6 +91,7 @@ export function WalletCompositionProvider({ children }: { children: React.ReactN
           }
         : undefined,
       user,
+      isReady: privyReady,
       login: privyLogin,
       logout: privyLogout,
     });
@@ -111,6 +112,7 @@ export function WalletCompositionProvider({ children }: { children: React.ReactN
   }, [
     embeddedWallets,
     user,
+    privyReady,
     privyLogin,
     privyLogout,
     reownAddress,
@@ -157,7 +159,8 @@ export function WalletCompositionProvider({ children }: { children: React.ReactN
     [walletService, activeWallet],
   );
 
-  // Don't render children until Privy is ready
+  // Don't render children until Privy SDK is ready
+  // The adapter layer handles concurrency protection, so we only need to wait for SDK ready
   if (!privyReady) {
     return null;
   }

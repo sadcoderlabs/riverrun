@@ -2,28 +2,54 @@ import { useWallet } from '@/app-internal';
 import { Button } from '@/app-internal/components/global/Button';
 import { CustomIcons } from '@/app-internal/components/global/icons/CustomIcons';
 import { useThemePreference } from '@/app-internal/components/shared/theme/useThemePreference';
+import { useState } from 'react';
 import { Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { toast } from 'sonner-native';
-import { Text, View, YStack } from 'tamagui';
+import { Spinner, Text, View, YStack } from 'tamagui';
 
 export default function Login() {
   const insets = useSafeAreaInsets();
   const { effectiveTheme } = useThemePreference();
   const { connect } = useWallet();
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   // Handle email login via Privy
   const handleEmailLogin = async () => {
+    // Prevent double-clicking
+    if (isLoggingIn) {
+      return;
+    }
+
+    setIsLoggingIn(true);
+
+    // Give React a chance to render the loading state before blocking on connect
+    await new Promise(resolve => setTimeout(resolve, 0));
+
     try {
       await connect('privy');
       toast.success('Welcome!', {
         description: 'Login successful',
       });
     } catch (error: any) {
+      // Don't show error for user cancellation
+      if (error?.code === 'USER_CANCELLED') {
+        console.log('User cancelled login');
+        return;
+      }
+
+      // Don't show error for concurrent login attempts (silently ignored)
+      if (error?.code === 'ALREADY_CONNECTING') {
+        console.log('Login already in progress, ignoring duplicate request');
+        return;
+      }
+
       console.error('Privy login error:', error);
       toast.error('Login failed', {
         description: 'Please try again',
       });
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
@@ -85,8 +111,13 @@ export default function Login() {
               <View flex={1} height={1} backgroundColor="$color6" />
             </View>
           </YStack>
-          <Button.Tinted level="lg" onPress={handleEmailLogin}>
-            Continue with Email
+          <Button.Tinted
+            level="lg"
+            onPress={handleEmailLogin}
+            disabled={isLoggingIn}
+            icon={isLoggingIn ? <Spinner size="small" color="$accent1" /> : undefined}
+          >
+            {isLoggingIn ? 'Logging in...' : 'Continue with Email'}
           </Button.Tinted>
         </YStack>
       </YStack>
