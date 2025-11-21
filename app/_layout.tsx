@@ -14,6 +14,7 @@ import { AppCompositionProvider, useWallet } from '@/app-internal';
 import { useAppLifecycle } from '@/app-internal/components/shared/hooks/useAppLifecycle';
 import { useThemePreference } from '@/app-internal/components/shared/theme/useThemePreference';
 import { useAutoUpdate } from '@/app-internal/features/version/hooks/useAutoUpdate';
+import { useCustomerSupportWalletSync } from '@/app-internal/features/customerSupport';
 import { subscriptionManager } from '@/infra/hyperliquid/subscription';
 import { queryClient } from '@/infra/reactQuery';
 import { initializeSegment } from '@/infra/segment/segmentConfig';
@@ -39,6 +40,9 @@ initializeSentry();
 // Should be called after Sentry initialization
 initializeSegment();
 
+// Note: Intercom uses manual initialization (lazy initialization)
+// It will be initialized automatically when the user first opens the support messenger
+
 // Suppress known warnings
 LogBox.ignoreLogs([
   // WalletConnect warnings during session restoration
@@ -55,6 +59,10 @@ function WalletInfoDisplay() {
 
   // Automatic OTA update check on cold boot (preview/production builds only)
   useAutoUpdate();
+
+  // Sync wallet state with customer support (Intercom)
+  // Automatically identifies user when wallet connects and logs out when disconnects
+  useCustomerSupportWalletSync();
 
   // App Lifecycle management for subscription systems
   // When app goes to background, pause all subscriptions to save battery and data

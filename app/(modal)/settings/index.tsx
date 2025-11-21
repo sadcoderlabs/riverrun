@@ -7,8 +7,9 @@ import ExportWalletModal from '@/app-internal/components/settings/ExportWalletMo
 import { type ThemePreference } from '@/app-internal/components/shared/theme/theme.store';
 import { useThemePreference } from '@/app-internal/components/shared/theme/useThemePreference';
 import { useVersionInfo } from '@/app-internal/features/version/hooks/useVersionInfo';
+import { useCustomerSupport } from '@/app-internal/features/customerSupport';
 import { features } from '@/config/environment';
-import { ArrowUpRight } from '@tamagui/lucide-icons';
+import { ArrowUpRight, MessageCircle } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Linking } from 'react-native';
@@ -20,6 +21,7 @@ export default function Index() {
   const { wallet } = useWallet();
   const [showExportModal, setShowExportModal] = useState(false);
   const { displayVersion, checkForUpdate, isChecking, isDownloading } = useVersionInfo();
+  const { openSupport } = useCustomerSupport();
 
   const getThemeDisplayName = (theme: ThemePreference) => {
     const themeMap: Record<ThemePreference, string> = {
@@ -99,6 +101,16 @@ export default function Index() {
                     </View>
                   }
                   onPress={() => Linking.openURL('https://x.com/perpprotocol')}
+                />
+                <ListItem
+                  title="Contact Support"
+                  subTitle="Get help from our team"
+                  iconAfter={
+                    <View marginRight={'$1.5'}>
+                      <MessageCircle size={18} color={'$color04'} fontWeight={'bold'} />
+                    </View>
+                  }
+                  onPress={openSupport}
                 />
               </ListSection>
             </YStack>

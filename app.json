@@ -48,6 +48,15 @@
           "organization": "perp",
           "project": "riverrun"
         }
+      ],
+      [
+        "@intercom/intercom-react-native",
+        {
+          "appId": "tlxodcmw",
+          "androidApiKey": "android_sdk-bdb2171ef56a06265b1df0f5aecf5d14adc40d4f",
+          "iosApiKey": "ios_sdk-e5774cb37d2a4066ddf241e1494637775fcf4801",
+          "useManualInit": true
+        }
       ]
     ],
     "experiments": {
