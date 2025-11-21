@@ -1,6 +1,6 @@
 import { useMargin, useMarginStore } from '@/app-internal';
 import { toast } from 'sonner-native';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Modal, Pressable, StyleSheet } from 'react-native';
 import { Button, Slider, Spinner, Text, XStack, YStack } from 'tamagui';
 
@@ -28,6 +28,7 @@ export function LeverageAdjustmentModal({ open, onOpenChange }: LeverageAdjustme
   );
 
   // Sync local state with current margin/leverage when modal opens
+  // Intentionally omit marginLeverage from deps to prevent WebSocket updates from overwriting user input
   useEffect(() => {
     if (open && marginLeverage) {
       // Clamp the leverage to the valid range
@@ -38,7 +39,7 @@ export function LeverageAdjustmentModal({ open, onOpenChange }: LeverageAdjustme
       setSelectedLeverage(clampedLeverage);
       setSelectedMarginMode(marginLeverage.marginMode);
     }
-  }, [open, marginLeverage]);
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle margin mode change - immediately call API
   const handleMarginModeChange = useCallback(
