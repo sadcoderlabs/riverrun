@@ -28,6 +28,9 @@ importers:
       '@hookform/resolvers':
         specifier: 5.2.2
         version: 5.2.2(react-hook-form@7.65.0(react@19.1.0))
+      '@intercom/intercom-react-native':
+        specifier: ^9.3.3
+        version: 9.3.3(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0)
       '@nktkas/hyperliquid':
         specifier: 0.25.5
         version: 0.25.5(typescript@5.9.2)
@@ -920,7 +923,7 @@ packages:
 
   '@expo/bunyan@4.0.1':
     resolution: {integrity: sha512-+Lla7nYSiHZirgK+U/uYzsLv/X+HaJienbD5AKX1UQZHYfWaP+9uuQluRB4GrEVWF0GZ7vEVp/jzaOT9k/SQlg==}
-    engines: {node: '>=0.10.0'}
+    engines: {'0': node >=0.10.0}
 
   '@expo/cli@54.0.16':
     resolution: {integrity: sha512-hY/OdRaJMs5WsVPuVSZ+RLH3VObJmL/pv5CGCHEZHN2PxZjSZSdctyKV8UcFBXTF0yIKNAJ9XLs1dlNYXHh4Cw==}
@@ -1183,6 +1186,13 @@ packages:
   '@humanwhocodes/retry@0.4.3':
     resolution: {integrity: sha512-bV0Tgo9K4hfPCek+aMAn81RppFKv2ySDQeMoSZuvTASywNTnVJCArCZE2FWqpvIatKu7VMRLWlR1EazvVhDyhQ==}
     engines: {node: '>=18.18'}
+
+  '@intercom/intercom-react-native@9.3.3':
+    resolution: {integrity: sha512-dhmdVd33zb4jQ9KLoUdOovaOBq9b1aj1kwqJMtH+CVsylRsmg81B+/H95F+kmwRfZPjD5Qu3dB6T4z5ToPlvUA==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      react: '*'
+      react-native: '*'
 
   '@isaacs/cliui@8.0.2':
     resolution: {integrity: sha512-O8jcjabXaleOG9DQ0+ARXWZBTfnP4WNAqzuiJK7ll44AmxGKv/J2M4TPjxjY3znBCfvBXFzucm1twdyFybFqEA==}
@@ -9623,6 +9633,11 @@ snapshots:
   '@humanwhocodes/module-importer@1.0.1': {}
 
   '@humanwhocodes/retry@0.4.3': {}
+
+  '@intercom/intercom-react-native@9.3.3(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0)':
+    dependencies:
+      react: 19.1.0
+      react-native: 0.81.5(@babel/core@7.28.5)(@types/react@19.1.13)(react@19.1.0)
 
   '@isaacs/cliui@8.0.2':
     dependencies:
