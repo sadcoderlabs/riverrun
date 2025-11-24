@@ -6,10 +6,10 @@ import { formatSize } from '@/infra/hyperliquid/format/formatSize';
 import { formatValue } from '@/infra/hyperliquid/format/formatValue';
 import * as hl from '@nktkas/hyperliquid';
 import { Checkbox } from '@tamagui/checkbox';
-import { Check } from '@tamagui/lucide-icons';
+import { Check, X } from '@tamagui/lucide-icons';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ScrollView } from 'react-native';
-import { Sheet, Slider, Text, XStack, YStack } from 'tamagui';
+import { Sheet, Slider, Spinner, Text, XStack, YStack } from 'tamagui';
 
 type Position = hl.ClearinghouseStateResponse['assetPositions'][number]['position'];
 
@@ -475,41 +475,42 @@ export default function TpSlModal({ open, onOpenChange, position }: TpSlModalPro
             <YStack gap="$3" marginTop="$4">
               {/* Take Profit */}
               <YStack gap="$3">
-                <XStack justifyContent="space-between" alignItems="center">
-                  <Text fontSize="$2" color="$color" fontWeight={400}>
-                    Take Profit
-                  </Text>
-                  {existingTpSlOrders.tp && (
-                    <Button
-                      size="$2"
-                      backgroundColor="$red9"
-                      onPress={handleCancelTpOrder}
-                      disabled={isCancelingTp}
-                      opacity={isCancelingTp ? 0.5 : 1}
-                      pressStyle={{ opacity: 0.8 }}
-                    >
-                      <Text fontSize="$1" fontFamily="$interSemiBold" color="white">
-                        {isCancelingTp ? 'Canceling...' : 'Cancel TP'}
-                      </Text>
-                    </Button>
-                  )}
-                </XStack>
+                <Text fontSize="$2" color="$color" fontWeight={400}>
+                  Take Profit
+                </Text>
 
                 {existingTpSlOrders.tp ? (
-                  <YStack
+                  <XStack
                     backgroundColor="$gray3"
                     padding="$3"
                     borderRadius="$3"
                     borderWidth={1}
                     borderColor="$green9"
+                    justifyContent="space-between"
+                    alignItems="center"
                   >
-                    <Text fontSize="$2" color="$green10" fontFamily="$interMedium">
-                      TP Order Active: {existingTpSlOrders.tp.triggerPx}
-                    </Text>
-                    <Text fontSize="$1" color="$color9">
-                      Size: {existingTpSlOrders.tp.sz} {position.coin}
-                    </Text>
-                  </YStack>
+                    <YStack gap="$1">
+                      <Text fontSize="$2" color="$green10" fontFamily="$interMedium">
+                        {existingTpSlOrders.tp.triggerPx}
+                      </Text>
+                      <Text fontSize="$1" color="$color9">
+                        Size: {existingTpSlOrders.tp.sz} {position.coin}
+                      </Text>
+                    </YStack>
+                    <XStack
+                      onPress={handleCancelTpOrder}
+                      disabled={isCancelingTp}
+                      padding="$2"
+                      pressStyle={{ opacity: 0.6 }}
+                      cursor="pointer"
+                    >
+                      {isCancelingTp ? (
+                        <Spinner size="small" color="$color9" />
+                      ) : (
+                        <X size={20} color="$color9" />
+                      )}
+                    </XStack>
+                  </XStack>
                 ) : (
                   <>
                     <XStack gap="$2">
@@ -558,41 +559,42 @@ export default function TpSlModal({ open, onOpenChange, position }: TpSlModalPro
 
               {/* Stop Loss */}
               <YStack gap="$2">
-                <XStack justifyContent="space-between" alignItems="center">
-                  <Text fontSize="$2" color="$color" fontFamily="$interMedium">
-                    Stop Loss
-                  </Text>
-                  {existingTpSlOrders.sl && (
-                    <Button
-                      size="$2"
-                      backgroundColor="$red9"
-                      onPress={handleCancelSlOrder}
-                      disabled={isCancelingSl}
-                      opacity={isCancelingSl ? 0.5 : 1}
-                      pressStyle={{ opacity: 0.8 }}
-                    >
-                      <Text fontSize="$1" fontFamily="$interSemiBold" color="white">
-                        {isCancelingSl ? 'Canceling...' : 'Cancel SL'}
-                      </Text>
-                    </Button>
-                  )}
-                </XStack>
+                <Text fontSize="$2" color="$color" fontFamily="$interMedium">
+                  Stop Loss
+                </Text>
 
                 {existingTpSlOrders.sl ? (
-                  <YStack
+                  <XStack
                     backgroundColor="$gray3"
                     padding="$3"
                     borderRadius="$3"
                     borderWidth={1}
                     borderColor="$red9"
+                    justifyContent="space-between"
+                    alignItems="center"
                   >
-                    <Text fontSize="$2" color="$red10" fontFamily="$interMedium">
-                      SL Order Active: {existingTpSlOrders.sl.triggerPx}
-                    </Text>
-                    <Text fontSize="$1" color="$color9">
-                      Size: {existingTpSlOrders.sl.sz} {position.coin}
-                    </Text>
-                  </YStack>
+                    <YStack gap="$1">
+                      <Text fontSize="$2" color="$red10" fontFamily="$interMedium">
+                        {existingTpSlOrders.sl.triggerPx}
+                      </Text>
+                      <Text fontSize="$1" color="$color9">
+                        Size: {existingTpSlOrders.sl.sz} {position.coin}
+                      </Text>
+                    </YStack>
+                    <XStack
+                      onPress={handleCancelSlOrder}
+                      disabled={isCancelingSl}
+                      padding="$2"
+                      pressStyle={{ opacity: 0.6 }}
+                      cursor="pointer"
+                    >
+                      {isCancelingSl ? (
+                        <Spinner size="small" color="$color9" />
+                      ) : (
+                        <X size={20} color="$color9" />
+                      )}
+                    </XStack>
+                  </XStack>
                 ) : (
                   <>
                     <XStack gap="$2">
