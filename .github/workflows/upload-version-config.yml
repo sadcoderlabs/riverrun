@@ -7,6 +7,11 @@ on:
     paths:
       - "version-config.json"
   workflow_dispatch:
+    inputs:
+      ref:
+        description: "Branch, tag, or commit SHA to upload from"
+        required: false
+        default: main
 
 jobs:
   upload:
@@ -17,6 +22,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref || github.ref }}
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
