@@ -1,10 +1,24 @@
 import 'event-target-polyfill'; // polyfill for hyperliquid sdk
 import 'fast-text-encoding'; // polyfill for hyperliquid sdk
 
+import {
+  useAvailableToTrade,
+  useMarginRequired,
+  useMarginStore,
+  useMarketStore,
+  useOrder,
+  useOrderValidation,
+  useOrderValue,
+  usePositionStore,
+} from '@/app-internal';
 import { FundingRate } from '@/app-internal/components/trade/FundingRate';
 import { useOrderForm } from '@/app-internal/components/trade/hooks/useOrderForm';
 import { LeverageSelector } from '@/app-internal/components/trade/LeverageSelector';
-import { LimitOrderForm, MarketOrderForm, OrderTypeSelector } from '@/app-internal/components/trade/order-forms';
+import {
+  LimitOrderForm,
+  MarketOrderForm,
+  OrderTypeSelector,
+} from '@/app-internal/components/trade/order-forms';
 import { OrderBook } from '@/app-internal/components/trade/OrderBook';
 import { OrderPreview } from '@/app-internal/components/trade/OrderPreview';
 import { PositionSummary } from '@/app-internal/components/trade/PositionSummary';
@@ -13,17 +27,7 @@ import {
   type TpSlResult,
   type TpSlValidationResult,
 } from '@/app-internal/components/trade/TpSlInput';
-import {
-  useAvailableToTrade,
-  useOrder,
-  useOrderValue,
-  useMarginRequired,
-  useOrderValidation,
-} from '@/app-internal';
-import { usePositionStore } from '@/app-internal';
-import { useMarginStore } from '@/app-internal';
-import { useMarketStore } from '@/app-internal';
-import { useMarkPrice, useMidPrice, useExecutionPrice } from './hooks';
+import { useExecutionPrice, useMarkPrice, useMidPrice } from './hooks';
 
 import { Checkbox } from '@tamagui/checkbox';
 import { Check } from '@tamagui/lucide-icons';

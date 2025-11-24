@@ -1,17 +1,17 @@
+import { useMarketStore } from '@/app-internal';
 import AdaptiveSelect from '@/app-internal/components/global/AdaptiveSelect';
+import { useThrottle } from '@/app-internal/components/shared/hooks/useThrottle';
 import { formatPrice } from '@/infra/hyperliquid/format/formatPrice';
 import { formatSizeFixedDecimals } from '@/infra/hyperliquid/format/formatSizeFixedDecimals';
 import { buildPrecisionMenu } from '@/infra/hyperliquid/format/orderbookPrecision';
-import { useActiveAssetCtx, useTrades, useLatestPrice } from '@/infra/hyperliquid/hooks';
+import { useActiveAssetCtx, useLatestPrice, useTrades } from '@/infra/hyperliquid/hooks';
 import {
   useSubscription,
-  type OrderBookData,
   type NSigFigs,
+  type OrderBookData,
   type OrderBookLevel,
   type PrecisionMenuItem,
 } from '@/infra/hyperliquid/subscription';
-import { useThrottle } from '@/app-internal/components/shared/hooks/useThrottle';
-import { useMarketStore } from '@/app-internal';
 import { ArrowDownRight, ArrowUpRight, ChevronDown, Info } from '@tamagui/lucide-icons';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList } from 'react-native';
@@ -228,7 +228,7 @@ export function OrderBook({ onPriceClick }: OrderBookProps) {
     <YStack flex={1} backgroundColor="$background" borderWidth={0}>
       {/* Selectors Row - Precision & Size Unit Dropdowns */}
       <XStack
-        paddingHorizontal="$1.5"
+        paddingHorizontal="$3"
         paddingVertical="$1"
         backgroundColor="$background"
         justifyContent="space-between"
@@ -309,7 +309,7 @@ export function OrderBook({ onPriceClick }: OrderBookProps) {
 
       {/* Column Headers */}
       <XStack
-        paddingHorizontal="$1.5"
+        paddingHorizontal="$3"
         paddingVertical="$0.75"
         justifyContent="space-between"
         alignItems="center"
