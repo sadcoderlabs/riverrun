@@ -369,7 +369,7 @@ export function OrderSizeInput({
         </XStack>
         <YStack paddingVertical="$2">
           <Slider value={[sizePercentage]} max={100} step={1} onValueChange={handleSliderChange}>
-            <Slider.Track backgroundColor="$gray5" height="$1.5" borderRadius="$2">
+            <Slider.Track backgroundColor="$gray5" height="$0.75" borderRadius="$2">
               <Slider.TrackActive backgroundColor="$accent9" />
             </Slider.Track>
             <Slider.Thumb
