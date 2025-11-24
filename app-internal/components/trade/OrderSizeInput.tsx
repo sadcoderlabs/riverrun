@@ -374,14 +374,11 @@ export function OrderSizeInput({
             </Slider.Track>
             <Slider.Thumb
               index={0}
-              size="$1"
-              backgroundColor="$background"
+              circular
+              size="$1.5"
+              backgroundColor="$accent1"
               borderWidth={2}
               borderColor="$accent9"
-              circular
-              pressStyle={{
-                scale: 1.2,
-              }}
             />
           </Slider>
         </YStack>
