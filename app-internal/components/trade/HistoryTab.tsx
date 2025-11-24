@@ -9,7 +9,8 @@ import { formatPrice } from '@/infra/hyperliquid/format/formatPrice';
 import { formatSize } from '@/infra/hyperliquid/format/formatSize';
 import { formatValue } from '@/infra/hyperliquid/format/formatValue';
 import React, { useMemo, useState } from 'react';
-import { Button, Spinner, Text, View, XStack, YStack } from 'tamagui';
+import { Spinner, Text, View, XStack, YStack } from 'tamagui';
+import { Button } from '../global';
 
 // ============================================================================
 // Fill Card Component
@@ -55,7 +56,7 @@ const FillCard = React.memo<FillCardProps>(({ fill, szDecimals, onPress }) => {
             {fill.coin}-USDC
           </Text>
           <View
-            backgroundColor="$gray6"
+            backgroundColor="$gray1"
             paddingHorizontal="$2"
             paddingVertical="$1"
             borderRadius="$4"

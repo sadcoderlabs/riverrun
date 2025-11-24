@@ -1,13 +1,13 @@
+import { useMarket, usePositionStore, useWallet } from '@/app-internal';
+import type { EnrichedPosition } from '@/app-internal/features/position/types/position';
+import { calculatePositionMetrics } from '@/app-internal/features/position/types/position';
 import { formatPercent } from '@/infra/hyperliquid/format/formatPercent';
 import { formatPrice } from '@/infra/hyperliquid/format/formatPrice';
 import { formatSize } from '@/infra/hyperliquid/format/formatSize';
 import { formatValue } from '@/infra/hyperliquid/format/formatValue';
-import { useWallet, useMarket } from '@/app-internal';
-import { usePositionStore } from '@/app-internal';
-import type { EnrichedPosition } from '@/app-internal/features/position/types/position';
-import { calculatePositionMetrics } from '@/app-internal/features/position/types/position';
 import { useState } from 'react';
-import { Button, Spinner, Text, View, XStack, YStack } from 'tamagui';
+import { Spinner, Text, View, XStack, YStack } from 'tamagui';
+import { Button } from '../global';
 import ClosePositionModal from './ClosePositionModal';
 import TpSlModal from './TpSlModal';
 
@@ -117,52 +117,54 @@ function PositionCard({ position, onPositionClick, onCloseClick, onTpSlClick }: 
       {/* Header Section */}
       <XStack justifyContent="space-between" alignItems="flex-start">
         {/* Left: Coin name, badge, and direction/leverage */}
-        <YStack gap="$1">
+        <XStack gap="$1" justifyContent="space-between" alignItems="center">
           <XStack gap="$2" alignItems="center">
-            <Text fontSize="$5" fontFamily="$interSemiBold">
-              {position.coin}-USD
+            <Text fontFamily="$interBold" fontSize="$3">
+              {position.coin}-USDC
             </Text>
             {position.leverage.type === 'cross' && (
               <View
-                backgroundColor="orange"
-                paddingHorizontal="$1.5"
-                paddingVertical="$0.5"
-                borderRadius="$2"
+                backgroundColor="$gray1"
+                paddingHorizontal="$2"
+                paddingVertical="$1"
+                borderRadius="$4"
               >
-                <Text fontSize="$1" fontFamily="$interMedium" color="white">
+                <Text fontSize="$1" fontFamily="$interMedium" color="$color12">
                   CROSS
                 </Text>
               </View>
             )}
+            <View
+              backgroundColor={metrics.side === 'Long' ? '$green1' : '$red1'}
+              paddingHorizontal="$2"
+              paddingVertical="$1"
+              borderRadius="$4"
+            >
+              <Text fontSize="$1" color={metrics.side === 'Long' ? '$green10' : '$red10'}>
+                {metrics.side.toUpperCase()} {leverage}X
+              </Text>
+            </View>
           </XStack>
-          <Text
-            fontSize="$3"
-            color={metrics.side === 'Long' ? '$green10' : '$red10'}
-            fontFamily="$interSemiBold"
-          >
-            {metrics.side} {leverage}x
-          </Text>
-        </YStack>
+        </XStack>
+      </XStack>
 
-        {/* Right: Unrealized PnL */}
-        <YStack alignItems="flex-end" gap="$0.5">
-          <Text fontSize="$1" color="$color9">
-            Unrealised P&L
-          </Text>
-          <Text
-            fontSize="$4"
-            fontFamily="$interSemiBold"
-            color={metrics.isPnlPositive ? '$green10' : '$red10'}
-          >
-            {metrics.isPnlPositive ? '+' : ''}${formatValue(unrealizedPnl, 2)} (
-            {metrics.isPnlPositive ? '+' : ''}
-            {formatPercent((unrealizedPnl / Number(position.marginUsed)) * 100, 1)})
-          </Text>
-        </YStack>
+      <XStack justifyContent="space-between" alignItems="center">
+        <Text fontSize="$2" color="$color9">
+          Unrealised P&L
+        </Text>
+        <Text
+          fontSize="$3"
+          fontFamily="$interMedium"
+          color={metrics.isPnlPositive ? '$green10' : '$red10'}
+        >
+          {metrics.isPnlPositive ? '+' : ''}${formatValue(unrealizedPnl, 2)} (
+          {metrics.isPnlPositive ? '+' : ''}
+          {formatPercent((unrealizedPnl / Number(position.marginUsed)) * 100, 1)})
+        </Text>
       </XStack>
 
       {/* Metrics Grid - 2 Rows x 4 Columns */}
-      <YStack gap="$1.5">
+      <YStack gap="$1.5" paddingVertical="$3">
         {/* Row 1: SIZE | ENTRY | MARK | MARGIN */}
         <XStack gap="$2">
           <YStack flex={1}>
@@ -245,10 +247,10 @@ function PositionCard({ position, onPositionClick, onCloseClick, onTpSlClick }: 
 
       {/* Action Buttons */}
       <XStack gap="$2" marginTop="$1">
-        <Button
+        <Button.Tinted
           flex={1}
           size="$2"
-          variant="outlined"
+          height="$3"
           onPress={(e: any) => {
             e.stopPropagation();
             onTpSlClick();
@@ -256,19 +258,21 @@ function PositionCard({ position, onPositionClick, onCloseClick, onTpSlClick }: 
           pressStyle={{ opacity: 0.8 }}
         >
           Set TP/SL
-        </Button>
-        <Button
+        </Button.Tinted>
+        <Button.Tinted
           flex={1}
           size="$2"
-          backgroundColor="$red9"
+          height="$3"
+          backgroundColor="$gray1"
+          color="$color12"
           onPress={(e: any) => {
             e.stopPropagation();
             onCloseClick();
           }}
           pressStyle={{ opacity: 0.8 }}
         >
-          Close position
-        </Button>
+          Close Position
+        </Button.Tinted>
       </XStack>
     </YStack>
   );

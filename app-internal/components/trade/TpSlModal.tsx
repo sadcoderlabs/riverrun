@@ -425,7 +425,7 @@ export default function TpSlModal({ open, onOpenChange, position }: TpSlModalPro
                   borderRadius="$2"
                 >
                   <Text fontSize="$2" color={isLong ? '$green10' : '$red10'}>
-                    {position.leverage.value}X {isLong ? 'LONG' : 'SHORT'}
+                    {isLong ? 'LONG' : 'SHORT'} {position.leverage.value}X
                   </Text>
                 </YStack>
               </XStack>

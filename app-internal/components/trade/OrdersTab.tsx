@@ -3,10 +3,7 @@
  * Displays user's open orders in a flat list with ability to cancel
  */
 
-import { formatPrice } from '@/infra/hyperliquid/format/formatPrice';
-import { formatSize } from '@/infra/hyperliquid/format/formatSize';
-import { formatValue } from '@/infra/hyperliquid/format/formatValue';
-import { useOrder, useOrderStore } from '@/app-internal';
+import { useMarket, useMarketStore, useOrder, useOrderStore, useWallet } from '@/app-internal';
 import type { Order } from '@/contexts/order/ports';
 import {
   calculateOrderMetrics,
@@ -14,9 +11,12 @@ import {
   getOrderDirection,
   isMarketOrder,
 } from '@/contexts/order/ports';
-import { useWallet, useMarketStore, useMarket } from '@/app-internal';
+import { formatPrice } from '@/infra/hyperliquid/format/formatPrice';
+import { formatSize } from '@/infra/hyperliquid/format/formatSize';
+import { formatValue } from '@/infra/hyperliquid/format/formatValue';
 import { useMemo, useState } from 'react';
-import { Button, Spinner, Text, View, XStack, YStack } from 'tamagui';
+import { Spinner, Text, View, XStack, YStack } from 'tamagui';
+import { Button } from '../global';
 
 // ============================================================================
 // Order Card Component
@@ -70,29 +70,26 @@ function OrderCard({ order, onCancel, onPress, canceling }: OrderCardProps) {
       borderWidth={1}
       borderColor="$gray5"
       gap="$2"
-      onPress={onPress}
-      pressStyle={{ opacity: 0.7, backgroundColor: '$gray3' }}
-      cursor="pointer"
+      marginBottom="$3"
     >
       {/* Header row: Coin + PERP badge, and Cancel button */}
       <XStack justifyContent="space-between" alignItems="center">
         <XStack gap="$2" alignItems="center">
-          <Text fontFamily="$interBold" fontSize="$4">
-            {order.coin}-USD
+          <Text fontFamily="$interBold" fontSize="$3">
+            {order.coin}-USDC
           </Text>
           <View
-            backgroundColor="orange"
-            paddingHorizontal="$1.5"
-            paddingVertical="$0.5"
-            borderRadius="$2"
+            backgroundColor="$gray1"
+            paddingHorizontal="$2"
+            paddingVertical="$1"
+            borderRadius="$4"
           >
-            <Text fontSize="$1" fontFamily="$interMedium" color="white">
+            <Text fontSize="$1" fontFamily="$interMedium" color="$color12">
               PERP
             </Text>
           </View>
         </XStack>
         <Button
-          size="$2"
           backgroundColor="$gray5"
           color="$color"
           disabled={canceling}
@@ -102,86 +99,89 @@ function OrderCard({ order, onCancel, onPress, canceling }: OrderCardProps) {
         </Button>
       </XStack>
 
-      {/* Time Row */}
-      <XStack justifyContent="space-between" alignItems="center">
-        <Text fontSize="$2" color="$color9">
-          Time
-        </Text>
-        <Text fontSize="$2" fontFamily="$interMedium">
-          {formatTimestamp(order.timestamp)}
-        </Text>
-      </XStack>
+      {/* Metrics */}
+      <YStack gap="$2" paddingVertical="$2">
+        {/* Time Row */}
+        <XStack justifyContent="space-between" alignItems="center">
+          <Text fontSize="$2" color="$color9">
+            Time
+          </Text>
+          <Text fontSize="$2" fontFamily="$interMedium">
+            {formatTimestamp(order.timestamp)}
+          </Text>
+        </XStack>
 
-      {/* Type Row */}
-      <XStack justifyContent="space-between" alignItems="center">
-        <Text fontSize="$2" color="$color9">
-          Type
-        </Text>
-        <Text fontSize="$2" fontFamily="$interMedium">
-          {order.orderType}
-        </Text>
-      </XStack>
+        {/* Type Row */}
+        <XStack justifyContent="space-between" alignItems="center">
+          <Text fontSize="$2" color="$color9">
+            Type
+          </Text>
+          <Text fontSize="$2" fontFamily="$interMedium">
+            {order.orderType}
+          </Text>
+        </XStack>
 
-      {/* Direction Row */}
-      <XStack justifyContent="space-between" alignItems="center">
-        <Text fontSize="$2" color="$color9">
-          Direction
-        </Text>
-        <Text fontSize="$2" fontFamily="$interSemiBold" color={isBuy ? '$green10' : '$red10'}>
-          {direction}
-        </Text>
-      </XStack>
+        {/* Direction Row */}
+        <XStack justifyContent="space-between" alignItems="center">
+          <Text fontSize="$2" color="$color9">
+            Direction
+          </Text>
+          <Text fontSize="$2" fontFamily="$interSemiBold" color={isBuy ? '$green10' : '$red10'}>
+            {direction}
+          </Text>
+        </XStack>
 
-      {/* Filled Size / Size Row */}
-      <XStack justifyContent="space-between" alignItems="center">
-        <Text fontSize="$2" color="$color9">
-          Filled Size / Size
-        </Text>
-        <Text fontSize="$2" fontFamily="$interMedium">
-          {formatSize(metrics.filledSize, szDecimals, true)} /{' '}
-          {formatSize(metrics.size, szDecimals, true)} {order.coin}
-        </Text>
-      </XStack>
+        {/* Filled Size / Size Row */}
+        <XStack justifyContent="space-between" alignItems="center">
+          <Text fontSize="$2" color="$color9">
+            Filled Size / Size
+          </Text>
+          <Text fontSize="$2" fontFamily="$interMedium">
+            {formatSize(metrics.filledSize, szDecimals, true)} /{' '}
+            {formatSize(metrics.size, szDecimals, true)} {order.coin}
+          </Text>
+        </XStack>
 
-      {/* Order Value Row */}
-      <XStack justifyContent="space-between" alignItems="center">
-        <Text fontSize="$2" color="$color9">
-          Order Value
-        </Text>
-        <Text fontSize="$2" fontFamily="$interMedium">
-          {isMarket ? 'Market' : `$${formatValue(metrics.size * metrics.price, 2)}`}
-        </Text>
-      </XStack>
+        {/* Order Value Row */}
+        <XStack justifyContent="space-between" alignItems="center">
+          <Text fontSize="$2" color="$color9">
+            Order Value
+          </Text>
+          <Text fontSize="$2" fontFamily="$interMedium">
+            {isMarket ? 'Market' : `$${formatValue(metrics.size * metrics.price, 2)}`}
+          </Text>
+        </XStack>
 
-      {/* Price Row */}
-      <XStack justifyContent="space-between" alignItems="center">
-        <Text fontSize="$2" color="$color9">
-          Price
-        </Text>
-        <Text fontSize="$2" fontFamily="$interMedium">
-          {isMarket ? 'Market' : formatPrice(metrics.price, 2, true)}
-        </Text>
-      </XStack>
+        {/* Price Row */}
+        <XStack justifyContent="space-between" alignItems="center">
+          <Text fontSize="$2" color="$color9">
+            Price
+          </Text>
+          <Text fontSize="$2" fontFamily="$interMedium">
+            {isMarket ? 'Market' : formatPrice(metrics.price, 2, true)}
+          </Text>
+        </XStack>
 
-      {/* Trigger Conditions Row - always show */}
-      <XStack justifyContent="space-between" alignItems="center">
-        <Text fontSize="$2" color="$color9">
-          Trigger Conditions
-        </Text>
-        <Text fontSize="$2" fontFamily="$interMedium">
-          {triggerCondition || '-'}
-        </Text>
-      </XStack>
+        {/* Trigger Conditions Row - always show */}
+        <XStack justifyContent="space-between" alignItems="center">
+          <Text fontSize="$2" color="$color9">
+            Trigger Conditions
+          </Text>
+          <Text fontSize="$2" fontFamily="$interMedium">
+            {triggerCondition || '-'}
+          </Text>
+        </XStack>
 
-      {/* Reduce Only Row - always show */}
-      <XStack justifyContent="space-between" alignItems="center">
-        <Text fontSize="$2" color="$color9">
-          Reduce Only
-        </Text>
-        <Text fontSize="$2" fontFamily="$interMedium">
-          {order.reduceOnly ? 'True' : 'False'}
-        </Text>
-      </XStack>
+        {/* Reduce Only Row - always show */}
+        <XStack justifyContent="space-between" alignItems="center">
+          <Text fontSize="$2" color="$color9">
+            Reduce Only
+          </Text>
+          <Text fontSize="$2" fontFamily="$interMedium">
+            {order.reduceOnly ? 'True' : 'False'}
+          </Text>
+        </XStack>
+      </YStack>
     </YStack>
   );
 }
