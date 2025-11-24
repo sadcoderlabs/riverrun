@@ -228,7 +228,7 @@ export function OrderBook({ onPriceClick }: OrderBookProps) {
     <YStack flex={1} backgroundColor="$background" borderWidth={0}>
       {/* Selectors Row - Precision & Size Unit Dropdowns */}
       <XStack
-        paddingHorizontal="$3"
+        paddingLeft="$3"
         paddingVertical="$1"
         backgroundColor="$background"
         justifyContent="space-between"

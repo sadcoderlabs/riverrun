@@ -51,8 +51,8 @@ const FillCard = React.memo<FillCardProps>(({ fill, szDecimals, onPress }) => {
       {/* Header row: Coin + PERP badge */}
       <XStack justifyContent="space-between" alignItems="center">
         <XStack gap="$2" alignItems="center">
-          <Text fontFamily="$interBold" fontSize="$4">
-            {fill.coin}-USD
+          <Text fontFamily="$interBold" fontSize="$3">
+            {fill.coin}-USDC
           </Text>
           <View
             backgroundColor="$gray6"

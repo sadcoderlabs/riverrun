@@ -78,7 +78,7 @@ export const OrderBookRow = memo(function OrderBookRow({
         top={0}
         bottom={0}
         width={`${depthPercentage}%`}
-        backgroundColor={isBid ? '$green3' : '$red3'}
+        backgroundColor={isBid ? '$green5' : '$red3'}
         opacity={0.6}
         zIndex={0}
       />
@@ -88,7 +88,7 @@ export const OrderBookRow = memo(function OrderBookRow({
         {/* Price */}
         <Text
           fontSize="$1"
-          color={isBid ? '$green10' : '$red10'}
+          color={isBid ? '$green9' : '$red10'}
           flexShrink={0}
           style={{
             fontFamily: MONOSPACE_FONT,
