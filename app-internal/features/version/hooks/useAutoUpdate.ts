@@ -3,7 +3,7 @@ import Constants from 'expo-constants';
 import { isEnabled } from 'expo-updates/build/Updates';
 import { useAppLifecycle } from '@/app-internal/components/shared/hooks/useAppLifecycle';
 import { isDevelopmentBuild } from '@/config/environment';
-import { performOTAUpdateFlow, UpdateStatus } from '../updateService';
+import { performOTAUpdateFlow, performNativeUpdateFlow, UpdateStatus } from '../updateService';
 
 /**
  * Version and update information returned by the hook
@@ -18,7 +18,7 @@ export interface VersionInfo {
 }
 
 /**
- * Hook for app version information and automatic/manual OTA updates
+ * Hook for app version information and automatic/manual updates
  *
  * Features:
  * - Provides version information (version, commit hash, display string)
@@ -26,11 +26,15 @@ export interface VersionInfo {
  * - Manual update check via `checkForUpdate()` method (for Settings)
  * - Update status tracking (checking, downloading)
  *
+ * Update flow:
+ * 1. Check for native app updates (App Store/Play Store)
+ * 2. Check for OTA updates (if native is up to date)
+ *
  * Automatic update behavior:
  * - Only runs on cold boot (not on foreground return)
  * - Only runs on preview/production builds (not development)
  * - Shows confirmation dialog before downloading
- * - User can decline and continue using current version
+ * - User can decline and continue using current version (non-blocking)
  *
  * @example
  * ```tsx
@@ -68,20 +72,32 @@ export function useAutoUpdate(): VersionInfo {
 
   /**
    * Manual update check (for Settings button)
+   * Checks both native and OTA updates in sequence
    */
   const checkForUpdate = useCallback(async () => {
-    await performOTAUpdateFlow({
-      showPrompt: true,
-      showToast: true,
-      onStatusChange: status => {
-        setIsChecking(status === UpdateStatus.CHECKING);
-        setIsDownloading(status === UpdateStatus.DOWNLOADING);
-      },
-    });
+    try {
+      // Step 1: Check for native updates first
+      await performNativeUpdateFlow({
+        showToast: true,
+        onStatusChange: status => {
+          setIsChecking(status === UpdateStatus.CHECKING);
+        },
+      });
 
-    // Reset states if not downloading
-    setIsChecking(false);
-    setIsDownloading(false);
+      // Step 2: Check for OTA updates (if native check passed)
+      await performOTAUpdateFlow({
+        showPrompt: true,
+        showToast: true,
+        onStatusChange: status => {
+          setIsChecking(status === UpdateStatus.CHECKING);
+          setIsDownloading(status === UpdateStatus.DOWNLOADING);
+        },
+      });
+    } finally {
+      // Reset states after completion
+      setIsChecking(false);
+      setIsDownloading(false);
+    }
   }, []);
 
   /**
@@ -112,23 +128,33 @@ export function useAutoUpdate(): VersionInfo {
     console.log('[AutoUpdate] Performing automatic update check on cold boot');
 
     // Perform update check asynchronously (don't block render)
-    performOTAUpdateFlow({
-      showPrompt: true,
-      showToast: false,
-      onStatusChange: status => {
-        setIsChecking(status === UpdateStatus.CHECKING);
-        setIsDownloading(status === UpdateStatus.DOWNLOADING);
-      },
-    })
-      .then(() => {
-        setIsChecking(false);
-        setIsDownloading(false);
-      })
-      .catch(error => {
+    // Check native updates first, then OTA updates
+    (async () => {
+      try {
+        // Step 1: Check for native updates
+        await performNativeUpdateFlow({
+          showToast: false, // No toast for automatic checks
+          onStatusChange: status => {
+            setIsChecking(status === UpdateStatus.CHECKING);
+          },
+        });
+
+        // Step 2: Check for OTA updates (if native check passed)
+        await performOTAUpdateFlow({
+          showPrompt: true,
+          showToast: false, // No toast for automatic checks
+          onStatusChange: status => {
+            setIsChecking(status === UpdateStatus.CHECKING);
+            setIsDownloading(status === UpdateStatus.DOWNLOADING);
+          },
+        });
+      } catch (error) {
         console.error('[AutoUpdate] Auto-check failed:', error);
+      } finally {
         setIsChecking(false);
         setIsDownloading(false);
-      });
+      }
+    })();
   }, [appState]);
 
   return {

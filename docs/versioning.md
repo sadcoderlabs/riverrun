@@ -336,32 +336,216 @@ Store 審核通過後進入 Ready for Sale / Available
 - 一旦 bump `expo.version`，舊版使用者將無法收到後續的 OTA 更新
 - Production builds 會自動訂閱 `production` channel，推送到 `main` branch 的 OTA 更新會自動送達
 
-### 4.5 App Store 上架後同步 S3 JSON
+### 4.5 App Store 上架後同步版本配置
 
-- App Store 審核通過並上架後，務必更新 S3 上的 `latest-build.json`（或專案自訂名稱），讓線上使用中的 App 能知道最新 binary 是否已經推出。
-- JSON 以平台為單位維護（`ios` / `android`），每個平台記錄 `minSupportedBuild`（允許繼續使用的最低 buildNumber/versionCode）與對應 Store 連結 `storeUrl`，供 App 決定是否顯示「請更新到最新版本」提示。
-- 建議在更新 JSON 之前先確認 App Store Connect / Play Console 已顯示「Ready for Sale」，再使用 CI 腳本或手動 `aws s3 cp` 將檔案覆蓋上傳，並保留 Bucket Versioning 以利追溯。
+App Store 審核通過並上架後，務必更新專案根目錄的 `version-config.json` 並推送到 S3，讓線上使用中的 App 能知道最新版本資訊。
 
-範例：
+#### 版本配置檔案結構
+
+專案根目錄的 `version-config.json`：
 
 ```json
 {
   "ios": {
-    "minSupportedBuild": 45,
-    "storeUrl": "https://apps.apple.com/app/"
+    "latestVersion": "1.3.0",
+    "minVersion": "1.2.0",
+    "storeUrl": "https://apps.apple.com/app/idXXXXXXXX"
   },
   "android": {
-    "minSupportedBuild": 33,
-    "storeUrl": "https://play.google.com/store/apps/details?id=..."
+    "latestVersion": "1.3.0",
+    "minVersion": "1.2.0",
+    "storeUrl": "https://play.google.com/store/apps/details?id=com.xxx.yyy"
   }
 }
 ```
 
+#### 欄位說明
+
+- `latestVersion`: 最新的 App 版本號（對應 `expo.version`）
+- `minVersion`: 最低支援的版本號，低於此版本會提示使用者更新
+- `storeUrl`: App Store / Play Store 的下載連結
+
+#### 更新流程
+
+1. **修改版本配置**：
+   ```bash
+   # 編輯 version-config.json，更新 latestVersion 和 minVersion
+   vi version-config.json
+   ```
+
+2. **提交並推送到 main**：
+   ```bash
+   git add version-config.json
+   git commit -m "chore: update version config to 1.3.0"
+   git push origin main
+   ```
+
+3. **自動上傳到 S3**：
+   - GitHub Actions 會自動偵測 `version-config.json` 的變更
+   - 觸發 `.github/workflows/upload-version-config.yml` workflow
+   - 自動上傳到 S3 bucket
+   - 檔案會設定為 public-read，cache 5 分鐘
+
+#### 注意事項
+
+- 建議在更新前確認 App Store Connect / Play Console 已顯示「Ready for Sale」
+- S3 bucket 應啟用 Versioning 以利追溯歷史版本
+- 檔案 URL 格式：`https://[bucket-name].s3.[region].amazonaws.com/version-config.json`
+
 ---
 
-## 5. App 端版本顯示 & Sentry
+## 5. Native Version 檢查與更新提醒
 
-### 5.1 前端顯示
+### 5.1 檢查流程
+
+App 在冷啟動時會依序執行以下檢查：
+
+```
+App 冷啟動
+  ↓
+1. 檢查 Native Version（從 S3 fetch version-config.json）
+  ↓
+  ├─ 版本低於 minVersion → 顯示更新提醒（非阻擋式）→ 允許繼續使用
+  ├─ 版本低於 latestVersion → 顯示更新提醒（非阻擋式）→ 允許繼續使用
+  └─ 版本符合 latestVersion →
+      ↓
+2. 檢查 Runtime Version（自動，透過 expo.version）
+  ↓
+  ├─ Runtime 不符 → 無法收到 OTA（已知限制）
+  └─ Runtime 相同 →
+      ↓
+3. 檢查 OTA Update（現有邏輯）
+  ↓
+  ├─ 有更新 → 提示下載 → 重載
+  └─ 無更新 → 完成
+```
+
+### 5.2 更新提醒策略
+
+- **非阻擋式設計**：所有更新提醒都允許使用者選擇「稍後」，繼續使用 App
+- **雙層提醒**：
+  - 低於 `minVersion`：顯示「Update Required」，強調需要更新以獲得最佳體驗
+  - 低於 `latestVersion`：顯示「Update Available」，溫和提醒有新版本
+- **使用者體驗**：
+  - 提醒僅在冷啟動時顯示一次
+  - 可透過設定頁面手動檢查更新
+  - 不會在使用過程中打斷使用者
+
+### 5.3 配置 Version Config URL
+
+需要在環境變數中配置版本檔案的 URL：
+
+```bash
+# .env.production
+EXPO_PUBLIC_VERSION_CONFIG_URL=https://your-bucket.s3.region.amazonaws.com/version-config.json
+```
+
+### 5.4 S3 配置步驟
+
+#### 步驟 1: 建立 S3 Bucket
+
+```bash
+# 使用 AWS CLI 建立 bucket
+aws s3 mb s3://riverrun-version-config --region ap-northeast-1
+```
+
+或透過 AWS Console：
+1. 進入 S3 服務
+2. 點擊「Create bucket」
+3. 設定 Bucket name（例如：`riverrun-version-config`）
+4. 選擇 Region（建議選擇離使用者最近的，如 `ap-northeast-1`）
+5. 啟用「Bucket Versioning」以追蹤歷史版本
+
+#### 步驟 2: 設定 Bucket Policy（Public Read）
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "PublicReadGetObject",
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": "s3:GetObject",
+      "Resource": "arn:aws:s3:::riverrun-version-config/version-config.json"
+    }
+  ]
+}
+```
+
+#### 步驟 3: 建立 IAM User 供 GitHub Actions 使用
+
+1. 建立新的 IAM User（例如：`github-actions-s3-upload`）
+2. 設定權限 Policy：
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:PutObject",
+        "s3:GetObject"
+      ],
+      "Resource": "arn:aws:s3:::riverrun-version-config/*"
+    }
+  ]
+}
+```
+
+3. 建立 Access Key，記錄 `Access Key ID` 和 `Secret Access Key`
+
+#### 步驟 4: 配置 GitHub Secrets
+
+在 GitHub Repository 的 Settings → Secrets and variables → Actions 中新增：
+
+- `AWS_ACCESS_KEY_ID`: IAM User 的 Access Key ID
+- `AWS_SECRET_ACCESS_KEY`: IAM User 的 Secret Access Key
+- `AWS_S3_BUCKET`: Bucket 名稱（例如：`riverrun-version-config`）
+- `AWS_REGION`: Bucket 的 Region（例如：`ap-northeast-1`）
+
+#### 步驟 5: 驗證設定
+
+上傳測試檔案：
+
+```bash
+aws s3 cp version-config.json s3://riverrun-version-config/version-config.json \
+  --acl public-read \
+  --cache-control "max-age=300, must-revalidate"
+```
+
+測試公開存取：
+
+```bash
+curl https://riverrun-version-config.s3.ap-northeast-1.amazonaws.com/version-config.json
+```
+
+### 5.5 CloudFront CDN（可選，推薦）
+
+為了更好的效能和更低的成本，建議使用 CloudFront CDN：
+
+1. **建立 CloudFront Distribution**：
+   - Origin: S3 bucket
+   - Viewer Protocol Policy: Redirect HTTP to HTTPS
+   - TTL: 最小 300 秒（5 分鐘）
+
+2. **更新環境變數**：
+   ```bash
+   EXPO_PUBLIC_VERSION_CONFIG_URL=https://d123456789.cloudfront.net/version-config.json
+   ```
+
+3. **好處**：
+   - 全球 CDN 加速
+   - 降低 S3 請求成本
+   - HTTPS 支援
+   - 更好的快取控制
+
+---
+
+## 6. App 端版本顯示 & Sentry
+
+### 6.1 前端顯示
 
 使用者看到（同時帶出 commit hash 方便客服定位）：
 
@@ -389,7 +573,7 @@ const buildNumber =
 
 **注意**：由於使用 `policy: "appVersion"`，runtime version 實際上會等於 `expo.version`。
 
-### 5.2 Sentry 設定
+### 6.2 Sentry 設定
 
 在 `Sentry.init()` 中加入版本追蹤：
 
@@ -404,9 +588,9 @@ Sentry.init({
 
 ---
 
-## 6. 常見更新情境
+## 7. 常見更新情境
 
-### 6.1 JS-only OTA
+### 7.1 JS-only OTA
 
 - 修改 develop → 自動更新 preview
 - merge main → 自動更新 production
@@ -414,7 +598,7 @@ Sentry.init({
 - runtime version 自動維持不變
 - commitHash 用於追蹤
 
-### 6.2 Native 變更 + 新 binary
+### 7.2 Native 變更 + 新 binary
 
 - bump：
   - `expo.version`（runtime version 會自動跟著更新）
@@ -423,7 +607,7 @@ Sentry.init({
 
 ---
 
-## 7. 選擇背後的原則
+## 8. 選擇背後的原則
 
 1. **`expo.version` 表示 Store release**：不用來標記 OTA，只在出新 binary 時才 bump
 2. **`runtimeVersion` 使用 `policy: "appVersion"` 自動管理**：
