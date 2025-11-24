@@ -3,8 +3,7 @@
  * Displays user's fill history (executed trades)
  */
 
-import { useMarket, useMarketStore, useWallet } from '@/app-internal';
-import { useHistory, type Fill } from '@/app-internal';
+import { useHistory, useMarket, useMarketStore, useWallet, type Fill } from '@/app-internal';
 import { formatTimestamp } from '@/contexts/order/ports';
 import { formatPrice } from '@/infra/hyperliquid/format/formatPrice';
 import { formatSize } from '@/infra/hyperliquid/format/formatSize';
@@ -47,9 +46,7 @@ const FillCard = React.memo<FillCardProps>(({ fill, szDecimals, onPress }) => {
       borderWidth={1}
       borderColor="$gray5"
       gap="$2"
-      onPress={onPress}
-      pressStyle={{ opacity: 0.7, backgroundColor: '$gray3' }}
-      cursor="pointer"
+      marginBottom="$3"
     >
       {/* Header row: Coin + PERP badge */}
       <XStack justifyContent="space-between" alignItems="center">
@@ -58,12 +55,12 @@ const FillCard = React.memo<FillCardProps>(({ fill, szDecimals, onPress }) => {
             {fill.coin}-USD
           </Text>
           <View
-            backgroundColor="orange"
-            paddingHorizontal="$1.5"
-            paddingVertical="$0.5"
-            borderRadius="$2"
+            backgroundColor="$gray6"
+            paddingHorizontal="$2"
+            paddingVertical="$1"
+            borderRadius="$4"
           >
-            <Text fontSize="$1" fontFamily="$interMedium" color="white">
+            <Text fontSize="$1" fontFamily="$interMedium" color="$color12">
               PERP
             </Text>
           </View>
