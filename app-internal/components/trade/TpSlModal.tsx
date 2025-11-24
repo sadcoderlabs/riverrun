@@ -1,14 +1,15 @@
-import { useEffect, useState, useMemo, useRef } from 'react';
-import { Modal, Pressable, StyleSheet, ScrollView } from 'react-native';
-import { Button, Slider, Text, XStack, YStack } from 'tamagui';
-import { Check } from '@tamagui/lucide-icons';
-import { Checkbox } from '@tamagui/checkbox';
-import * as hl from '@nktkas/hyperliquid';
-import { Input } from '@/app-internal/components/global/Input';
 import { useOrder, useOrderStore } from '@/app-internal';
-import { formatSize } from '@/infra/hyperliquid/format/formatSize';
+import { Button } from '@/app-internal/components/global/Button';
+import { Input } from '@/app-internal/components/global/Input';
 import { formatPrice } from '@/infra/hyperliquid/format/formatPrice';
+import { formatSize } from '@/infra/hyperliquid/format/formatSize';
 import { formatValue } from '@/infra/hyperliquid/format/formatValue';
+import * as hl from '@nktkas/hyperliquid';
+import { Checkbox } from '@tamagui/checkbox';
+import { Check } from '@tamagui/lucide-icons';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ScrollView } from 'react-native';
+import { Sheet, Slider, Text, XStack, YStack } from 'tamagui';
 
 type Position = hl.ClearinghouseStateResponse['assetPositions'][number]['position'];
 
@@ -108,30 +109,49 @@ export default function TpSlModal({ open, onOpenChange, position }: TpSlModalPro
   // Show loading if szDecimals not yet loaded
   if (szDecimals === undefined) {
     return (
-      <Modal
-        visible={open}
-        transparent
-        animationType="slide"
-        onRequestClose={() => onOpenChange(false)}
-        statusBarTranslucent
+      <Sheet
+        modal
+        native
+        open={open}
+        onOpenChange={() => onOpenChange(false)}
+        position={0}
+        dismissOnSnapToBottom
+        dismissOnOverlayPress
       >
-        <Pressable style={styles.overlay} onPress={() => onOpenChange(false)}>
-          <Pressable style={styles.contentContainer} onPress={e => e.stopPropagation()}>
-            <YStack
-              flex={1}
-              backgroundColor="$background"
-              borderTopLeftRadius="$6"
-              borderTopRightRadius="$6"
-              justifyContent="center"
-              alignItems="center"
-            >
-              <Text fontSize="$4" color="$color9">
-                Loading...
-              </Text>
-            </YStack>
-          </Pressable>
-        </Pressable>
-      </Modal>
+        <Sheet.Overlay
+          enterStyle={{ opacity: 0 }}
+          exitStyle={{ opacity: 0 }}
+          backgroundColor="rgba(0,0,0,0.7)"
+        />
+        <Sheet.Frame
+          padding="$2"
+          backgroundColor="$background"
+          borderTopLeftRadius="$6"
+          borderTopRightRadius="$6"
+        >
+          {/* Handle */}
+          <YStack
+            opacity={0.5}
+            backgroundColor="$gray9"
+            height={3}
+            width={32}
+            alignSelf="center"
+            borderRadius="$12"
+          />
+          <YStack
+            flex={1}
+            backgroundColor="$background"
+            borderTopLeftRadius="$6"
+            borderTopRightRadius="$6"
+            justifyContent="center"
+            alignItems="center"
+          >
+            <Text fontSize="$4" color="$color9">
+              Loading...
+            </Text>
+          </YStack>
+        </Sheet.Frame>
+      </Sheet>
     );
   }
 
@@ -349,432 +369,416 @@ export default function TpSlModal({ open, onOpenChange, position }: TpSlModalPro
   };
 
   return (
-    <Modal
-      visible={open}
-      transparent
-      animationType="slide"
-      onRequestClose={() => onOpenChange(false)}
-      statusBarTranslucent
+    <Sheet
+      modal
+      native
+      open={open}
+      onOpenChange={() => onOpenChange(false)}
+      snapPoints={[90]}
+      position={0}
+      dismissOnSnapToBottom
+      dismissOnOverlayPress
     >
-      <Pressable style={styles.overlay} onPress={() => onOpenChange(false)}>
-        <Pressable style={styles.contentContainer} onPress={e => e.stopPropagation()}>
-          <YStack
-            flex={1}
-            backgroundColor="$background"
-            borderTopLeftRadius="$6"
-            borderTopRightRadius="$6"
-            overflow="hidden"
-          >
-            {/* Handle bar */}
-            <XStack justifyContent="center" paddingVertical="$2">
+      <Sheet.Overlay
+        enterStyle={{ opacity: 0 }}
+        exitStyle={{ opacity: 0 }}
+        backgroundColor="rgba(0,0,0,0.7)"
+      />
+      <Sheet.Frame
+        padding="$2"
+        backgroundColor="$background"
+        borderTopLeftRadius="$6"
+        borderTopRightRadius="$6"
+      >
+        {/* Handle */}
+        <YStack
+          opacity={0.5}
+          backgroundColor="$gray9"
+          height={3}
+          width={32}
+          marginTop="$2"
+          alignSelf="center"
+          borderRadius="$12"
+        />
+        <YStack
+          flex={1}
+          backgroundColor="$background"
+          borderTopLeftRadius="$6"
+          borderTopRightRadius="$6"
+          padding="$4"
+          gap="$3"
+          overflow="hidden"
+        >
+          {/* Header */}
+          <XStack justifyContent="space-between" alignItems="center">
+            <XStack gap="$2" alignItems="center">
+              <Text fontSize="$4" fontWeight={500}>
+                {position.coin}-USDC
+              </Text>
               <YStack
-                opacity={0.5}
-                backgroundColor="$gray9"
-                height={3}
-                width={32}
-                borderRadius="$6"
-              />
-            </XStack>
-
-            {/* Header */}
-            <XStack
-              justifyContent="space-between"
-              alignItems="center"
-              paddingHorizontal="$4"
-              paddingBottom="$3"
-            >
-              <XStack gap="$2" alignItems="center">
-                <Text fontSize="$6" fontFamily="$interSemiBold">
-                  {position.coin}-USD
+                backgroundColor={isLong ? '$green1' : '$red1'}
+                paddingHorizontal="$2"
+                paddingVertical="$1"
+                borderRadius="$2"
+              >
+                <Text fontSize="$2" color={isLong ? '$green10' : '$red10'}>
+                  {position.leverage.value}X {isLong ? 'LONG' : 'SHORT'}
                 </Text>
-                <YStack
-                  backgroundColor={isLong ? '$green1' : '$red1'}
-                  paddingHorizontal="$2"
-                  paddingVertical="$1"
-                  borderRadius="$2"
-                >
-                  <Text
-                    fontSize="$2"
-                    fontFamily="$interMedium"
-                    color={isLong ? '$green10' : '$red10'}
+              </YStack>
+            </XStack>
+          </XStack>
+
+          {/* Position Metrics */}
+          <XStack gap="$2">
+            <YStack flex={1} gap="$0.5">
+              <Text fontSize="$1" color="$color9">
+                Size
+              </Text>
+              <Text fontSize="$3" fontWeight={400}>
+                {formatSize(positionSize, szDecimals, true)}
+              </Text>
+            </YStack>
+            <YStack flex={1} gap="$0.5">
+              <Text fontSize="$1" color="$color9">
+                Entry
+              </Text>
+              <Text fontSize="$3" fontWeight={400}>
+                {formatPrice(entryPrice, szDecimals, true)}
+              </Text>
+            </YStack>
+            <YStack flex={1} gap="$0.5">
+              <Text fontSize="$1" color="$color9">
+                Mark
+              </Text>
+              <Text fontSize="$3" fontWeight={400}>
+                {formatPrice(markPrice, szDecimals, true)}
+              </Text>
+            </YStack>
+            <YStack flex={1} gap="$0.5" alignItems="flex-end">
+              <Text fontSize="$1" color="$color9">
+                PnL
+              </Text>
+              <Text
+                fontSize="$3"
+                fontWeight={400}
+                color={unrealizedPnl >= 0 ? '$green10' : '$red10'}
+              >
+                {unrealizedPnl >= 0 ? '+' : ''}${formatValue(unrealizedPnl, 2)}
+              </Text>
+            </YStack>
+          </XStack>
+
+          {/* TP/SL Inputs */}
+          <YStack gap="$3" marginTop="$4">
+            {/* Take Profit */}
+            <YStack gap="$3">
+              <XStack justifyContent="space-between" alignItems="center">
+                <Text fontSize="$2" color="$color" fontWeight={400}>
+                  Take Profit
+                </Text>
+                {existingTpSlOrders.tp && (
+                  <Button
+                    size="$2"
+                    backgroundColor="$red9"
+                    onPress={handleCancelTpOrder}
+                    disabled={isCancelingTp}
+                    opacity={isCancelingTp ? 0.5 : 1}
+                    pressStyle={{ opacity: 0.8 }}
                   >
-                    {position.leverage.value}X {isLong ? 'LONG' : 'SHORT'}
-                  </Text>
-                </YStack>
-              </XStack>
-              <Pressable onPress={() => onOpenChange(false)}>
-                <Text fontSize="$6" color="$color9">
-                  ✕
-                </Text>
-              </Pressable>
-            </XStack>
-
-            {/* Position Metrics */}
-            <XStack gap="$2" paddingHorizontal="$4" paddingBottom="$3">
-              <YStack flex={1} gap="$0.5">
-                <Text fontSize="$1" color="$color9">
-                  Size
-                </Text>
-                <Text fontSize="$3" fontFamily="$interMedium">
-                  {formatSize(positionSize, szDecimals, true)}
-                </Text>
-              </YStack>
-              <YStack flex={1} gap="$0.5">
-                <Text fontSize="$1" color="$color9">
-                  Entry
-                </Text>
-                <Text fontSize="$3" fontFamily="$interMedium">
-                  {formatPrice(entryPrice, szDecimals, true)}
-                </Text>
-              </YStack>
-              <YStack flex={1} gap="$0.5">
-                <Text fontSize="$1" color="$color9">
-                  Mark
-                </Text>
-                <Text fontSize="$3" fontFamily="$interMedium">
-                  {formatPrice(markPrice, szDecimals, true)}
-                </Text>
-              </YStack>
-              <YStack flex={1} gap="$0.5" alignItems="flex-end">
-                <Text fontSize="$1" color="$color9">
-                  PnL
-                </Text>
-                <Text
-                  fontSize="$3"
-                  fontFamily="$interMedium"
-                  color={unrealizedPnl >= 0 ? '$green10' : '$red10'}
-                >
-                  {unrealizedPnl >= 0 ? '+' : ''}${formatValue(unrealizedPnl, 2)}
-                </Text>
-              </YStack>
-            </XStack>
-
-            {/* Scrollable Content */}
-            <ScrollView
-              ref={scrollViewRef}
-              style={{ flex: 1 }}
-              contentContainerStyle={{ paddingHorizontal: 16, gap: 12, paddingBottom: 120 }}
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="always"
-              keyboardDismissMode="none"
-              scrollEventThrottle={16}
-            >
-              {/* TP/SL Inputs */}
-              <YStack gap="$3">
-                {/* Take Profit */}
-                <YStack gap="$2">
-                  <XStack justifyContent="space-between" alignItems="center">
-                    <Text fontSize="$2" color="$color9" fontFamily="$interMedium">
-                      Take Profit
+                    <Text fontSize="$1" fontFamily="$interSemiBold" color="white">
+                      {isCancelingTp ? 'Canceling...' : 'Cancel TP'}
                     </Text>
-                    {existingTpSlOrders.tp && (
-                      <Button
-                        size="$2"
-                        backgroundColor="$red9"
-                        onPress={handleCancelTpOrder}
-                        disabled={isCancelingTp}
-                        opacity={isCancelingTp ? 0.5 : 1}
-                        pressStyle={{ opacity: 0.8 }}
-                      >
-                        <Text fontSize="$1" fontFamily="$interSemiBold" color="white">
-                          {isCancelingTp ? 'Canceling...' : 'Cancel TP'}
-                        </Text>
-                      </Button>
-                    )}
-                  </XStack>
-
-                  {existingTpSlOrders.tp ? (
-                    <YStack
-                      backgroundColor="$gray3"
-                      padding="$3"
-                      borderRadius="$3"
-                      borderWidth={1}
-                      borderColor="$green9"
-                    >
-                      <Text fontSize="$2" color="$green10" fontFamily="$interMedium">
-                        TP Order Active: {existingTpSlOrders.tp.triggerPx}
-                      </Text>
-                      <Text fontSize="$1" color="$color9">
-                        Size: {existingTpSlOrders.tp.sz} {position.coin}
-                      </Text>
-                    </YStack>
-                  ) : (
-                    <>
-                      <XStack gap="$2">
-                        <YStack flex={1} gap="$1">
-                          <Text fontSize="$1" color="$color9">
-                            TP Price
-                          </Text>
-                          <Input
-                            placeholder="0.0"
-                            value={tpPrice}
-                            onChangeText={handleTpPriceChange}
-                            keyboardType="numeric"
-                            returnKeyType="done"
-                          />
-                        </YStack>
-                        <YStack flex={1} gap="$1">
-                          <Text fontSize="$1" color="$color9">
-                            Gain
-                          </Text>
-                          <XStack alignItems="center" gap="$1">
-                            <Input
-                              flex={1}
-                              placeholder="0"
-                              value={tpPercent}
-                              onChangeText={handleTpPercentChange}
-                              keyboardType="numeric"
-                              returnKeyType="done"
-                            />
-                            <Text fontSize="$3" fontFamily="$interMedium" color="$color9">
-                              %
-                            </Text>
-                          </XStack>
-                        </YStack>
-                      </XStack>
-                      {expectedProfit !== null && (
-                        <Text fontSize="$2" color="$color9">
-                          Expected profit: {expectedProfit >= 0 ? '+' : ''}
-                          {formatValue(expectedProfit, 2)} USDC
-                        </Text>
-                      )}
-                    </>
-                  )}
-                </YStack>
-
-                {/* Stop Loss */}
-                <YStack gap="$2">
-                  <XStack justifyContent="space-between" alignItems="center">
-                    <Text fontSize="$2" color="$color9" fontFamily="$interMedium">
-                      Stop Loss
-                    </Text>
-                    {existingTpSlOrders.sl && (
-                      <Button
-                        size="$2"
-                        backgroundColor="$red9"
-                        onPress={handleCancelSlOrder}
-                        disabled={isCancelingSl}
-                        opacity={isCancelingSl ? 0.5 : 1}
-                        pressStyle={{ opacity: 0.8 }}
-                      >
-                        <Text fontSize="$1" fontFamily="$interSemiBold" color="white">
-                          {isCancelingSl ? 'Canceling...' : 'Cancel SL'}
-                        </Text>
-                      </Button>
-                    )}
-                  </XStack>
-
-                  {existingTpSlOrders.sl ? (
-                    <YStack
-                      backgroundColor="$gray3"
-                      padding="$3"
-                      borderRadius="$3"
-                      borderWidth={1}
-                      borderColor="$red9"
-                    >
-                      <Text fontSize="$2" color="$red10" fontFamily="$interMedium">
-                        SL Order Active: {existingTpSlOrders.sl.triggerPx}
-                      </Text>
-                      <Text fontSize="$1" color="$color9">
-                        Size: {existingTpSlOrders.sl.sz} {position.coin}
-                      </Text>
-                    </YStack>
-                  ) : (
-                    <>
-                      <XStack gap="$2">
-                        <YStack flex={1} gap="$1">
-                          <Text fontSize="$1" color="$color9">
-                            SL Price
-                          </Text>
-                          <Input
-                            placeholder="0.0"
-                            value={slPrice}
-                            onChangeText={handleSlPriceChange}
-                            keyboardType="numeric"
-                            returnKeyType="done"
-                          />
-                        </YStack>
-                        <YStack flex={1} gap="$1">
-                          <Text fontSize="$1" color="$color9">
-                            Loss
-                          </Text>
-                          <XStack alignItems="center" gap="$1">
-                            <Input
-                              flex={1}
-                              placeholder="0"
-                              value={slPercent}
-                              onChangeText={handleSlPercentChange}
-                              keyboardType="numeric"
-                              returnKeyType="done"
-                            />
-                            <Text fontSize="$3" fontFamily="$interMedium" color="$color9">
-                              %
-                            </Text>
-                          </XStack>
-                        </YStack>
-                      </XStack>
-                      {expectedLoss !== null && (
-                        <Text fontSize="$2" color="$color9">
-                          Expected loss: {expectedLoss >= 0 ? '+' : ''}
-                          {formatValue(expectedLoss, 2)} USDC
-                        </Text>
-                      )}
-                    </>
-                  )}
-                </YStack>
-              </YStack>
-
-              {/* Configure Amount */}
-              <YStack gap="$2">
-                <XStack justifyContent="space-between" alignItems="center">
-                  <Text fontSize="$2" color="$color" fontFamily="$interMedium">
-                    Configure Amount
-                  </Text>
-                  <Checkbox
-                    size="$4"
-                    checked={configureAmount}
-                    onCheckedChange={checked => setConfigureAmount(checked === true)}
-                  >
-                    <Checkbox.Indicator>
-                      <Check />
-                    </Checkbox.Indicator>
-                  </Checkbox>
-                </XStack>
-
-                {configureAmount && (
-                  <YStack gap="$2">
-                    <XStack gap="$3" alignItems="center">
-                      <Slider
-                        flex={1}
-                        value={[amountPercentage]}
-                        onValueChange={handleAmountPercentageChange}
-                        min={0}
-                        max={100}
-                        step={1}
-                      >
-                        <Slider.Track backgroundColor="$gray5" height={6}>
-                          <Slider.TrackActive backgroundColor="$accent9" />
-                        </Slider.Track>
-                        <Slider.Thumb
-                          index={0}
-                          circular
-                          size="$1.5"
-                          backgroundColor="$accent9"
-                          borderWidth={3}
-                          borderColor="white"
-                        />
-                      </Slider>
-                      <XStack gap="$1" alignItems="center" width={120}>
-                        <Input
-                          flex={1}
-                          placeholder="0"
-                          value={amount}
-                          onChangeText={handleAmountInputChange}
-                          keyboardType="numeric"
-                          returnKeyType="done"
-                          textAlign="right"
-                        />
-                        <Text fontSize="$2" fontFamily="$interMedium" color="$color9">
-                          {position.coin}
-                        </Text>
-                      </XStack>
-                    </XStack>
-                  </YStack>
+                  </Button>
                 )}
-              </YStack>
+              </XStack>
 
-              {/* Limit Price */}
-              <YStack gap="$2">
-                <XStack justifyContent="space-between" alignItems="center">
-                  <Text fontSize="$2" color="$color" fontFamily="$interMedium">
-                    Limit Price
+              {existingTpSlOrders.tp ? (
+                <YStack
+                  backgroundColor="$gray3"
+                  padding="$3"
+                  borderRadius="$3"
+                  borderWidth={1}
+                  borderColor="$green9"
+                >
+                  <Text fontSize="$2" color="$green10" fontFamily="$interMedium">
+                    TP Order Active: {existingTpSlOrders.tp.triggerPx}
                   </Text>
-                  <Checkbox
-                    size="$4"
-                    checked={limitPrice}
-                    onCheckedChange={checked => setLimitPrice(checked === true)}
-                  >
-                    <Checkbox.Indicator>
-                      <Check />
-                    </Checkbox.Indicator>
-                  </Checkbox>
-                </XStack>
-
-                {limitPrice && (
+                  <Text fontSize="$1" color="$color9">
+                    Size: {existingTpSlOrders.tp.sz} {position.coin}
+                  </Text>
+                </YStack>
+              ) : (
+                <>
                   <XStack gap="$2">
                     <YStack flex={1} gap="$1">
                       <Text fontSize="$1" color="$color9">
-                        TP Limit Price
+                        TP Price
                       </Text>
                       <Input
                         placeholder="0.0"
-                        value={tpLimitPrice}
-                        onChangeText={setTpLimitPrice}
+                        value={tpPrice}
+                        onChangeText={handleTpPriceChange}
+                        backgroundColor="$gray3"
                         keyboardType="numeric"
                         returnKeyType="done"
-                        disabled={!tpPrice}
                       />
                     </YStack>
                     <YStack flex={1} gap="$1">
                       <Text fontSize="$1" color="$color9">
-                        SL Limit Price
+                        Gain
+                      </Text>
+                      <XStack alignItems="center" gap="$1">
+                        <Input
+                          flex={1}
+                          placeholder="0"
+                          value={tpPercent}
+                          onChangeText={handleTpPercentChange}
+                          backgroundColor="$gray3"
+                          keyboardType="numeric"
+                          returnKeyType="done"
+                        />
+                        <Text fontSize="$3" fontFamily="$interMedium" color="$color9">
+                          %
+                        </Text>
+                      </XStack>
+                    </YStack>
+                  </XStack>
+                  {expectedProfit !== null && (
+                    <Text fontSize="$2" color="$color9">
+                      Expected profit: {expectedProfit >= 0 ? '+' : ''}
+                      {formatValue(expectedProfit, 2)} USDC
+                    </Text>
+                  )}
+                </>
+              )}
+            </YStack>
+
+            {/* Stop Loss */}
+            <YStack gap="$2">
+              <XStack justifyContent="space-between" alignItems="center">
+                <Text fontSize="$2" color="$color" fontFamily="$interMedium">
+                  Stop Loss
+                </Text>
+                {existingTpSlOrders.sl && (
+                  <Button
+                    size="$2"
+                    backgroundColor="$red9"
+                    onPress={handleCancelSlOrder}
+                    disabled={isCancelingSl}
+                    opacity={isCancelingSl ? 0.5 : 1}
+                    pressStyle={{ opacity: 0.8 }}
+                  >
+                    <Text fontSize="$1" fontFamily="$interSemiBold" color="white">
+                      {isCancelingSl ? 'Canceling...' : 'Cancel SL'}
+                    </Text>
+                  </Button>
+                )}
+              </XStack>
+
+              {existingTpSlOrders.sl ? (
+                <YStack
+                  backgroundColor="$gray3"
+                  padding="$3"
+                  borderRadius="$3"
+                  borderWidth={1}
+                  borderColor="$red9"
+                >
+                  <Text fontSize="$2" color="$red10" fontFamily="$interMedium">
+                    SL Order Active: {existingTpSlOrders.sl.triggerPx}
+                  </Text>
+                  <Text fontSize="$1" color="$color9">
+                    Size: {existingTpSlOrders.sl.sz} {position.coin}
+                  </Text>
+                </YStack>
+              ) : (
+                <>
+                  <XStack gap="$2">
+                    <YStack flex={1} gap="$1">
+                      <Text fontSize="$1" color="$color9">
+                        SL Price
                       </Text>
                       <Input
                         placeholder="0.0"
-                        value={slLimitPrice}
-                        onChangeText={setSlLimitPrice}
+                        value={slPrice}
+                        onChangeText={handleSlPriceChange}
+                        backgroundColor="$gray3"
                         keyboardType="numeric"
                         returnKeyType="done"
-                        disabled={!slPrice}
                       />
                     </YStack>
+                    <YStack flex={1} gap="$1">
+                      <Text fontSize="$1" color="$color9">
+                        Loss
+                      </Text>
+                      <XStack alignItems="center" gap="$1">
+                        <Input
+                          flex={1}
+                          placeholder="0"
+                          value={slPercent}
+                          onChangeText={handleSlPercentChange}
+                          backgroundColor="$gray3"
+                          keyboardType="numeric"
+                          returnKeyType="done"
+                        />
+                        <Text fontSize="$3" fontFamily="$interMedium" color="$color9">
+                          %
+                        </Text>
+                      </XStack>
+                    </YStack>
                   </XStack>
-                )}
-              </YStack>
-
-              {/* Helper Text */}
-              <YStack gap="$2" paddingBottom="$3">
-                <Text fontSize="$1" color="$color9" lineHeight="$1">
-                  By default take-profit and stop-loss orders apply to the entire position.
-                  Take-profit and stop-loss automatically cancel after closing the position. A
-                  market order is triggered when the stop loss or take profit price is reached.
-                </Text>
-                <Text fontSize="$1" color="$color9" lineHeight="$1">
-                  If the order size is configured above, the TP/SL order will be for that size no
-                  matter how the position changes in the future.
-                </Text>
-              </YStack>
-
-              {/* Confirm Button */}
-              <Button
-                size="$4"
-                backgroundColor="$accent9"
-                disabled={!canConfirm() || isPlacingOrder}
-                opacity={!canConfirm() || isPlacingOrder ? 0.5 : 1}
-                onPress={handleConfirm}
-                pressStyle={{ opacity: 0.8 }}
-                marginBottom="$3"
-              >
-                <Text fontSize="$4" fontFamily="$interSemiBold" color="white">
-                  {isPlacingOrder ? 'Placing Orders...' : 'Confirm'}
-                </Text>
-              </Button>
-            </ScrollView>
+                  {expectedLoss !== null && (
+                    <Text fontSize="$2" color="$color9">
+                      Expected loss: {expectedLoss >= 0 ? '+' : ''}
+                      {formatValue(expectedLoss, 2)} USDC
+                    </Text>
+                  )}
+                </>
+              )}
+            </YStack>
           </YStack>
-        </Pressable>
-      </Pressable>
-    </Modal>
+
+          {/* Configure Amount */}
+          <YStack gap="$2" marginTop="$4">
+            <XStack justifyContent="space-between" alignItems="center">
+              <Text fontSize="$2" color="$color" fontFamily="$interMedium">
+                Configure Amount
+              </Text>
+              <Checkbox
+                size="$4"
+                checked={configureAmount}
+                onCheckedChange={checked => setConfigureAmount(checked === true)}
+              >
+                <Checkbox.Indicator>
+                  <Check />
+                </Checkbox.Indicator>
+              </Checkbox>
+            </XStack>
+
+            {configureAmount && (
+              <YStack gap="$3">
+                <XStack justifyContent="flex-end" alignItems="center" gap="$2">
+                  <Input
+                    placeholder="0"
+                    fontSize="$3"
+                    width={100}
+                    value={amount}
+                    onChangeText={handleAmountInputChange}
+                    keyboardType="numeric"
+                    returnKeyType="done"
+                    textAlign="right"
+                  />
+                  <Text fontSize="$2" fontFamily="$interMedium" color="$color9">
+                    {position.coin}
+                  </Text>
+                </XStack>
+                <Slider
+                  value={[amountPercentage]}
+                  onValueChange={handleAmountPercentageChange}
+                  min={0}
+                  max={100}
+                  step={1}
+                  size="$4"
+                  marginBottom="$3"
+                >
+                  <Slider.Track backgroundColor="$gray5" height="$0.75">
+                    <Slider.TrackActive backgroundColor="$accent9" />
+                  </Slider.Track>
+                  <Slider.Thumb
+                    index={0}
+                    circular
+                    size="$1.5"
+                    backgroundColor="$accent1"
+                    borderWidth={2}
+                    borderColor="$accent9"
+                  />
+                </Slider>
+              </YStack>
+            )}
+          </YStack>
+
+          {/* Limit Price */}
+          <YStack gap="$2">
+            <XStack justifyContent="space-between" alignItems="center">
+              <Text fontSize="$2" color="$color" fontFamily="$interMedium">
+                Limit Price
+              </Text>
+              <Checkbox
+                size="$4"
+                checked={limitPrice}
+                onCheckedChange={checked => setLimitPrice(checked === true)}
+              >
+                <Checkbox.Indicator>
+                  <Check />
+                </Checkbox.Indicator>
+              </Checkbox>
+            </XStack>
+
+            {limitPrice && (
+              <XStack gap="$2">
+                <YStack flex={1} gap="$1">
+                  <Text fontSize="$1" color="$color9">
+                    TP Limit Price
+                  </Text>
+                  <Input
+                    placeholder="0.0"
+                    value={tpLimitPrice}
+                    onChangeText={setTpLimitPrice}
+                    backgroundColor="$gray3"
+                    keyboardType="numeric"
+                    returnKeyType="done"
+                    disabled={!tpPrice}
+                  />
+                </YStack>
+                <YStack flex={1} gap="$1">
+                  <Text fontSize="$1" color="$color9">
+                    SL Limit Price
+                  </Text>
+                  <Input
+                    placeholder="0.0"
+                    value={slLimitPrice}
+                    onChangeText={setSlLimitPrice}
+                    backgroundColor="$gray3"
+                    keyboardType="numeric"
+                    returnKeyType="done"
+                    disabled={!slPrice}
+                  />
+                </YStack>
+              </XStack>
+            )}
+          </YStack>
+
+          {/* Info */}
+          <YStack backgroundColor="$gray2" padding="$3" borderRadius="$3" gap="$1.5">
+            <Text fontSize="$1" color="$color10" lineHeight={16}>
+              • TP/SL applies to entire position by default
+            </Text>
+            <Text fontSize="$1" color="$color10" lineHeight={16}>
+              • Orders auto-cancel when position closes
+            </Text>
+            {configureAmount && (
+              <Text fontSize="$1" color="$color10" lineHeight={16}>
+                • Configured size remains fixed regardless of position changes
+              </Text>
+            )}
+          </YStack>
+
+          {/* Confirm Button */}
+          <Button.Filled
+            backgroundColor="$accent9"
+            height="$5"
+            marginTop="$5"
+            disabled={!canConfirm() || isPlacingOrder}
+            opacity={!canConfirm() || isPlacingOrder ? 0.5 : 1}
+            onPress={handleConfirm}
+            pressStyle={{ opacity: 0.8 }}
+            marginBottom="$3"
+          >
+            <Text fontSize="$4" color="$color1">
+              {isPlacingOrder ? 'Placing Orders...' : 'Confirm'}
+            </Text>
+          </Button.Filled>
+        </YStack>
+      </Sheet.Frame>
+    </Sheet>
   );
 }
-
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'flex-end',
-  },
-  contentContainer: {
-    height: '85%',
-    width: '100%',
-  },
-});
