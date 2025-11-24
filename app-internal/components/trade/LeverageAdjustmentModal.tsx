@@ -1,8 +1,10 @@
 import { useMargin, useMarginStore } from '@/app-internal';
-import { toast } from 'sonner-native';
+import { Button } from '@/app-internal/components/global/Button';
+import { Text } from '@/app-internal/components/global/Text';
+import { AlertTriangle } from '@tamagui/lucide-icons';
 import { useCallback, useEffect, useState } from 'react';
-import { Modal, Pressable, StyleSheet } from 'react-native';
-import { Button, Slider, Spinner, Text, XStack, YStack } from 'tamagui';
+import { toast } from 'sonner-native';
+import { Sheet, Slider, Spinner, XStack, YStack } from 'tamagui';
 
 const LEVERAGE_STEP = 1;
 
@@ -93,70 +95,69 @@ export function LeverageAdjustmentModal({ open, onOpenChange }: LeverageAdjustme
   }, [isUpdating, onOpenChange, selectedLeverage, selectedMarginMode, setMarginLeverage]);
 
   return (
-    <Modal
-      visible={open}
-      transparent
-      animationType="slide"
-      onRequestClose={() => onOpenChange(false)}
-      statusBarTranslucent
+    <Sheet
+      modal
+      native
+      open={open}
+      onOpenChange={() => onOpenChange(false)}
+      snapPoints={[70]}
+      position={0}
+      dismissOnSnapToBottom
+      dismissOnOverlayPress
     >
-      {/* Overlay */}
-      <Pressable style={styles.overlay} onPress={() => onOpenChange(false)}>
+      <Sheet.Overlay
+        enterStyle={{ opacity: 0 }}
+        exitStyle={{ opacity: 0 }}
+        backgroundColor="rgba(0,0,0,0.6)"
+      />
+      <Sheet.Frame
+        padding="$2"
+        backgroundColor="$background"
+        borderTopLeftRadius="$6"
+        borderTopRightRadius="$6"
+      >
         {/* Content Container */}
-        <Pressable style={styles.contentContainer} onPress={e => e.stopPropagation()}>
+        <YStack
+          flex={1}
+          backgroundColor="$background"
+          borderTopLeftRadius="$6"
+          borderTopRightRadius="$6"
+          padding="$4"
+          gap="$4"
+        >
+          {/* Handle */}
           <YStack
-            flex={1}
-            backgroundColor="$background"
-            borderTopLeftRadius="$6"
-            borderTopRightRadius="$6"
-            padding="$4"
-            gap="$4"
-          >
-            {/* Handle */}
-            <YStack
-              opacity={0.5}
-              backgroundColor="$gray9"
-              height={3}
-              width={32}
-              alignSelf="center"
-              borderRadius="$12"
-            />
+            opacity={0.5}
+            backgroundColor="$gray9"
+            height={3}
+            width={32}
+            alignSelf="center"
+            borderRadius="$12"
+          />
 
-            {/* Header */}
-            <XStack alignItems="center" justifyContent="space-between">
-              <Text fontFamily="$interSemiBold" fontSize="$4" color="$color">
-                Adjust Leverage
+          {/* Header */}
+          <Text fontSize="$3" textAlign="center" color="$color12">
+            Leverage Picker
+          </Text>
+
+          {/* Loading State */}
+          {(isLoading || !marginLeverage) && (
+            <YStack flex={1} justifyContent="center" alignItems="center" gap="$3">
+              <Spinner size="large" color="$accent9" />
+              <Text fontFamily="$interRegular" fontSize="$3" color="$gray10">
+                Loading leverage data...
               </Text>
-              <XStack
-                width="$2"
-                height="$2"
-                alignItems="center"
-                justifyContent="center"
-                onPress={() => onOpenChange(false)}
-                pressStyle={{ opacity: 0.5 }}
-              >
-                <Text fontSize="$5" color="$gray11">
-                  ×
-                </Text>
-              </XStack>
-            </XStack>
+            </YStack>
+          )}
 
-            {/* Loading State */}
-            {(isLoading || !marginLeverage) && (
-              <YStack flex={1} justifyContent="center" alignItems="center" gap="$3">
-                <Spinner size="large" color="$accent9" />
-                <Text fontFamily="$interRegular" fontSize="$3" color="$gray10">
-                  Loading leverage data...
-                </Text>
-              </YStack>
-            )}
-
-            {/* Content - only show when data is loaded */}
-            {!isLoading && marginLeverage && (
-              <>
-                {/* Margin Mode Selector */}
+          {/* Content - only show when data is loaded */}
+          {!isLoading && marginLeverage && (
+            <>
+              {/* Scrollable Content Area */}
+              <YStack flex={1} gap="$4">
+                {/* Margin Mode Selector Section */}
                 <YStack gap="$2">
-                  <Text fontFamily="$interRegular" fontSize="$3" color="$gray11">
+                  <Text fontSize="$2" color="$gray11">
                     Margin Mode
                   </Text>
                   <XStack gap="$2">
@@ -173,7 +174,6 @@ export function LeverageAdjustmentModal({ open, onOpenChange }: LeverageAdjustme
                       opacity={isUpdating ? 0.5 : 1}
                     >
                       <Text
-                        fontFamily="$interSemiBold"
                         fontSize="$3"
                         color={selectedMarginMode === 'cross' ? '$accent1' : '$color'}
                       >
@@ -195,7 +195,6 @@ export function LeverageAdjustmentModal({ open, onOpenChange }: LeverageAdjustme
                       opacity={isUpdating ? 0.5 : 1}
                     >
                       <Text
-                        fontFamily="$interSemiBold"
                         fontSize="$3"
                         color={selectedMarginMode === 'isolated' ? '$accent1' : '$color'}
                       >
@@ -205,8 +204,8 @@ export function LeverageAdjustmentModal({ open, onOpenChange }: LeverageAdjustme
                   </XStack>
                 </YStack>
 
-                {/* Leverage Adjuster */}
-                <YStack gap="$3">
+                {/* Leverage Adjuster Section */}
+                <YStack gap="$2" mt="$8">
                   {/* Leverage Display with Step Buttons */}
                   <XStack alignItems="center" justifyContent="center" gap="$4">
                     <XStack
@@ -224,13 +223,15 @@ export function LeverageAdjustmentModal({ open, onOpenChange }: LeverageAdjustme
                       pressStyle={{ opacity: 0.7 }}
                       opacity={isUpdating || selectedLeverage <= leverageMin ? 0.5 : 1}
                     >
-                      <Text fontSize="$5" color="$color">
+                      <Text fontSize="$4" color="$color">
                         −
                       </Text>
                     </XStack>
-                    <Text fontFamily="$interBold" fontSize="$8" color="$color">
-                      {selectedLeverage}x
-                    </Text>
+                    <XStack width={80} alignItems="center" justifyContent="center">
+                      <Text fontFamily="$interBold" fontSize="$6" color="$color">
+                        {selectedLeverage}x
+                      </Text>
+                    </XStack>
                     <XStack
                       width="$3"
                       height="$3"
@@ -246,20 +247,10 @@ export function LeverageAdjustmentModal({ open, onOpenChange }: LeverageAdjustme
                       pressStyle={{ opacity: 0.7 }}
                       opacity={isUpdating || selectedLeverage >= leverageMax ? 0.5 : 1}
                     >
-                      <Text fontSize="$5" color="$color">
+                      <Text fontSize="$4" color="$color">
                         +
                       </Text>
                     </XStack>
-                  </XStack>
-
-                  {/* Leverage Range Info */}
-                  <XStack justifyContent="center" alignItems="center" gap="$2">
-                    <Text fontFamily="$interRegular" fontSize="$2" color="$gray10">
-                      Available Range:
-                    </Text>
-                    <Text fontFamily="$interSemiBold" fontSize="$2" color="$color">
-                      {leverageMin}x - {leverageMax}x
-                    </Text>
                   </XStack>
 
                   {/* Leverage Slider */}
@@ -281,31 +272,60 @@ export function LeverageAdjustmentModal({ open, onOpenChange }: LeverageAdjustme
                       );
                       setSelectedLeverage(clampedValue);
                     }}
+                    marginVertical="$4"
                   >
-                    <Slider.Track backgroundColor="$gray5" height="$0.5">
+                    <Slider.Track backgroundColor="$gray5" height="$0.75">
                       <Slider.TrackActive backgroundColor="$accent9" />
                     </Slider.Track>
                     <Slider.Thumb
                       index={0}
-                      size="$1.5"
+                      size="$1"
                       backgroundColor="$accent1"
                       borderWidth={2}
                       borderColor="$accent9"
                       circular
                     />
                   </Slider>
+                  {/* Leverage Range Info */}
+                  <XStack justifyContent="center" alignItems="center" gap="$2">
+                    <Text fontSize="$2" color="$gray10">
+                      Available Range:
+                    </Text>
+                    <Text fontSize="$2" color="$color12">
+                      {leverageMin}x - {leverageMax}x
+                    </Text>
+                  </XStack>
                 </YStack>
+              </YStack>
 
+              {/* Confirm Section - Pinned at Bottom */}
+              <YStack gap="$4">
                 {/* Warning Text */}
-                <Text fontFamily="$interRegular" fontSize="$2" color="$gray10" textAlign="center">
-                  * Placing high leverage increases your liquidation risk. Always manage your risk
-                  by monitoring your positions closely.
-                </Text>
+                <XStack
+                  padding="$3"
+                  backgroundColor="$yellow2"
+                  borderRadius="$3"
+                  gap="$2.5"
+                  alignItems="flex-start"
+                >
+                  <AlertTriangle size={16} color="$yellow9" />
+                  <YStack flex={1}>
+                    <YStack gap="$1" alignItems="flex-start" style={{ marginTop: -3 }}>
+                      <Text.Footnote color="$yellow9" fontWeight="700">
+                        Important
+                      </Text.Footnote>
+                      <Text.Footnote color="$yellow9">
+                        Placing high leverage increases your liquidation risk. Always manage your
+                        risk by monitoring your positions closely.
+                      </Text.Footnote>
+                    </YStack>
+                  </YStack>
+                </XStack>
 
                 {/* Confirm Button */}
                 <Button
                   width="100%"
-                  height="$4"
+                  height="$5"
                   backgroundColor="$accent9"
                   borderColor="$accent9"
                   borderWidth={1}
@@ -319,28 +339,16 @@ export function LeverageAdjustmentModal({ open, onOpenChange }: LeverageAdjustme
                   {isUpdating ? (
                     <Spinner size="small" color="$accent1" />
                   ) : (
-                    <Text fontFamily="$interSemiBold" fontSize="$4" color="$accent1">
+                    <Text fontSize="$4" color="$accent1">
                       Confirm
                     </Text>
                   )}
                 </Button>
-              </>
-            )}
-          </YStack>
-        </Pressable>
-      </Pressable>
-    </Modal>
+              </YStack>
+            </>
+          )}
+        </YStack>
+      </Sheet.Frame>
+    </Sheet>
   );
 }
-
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'flex-end',
-  },
-  contentContainer: {
-    height: '55%',
-    width: '100%',
-  },
-});

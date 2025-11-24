@@ -1,8 +1,8 @@
+import { useMarket, useMarketStore } from '@/app-internal';
 import { MarketListItem } from '@/app-internal/components/trade/MarketListItem';
-import { useMarketStore, useMarket } from '@/app-internal';
 import { useSubscription } from '@/infra/hyperliquid/subscription';
 import { ArrowDown, ArrowUp, Search } from '@tamagui/lucide-icons';
-import { useCallback, useState, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet } from 'react-native';
 import Modal from 'react-native-modal';
 import { Button, Input, Text, XStack, YStack } from 'tamagui';
@@ -209,7 +209,7 @@ export function MarketSelectorModal({ open, onOpenChange }: MarketSelectorModalP
           alignItems="center"
           gap="$2"
         >
-          <Search size="$0.75" color="$gray9" />
+          <Search size="$1" color="$gray9" />
           <Input
             flex={1}
             placeholder="Search tokens"
@@ -218,7 +218,7 @@ export function MarketSelectorModal({ open, onOpenChange }: MarketSelectorModalP
             onChangeText={setSearchQuery}
             backgroundColor="transparent"
             borderWidth={0}
-            fontSize="$2"
+            fontSize="$3"
             paddingVertical="$0"
             paddingHorizontal="$0"
           />

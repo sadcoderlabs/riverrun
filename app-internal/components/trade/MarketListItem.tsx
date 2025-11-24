@@ -69,8 +69,8 @@ const MarketListItemComponent = ({
         <XStack onPress={handleStarPress} pressStyle={{ opacity: 0.7 }} padding="$1.5">
           <Star
             size="$1"
-            color={isFavorite ? '#FDB022' : '$gray9'}
-            fill={isFavorite ? '#FDB022' : 'transparent'}
+            color={isFavorite ? '#FDDC64' : '$gray9'}
+            fill={isFavorite ? '#FDDC64' : 'transparent'}
           />
         </XStack>
 
@@ -82,14 +82,15 @@ const MarketListItemComponent = ({
               {coin}
             </Text>
             <XStack
-              backgroundColor="rgba(255, 100, 50, 0.15)"
+              backgroundColor="$color1"
+              opacity={0.6}
               paddingHorizontal="$1.5"
               paddingVertical="$0.5"
               borderRadius="$2"
               borderWidth={1}
-              borderColor="rgba(255, 100, 50, 0.4)"
+              borderColor="$color10"
             >
-              <Text fontSize="$1" color="rgba(255, 120, 70, 1)" fontFamily="$interMedium">
+              <Text fontSize="$1" color="$color" fontFamily="$interMedium">
                 {maxLeverage}x
               </Text>
             </XStack>
@@ -112,7 +113,7 @@ const MarketListItemComponent = ({
       {/* Right Column: 24h Change */}
       <YStack alignItems="flex-end" minWidth={80}>
         <XStack
-          backgroundColor={isPriceUp ? 'rgba(20, 80, 70, 0.6)' : 'rgba(100, 30, 30, 0.6)'}
+          backgroundColor={isPriceUp ? 'rgba(37,51,29,0.6)' : 'rgba(100, 30, 30, 0.6)'}
           paddingHorizontal="$2"
           paddingVertical="$1.5"
           borderRadius="$2"
@@ -120,7 +121,7 @@ const MarketListItemComponent = ({
           <Text
             fontFamily="$interSemiBold"
             fontSize="$3"
-            color={isPriceUp ? 'rgba(100, 220, 180, 1)' : 'rgba(255, 100, 100, 1)'}
+            color={isPriceUp ? 'rgba(130,178,102,1)' : 'rgba(255, 100, 100, 1)'}
           >
             {isPriceUp ? '+' : ''}
             {change.toFixed(2)}%

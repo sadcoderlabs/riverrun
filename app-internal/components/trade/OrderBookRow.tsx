@@ -65,7 +65,8 @@ export const OrderBookRow = memo(function OrderBookRow({
       position="relative"
       height={20}
       alignItems="center"
-      paddingHorizontal="$1.5"
+      paddingLeft="$3"
+      paddingRight="$1.5"
       paddingVertical="$0.5"
       onPress={onPress}
       pressStyle={{ opacity: 0.7 }}
@@ -77,7 +78,7 @@ export const OrderBookRow = memo(function OrderBookRow({
         top={0}
         bottom={0}
         width={`${depthPercentage}%`}
-        backgroundColor={isBid ? '$green3' : '$red3'}
+        backgroundColor={isBid ? '$green5' : '$red3'}
         opacity={0.6}
         zIndex={0}
       />
@@ -87,8 +88,8 @@ export const OrderBookRow = memo(function OrderBookRow({
         {/* Price */}
         <Text
           fontSize="$1"
-          color={isBid ? '$green10' : '$red10'}
-          width={85}
+          color={isBid ? '$green9' : '$red10'}
+          flexShrink={0}
           style={{
             fontFamily: MONOSPACE_FONT,
             fontVariant: ['tabular-nums'],
@@ -102,8 +103,7 @@ export const OrderBookRow = memo(function OrderBookRow({
           fontSize="$1"
           color="$color"
           textAlign="right"
-          width={70}
-          paddingRight="$1"
+          flexShrink={0}
           style={{
             fontFamily: MONOSPACE_FONT,
             fontVariant: ['tabular-nums'],
