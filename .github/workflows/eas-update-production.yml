@@ -1,10 +1,7 @@
 name: EAS Update (Production)
 
 on:
-  workflow_run:
-    workflows: ['Test']
-    types:
-      - completed
+  push:
     branches:
       - main
   workflow_dispatch:
@@ -19,8 +16,6 @@ jobs:
     name: Publish Production Update
     runs-on: ubuntu-latest
     environment: production
-    # Run automatically only when tests succeed on a push to main, or manually via dispatch
-    if: ${{ github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main') }}
 
     steps:
       - name: Checkout code
