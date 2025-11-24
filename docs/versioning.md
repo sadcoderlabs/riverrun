@@ -1,182 +1,497 @@
-# Expo App 版本與更新管理規範
+# App 版本與更新管理規範
 
-## 0. 目標與設計原則
-
-本文件說明本專案在 **Expo / EAS** 下的版本與更新管理策略，涵蓋：
-
-- App 在 App Store / Play Store 的版本號管理
-- OTA（EAS Update）發版流程（preview / production）
-- runtimeVersion 管理原則
-- 如何在 Sentry / 客服中追蹤使用者目前使用的 OTA 版本
-
-設計原則：
-
-1. **使用者只會拿到 `main` branch 的程式碼**
-   - `develop` branch 僅用於 internal preview 測試
-   - 真正上線給使用者的 OTA / binary 僅來源於 `main` branch
-
-2. **App Store 顯示的版本號與 `expo.version` 完全對齊**
-   - 使用者在 App 內看到的版本號 = Store 後台的版本號
-   - 方便客服 / debug / 查 release 紀錄
-
-3. **runtimeVersion 使用 `policy: "appVersion"` 自動管理**
-   - 不需要手動維護，自動與 `expo.version` 同步
-   - 確保 OTA 更新只會推送給相同 app version 的使用者
-
-4. **每次送新 binary，都會遞增 `buildNumber` / `versionCode`**
-   - 這是 Store 的硬性規定
-   - 版本號的主體資訊交由 `expo.version` 呈現
-
-5. **不維護 git tag，追蹤 OTA 只靠 commit hash + Sentry**
-   - CI 在 build / update 時，透過 `EXPO_PUBLIC_GIT_COMMIT_HASH` 注入 git commit hash
-   - App 啟動時把 commitHash 傳給 Sentry，方便錯誤追蹤與客服排查
+本文件說明本專案的版本管理策略、更新流程與決策指南。
 
 ---
 
-## 1. 版本欄位定義
+## 1. 核心原則
 
-### 1.1 `expo.version`
+### 1.1 版本號管理
 
-- 給使用者與 Store 顯示的版本號
-- 格式：`MAJOR.MINOR.PATCH`
-- **只在「要出新 binary 並送審」前才 bump**
-- 由於使用 `runtimeVersion: { policy: "appVersion" }`，每次 bump version 都會同時更新 runtime version
+**`expo.version` 是 App 的唯一語意版本號**
 
-⚠️ **重要警告**：
-
-- **不要隨意 bump `expo.version`**，除非真的要出新的 native build
-- 每次 bump version 會改變 runtime version，導致已安裝舊版 app 的使用者**無法收到新的 OTA 更新**
-- OTA 只會推送給相同 runtime version 的使用者
-
-### 1.2 `ios.buildNumber` / `android.versionCode`
-
-- Store 判斷新 binary 的依據
-- 每次 submit 都必須遞增
-- JS-only OTA **不修改**
-
-### 1.3 `expo.runtimeVersion`
-
-- 決定 OTA 是否相容
-- **使用 `policy: "appVersion"` 自動管理**
-- Runtime version 自動與 `expo.version` 同步
-- 這意味著每次 bump `expo.version` 時，runtime version 也會自動更新
-
-### 1.4 Git Commit Hash
-
-- 用於工程師 debug / Sentry dist
-- **不儲存在 `expo.extra`**，改用 `EXPO_PUBLIC_GIT_COMMIT_HASH` 環境變數
-- CI 在執行 `eas update` 時注入 `git rev-parse --short HEAD`
-- 透過 `process.env.EXPO_PUBLIC_GIT_COMMIT_HASH` 在 App 中存取
-
----
-
-## 2. Git Branch / EAS Channel 策略
-
-| Git branch | EAS Update branch | Channel    | Build Profile | 用途                 |
-| ---------- | ----------------- | ---------- | ------------- | -------------------- |
-| develop    | develop           | preview    | preview       | 內部測試（內部分發） |
-| main       | main              | production | production    | 使用者版本（Store）  |
-
-### Channel 設定
-
-在 `eas.json` 中配置 channel：
-
-```json
-{
-  "build": {
-    "preview": {
-      "channel": "preview",
-      "distribution": "internal"
-    },
-    "production": {
-      "channel": "production"
-    }
-  }
-}
-```
-
-### 運作方式
-
-- 執行 `eas build --profile preview` 產生的 binary 會訂閱 `preview` channel
-- 執行 `eas build --profile production` 產生的 binary 會訂閱 `production` channel
-- Store 安裝的 App（production build）永遠指向 `production` channel
-- 只有 `main` branch 的程式碼能送達使用者
-
----
-
-## 3. `app.json` / `app.config.ts` 範例
-
-### `app.json`
+- 格式：`MAJOR.MINOR.PATCH`（例如：`1.2.3`）
+- 對應 Store 顯示版本號
+- 對應 App 內顯示版本號
+- 自動決定 `runtimeVersion`（透過 `policy: "appVersion"`）
 
 ```json
 {
   "expo": {
-    "version": "1.2.3",
+    "version": "1.2.3",  // 唯一真相來源
     "runtimeVersion": {
-      "policy": "appVersion"
-    },
-    "ios": {
-      "buildNumber": "45"
-    },
-    "android": {
-      "versionCode": 45
-    },
-    "extra": {
-      "sentryDsn": "https://..."
+      "policy": "appVersion"  // 自動等於 expo.version
     }
   }
 }
 ```
 
-### `app.config.ts`
+⚠️ **關鍵理解**：
+- 修改 `expo.version` → `runtimeVersion` 自動更新
+- `runtimeVersion` 改變 → 舊版 App **無法**收到新的 OTA 更新
+- OTA 只推送給相同 `runtimeVersion` 的 App
 
-```ts
-import type { ExpoConfig, ConfigContext } from 'expo/config';
+### 1.2 版本號意義
 
-export default ({ config }: ConfigContext): ExpoConfig => {
-  return {
-    ...config,
-    name: 'MyApp',
-    ios: {
-      ...config.ios,
-      bundleIdentifier: 'com.mycompany.myapp',
-    },
-    android: {
-      ...config.android,
-      package: 'com.mycompany.myapp',
-    },
-    extra: {
-      ...config.extra,
-      // 注意：不要在這裡放 commitHash
-      // commitHash 透過 EXPO_PUBLIC_GIT_COMMIT_HASH 注入
-    },
-  };
-};
-```
+| 欄位 | 用途 | 何時修改 | 影響 |
+|------|------|----------|------|
+| `expo.version` | App 語意版本號 | 需要新 native build 時 | 改變 runtimeVersion，切斷舊版 OTA |
+| `ios.buildNumber` | Store 識別 iOS build | 每次 submit 到 Store | Store 判斷是否為新 build |
+| `android.versionCode` | Store 識別 Android build | 每次 submit 到 Store | Store 判斷是否為新 build |
+| `runtimeVersion` | OTA 相容性判斷 | **自動**（跟隨 expo.version） | 決定哪些 App 能收到 OTA |
+| Commit Hash | 追蹤 JS bundle 版本 | 自動注入 | Sentry 追蹤、客服查詢 |
 
-**重要注意事項**：
+### 1.3 Branch & Channel 策略
 
-1. **Runtime Version**：使用 `policy: "appVersion"` 自動與 `expo.version` 同步，不需手動維護
-2. **Git Commit Hash**：不應該放在 `app.config.ts` 的 `extra` 中，因為 `eas update` 執行時無法存取 shell 環境變數。改用 `EXPO_PUBLIC_` 前綴的環境變數，直接注入到 JavaScript bundle 中
-3. **⚠️ 不要輕易修改 `expo.version`**：由於 runtime version 與 `expo.version` 綁定，每次修改版本號都會建立新的 runtime version，導致舊版使用者無法收到 OTA 更新
+| Branch | Build Profile | Channel | 用途 | 誰會使用 |
+|--------|--------------|---------|------|----------|
+| `develop` | `preview` | `preview` | 內部測試 | 開發團隊 |
+| `main` | `production` | `production` | 正式版本 | 所有使用者 |
+
+**原則**：
+- ✅ 使用者**只會**拿到來自 `main` branch 的代碼
+- ✅ `develop` 僅用於內部開發與測試
+- ✅ 所有 PR 必須先合併到 `main` 再發布 production build
 
 ---
 
-## 4. CI / CD 流程
+## 2. 更新機制說明
 
-### 4.1 在 CI 取得 commit hash
+### 2.1 三種更新方式
 
-在 GitHub Actions 中取得 commit hash 並設為環境變數：
+#### **A. OTA 更新（Over-The-Air）**
+- **適用**：純 JS/React 代碼變更
+- **速度**：秒級推送
+- **限制**：不能修改 native code
+- **版本號**：`expo.version` 保持不變
 
-```bash
-COMMIT_HASH=$(git rev-parse --short HEAD)
+#### **B. Native Build 更新**
+- **適用**：Native module、配置變更
+- **速度**：需要 Store 審核（1-7 天）
+- **限制**：必須透過 Store 下載
+- **版本號**：`expo.version` 必須升級
+
+#### **C. Bundle 更新（不升級 expo.version）**
+- **適用**：想讓新用戶直接下載最新 JS bundle
+- **速度**：需要 Store 審核
+- **限制**：僅 `buildNumber`/`versionCode` 遞增
+- **版本號**：`expo.version` 保持不變
+- **效果**：舊用戶透過 OTA 更新，新用戶下載到最新 bundle
+
+### 2.2 App 啟動時的更新檢查流程
+
+```
+App 冷啟動
+    ↓
+┌─────────────────────────────────────┐
+│ 1. Native Version 檢查              │
+│    - 從 S3 獲取 version-config.json │
+│    - 比較當前版本與 latestVersion   │
+└─────────────────────────────────────┘
+    ↓
+    ├─ 版本 < minVersion
+    │   → 顯示「Update Required」提醒
+    │   → 非阻擋式（用戶可選擇 Later）
+    │
+    ├─ 版本 < latestVersion
+    │   → 顯示「Update Available」提醒
+    │   → 非阻擋式（用戶可選擇 Later）
+    │
+    └─ 版本 >= latestVersion
+        ↓
+┌─────────────────────────────────────┐
+│ 2. Runtime Version 檢查              │
+│    - 自動判斷（基於 expo.version）   │
+└─────────────────────────────────────┘
+    ↓
+    ├─ runtimeVersion 不符
+    │   → 無法收到 OTA（已知限制）
+    │   → 需要升級 native build
+    │
+    └─ runtimeVersion 相符
+        ↓
+┌─────────────────────────────────────┐
+│ 3. OTA Update 檢查                   │
+│    - 檢查 Expo Updates 服務          │
+│    - 下載新 JS bundle                │
+└─────────────────────────────────────┘
+    ↓
+    ├─ 有更新
+    │   → 顯示確認提示
+    │   → 下載並重載 App
+    │
+    └─ 無更新
+        → 完成啟動
 ```
 
-### 4.2 develop → preview（自動 OTA）
+### 2.3 更新策略設計原則
 
+- **非阻擋式**：所有提醒都允許用戶選擇「稍後」
+- **單次提醒**：冷啟動只檢查一次，不重複打擾
+- **分級提醒**：
+  - `minVersion`：「Update Required」（強烈建議）
+  - `latestVersion`：「Update Available」（溫和提醒）
+- **錯誤容忍**：版本檢查失敗不影響 App 啟動
+
+---
+
+## 3. 決策指南：我該做什麼？
+
+### 3.1 決策樹
+
+```
+我要做什麼修改？
+    ↓
+    ├─ 純 JS/React 代碼變更？
+    │   ├─ 是 → 【情境 A：OTA 更新】
+    │   └─ 否 ↓
+    │
+    ├─ 修改 native module 或配置？
+    │   ├─ 是 → 【情境 B：Native Build 更新】
+    │   └─ 否 ↓
+    │
+    └─ 想讓新用戶下載到最新 JS？
+        └─ 是 → 【情境 C：Bundle 更新】
+```
+
+---
+
+### 3.2 情境 A：OTA 更新（純 JS 變更）
+
+**適用情況**：
+- ✅ UI 調整、樣式修改
+- ✅ 新增/修改 React 組件
+- ✅ 商業邏輯變更
+- ✅ Bug 修復（純 JS）
+- ❌ 不能修改 native code
+- ❌ 不能添加 native dependencies
+
+**操作步驟**：
+
+#### Develop 環境測試
+```bash
+# 1. 開發並提交到 develop
+git checkout develop
+git add .
+git commit -m "feat: add new feature"
+git push origin develop
+
+# 2. CI 自動發布 Preview OTA
+# 3. 使用 Preview Build 測試
+```
+
+#### 發布到 Production
+```bash
+# 4. 測試通過後，合併到 main（建議使用 PR）
+git checkout main
+git pull origin main
+git merge develop
+git push origin main
+
+# 5. CI 自動發布 Production OTA
+# 6. 所有使用者在下次啟動時收到更新
+```
+
+**版本號變更**：
+- `expo.version`: ❌ 不改
+- `buildNumber`/`versionCode`: ❌ 不改
+- `version-config.json`: ❌ 不改
+
+**時間**：約 5-10 分鐘（從 push 到使用者收到）
+
+---
+
+### 3.3 情境 B：Native Build 更新
+
+**適用情況**：
+- ✅ 新增 native module (如 expo-camera)
+- ✅ 修改 app.json 的 native 配置
+- ✅ 修改 iOS/Android 原生代碼
+- ✅ 升級 Expo SDK
+- ✅ 修改 permissions
+
+**完整流程**：
+
+#### 步驟 1：本地準備與版本號升級
+
+```bash
+# 1. 在 develop branch 開發
+git checkout develop
+
+# 2. 修改 app.json 升級版本號
+vi app.json
+```
+
+```json
+{
+  "expo": {
+    "version": "1.3.0",  // 從 1.2.3 升級到 1.3.0
+    "ios": {
+      "buildNumber": "46"  // 從 45 升級到 46
+    },
+    "android": {
+      "versionCode": 46  // 從 45 升級到 46
+    }
+  }
+}
+```
+
+```bash
+# 3. 提交版本號變更
+git add app.json
+git commit -m "chore: bump version to 1.3.0"
+```
+
+#### 步驟 2：本地發 Development Build
+
+⚠️ **重要**：必須先在本地發 development build，確保能正常開發
+
+```bash
+# 使用 pnpm script（包含 commit hash）
+pnpm run build:development
+
+# 或手動執行
+COMMIT_HASH=$(git rev-parse --short HEAD)
+EXPO_PUBLIC_GIT_COMMIT_HASH=$COMMIT_HASH eas build --profile development --platform all
+```
+
+**為什麼要先發 development build？**
+- ✅ 開發者需要在本地測試 native 變更
+- ✅ 確保 development build 可以正常運行
+- ✅ 驗證 native module 整合正確
+- ✅ 在提交代碼前發現問題
+
+```bash
+# 4. 下載 development build 並在本地測試
+# 5. 確認可以正常開發後，繼續下一步
+```
+
+#### 步驟 3：本地發 Preview Build
+
+⚠️ **重要**：確保其他開發者可以下載使用
+
+```bash
+# 使用 pnpm script（包含 commit hash）
+pnpm run build:preview
+
+# 或手動執行
+COMMIT_HASH=$(git rev-parse --short HEAD)
+EXPO_PUBLIC_GIT_COMMIT_HASH=$COMMIT_HASH eas build --profile preview --platform all
+```
+
+**為什麼要在本地發 preview build？**
+- ✅ 確保 build 成功後才 push
+- ✅ 其他開發者 pull 後可立即下載 preview build 測試
+- ✅ 避免 push 後發現 build 失敗
+- ✅ 內部測試人員可以立即開始測試
+
+#### 步驟 4：Push 到 Develop
+
+```bash
+# 6. Preview build 成功後 push
+git push origin develop
+
+# 7. 內部測試人員使用 Preview Build 測試
+# 8. 確認無問題後進行下一步
+```
+
+#### 步驟 5：合併到 Main
+
+```bash
+# 9. 開 PR: develop → main
+# 10. Code Review 通過後合併
+git checkout main
+git pull origin main
+git merge develop
+git push origin main
+```
+
+#### 步驟 6：發 Production Build
+
+```bash
+# 11. 在 main branch 發 Production Build（本地或 CI）
+pnpm run build:production
+
+# 或手動
+COMMIT_HASH=$(git rev-parse --short HEAD)
+EXPO_PUBLIC_GIT_COMMIT_HASH=$COMMIT_HASH eas build --profile production --platform all
+```
+
+#### 步驟 7：提交到 Store
+
+```bash
+# 12. 自動提交到 Store
+eas submit --platform ios --latest
+eas submit --platform android --latest
+
+# 13. 等待 Store 審核（1-7 天）
+```
+
+#### 步驟 8：更新 Version Config
+
+```bash
+# 14. Store 上架後，更新 version-config.json
+vi version-config.json
+```
+
+```json
+{
+  "ios": {
+    "latestVersion": "1.3.0",  // 更新
+    "minVersion": "1.2.0",     // 可選：更新最低支援版本
+    "storeUrl": "https://apps.apple.com/app/..."
+  },
+  "android": {
+    "latestVersion": "1.3.0",  // 更新
+    "minVersion": "1.2.0",
+    "storeUrl": "https://play.google.com/store/apps/..."
+  }
+}
+```
+
+```bash
+# 15. 提交並推送（建議使用 PR）
+git add version-config.json
+git commit -m "chore: update version config to 1.3.0"
+git push origin main
+
+# 16. CI 自動上傳到 S3
+```
+
+**版本號變更**：
+- `expo.version`: ✅ 升級 (1.2.3 → 1.3.0)
+- `buildNumber`/`versionCode`: ✅ 升級 (45 → 46)
+- `version-config.json`: ✅ 更新 latestVersion
+
+**時間**：約 1-7 天（取決於 Store 審核）
+
+**關鍵提醒**：
+- ⚠️ 一旦升級 `expo.version`，舊版 App 將無法收到新的 OTA
+- ⚠️ 必須先在本地發 development build 確認可以正常開發
+- ⚠️ 必須在本地發 preview build 才能 push 到 develop
+- ⚠️ 必須等 Store 上架後才更新 version-config.json
+
+---
+
+### 3.4 情境 C：Bundle 更新（不升級 expo.version）
+
+**適用情況**：
+- 累積了多個 OTA 更新
+- 想讓新下載的用戶直接獲得最新 JS bundle
+- 作為 OTA 的補充機制
+- 無 native code 變更
+
+**操作步驟**：
+
+#### 步驟 1：升級 Build Number
+
+```bash
+# 1. 修改 app.json（只改 buildNumber）
+vi app.json
+```
+
+```json
+{
+  "expo": {
+    "version": "1.2.3",  // 保持不變
+    "ios": {
+      "buildNumber": "46"  // 從 45 升級
+    },
+    "android": {
+      "versionCode": 46  // 從 45 升級
+    }
+  }
+}
+```
+
+#### 步驟 2：發 Build 並提交
+
+```bash
+# 2. 提交版本變更
+git add app.json
+git commit -m "chore: bump build number to 46"
+git push origin main
+
+# 3. 發 Production Build
+pnpm run build:production
+
+# 4. 提交到 Store
+eas submit --platform ios --latest
+eas submit --platform android --latest
+```
+
+**效果**：
+- 舊用戶：透過 OTA 持續更新（runtimeVersion 未變）
+- 新用戶：下載到內嵌最新 JS 的 build
+- version-config.json：不需要修改（latestVersion 未變）
+
+**版本號變更**：
+- `expo.version`: ❌ 不改
+- `buildNumber`/`versionCode`: ✅ 升級
+- `version-config.json`: ❌ 不改
+
+**時間**：約 1-7 天（Store 審核）
+
+**使用時機**：
+- 定期發布（如每週/每月）
+- 累積較多 OTA 更新後
+- 提升新用戶首次體驗
+
+---
+
+## 4. Build Scripts 配置
+
+為了確保 commit hash 正確注入，建議在 `package.json` 中添加 build scripts：
+
+```json
+{
+  "scripts": {
+    "build:development": "bash -c 'COMMIT_HASH=$(git rev-parse --short HEAD) && EXPO_PUBLIC_GIT_COMMIT_HASH=$COMMIT_HASH eas build --profile development --platform all'",
+    "build:development:ios": "bash -c 'COMMIT_HASH=$(git rev-parse --short HEAD) && EXPO_PUBLIC_GIT_COMMIT_HASH=$COMMIT_HASH eas build --profile development --platform ios'",
+    "build:development:android": "bash -c 'COMMIT_HASH=$(git rev-parse --short HEAD) && EXPO_PUBLIC_GIT_COMMIT_HASH=$COMMIT_HASH eas build --profile development --platform android'",
+    "build:preview": "bash -c 'COMMIT_HASH=$(git rev-parse --short HEAD) && EXPO_PUBLIC_GIT_COMMIT_HASH=$COMMIT_HASH eas build --profile preview --platform all'",
+    "build:preview:ios": "bash -c 'COMMIT_HASH=$(git rev-parse --short HEAD) && EXPO_PUBLIC_GIT_COMMIT_HASH=$COMMIT_HASH eas build --profile preview --platform ios'",
+    "build:preview:android": "bash -c 'COMMIT_HASH=$(git rev-parse --short HEAD) && EXPO_PUBLIC_GIT_COMMIT_HASH=$COMMIT_HASH eas build --profile preview --platform android'",
+    "build:production": "bash -c 'COMMIT_HASH=$(git rev-parse --short HEAD) && EXPO_PUBLIC_GIT_COMMIT_HASH=$COMMIT_HASH eas build --profile production --platform all'",
+    "build:production:ios": "bash -c 'COMMIT_HASH=$(git rev-parse --short HEAD) && EXPO_PUBLIC_GIT_COMMIT_HASH=$COMMIT_HASH eas build --profile production --platform ios'",
+    "build:production:android": "bash -c 'COMMIT_HASH=$(git rev-parse --short HEAD) && EXPO_PUBLIC_GIT_COMMIT_HASH=$COMMIT_HASH eas build --profile production --platform android'"
+  }
+}
+```
+
+**使用方式**：
+```bash
+# Development builds (本地開發測試)
+pnpm run build:development
+pnpm run build:development:ios
+pnpm run build:development:android
+
+# Preview builds (內部測試)
+pnpm run build:preview
+pnpm run build:preview:ios
+pnpm run build:preview:android
+
+# Production builds (正式發布)
+pnpm run build:production
+pnpm run build:production:ios
+pnpm run build:production:android
+```
+
+**好處**：
+- ✅ 自動注入 commit hash
+- ✅ 統一 build 命令
+- ✅ 減少人為錯誤
+- ✅ 方便 Sentry 追蹤
+
+---
+
+## 5. CI/CD 自動化
+
+### 5.1 自動 OTA 發布
+
+#### Develop → Preview OTA
 ```yaml
-name: Publish EAS Update (Preview)
-
+# .github/workflows/eas-update-preview.yml
 on:
   push:
     branches: [develop]
@@ -185,44 +500,18 @@ jobs:
   update:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10.16.1
-
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Publish Update
+      - name: Publish EAS Update
         run: |
           COMMIT_HASH=$(git rev-parse --short HEAD)
           EXPO_PUBLIC_GIT_COMMIT_HASH=$COMMIT_HASH pnpm exec eas update \
             --branch develop \
             --channel preview \
             --message "Preview: $COMMIT_HASH"
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 ```
 
-**關鍵要點**：
-
-- 使用 `EXPO_PUBLIC_GIT_COMMIT_HASH=$COMMIT_HASH` 在指令前綴設定環境變數
-- 這會將 commit hash 注入到 JavaScript bundle 中
-- `--branch develop` 指定 EAS Update branch（用於版本管理）
-- `--channel preview` 指定推送到 preview channel（對應到 `eas.json` 中的 preview build profile）
-- Preview builds（`eas build --profile preview`）訂閱 `preview` channel，會收到這個更新
-
-### 4.3 main → production（自動 OTA）
-
+#### Main → Production OTA
 ```yaml
-name: Publish EAS Update (Production)
-
+# .github/workflows/eas-update-production.yml
 on:
   push:
     branches: [main]
@@ -231,391 +520,244 @@ jobs:
   update:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10.16.1
-
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Publish Update
+      - name: Publish EAS Update
         run: |
           COMMIT_HASH=$(git rev-parse --short HEAD)
           EXPO_PUBLIC_GIT_COMMIT_HASH=$COMMIT_HASH pnpm exec eas update \
             --branch main \
             --channel production \
             --message "Production: $COMMIT_HASH"
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 ```
 
-**關鍵要點**：
+### 5.2 自動上傳 Version Config
 
-- `--branch main` 指定 EAS Update branch
-- `--channel production` 指定推送到 production channel
-- Production builds（從 Store 下載的 App）訂閱 `production` channel，會收到這個更新
+```yaml
+# .github/workflows/upload-version-config.yml
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'version-config.json'
 
-### 4.4 新 binary 的手動 build + submit
-
-當需要更新 native code 或發佈新版本到 Store 時，**務必遵循以下流程**：
-
-#### 流程概覽
-
-```
-develop branch → 測試 → merge to main → build & submit → Store 上架
-```
-
-#### 詳細步驟
-
-**步驟 1: 在 develop branch 上開發和測試**
-
-1. 在 `develop` branch 進行 native 相關的開發
-2. **Bump version**（在 `app.json` 中）：
-   - 更新 `expo.version`（例如 `1.2.3` → `1.3.0`）
-   - 更新 `ios.buildNumber` 和 `android.versionCode`
-   - ⚠️ **注意**：runtime version 會自動跟著 `expo.version` 更新
-
-3. **建立 preview build 進行測試**：
-
-   ```bash
-   # 在 develop branch
-   eas build --profile preview --platform all
-   ```
-
-4. 使用 preview build 進行內部測試，確保 native 變更正常運作
-
-**步驟 2: Merge to main branch**
-
-測試完成後，將 `develop` merge 到 `main`：
-
-```bash
-git checkout main
-git merge develop
-git push origin main
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Upload to S3
+        run: |
+          aws s3 cp version-config.json s3://${{ secrets.AWS_S3_BUCKET }}/version-config.json \
+            --cache-control "max-age=300, must-revalidate" \
+            --content-type "application/json"
 ```
 
-⚠️ **重要**：必須先 merge 到 `main` 再 build production，確保：
+---
 
-- Production build 包含最新的程式碼
-- `main` branch 保持為唯一的 production 程式碼來源
-- 版本號與 Store 上的版本保持同步
+## 6. Version Config 管理
 
-**步驟 3: 建立 production build 並 submit**
-
-```bash
-# 在 main branch
-eas build --profile production --platform all
-
-# Submit to Store
-eas submit --platform ios --latest
-eas submit --platform android --latest
-```
-
-或使用 GitHub Actions workflow_dispatch 觸發。
-
-**步驟 4: 等待審核與上架**
-
-Store 審核通過後進入 Ready for Sale / Available
-
-**步驟 5: 更新 latest-build.json**
-
-依照 4.5 的流程更新 S3 上的版本資訊
-
-#### 重要提醒
-
-- ✅ **正確流程**：develop 測試 → merge to main → build production from main
-- ❌ **錯誤流程**：在 develop build production，或 build 後才 merge
-- Native build 的流程**不應該自動化**（需要手動觸發），確保版本號變更是有意識的決定
-- 一旦 bump `expo.version`，舊版使用者將無法收到後續的 OTA 更新
-- Production builds 會自動訂閱 `production` channel，推送到 `main` branch 的 OTA 更新會自動送達
-
-### 4.5 App Store 上架後同步版本配置
-
-App Store 審核通過並上架後，務必更新專案根目錄的 `version-config.json` 並推送到 S3，讓線上使用中的 App 能知道最新版本資訊。
-
-#### 版本配置檔案結構
-
-專案根目錄的 `version-config.json`：
+### 6.1 檔案結構
 
 ```json
 {
   "ios": {
     "latestVersion": "1.3.0",
     "minVersion": "1.2.0",
-    "storeUrl": "https://apps.apple.com/app/idXXXXXXXX"
+    "storeUrl": "https://apps.apple.com/app/id6755521142"
   },
   "android": {
     "latestVersion": "1.3.0",
     "minVersion": "1.2.0",
-    "storeUrl": "https://play.google.com/store/apps/details?id=com.xxx.yyy"
+    "storeUrl": "https://play.google.com/store/apps/details?id=com.perpetualprotocol.riverrun"
   }
 }
 ```
 
-#### 欄位說明
+### 6.2 欄位說明
 
-- `latestVersion`: 最新的 App 版本號（對應 `expo.version`）
-- `minVersion`: 最低支援的版本號，低於此版本會提示使用者更新
-- `storeUrl`: App Store / Play Store 的下載連結
+- **`latestVersion`**: Store 上最新的版本號
+  - 用於提示用戶有新版本
+  - 與 `expo.version` 對應
 
-#### 更新流程
+- **`minVersion`**: 最低支援版本
+  - 低於此版本顯示「Update Required」
+  - 建議設為最近 2-3 個主要版本
 
-1. **修改版本配置**：
-   ```bash
-   # 編輯 version-config.json，更新 latestVersion 和 minVersion
-   vi version-config.json
-   ```
+- **`storeUrl`**: App Store / Play Store 連結
+  - 用於「Update Now」按鈕跳轉
 
-2. **提交並推送到 main**：
-   ```bash
-   git add version-config.json
-   git commit -m "chore: update version config to 1.3.0"
-   git push origin main
-   ```
+### 6.3 更新時機
 
-3. **自動上傳到 S3**：
-   - GitHub Actions 會自動偵測 `version-config.json` 的變更
-   - 觸發 `.github/workflows/upload-version-config.yml` workflow
-   - 自動上傳到 S3 bucket
-   - 檔案會設定為 public-read，cache 5 分鐘
+**何時更新 latestVersion？**
+- ✅ Native build 上架後
+- ❌ 發 OTA 時不更新
+- ❌ 僅升級 buildNumber 時不更新
 
-#### 注意事項
+**何時更新 minVersion？**
+- ✅ 有重大安全漏洞修復
+- ✅ 有破壞性 API 變更
+- ✅ 舊版本不再維護
+- ⚠️ 謹慎使用，會強制用戶更新
 
-- 建議在更新前確認 App Store Connect / Play Console 已顯示「Ready for Sale」
-- S3 bucket 應啟用 Versioning 以利追溯歷史版本
-- 檔案 URL 格式：`https://[bucket-name].s3.[region].amazonaws.com/version-config.json`
-
----
-
-## 5. Native Version 檢查與更新提醒
-
-### 5.1 檢查流程
-
-App 在冷啟動時會依序執行以下檢查：
-
-```
-App 冷啟動
-  ↓
-1. 檢查 Native Version（從 S3 fetch version-config.json）
-  ↓
-  ├─ 版本低於 minVersion → 顯示更新提醒（非阻擋式）→ 允許繼續使用
-  ├─ 版本低於 latestVersion → 顯示更新提醒（非阻擋式）→ 允許繼續使用
-  └─ 版本符合 latestVersion →
-      ↓
-2. 檢查 Runtime Version（自動，透過 expo.version）
-  ↓
-  ├─ Runtime 不符 → 無法收到 OTA（已知限制）
-  └─ Runtime 相同 →
-      ↓
-3. 檢查 OTA Update（現有邏輯）
-  ↓
-  ├─ 有更新 → 提示下載 → 重載
-  └─ 無更新 → 完成
-```
-
-### 5.2 更新提醒策略
-
-- **非阻擋式設計**：所有更新提醒都允許使用者選擇「稍後」，繼續使用 App
-- **雙層提醒**：
-  - 低於 `minVersion`：顯示「Update Required」，強調需要更新以獲得最佳體驗
-  - 低於 `latestVersion`：顯示「Update Available」，溫和提醒有新版本
-- **使用者體驗**：
-  - 提醒僅在冷啟動時顯示一次
-  - 可透過設定頁面手動檢查更新
-  - 不會在使用過程中打斷使用者
-
-### 5.3 配置 Version Config URL
-
-需要在環境變數中配置版本檔案的 URL：
+### 6.4 環境配置
 
 ```bash
 # .env.production
-EXPO_PUBLIC_VERSION_CONFIG_URL=https://your-bucket.s3.region.amazonaws.com/version-config.json
+EXPO_PUBLIC_VERSION_CONFIG_URL=https://s3.ap-southeast-1.amazonaws.com/riverrun.perp.com/version-config.json
 ```
-
-### 5.4 S3 配置步驟
-
-#### 步驟 1: 建立 S3 Bucket
-
-```bash
-# 使用 AWS CLI 建立 bucket
-aws s3 mb s3://riverrun-version-config --region ap-northeast-1
-```
-
-或透過 AWS Console：
-1. 進入 S3 服務
-2. 點擊「Create bucket」
-3. 設定 Bucket name（例如：`riverrun-version-config`）
-4. 選擇 Region（建議選擇離使用者最近的，如 `ap-northeast-1`）
-5. 啟用「Bucket Versioning」以追蹤歷史版本
-
-#### 步驟 2: 設定 Bucket Policy（Public Read）
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Sid": "PublicReadGetObject",
-      "Effect": "Allow",
-      "Principal": "*",
-      "Action": "s3:GetObject",
-      "Resource": "arn:aws:s3:::riverrun-version-config/version-config.json"
-    }
-  ]
-}
-```
-
-#### 步驟 3: 建立 IAM User 供 GitHub Actions 使用
-
-1. 建立新的 IAM User（例如：`github-actions-s3-upload`）
-2. 設定權限 Policy：
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "s3:PutObject",
-        "s3:GetObject"
-      ],
-      "Resource": "arn:aws:s3:::riverrun-version-config/*"
-    }
-  ]
-}
-```
-
-3. 建立 Access Key，記錄 `Access Key ID` 和 `Secret Access Key`
-
-#### 步驟 4: 配置 GitHub Secrets
-
-在 GitHub Repository 的 Settings → Secrets and variables → Actions 中新增：
-
-- `AWS_ACCESS_KEY_ID`: IAM User 的 Access Key ID
-- `AWS_SECRET_ACCESS_KEY`: IAM User 的 Secret Access Key
-- `AWS_S3_BUCKET`: Bucket 名稱（例如：`riverrun-version-config`）
-- `AWS_REGION`: Bucket 的 Region（例如：`ap-northeast-1`）
-
-#### 步驟 5: 驗證設定
-
-上傳測試檔案：
-
-```bash
-aws s3 cp version-config.json s3://riverrun-version-config/version-config.json \
-  --acl public-read \
-  --cache-control "max-age=300, must-revalidate"
-```
-
-測試公開存取：
-
-```bash
-curl https://riverrun-version-config.s3.ap-northeast-1.amazonaws.com/version-config.json
-```
-
-### 5.5 CloudFront CDN（可選，推薦）
-
-為了更好的效能和更低的成本，建議使用 CloudFront CDN：
-
-1. **建立 CloudFront Distribution**：
-   - Origin: S3 bucket
-   - Viewer Protocol Policy: Redirect HTTP to HTTPS
-   - TTL: 最小 300 秒（5 分鐘）
-
-2. **更新環境變數**：
-   ```bash
-   EXPO_PUBLIC_VERSION_CONFIG_URL=https://d123456789.cloudfront.net/version-config.json
-   ```
-
-3. **好處**：
-   - 全球 CDN 加速
-   - 降低 S3 請求成本
-   - HTTPS 支援
-   - 更好的快取控制
 
 ---
 
-## 6. App 端版本顯示 & Sentry
+## 7. 版本顯示與追蹤
 
-### 6.1 前端顯示
+### 7.1 App 內顯示
 
-使用者看到（同時帶出 commit hash 方便客服定位）：
-
-```
-版本：1.2.3 (45) [a1b2c3d]
-```
-
-工程師 debug：
-
-```
-Debug：runtimeVersion=2024.11.18, commit=a1b2c3d
-```
-
-取得版本資訊：
-
-```ts
+```typescript
 import Constants from 'expo-constants';
 
-const version = Constants.expoConfig?.version; // 1.2.3
-const runtimeVersion = Constants.expoConfig?.runtimeVersion; // { policy: 'appVersion' } 或實際值 1.2.3
-const commitHash = process.env.EXPO_PUBLIC_GIT_COMMIT_HASH; // a1b2c3d
-const buildNumber =
-  Constants.expoConfig?.ios?.buildNumber || Constants.expoConfig?.android?.versionCode;
+const version = Constants.expoConfig?.version;  // "1.2.3"
+const commitHash = process.env.EXPO_PUBLIC_GIT_COMMIT_HASH;  // "a1b2c3d"
+const buildNumber = Constants.expoConfig?.ios?.buildNumber;  // "45"
+
+// 顯示格式: "1.2.3 (45) [a1b2c3d]"
+const displayVersion = `${version} (${buildNumber}) [${commitHash}]`;
 ```
 
-**注意**：由於使用 `policy: "appVersion"`，runtime version 實際上會等於 `expo.version`。
+### 7.2 Sentry 追蹤
 
-### 6.2 Sentry 設定
-
-在 `Sentry.init()` 中加入版本追蹤：
-
-```ts
+```typescript
 Sentry.init({
   dsn: '...',
   release: `${bundleId}@${version}+${buildNumber}`,
-  commit: commitHash, // 用 commit hash 識別 OTA 版本
-  // ... 其他設定
+  dist: commitHash,  // 用 commit hash 識別 OTA 版本
 });
 ```
 
----
-
-## 7. 常見更新情境
-
-### 7.1 JS-only OTA
-
-- 修改 develop → 自動更新 preview
-- merge main → 自動更新 production
-- **不改 `expo.version`**（⚠️ 重要：改了會導致舊版使用者收不到 OTA）
-- runtime version 自動維持不變
-- commitHash 用於追蹤
-
-### 7.2 Native 變更 + 新 binary
-
-- bump：
-  - `expo.version`（runtime version 會自動跟著更新）
-  - `buildNumber` / `versionCode`
-- build → submit → Store 上架
+**好處**：
+- 客服查詢時可以精確定位版本
+- 錯誤追蹤時可以知道具體的 JS bundle 版本
+- 可以區分相同 `expo.version` 但不同 OTA 的問題
 
 ---
 
-## 8. 選擇背後的原則
+## 8. 常見問題
 
-1. **`expo.version` 表示 Store release**：不用來標記 OTA，只在出新 binary 時才 bump
-2. **`runtimeVersion` 使用 `policy: "appVersion"` 自動管理**：
-   - 自動與 `expo.version` 同步，無需手動維護
-   - 確保 OTA 只會推送給相同 app version 的使用者
-   - 每次出新 binary 並 bump version 時，runtime version 自動更新
-3. **Git tag 非必要**：小團隊降低維護成本
-4. **使用 `EXPO_PUBLIC_GIT_COMMIT_HASH` + Sentry 追蹤 OTA 來源**：透過 commit hash 精確識別每個 OTA 版本
-5. **main / develop 分離**：強制確保只有 production branch 能被使用者取得
+### Q1: 我可以跳過 preview build 直接發 production 嗎？
+
+❌ **不建議**。Preview build 是為了：
+- 內部測試 native 變更
+- 在 TestFlight/Internal Testing 上驗證
+- 避免將問題帶到 production
+
+### Q2: 為什麼要先發 development build 再發 preview build？
+
+✅ **必須**。原因：
+
+**Development build**：
+- 開發者在本地測試 native 變更
+- 確保可以正常開發和調試
+- 在提交前發現問題
+
+**Preview build**：
+- 其他開發者 pull 後可立即下載測試
+- 內部測試人員使用
+- 確保 build 成功才 push 代碼
+
+### Q3: 忘記升級 buildNumber 會怎樣？
+
+❌ Store 會拒絕：
+- iOS: "Invalid Bundle. The bundle version must be higher than the previously uploaded version."
+- Android: "Version code XXX has already been used."
+
+### Q4: 可以降級 expo.version 嗎？
+
+❌ **不可以**：
+- Store 不允許降級
+- 會造成版本混亂
+- 可能導致 OTA 推送錯誤
+
+### Q5: OTA 更新後用戶需要重啟 App 嗎？
+
+✅ **是的**。OTA 下載完成後會呼叫 `reloadAsync()` 重新載入 App。
+
+### Q6: 如果 version-config.json 下載失敗怎麼辦？
+
+✅ **不影響啟動**：
+- Native 版本檢查失敗會優雅降級
+- 僅記錄錯誤但不阻擋 App
+- 用戶可以正常使用 App
+
+### Q7: 多久應該發一次 native build？
+
+📊 **建議**：
+- **必須時**：有 native 變更立即發
+- **定期**：每 1-2 個月發一次（情境 C）
+- **目的**：讓新用戶獲得最佳體驗
 
 ---
+
+## 9. 快速參考
+
+### 9.1 決策表
+
+| 情況 | expo.version | buildNumber | version-config.json | 操作 |
+|------|-------------|-------------|---------------------|------|
+| 純 JS 改動 | 不變 | 不變 | 不改 | Push → 自動 OTA |
+| Native 改動 | 升級 | 升級 | 上架後更新 | 完整 Build 流程 |
+| 優化新用戶體驗 | 不變 | 升級 | 不改 | Build → Submit |
+| 定期維護 | 不變 | 升級 | 不改 | Build → Submit |
+
+### 9.2 命令速查
+
+```bash
+# OTA 更新（自動觸發，無需手動）
+git push origin develop  # → Preview OTA
+git push origin main     # → Production OTA
+
+# Preview Build（本地發）
+pnpm run build:preview
+
+# Production Build（本地發）
+pnpm run build:production
+
+# Submit to Store
+eas submit --platform ios --latest
+eas submit --platform android --latest
+
+# 更新 Version Config
+# 1. 修改 version-config.json
+# 2. git add version-config.json
+# 3. git commit -m "chore: update version config"
+# 4. git push origin main  # → 自動上傳 S3
+```
+
+### 9.3 檢查清單
+
+#### 發布 OTA 前
+- [ ] 代碼已測試通過
+- [ ] 無 native code 變更
+- [ ] 已合併到目標 branch (develop/main)
+
+#### 發布 Native Build 前
+- [ ] 已升級 `expo.version`
+- [ ] 已升級 `buildNumber`/`versionCode`
+- [ ] 已在本地發 development build
+- [ ] Development build 測試通過（本地開發正常）
+- [ ] 已在本地發 preview build
+- [ ] Preview build 已測試通過（內部測試正常）
+- [ ] 已合併到 main branch
+- [ ] 已發 production build
+
+#### Native Build 上架後
+- [ ] Store 已顯示「Ready for Sale」
+- [ ] 已更新 `version-config.json`
+- [ ] version-config.json 已推送到 main
+- [ ] S3 已成功更新
+- [ ] 測試 App 可正常檢查版本
+
+---
+
+## 10. 相關資源
+
+- [Expo Updates 文檔](https://docs.expo.dev/versions/latest/sdk/updates/)
+- [EAS Build 文檔](https://docs.expo.dev/build/introduction/)
+- [EAS Submit 文檔](https://docs.expo.dev/submit/introduction/)
+- [Semantic Versioning](https://semver.org/)
