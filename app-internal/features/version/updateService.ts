@@ -12,7 +12,7 @@ import { toast } from 'sonner-native';
 import { isVersionNewer, meetsMinimumVersion } from './versionCompare';
 
 /**
- * Update types supported by the app.
+ * Update types supported by the app..
  */
 export enum UpdateType {
   /** Over-the-air update via expo-updates */
