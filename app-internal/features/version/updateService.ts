@@ -1,18 +1,18 @@
 // Import from Updates submodule to ensure proper type resolution
+import Constants from 'expo-constants';
 import {
-  isEnabled,
   checkForUpdateAsync,
   fetchUpdateAsync,
+  isEnabled,
   reloadAsync,
 } from 'expo-updates/build/Updates';
 import type { Manifest } from 'expo-updates/build/Updates.types';
-import Constants from 'expo-constants';
 import { Alert, Linking, Platform } from 'react-native';
 import { toast } from 'sonner-native';
 import { isVersionNewer, meetsMinimumVersion } from './versionCompare';
 
 /**
- * Update types supported by the app
+ * Update types supported by the app..
  */
 export enum UpdateType {
   /** Over-the-air update via expo-updates */
