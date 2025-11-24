@@ -27,7 +27,7 @@ jobs:
 
       - name: Upload version-config.json to S3
         run: |
-          aws s3 cp version-config.json s3://${{ secrets.AWS_S3_BUCKET }}/version-config.json \
+          aws s3 cp version-config.json s3://riverrun.perp.com/version-config.json \
             --cache-control "max-age=300, must-revalidate" \
             --content-type "application/json"
 
