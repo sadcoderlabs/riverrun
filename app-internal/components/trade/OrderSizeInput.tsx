@@ -367,19 +367,24 @@ export function OrderSizeInput({
             {sizePercentage === 0 ? '0' : Math.round(sizePercentage)}%
           </Text>
         </XStack>
-        <Slider value={[sizePercentage]} max={100} step={1} onValueChange={handleSliderChange}>
-          <Slider.Track backgroundColor="$gray5" height="$0.5">
-            <Slider.TrackActive backgroundColor="$accent9" />
-          </Slider.Track>
-          <Slider.Thumb
-            index={0}
-            size="$0.75"
-            backgroundColor="$accent1"
-            borderWidth={1}
-            borderColor="$accent9"
-            circular
-          />
-        </Slider>
+        <YStack paddingVertical="$2">
+          <Slider value={[sizePercentage]} max={100} step={1} onValueChange={handleSliderChange}>
+            <Slider.Track backgroundColor="$gray5" height="$1.5" borderRadius="$2">
+              <Slider.TrackActive backgroundColor="$accent9" />
+            </Slider.Track>
+            <Slider.Thumb
+              index={0}
+              size="$1"
+              backgroundColor="$background"
+              borderWidth={2}
+              borderColor="$accent9"
+              circular
+              pressStyle={{
+                scale: 1.2,
+              }}
+            />
+          </Slider>
+        </YStack>
       </YStack>
     </YStack>
   );
