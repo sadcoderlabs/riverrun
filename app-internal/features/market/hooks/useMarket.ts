@@ -9,7 +9,7 @@
 
 import { useCallback, useState } from 'react';
 import { useContainer } from '@/app-internal/di';
-import { useMarketStore } from './useMarketStore';
+import { marketStore } from '@/contexts/market/adapters/marketStore';
 
 export interface UseMarketResult {
   /** UI loading state (for manual refresh) */
@@ -66,7 +66,7 @@ export function useMarket(): UseMarketResult {
   const setSelectedMarketByCoin = useCallback(
     (coin: string) => {
       // Get current market before switching
-      const fromMarket = useMarketStore.getState().selectedMarket?.coin;
+      const fromMarket = marketStore.getState().selectedMarket?.coin;
 
       marketService.setSelectedMarketByCoin(coin);
 
@@ -82,7 +82,7 @@ export function useMarket(): UseMarketResult {
   const toggleFavorite = useCallback(
     (coin: string) => {
       // Get current favorite status before toggling
-      const favorites = useMarketStore.getState().favorites;
+      const favorites = marketStore.getState().favorites;
       const isFavorite = !favorites.includes(coin);
 
       marketService.toggleFavorite(coin);
