@@ -19,7 +19,7 @@
 import { useCallback } from 'react';
 import { useFocusEffect } from 'expo-router';
 
-import { useContainer } from '../../..';
+import { useContainer } from '../../../di';
 import type { ScreenName, ScreenProps } from '../../../../contexts/telemetry/ports/types';
 
 /**

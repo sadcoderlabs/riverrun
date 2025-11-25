@@ -22,6 +22,8 @@ import {
 } from '@/infra/hyperliquid/hyperliquidGateway';
 import { orderStore } from '../../../../contexts/order/adapters/orderStore';
 import type { Order } from '../../../../contexts/order/ports/types';
+import type { TelemetryPort } from '../../../../contexts/telemetry/ports/telemetryPort';
+import type { TelemetryErrorContext } from '../../../../contexts/telemetry/ports/types';
 
 // ============================================================================
 // Failed Order Status Detection
@@ -88,6 +90,7 @@ export async function handleOrderUpdates(
   }[],
   userAddress: string,
   gateway: HyperliquidGateway,
+  captureError?: (error: unknown, context?: TelemetryErrorContext) => Promise<void>,
 ): Promise<void> {
   if (!updates || updates.length === 0) return;
 
@@ -136,6 +139,11 @@ export async function handleOrderUpdates(
       }
     } catch (error) {
       console.error(`[useOrderSubscription] Failed to fetch order ${oid}:`, error);
+      captureError?.(error, {
+        component: 'useOrderSubscription',
+        action: 'fetchOrderStatus',
+        extra: { oid, userAddress },
+      });
       // Keep existing order data if fetch fails
     }
   }
@@ -156,10 +164,15 @@ export async function handleOrderUpdates(
  * }
  * ```
  */
-export function useOrderSubscription() {
+export function useOrderSubscription(telemetryService: TelemetryPort) {
   // Get active wallet address from React Context
   const { address: walletAddress } = useWallet();
   const gateway = useMemo(() => new HyperliquidGateway(), []);
+
+  // Create a stable captureError function for use in handleOrderUpdates
+  const captureError = (error: unknown, context?: TelemetryErrorContext) => {
+    telemetryService.captureError(error, context);
+  };
 
   useEffect(() => {
     // No wallet - clear orders
@@ -204,11 +217,16 @@ export function useOrderSubscription() {
 
           // Don't process if effect was cancelled
           if (!isCancelled) {
-            handleOrderUpdates(orderUpdatesData.updates, walletAddress, gateway);
+            handleOrderUpdates(orderUpdatesData.updates, walletAddress, gateway, captureError);
           }
         });
       } catch (error) {
         console.error('[useOrderSubscription] Failed to start subscription:', error);
+        telemetryService.captureError(error, {
+          component: 'useOrderSubscription',
+          action: 'startSubscription',
+          extra: { walletAddress },
+        });
         if (!isCancelled) {
           orderStore.getState().setLoading(false);
         }
@@ -221,5 +239,5 @@ export function useOrderSubscription() {
       subscription?.unsubscribe();
       orderStore.getState().clear();
     };
-  }, [walletAddress, gateway]);
+  }, [walletAddress, gateway, telemetryService, captureError]);
 }

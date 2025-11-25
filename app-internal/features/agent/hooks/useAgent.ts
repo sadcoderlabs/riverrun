@@ -149,6 +149,11 @@ export function useAgent(): UseAgentResult {
       setAllAgents(status.allAgents);
     } catch (error) {
       console.error('[useAgent] Failed to load agents:', error);
+      telemetryService.captureError(error, {
+        component: 'useAgent',
+        action: 'loadAllAgents',
+        extra: { walletAddress: wallet?.address },
+      });
       setAgentAddress(undefined);
       setAllAgents([]);
     } finally {
@@ -204,6 +209,11 @@ export function useAgent(): UseAgentResult {
       telemetryService.trackEvent('agent_approval_failed', {
         reason: error instanceof Error ? error.message : String(error),
       });
+      telemetryService.captureError(error, {
+        component: 'useAgent',
+        action: 'approve',
+        extra: { walletAddress: wallet?.address },
+      });
 
       console.error('[useAgent] Failed to approve agent:', error);
       return false;
@@ -243,6 +253,11 @@ export function useAgent(): UseAgentResult {
         return true;
       } catch (error) {
         console.error('[useAgent] Failed to revoke agent:', error);
+        telemetryService.captureError(error, {
+          component: 'useAgent',
+          action: 'revoke',
+          extra: { walletAddress: wallet?.address, agentName },
+        });
         return false;
       } finally {
         setIsLoading(false);

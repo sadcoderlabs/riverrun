@@ -15,6 +15,7 @@ import type { TryGetAgentWalletUseCase } from '@/contexts/agent/application/usec
 import { getBuilderParam } from '@/contexts/builderFee/config';
 import type { EnsureBuilderFeeUseCase } from '@/contexts/builderFee/application/usecases/EnsureBuilderFeeUseCase';
 import type { MarketPort } from '@/contexts/market/ports/marketPort';
+import type { TelemetryPort } from '@/contexts/telemetry/ports/telemetryPort';
 import type { WalletPort } from '@/contexts/wallet/ports/walletPort';
 import type { OrderExchangePort } from '../ports/OrderExchangePort';
 import type { PlaceOrderParams, OrderResult } from '../../ports/types';
@@ -27,6 +28,7 @@ export class PlaceOrderUseCase {
     private readonly ensureBuilderFee: EnsureBuilderFeeUseCase,
     private readonly marketPort: MarketPort,
     private readonly walletPort: WalletPort,
+    private readonly telemetryService: TelemetryPort,
   ) {}
 
   async execute(params: PlaceOrderParams): Promise<OrderResult> {
@@ -143,6 +145,16 @@ export class PlaceOrderUseCase {
       return { success: true };
     } catch (error) {
       console.error('[PlaceOrderUseCase] Error:', error);
+      this.telemetryService.captureError(error, {
+        component: 'PlaceOrderUseCase',
+        action: 'execute',
+        extra: {
+          coin: params.coin,
+          side: params.side,
+          orderType: params.orderType,
+          size: params.size,
+        },
+      });
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to place order',

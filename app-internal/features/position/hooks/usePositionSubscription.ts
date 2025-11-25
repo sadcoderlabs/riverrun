@@ -23,6 +23,7 @@ import {
   type SubscriptionHandle,
 } from '@/infra/hyperliquid/hyperliquidGateway';
 import type { MarketPort } from '@/contexts/market/ports/marketPort';
+import type { TelemetryPort } from '@/contexts/telemetry/ports/telemetryPort';
 import { positionStore } from '../adapters/positionStore';
 import type { EnrichedPosition, Position } from '../types/position';
 
@@ -82,7 +83,10 @@ export function enrichPositions(
  * }
  * ```
  */
-export function usePositionSubscription(marketAdapter: MarketPort) {
+export function usePositionSubscription(
+  marketAdapter: MarketPort,
+  telemetryService: TelemetryPort,
+) {
   // Get active wallet address from useWallet hook
   const { address: walletAddress } = useWallet();
   const gateway = useMemo(() => new HyperliquidGateway(), []);
@@ -120,6 +124,11 @@ export function usePositionSubscription(marketAdapter: MarketPort) {
                 positionStore.getState().setLoading(false);
               } catch (error) {
                 console.error('[usePositionSubscription] Failed to process position data:', error);
+                telemetryService.captureError(error, {
+                  component: 'usePositionSubscription',
+                  action: 'processPositionData',
+                  extra: { walletAddress },
+                });
                 positionStore.getState().setLoading(false);
               }
             }
@@ -127,6 +136,11 @@ export function usePositionSubscription(marketAdapter: MarketPort) {
         );
       } catch (error) {
         console.error('[usePositionSubscription] Failed to start subscription:', error);
+        telemetryService.captureError(error, {
+          component: 'usePositionSubscription',
+          action: 'startSubscription',
+          extra: { walletAddress },
+        });
         if (!isCancelled) {
           positionStore.getState().setLoading(false);
         }
@@ -139,5 +153,5 @@ export function usePositionSubscription(marketAdapter: MarketPort) {
       subscription?.unsubscribe();
       positionStore.getState().clear();
     };
-  }, [walletAddress, gateway, marketAdapter]);
+  }, [walletAddress, gateway, marketAdapter, telemetryService]);
 }

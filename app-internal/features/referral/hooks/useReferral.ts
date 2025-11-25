@@ -139,6 +139,11 @@ export function useReferral(): UseReferralResult {
       return info;
     } catch (error) {
       console.error('[useReferral] Failed to load status:', error);
+      telemetryService.captureError(error, {
+        component: 'useReferral',
+        action: 'loadStatus',
+        extra: { walletAddress: wallet?.address },
+      });
       const emptyInfo: ReferralInfo = {
         referrer: undefined,
         code: undefined,
@@ -149,7 +154,7 @@ export function useReferral(): UseReferralResult {
     } finally {
       setIsLoading(false);
     }
-  }, [getReferralStatusUseCase, wallet]);
+  }, [getReferralStatusUseCase, wallet, telemetryService]);
 
   /**
    * Set referrer code (with confirmation dialog)
@@ -215,6 +220,11 @@ export function useReferral(): UseReferralResult {
                   telemetryService.trackEvent('referral_code_failed', {
                     code: referralCode,
                     reason: error instanceof Error ? error.message : String(error),
+                  });
+                  telemetryService.captureError(error, {
+                    component: 'useReferral',
+                    action: 'setReferrer',
+                    extra: { code: referralCode, walletAddress: wallet?.address },
                   });
 
                   console.error('[useReferral] Failed to set referrer:', error);

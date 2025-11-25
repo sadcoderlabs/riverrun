@@ -7,7 +7,7 @@
 
 import { useCallback } from 'react';
 
-import { useContainer } from '../../..';
+import { useContainer } from '../../../di';
 import type {
   ScreenName,
   ScreenProps,

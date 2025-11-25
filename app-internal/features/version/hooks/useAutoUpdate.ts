@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import Constants from 'expo-constants';
 import { isEnabled } from 'expo-updates/build/Updates';
 import { useAppLifecycle } from '@/app-internal/components/shared/hooks/useAppLifecycle';
+import { useTelemetry } from '@/app-internal/features/telemetry/hooks/useTelemetry';
 import { isDevelopmentBuild } from '@/config/environment';
 import { performOTAUpdateFlow, performNativeUpdateFlow, UpdateStatus } from '../updateService';
 
@@ -60,6 +61,7 @@ export function useAutoUpdate(): VersionInfo {
   const commitHash = process.env.EXPO_PUBLIC_GIT_COMMIT_HASH || 'dev';
   const [isChecking, setIsChecking] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const { captureWarning } = useTelemetry();
 
   // Track if we've checked on this cold boot
   const hasCheckedOnBootRef = useRef(false);
@@ -150,6 +152,11 @@ export function useAutoUpdate(): VersionInfo {
         });
       } catch (error) {
         console.error('[AutoUpdate] Auto-check failed:', error);
+        captureWarning('Auto-update check failed', {
+          component: 'useAutoUpdate',
+          action: 'autoCheck',
+          extra: { version, commitHash },
+        });
       } finally {
         setIsChecking(false);
         setIsDownloading(false);

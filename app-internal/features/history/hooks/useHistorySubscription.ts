@@ -22,6 +22,7 @@ import {
 } from '@/infra/hyperliquid/hyperliquidGateway';
 import { historyStore } from '../../../../contexts/history/adapters/historyStore';
 import type { Fill } from '../../../../contexts/history/ports/types';
+import type { TelemetryPort } from '../../../../contexts/telemetry/ports/telemetryPort';
 
 // ============================================================================
 // Types
@@ -79,7 +80,7 @@ export function handleFillUpdate(data: WsFillUpdate, currentFills: Fill[]): Fill
  * }
  * ```
  */
-export function useHistorySubscription() {
+export function useHistorySubscription(telemetryService: TelemetryPort) {
   // Get active wallet address from React Context
   const { address: walletAddress } = useWallet();
   const gateway = useMemo(() => new HyperliquidGateway(), []);
@@ -134,6 +135,11 @@ export function useHistorySubscription() {
         }
 
         console.error('[useHistorySubscription] Failed to start subscription:', error);
+        telemetryService.captureError(err, {
+          component: 'useHistorySubscription',
+          action: 'startSubscription',
+          extra: { walletAddress },
+        });
       }
     })();
 
@@ -143,5 +149,5 @@ export function useHistorySubscription() {
       subscription?.unsubscribe();
       historyStore.getState().clear();
     };
-  }, [walletAddress, gateway]);
+  }, [walletAddress, gateway, telemetryService]);
 }

@@ -191,6 +191,11 @@ export function useBuilderFee(): UseBuilderFeeResult {
       telemetryService.trackEvent('builder_fee_failed', {
         reason: error instanceof Error ? error.message : String(error),
       });
+      telemetryService.captureError(error, {
+        component: 'useBuilderFee',
+        action: 'executeApproval',
+        extra: { walletAddress: wallet?.address },
+      });
 
       console.error('Failed to approve builder fee:', error);
       Alert.alert(
@@ -268,6 +273,11 @@ export function useBuilderFee(): UseBuilderFeeResult {
       return success;
     } catch (error) {
       console.error('Failed to ensure builder fee approval:', error);
+      telemetryService.captureError(error, {
+        component: 'useBuilderFee',
+        action: 'ensureBuilderFeeApproval',
+        extra: { walletAddress: wallet?.address },
+      });
       Alert.alert(
         'Error',
         error instanceof Error ? error.message : 'Failed to check builder fee approval',
@@ -276,7 +286,7 @@ export function useBuilderFee(): UseBuilderFeeResult {
     } finally {
       setIsLoading(false);
     }
-  }, [getStatusUseCase, approveUseCase, loadBuilderFeeStatus, wallet, getSigner]);
+  }, [getStatusUseCase, approveUseCase, loadBuilderFeeStatus, wallet, getSigner, telemetryService]);
 
   /**
    * Revoke builder fee
@@ -317,6 +327,11 @@ export function useBuilderFee(): UseBuilderFeeResult {
                 resolve(true);
               } catch (error) {
                 console.error('Failed to revoke builder fee:', error);
+                telemetryService.captureError(error, {
+                  component: 'useBuilderFee',
+                  action: 'revokeBuilderFee',
+                  extra: { walletAddress: wallet?.address },
+                });
                 Alert.alert(
                   'Error',
                   error instanceof Error ? error.message : 'Failed to revoke builder fee',
@@ -330,7 +345,7 @@ export function useBuilderFee(): UseBuilderFeeResult {
         ],
       );
     });
-  }, [revokeUseCase, loadBuilderFeeStatus, getSigner, telemetryService]);
+  }, [revokeUseCase, loadBuilderFeeStatus, getSigner, telemetryService, wallet]);
 
   return {
     // State

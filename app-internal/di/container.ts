@@ -221,8 +221,8 @@ export function createAppContainer(options: CreateContainerOptions): AppContaine
 
   container.register({
     // ArbitrumBridgePort: Implemented by ArbitrumBridgeAdapter
-    arbitrumBridgePort: asFunction(() => {
-      return new ArbitrumBridgeAdapter();
+    arbitrumBridgePort: asFunction(({ telemetryService }) => {
+      return new ArbitrumBridgeAdapter(telemetryService);
     }).singleton(),
 
     // HyperliquidBridgePort: Implemented by HyperliquidGateway directly
@@ -379,6 +379,7 @@ export function createAppContainer(options: CreateContainerOptions): AppContaine
         ensureBuilderFeeUseCase,
         marketService,
         walletService,
+        telemetryService,
       }) => {
         return new PlaceOrderUseCase(
           orderExchangePort,
@@ -386,6 +387,7 @@ export function createAppContainer(options: CreateContainerOptions): AppContaine
           ensureBuilderFeeUseCase,
           marketService,
           walletService,
+          telemetryService,
         );
       },
     ).singleton(),

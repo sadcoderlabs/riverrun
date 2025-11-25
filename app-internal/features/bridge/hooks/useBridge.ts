@@ -179,6 +179,11 @@ export function useBridge(): UseBridgeResult {
       const error = err instanceof Error ? err : new Error(String(err));
       setError(error);
       console.error('[useBridge] Failed to refresh balances:', err);
+      telemetryService.captureError(err, {
+        component: 'useBridge',
+        action: 'refreshBalances',
+        extra: { walletAddress: wallet?.address },
+      });
     } finally {
       setIsLoadingBalances(false);
     }
@@ -233,6 +238,11 @@ export function useBridge(): UseBridgeResult {
         telemetryService.trackEvent('deposit_failed', {
           amount: amountNum,
           reason: error instanceof Error ? error.message : String(error),
+        });
+        telemetryService.captureError(error, {
+          component: 'useBridge',
+          action: 'deposit',
+          extra: { amount: amountNum, walletAddress: wallet?.address },
         });
 
         console.error('[useBridge] Deposit failed:', error);
@@ -292,6 +302,11 @@ export function useBridge(): UseBridgeResult {
         telemetryService.trackEvent('withdraw_failed', {
           amount: amountNum,
           reason: error instanceof Error ? error.message : String(error),
+        });
+        telemetryService.captureError(error, {
+          component: 'useBridge',
+          action: 'withdraw',
+          extra: { amount: amountNum, destinationAddress, walletAddress: wallet?.address },
         });
 
         console.error('[useBridge] Withdrawal failed:', error);
