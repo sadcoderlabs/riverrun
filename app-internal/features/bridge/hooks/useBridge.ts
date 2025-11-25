@@ -11,6 +11,7 @@
  * - Manage state with useState (local state, single responsibility)
  * - Manage UI loading states
  * - Handle errors
+ * - Track telemetry events for deposit/withdraw operations
  *
  * Does NOT contain:
  * - Business logic (in UseCases)
@@ -126,6 +127,7 @@ export function useBridge(): UseBridgeResult {
   const getWithdrawableBalanceUseCase = useContainer(c => c.getWithdrawableBalanceUseCase);
   const depositUsdcUseCase = useContainer(c => c.depositUsdcUseCase);
   const withdrawUsdcUseCase = useContainer(c => c.withdrawUsdcUseCase);
+  const telemetryService = useContainer(c => c.telemetryService);
 
   // Get wallet from React Context
   const { wallet, getSigner } = useWallet();
@@ -196,6 +198,13 @@ export function useBridge(): UseBridgeResult {
         throw new Error('No active wallet');
       }
 
+      const amountNum = parseFloat(amount);
+
+      // Track deposit initiated
+      telemetryService.trackEvent('deposit_initiated', {
+        amount: amountNum,
+      });
+
       try {
         // UI Layer: Manage loading state
         setIsDepositing(true);
@@ -209,18 +218,30 @@ export function useBridge(): UseBridgeResult {
         // Execute UseCase
         const result = await depositUsdcUseCase.execute(command);
 
+        // Track deposit completed
+        telemetryService.trackEvent('deposit_completed', {
+          amount: amountNum,
+          txHash: result.txHash,
+        });
+
         // UI Layer: Refresh balances after successful deposit
         await refreshBalances();
 
         return result;
       } catch (error) {
+        // Track deposit failed
+        telemetryService.trackEvent('deposit_failed', {
+          amount: amountNum,
+          reason: error instanceof Error ? error.message : String(error),
+        });
+
         console.error('[useBridge] Deposit failed:', error);
         throw error;
       } finally {
         setIsDepositing(false);
       }
     },
-    [depositUsdcUseCase, wallet, refreshBalances],
+    [depositUsdcUseCase, wallet, refreshBalances, telemetryService],
   );
 
   /**
@@ -231,6 +252,14 @@ export function useBridge(): UseBridgeResult {
       if (!wallet) {
         throw new Error('No active wallet');
       }
+
+      const amountNum = parseFloat(amount);
+
+      // Track withdraw initiated
+      telemetryService.trackEvent('withdraw_initiated', {
+        amount: amountNum,
+        destinationAddress,
+      });
 
       try {
         // UI Layer: Manage loading state
@@ -249,18 +278,29 @@ export function useBridge(): UseBridgeResult {
         // Execute UseCase
         const result = await withdrawUsdcUseCase.execute(command);
 
+        // Track withdraw completed
+        telemetryService.trackEvent('withdraw_completed', {
+          amount: amountNum,
+        });
+
         // UI Layer: Refresh balances after successful withdrawal
         await refreshBalances();
 
         return result;
       } catch (error) {
+        // Track withdraw failed
+        telemetryService.trackEvent('withdraw_failed', {
+          amount: amountNum,
+          reason: error instanceof Error ? error.message : String(error),
+        });
+
         console.error('[useBridge] Withdrawal failed:', error);
         throw error;
       } finally {
         setIsWithdrawing(false);
       }
     },
-    [withdrawUsdcUseCase, wallet, getSigner, refreshBalances],
+    [withdrawUsdcUseCase, wallet, getSigner, refreshBalances, telemetryService],
   );
 
   return {

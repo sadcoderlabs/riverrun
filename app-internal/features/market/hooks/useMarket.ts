@@ -3,10 +3,13 @@
  *
  * Provides business operations for market management.
  * For state access, use useMarketStore instead for better performance.
+ *
+ * Includes telemetry tracking for market selection and favorites.
  */
 
 import { useCallback, useState } from 'react';
 import { useContainer } from '@/app-internal/di';
+import { useMarketStore } from './useMarketStore';
 
 export interface UseMarketResult {
   /** UI loading state (for manual refresh) */
@@ -43,8 +46,9 @@ export interface UseMarketResult {
  * ```
  */
 export function useMarket(): UseMarketResult {
-  // Get marketService from DI container
+  // Get services from DI container
   const marketService = useContainer(c => c.marketService);
+  const telemetryService = useContainer(c => c.telemetryService);
 
   // UI state only (for manual refresh)
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -61,16 +65,35 @@ export function useMarket(): UseMarketResult {
 
   const setSelectedMarketByCoin = useCallback(
     (coin: string) => {
+      // Get current market before switching
+      const fromMarket = useMarketStore.getState().selectedMarket?.coin;
+
       marketService.setSelectedMarketByCoin(coin);
+
+      // Track market selection
+      telemetryService.trackEvent('market_selected', {
+        market: coin,
+        fromMarket,
+      });
     },
-    [marketService],
+    [marketService, telemetryService],
   );
 
   const toggleFavorite = useCallback(
     (coin: string) => {
+      // Get current favorite status before toggling
+      const favorites = useMarketStore.getState().favorites;
+      const isFavorite = !favorites.includes(coin);
+
       marketService.toggleFavorite(coin);
+
+      // Track favorite toggle
+      telemetryService.trackEvent('market_favorited', {
+        market: coin,
+        isFavorite,
+      });
     },
-    [marketService],
+    [marketService, telemetryService],
   );
 
   return {

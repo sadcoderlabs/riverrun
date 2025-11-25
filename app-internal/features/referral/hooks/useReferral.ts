@@ -3,6 +3,8 @@
  *
  * This hook provides referral operations with UI integration (Alert dialogs).
  * For state access, use useReferralStore instead for better performance.
+ *
+ * Includes telemetry tracking for referral code application.
  */
 
 import { useCallback, useState } from 'react';
@@ -90,6 +92,7 @@ export function useReferral(): UseReferralResult {
   // Inject UseCases from DI container
   const getReferralStatusUseCase = useContainer(c => c.getReferralStatusUseCase);
   const setReferrerUseCase = useContainer(c => c.setReferrerUseCase);
+  const telemetryService = useContainer(c => c.telemetryService);
 
   // Wallet access (UI layer responsibility)
   const { wallet, getSigner } = useWallet();
@@ -187,16 +190,33 @@ export function useReferral(): UseReferralResult {
                   });
 
                   if (info.code === referralCode) {
+                    // Track referral code applied
+                    telemetryService.trackEvent('referral_code_applied', {
+                      code: referralCode,
+                    });
+
                     // UI layer responsibility: update state
                     setReferralInfo(info);
 
                     Alert.alert('Success', `Referral code "${referralCode}" set successfully`);
                     resolve(true);
                   } else {
+                    // Track referral code failure
+                    telemetryService.trackEvent('referral_code_failed', {
+                      code: referralCode,
+                      reason: 'Referral code was not confirmed',
+                    });
+
                     Alert.alert('Error', 'Referral code was not confirmed');
                     resolve(false);
                   }
                 } catch (error) {
+                  // Track referral code failure
+                  telemetryService.trackEvent('referral_code_failed', {
+                    code: referralCode,
+                    reason: error instanceof Error ? error.message : String(error),
+                  });
+
                   console.error('[useReferral] Failed to set referrer:', error);
                   Alert.alert(
                     'Error',
@@ -212,7 +232,7 @@ export function useReferral(): UseReferralResult {
         );
       });
     },
-    [setReferrerUseCase, wallet, getSigner],
+    [setReferrerUseCase, wallet, getSigner, telemetryService],
   );
 
   /**

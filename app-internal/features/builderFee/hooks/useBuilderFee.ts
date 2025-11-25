@@ -6,6 +6,8 @@ import { useWallet } from '@/app-internal/features/wallet/hooks/useWallet';
 import type { BuilderFeeStatus } from '@/contexts/builderFee/ports/types';
 import { BUILDER_CONFIG } from '../../../../contexts/builderFee/config';
 
+// Telemetry tracking for builder fee operations
+
 export interface UseBuilderFeeResult {
   /**
    * Maximum approved fee in 0.1bps units
@@ -110,6 +112,7 @@ export function useBuilderFee(): UseBuilderFeeResult {
   const getStatusUseCase = useContainer(c => c.getBuilderFeeStatusUseCase);
   const approveUseCase = useContainer(c => c.approveBuilderFeeUseCase);
   const revokeUseCase = useContainer(c => c.revokeBuilderFeeUseCase);
+  const telemetryService = useContainer(c => c.telemetryService);
 
   // Wallet access (for getting wallet address and signer)
   const { wallet, getSigner } = useWallet();
@@ -166,14 +169,29 @@ export function useBuilderFee(): UseBuilderFeeResult {
       const success = await approveUseCase.execute({ signer });
 
       if (!success) {
+        // Track builder fee approval failure
+        telemetryService.trackEvent('builder_fee_failed', {
+          reason: 'User cancelled or not confirmed',
+        });
+
         Alert.alert('Approval Failed', 'Builder fee approval was not confirmed. Please try again.');
         return false;
       }
+
+      // Track builder fee approval success
+      telemetryService.trackEvent('builder_fee_approved', {
+        builderAddress: BUILDER_CONFIG.address,
+      });
 
       // UI layer responsibility: reload status to update state
       await loadBuilderFeeStatus();
       return true;
     } catch (error) {
+      // Track builder fee approval failure
+      telemetryService.trackEvent('builder_fee_failed', {
+        reason: error instanceof Error ? error.message : String(error),
+      });
+
       console.error('Failed to approve builder fee:', error);
       Alert.alert(
         'Approval Failed',
@@ -183,7 +201,7 @@ export function useBuilderFee(): UseBuilderFeeResult {
     } finally {
       setIsLoading(false);
     }
-  }, [approveUseCase, loadBuilderFeeStatus, wallet, getSigner]);
+  }, [approveUseCase, loadBuilderFeeStatus, wallet, getSigner, telemetryService]);
 
   /**
    * Approve builder fee
@@ -289,6 +307,9 @@ export function useBuilderFee(): UseBuilderFeeResult {
                 // Execute revocation on-chain
                 await revokeUseCase.execute({ signer });
 
+                // Track builder fee revocation
+                telemetryService.trackEvent('builder_fee_revoked', {});
+
                 // Reload status to update UI state (UI layer responsibility)
                 await loadBuilderFeeStatus();
 
@@ -309,7 +330,7 @@ export function useBuilderFee(): UseBuilderFeeResult {
         ],
       );
     });
-  }, [revokeUseCase, loadBuilderFeeStatus, getSigner]);
+  }, [revokeUseCase, loadBuilderFeeStatus, getSigner, telemetryService]);
 
   return {
     // State
