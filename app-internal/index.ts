@@ -18,10 +18,6 @@ export type { AppContainer, AppCradle } from './di';
 export { useTelemetry } from './features/telemetry/hooks/useTelemetry';
 export type { UseTelemetryResult } from './features/telemetry/hooks/useTelemetry';
 export { useScreenTracking } from './features/telemetry/hooks/useScreenTracking';
-export {
-  TelemetryCompositionProvider,
-  useTelemetryComposition,
-} from './features/telemetry/components/telemetryComposition';
 
 // Wallet
 export { useWallet } from './features/wallet/hooks/useWallet';

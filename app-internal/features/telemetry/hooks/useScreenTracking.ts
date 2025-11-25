@@ -19,7 +19,7 @@
 import { useCallback } from 'react';
 import { useFocusEffect } from 'expo-router';
 
-import { useTelemetryComposition } from '../components/telemetryComposition';
+import { useContainer } from '../../..';
 import type { ScreenName, ScreenProps } from '../../../../contexts/telemetry/ports/types';
 
 /**
@@ -58,7 +58,7 @@ export function useScreenTracking<S extends ScreenName>(
   screenName: S,
   props?: ScreenProps[S],
 ): void {
-  const { telemetryService } = useTelemetryComposition();
+  const telemetryService = useContainer(c => c.telemetryService);
 
   useFocusEffect(
     useCallback(() => {

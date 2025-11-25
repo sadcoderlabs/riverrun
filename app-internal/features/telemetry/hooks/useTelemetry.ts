@@ -7,7 +7,7 @@
 
 import { useCallback } from 'react';
 
-import { useTelemetryComposition } from '../components/telemetryComposition';
+import { useContainer } from '../../..';
 import type {
   ScreenName,
   ScreenProps,
@@ -150,7 +150,7 @@ export interface UseTelemetryResult {
  * ```
  */
 export function useTelemetry(): UseTelemetryResult {
-  const { telemetryService } = useTelemetryComposition();
+  const telemetryService = useContainer(c => c.telemetryService);
 
   const identifyUser = useCallback(
     (user: TelemetryUser) => {
