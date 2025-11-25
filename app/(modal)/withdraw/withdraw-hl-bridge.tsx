@@ -1,4 +1,10 @@
-import { BRIDGE_FEES, BRIDGE_LIMITS, useBridge, useWallet } from '@/app-internal';
+import {
+  BRIDGE_FEES,
+  BRIDGE_LIMITS,
+  useBridge,
+  useScreenTracking,
+  useWallet,
+} from '@/app-internal';
 import { Button, CustomHeader } from '@/app-internal/components/global';
 import { Input } from '@/app-internal/components/global/Input';
 import { Text } from '@/app-internal/components/global/Text';
@@ -22,6 +28,8 @@ function isValidAddress(address: string): boolean {
  * Safe area is handled by parent layout
  */
 export default function HyperliquidBridgeWithdrawPage() {
+  useScreenTracking('Withdraw');
+
   // Wallet hooks
   const { wallet } = useWallet();
 

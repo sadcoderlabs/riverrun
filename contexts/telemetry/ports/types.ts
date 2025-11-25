@@ -48,8 +48,6 @@ export type TelemetryEventName =
   | 'order_cancelled'
   | 'close_order_placed'
   | 'tpsl_order_placed'
-  // Trading - Position
-  | 'position_tpsl_modified'
   // Trading - Market
   | 'market_selected'
   | 'market_favorited'
@@ -135,12 +133,6 @@ export interface TelemetryEventProps {
     hasSl: boolean;
     tpTriggerPrice?: number;
     slTriggerPrice?: number;
-  };
-
-  // Trading - Position
-  position_tpsl_modified: {
-    market: string;
-    action: 'added' | 'removed' | 'updated';
   };
 
   // Trading - Market

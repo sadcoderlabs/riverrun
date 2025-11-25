@@ -1,4 +1,4 @@
-import { useBuilderFee } from '@/app-internal';
+import { useBuilderFee, useScreenTracking } from '@/app-internal';
 import { CustomHeader } from '@/app-internal/components/global';
 import { ListButton, ListItem } from '@/app-internal/components/global/ListItem';
 import { ListSection } from '@/app-internal/components/global/ListSection';
@@ -8,6 +8,7 @@ import { RefreshControl } from 'react-native';
 import { PortalProvider, ScrollView, Spinner, Text, View, YStack } from 'tamagui';
 
 export default function BuilderFeeStatus() {
+  useScreenTracking('BuilderFeeStatus');
   // Builder fee state and operations
   const {
     maxApprovedFee,

@@ -1,4 +1,4 @@
-import { useWallet } from '@/app-internal';
+import { useScreenTracking, useWallet } from '@/app-internal';
 import { Button } from '@/app-internal/components/global/Button';
 import { CustomIcons } from '@/app-internal/components/global/icons/CustomIcons';
 import { useThemePreference } from '@/app-internal/components/shared/theme/useThemePreference';
@@ -9,6 +9,7 @@ import { toast } from 'sonner-native';
 import { Spinner, Text, View, YStack } from 'tamagui';
 
 export default function Login() {
+  useScreenTracking('Login');
   const insets = useSafeAreaInsets();
   const { effectiveTheme } = useThemePreference();
   const { connect } = useWallet();

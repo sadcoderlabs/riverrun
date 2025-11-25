@@ -1,4 +1,10 @@
-import { ARBITRUM_CONFIG, BRIDGE_LIMITS, useBridge, useWallet } from '@/app-internal';
+import {
+  ARBITRUM_CONFIG,
+  BRIDGE_LIMITS,
+  useBridge,
+  useScreenTracking,
+  useWallet,
+} from '@/app-internal';
 import { Button, CustomHeader } from '@/app-internal/components/global';
 import { Input } from '@/app-internal/components/global/Input';
 import { Text } from '@/app-internal/components/global/Text';
@@ -24,6 +30,8 @@ function shortenAddress(address: string, chars: number = 5): string {
  * Safe area is handled by parent layout
  */
 export default function HyperliquidBridgePage() {
+  useScreenTracking('DepositBridge');
+
   const params = useLocalSearchParams<{ symbol: string; chain: string }>();
 
   // Wallet and bridge hooks

@@ -1,4 +1,4 @@
-import { useAgent } from '@/app-internal';
+import { useAgent, useScreenTracking } from '@/app-internal';
 import { CustomHeader } from '@/app-internal/components/global';
 import { Button } from '@/app-internal/components/global/Button';
 import { DEFAULT_AGENT_NAME } from '@/contexts/agent/constants';
@@ -15,6 +15,8 @@ function shortenAddress(address: string | undefined): string {
 }
 
 export default function AgentStatus() {
+  useScreenTracking('AgentStatus');
+
   // Agent state and operations (all from useAgent hook)
   const {
     agentAddress,

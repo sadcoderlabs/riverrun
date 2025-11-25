@@ -1,4 +1,4 @@
-import { useWallet } from '@/app-internal';
+import { useScreenTracking, useWallet } from '@/app-internal';
 import { CustomHeader } from '@/app-internal/components/global';
 import AdaptiveSelect from '@/app-internal/components/global/AdaptiveSelect';
 import { ListItem } from '@/app-internal/components/global/ListItem';
@@ -16,6 +16,7 @@ import { Linking } from 'react-native';
 import { PortalProvider, ScrollView, View, YStack } from 'tamagui';
 
 export default function Index() {
+  useScreenTracking('Settings');
   const router = useRouter();
   const { preference, setPreference } = useThemePreference();
   const { wallet } = useWallet();

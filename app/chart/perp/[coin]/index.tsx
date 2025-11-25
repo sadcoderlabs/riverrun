@@ -4,7 +4,7 @@ import { Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, XStack, YStack } from 'tamagui';
 import { ChartUI } from '@/app-internal/components/trade/ChartUi';
-import { useMarketStore } from '@/app-internal';
+import { useMarketStore, useScreenTracking } from '@/app-internal';
 
 /**
  * Full-Screen Chart Page
@@ -17,6 +17,8 @@ export default function ChartPage() {
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ coin: string }>();
   const selectedMarket = useMarketStore(state => state.selectedMarket);
+
+  useScreenTracking('Chart', { market: params.coin || selectedMarket?.coin || '' });
 
   // Use marketPair from selected market (e.g., "BTC-USD")
   const marketDisplay = selectedMarket?.marketPair || `${params.coin}-USD`;

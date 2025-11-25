@@ -43,24 +43,61 @@ export function useTelemetryWalletSync(telemetryService: TelemetryPort): void {
   // Track previous wallet address to detect changes
   const prevAddressRef = useRef<string | undefined>(undefined);
 
+  // Track previous wallet source to include in disconnect events
+  const prevSourceRef = useRef<'privy' | 'reown' | undefined>(undefined);
+
   useEffect(() => {
     const currentAddress = activeWallet?.address;
+    const currentSource = activeWallet?.source;
     const previousAddress = prevAddressRef.current;
+    const previousSource = prevSourceRef.current;
 
-    // User connected wallet (or switched to a different wallet)
-    if (currentAddress && currentAddress !== previousAddress) {
+    // User connected wallet (no previous wallet)
+    if (currentAddress && !previousAddress) {
+      // Identify user
       void telemetryService.identifyUser({
         address: currentAddress,
-        walletSource: activeWallet?.source,
+        walletSource: currentSource,
+      });
+
+      // Track wallet connected event
+      if (currentSource) {
+        telemetryService.trackEvent('wallet_connected', {
+          walletSource: currentSource,
+          address: currentAddress,
+        });
+      }
+    }
+
+    // User switched wallet (both addresses exist but different)
+    if (currentAddress && previousAddress && currentAddress !== previousAddress) {
+      // Identify new user
+      void telemetryService.identifyUser({
+        address: currentAddress,
+        walletSource: currentSource,
+      });
+
+      // Track wallet switched event
+      telemetryService.trackEvent('wallet_switched', {
+        fromAddress: previousAddress,
+        toAddress: currentAddress,
       });
     }
 
     // User disconnected wallet
     if (!currentAddress && previousAddress) {
+      // Track wallet disconnected event (before resetting user)
+      if (previousSource) {
+        telemetryService.trackEvent('wallet_disconnected', {
+          walletSource: previousSource,
+        });
+      }
+
       void telemetryService.resetUser();
     }
 
-    // Update ref for next comparison
+    // Update refs for next comparison
     prevAddressRef.current = currentAddress;
+    prevSourceRef.current = currentSource;
   }, [activeWallet, telemetryService]);
 }

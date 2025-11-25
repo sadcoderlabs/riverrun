@@ -1,4 +1,4 @@
-import { useBridge, useWallet } from '@/app-internal';
+import { useBridge, useScreenTracking, useWallet } from '@/app-internal';
 import { Button, CustomHeader } from '@/app-internal/components/global';
 import { CardContainer } from '@/app-internal/components/global/CardContainer';
 import { Text } from '@/app-internal/components/global/Text';
@@ -23,6 +23,8 @@ function shortenAddress(address: string, chars: number = 5): string {
  * on Arbitrum before proceeding with the deposit flow
  */
 export default function DepositCheckpointPage() {
+  useScreenTracking('DepositCheckpoint');
+
   const router = useRouter();
 
   // Wallet and bridge hooks

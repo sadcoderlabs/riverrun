@@ -1,4 +1,4 @@
-import { useReferral, useReferralHintsStore } from '@/app-internal';
+import { useReferral, useReferralHintsStore, useScreenTracking } from '@/app-internal';
 import { CustomHeader } from '@/app-internal/components/global';
 import { ListButton, ListItem } from '@/app-internal/components/global/ListItem';
 import { ListSection } from '@/app-internal/components/global/ListSection';
@@ -15,6 +15,8 @@ function shortenAddress(address: string | undefined): string {
 }
 
 export default function ApprovalStatus() {
+  useScreenTracking('ReferralStatus');
+
   // Referral state and operations
   const {
     referralInfo,
