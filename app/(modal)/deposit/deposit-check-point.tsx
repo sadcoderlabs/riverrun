@@ -2,11 +2,11 @@ import { useBridge, useWallet } from '@/app-internal';
 import { Button, CustomHeader } from '@/app-internal/components/global';
 import { CardContainer } from '@/app-internal/components/global/CardContainer';
 import { Text } from '@/app-internal/components/global/Text';
-import { AlertTriangle, Copy } from '@tamagui/lucide-icons';
+import { AlertTriangle, Copy, QrCode, X } from '@tamagui/lucide-icons';
 import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
-import { useEffect } from 'react';
-import { Image, Pressable, ScrollView } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Image, Modal, Pressable, ScrollView } from 'react-native';
 import { toast } from 'sonner-native';
 import { Spinner, XStack, YStack } from 'tamagui';
 
@@ -28,6 +28,10 @@ export default function DepositCheckpointPage() {
   // Wallet and bridge hooks
   const { wallet } = useWallet();
   const { arbitrumBalance, arbitrumEthBalance, refreshBalances, isLoadingBalances } = useBridge();
+
+  // QR code modal state
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [qrCodeUri, setQrCodeUri] = useState<string | null>(null);
 
   // Validation constants
   const MINIMUM_ETH = 0;
@@ -60,6 +64,16 @@ export default function DepositCheckpointPage() {
   useEffect(() => {
     refreshBalances();
   }, [refreshBalances]);
+
+  // Pre-generate QR code on mount
+  useEffect(() => {
+    if (wallet?.address) {
+      const uri = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${wallet.address}`;
+      setQrCodeUri(uri);
+      // Preload the image
+      Image.prefetch(uri);
+    }
+  }, [wallet?.address]);
 
   const handleCopyAddress = async () => {
     if (!wallet) return;
@@ -190,12 +204,20 @@ export default function DepositCheckpointPage() {
                   >
                     {shortenAddress(wallet.address, 6)}
                   </Text>
-                  <Pressable
-                    onPress={handleCopyAddress}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                  >
-                    <Copy size={18} color="$color11" />
-                  </Pressable>
+                  <XStack gap="$3">
+                    <Pressable
+                      onPress={() => setShowQRModal(true)}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    >
+                      <QrCode size={18} color="$color11" />
+                    </Pressable>
+                    <Pressable
+                      onPress={handleCopyAddress}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    >
+                      <Copy size={18} color="$color11" />
+                    </Pressable>
+                  </XStack>
                 </XStack>
               </YStack>
             </CardContainer>
@@ -237,6 +259,80 @@ export default function DepositCheckpointPage() {
           </Button.Filled>
         </YStack>
       </YStack>
+
+      {/* QR Code Modal */}
+      <Modal
+        visible={showQRModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowQRModal(false)}
+      >
+        <Pressable
+          style={{ flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.8)' }}
+          onPress={() => setShowQRModal(false)}
+        >
+          <YStack flex={1} justifyContent="center" alignItems="center" padding="$4">
+            <Pressable onPress={e => e.stopPropagation()}>
+              <YStack
+                backgroundColor="$background"
+                borderRadius="$4"
+                padding="$5"
+                gap="$4"
+                alignItems="center"
+                minWidth={300}
+              >
+                {/* Close Button */}
+                <XStack width="100%" justifyContent="flex-end">
+                  <Pressable
+                    onPress={() => setShowQRModal(false)}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  >
+                    <X size={24} color="$color11" />
+                  </Pressable>
+                </XStack>
+
+                {/* QR Code */}
+                <YStack backgroundColor="white" padding="$3" borderRadius="$3" alignItems="center">
+                  {qrCodeUri && (
+                    <Image source={{ uri: qrCodeUri }} style={{ width: 200, height: 200 }} />
+                  )}
+                </YStack>
+
+                {/* Wallet Address */}
+                <YStack gap="$2" width="100%">
+                  <Text.Subhead color="$color11" textAlign="center">
+                    Wallet Address
+                  </Text.Subhead>
+                  <XStack
+                    backgroundColor="$gray2"
+                    borderRadius="$3"
+                    padding="$3"
+                    gap="$2"
+                    alignItems="center"
+                    justifyContent="space-between"
+                  >
+                    <Text
+                      fontFamily="$skMono"
+                      fontSize="$3"
+                      color="$color12"
+                      flex={1}
+                      numberOfLines={1}
+                    >
+                      {shortenAddress(wallet?.address || '', 6)}
+                    </Text>
+                    <Pressable
+                      onPress={handleCopyAddress}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    >
+                      <Copy size={18} color="$color11" />
+                    </Pressable>
+                  </XStack>
+                </YStack>
+              </YStack>
+            </Pressable>
+          </YStack>
+        </Pressable>
+      </Modal>
     </YStack>
   );
 }

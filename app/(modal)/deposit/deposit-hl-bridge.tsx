@@ -3,8 +3,7 @@ import { Button, CustomHeader } from '@/app-internal/components/global';
 import { Input } from '@/app-internal/components/global/Input';
 import { Text } from '@/app-internal/components/global/Text';
 import { DEPOSIT_TOKENS, type ChainName } from '@/contexts/bridge/depositTokens';
-import { AlertTriangle } from '@tamagui/lucide-icons';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView } from 'react-native';
 import { toast } from 'sonner-native';
@@ -109,6 +108,10 @@ export default function HyperliquidBridgePage() {
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
           {/* Balance & Policy Display Section */}
           <YStack paddingHorizontal="$4" paddingTop="$4" gap="$2">
+            <Text.Footnote textAlign="center" color="$color11">
+              This transfers USDC to the Hyperliquid{'\n'} bridge contract{' '}
+              {shortenAddress(ARBITRUM_CONFIG.bridgeAddress, 3)}
+            </Text.Footnote>
             <XStack padding="$3" marginTop="$3" backgroundColor="$gray2" borderRadius="$3">
               <YStack flex={1} gap="$2">
                 <XStack alignItems="center" justifyContent="space-between">
@@ -199,37 +202,11 @@ export default function HyperliquidBridgePage() {
           </YStack>
         </ScrollView>
 
-        {/* Submit Section - Fixed at bottom with safe zone padding */}
+        {/* CTA Section - Fixed at bottom with safe zone padding */}
         <YStack paddingHorizontal="$4" paddingBottom="$4" marginTop="$2" gap="$3">
-          <XStack
-            padding="$4"
-            backgroundColor="$yellow2"
-            borderRadius="$3"
-            gap="$3"
-            alignItems="flex-start"
-          >
-            <AlertTriangle size={16} color="$yellow9" />
-            <YStack flex={1}>
-              <YStack gap="$1" alignItems="flex-start" style={{ marginTop: -3 }}>
-                <Text.Footnote color="$yellow9" fontWeight="700">
-                  Important Information
-                </Text.Footnote>
-                <XStack gap="$2" alignItems="flex-start">
-                  <Text.Caption color="$yellow9">•</Text.Caption>
-                  <Text.Footnote color="$yellow9">
-                    This transfers USDC to the Hyperliquid bridge contract{' '}
-                    {shortenAddress(ARBITRUM_CONFIG.bridgeAddress, 3)}
-                  </Text.Footnote>
-                </XStack>
-                <XStack gap="$2" alignItems="flex-start">
-                  <Text.Caption color="$yellow9">•</Text.Caption>
-                  <Text.Footnote color="$yellow9">
-                    Deposits below minimum required will result in loss of funds
-                  </Text.Footnote>
-                </XStack>
-              </YStack>
-            </YStack>
-          </XStack>
+          <Button.Gray level="lg" height="$5" onPress={() => router.replace('/(tabs)/home')}>
+            Cancel
+          </Button.Gray>
           <Button.Filled
             level="lg"
             height="$5"
