@@ -10,6 +10,7 @@
  */
 
 import {
+  applyHyperliquidPriceRules,
   countIntegerDigits,
   countSignificantFigures,
   getAllowedDecimals,
@@ -52,14 +53,18 @@ export function formatPrice(
     return '0';
   }
 
+  // Apply Hyperliquid price rules first (round to 5 sig figs and allowed decimals)
+  const priceResult = applyHyperliquidPriceRules(priceNum, szDecimals);
+  const roundedPrice = priceResult?.value ?? priceNum;
+
   const allowedDecimals = getAllowedDecimals(szDecimals);
-  const integerDigits = countIntegerDigits(priceNum);
-  const currentSigFigs = countSignificantFigures(priceNum);
+  const integerDigits = countIntegerDigits(roundedPrice);
+  const currentSigFigs = countSignificantFigures(roundedPrice);
 
   // Rule: Integer prices are always allowed
   // If price >= 1 AND integer part already has >= 5 digits, round to integer
-  if (priceNum >= 1 && integerDigits >= MAX_SIGNIFICANT_FIGURES) {
-    const rounded = Math.round(priceNum);
+  if (roundedPrice >= 1 && integerDigits >= MAX_SIGNIFICANT_FIGURES) {
+    const rounded = Math.round(roundedPrice);
     let formatted = rounded.toString();
 
     if (thousandsSeparator) {
@@ -72,7 +77,7 @@ export function formatPrice(
   // Calculate how many decimal places we can use
   let allowedDecimalPlaces: number;
 
-  if (priceNum >= 1) {
+  if (roundedPrice >= 1) {
     // Integer part has < 5 digits, limited by remaining sig figs
     const remainingSigFigs = MAX_SIGNIFICANT_FIGURES - integerDigits;
     allowedDecimalPlaces = Math.min(remainingSigFigs, allowedDecimals);
@@ -89,7 +94,7 @@ export function formatPrice(
     const needToAdd = MAX_SIGNIFICANT_FIGURES - currentSigFigs;
 
     // Get current decimal places
-    const str = priceNum.toString();
+    const str = roundedPrice.toString();
     const decimalIndex = str.indexOf('.');
     const currentDecimalPlaces = decimalIndex === -1 ? 0 : str.length - decimalIndex - 1;
 
@@ -101,7 +106,7 @@ export function formatPrice(
   }
 
   // Format with target decimal places
-  let formatted = priceNum.toFixed(targetDecimalPlaces);
+  let formatted = roundedPrice.toFixed(targetDecimalPlaces);
 
   // If input has >= 5 sig figs, try to remove trailing zeros for cleaner display
   // But ensure the result still has >= 5 sig figs

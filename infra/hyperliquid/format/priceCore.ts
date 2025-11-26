@@ -4,12 +4,19 @@
  * This module contains the shared logic for handling Hyperliquid's price rules.
  * Both roundPrice (for order submission) and formatPrice (for UI display) use these utilities.
  *
+ * Uses Big.js for precise decimal arithmetic to avoid JavaScript floating-point issues.
+ *
  * Hyperliquid Rules:
  * 1. Prices can have up to 5 significant figures
  * 2. Decimal places cannot exceed MAX_DECIMALS - szDecimals (MAX_DECIMALS = 6 for perps)
  * 3. Integer prices are ALWAYS allowed, regardless of significant figures
  *    (e.g., 123456 is valid even though 12345.6 is not)
  */
+
+import Big from 'big.js';
+
+// Configure Big.js to use ROUND_HALF_UP (standard rounding: 0.5 rounds up)
+Big.RM = Big.roundHalfUp;
 
 /** Maximum decimal places for Perp markets */
 export const MAX_DECIMALS_PERP = 6;
@@ -92,6 +99,22 @@ export function getAllowedDecimals(szDecimals: number): number {
 }
 
 /**
+ * Round a number to specified decimal places using Big.js for precision
+ * Uses ROUND_HALF_UP (standard rounding: 0.5 rounds up)
+ */
+export function roundToDecimals(num: number, decimals: number): number {
+  return new Big(num).round(decimals).toNumber();
+}
+
+/**
+ * Round a number to nearest integer using Big.js for precision
+ * Uses ROUND_HALF_UP (standard rounding: 0.5 rounds up)
+ */
+export function roundToInteger(num: number): number {
+  return new Big(num).round(0).toNumber();
+}
+
+/**
  * Result of applying Hyperliquid price rules
  */
 export interface PriceRuleResult {
@@ -138,17 +161,32 @@ export function applyHyperliquidPriceRules(
     };
   }
 
-  // For non-integer prices, apply both constraints
+  // For non-integer prices, apply constraints in correct order
+  // Use Big.js for precise rounding to avoid JavaScript floating-point issues
   let roundedPrice = price;
-  const sigFigs = countSignificantFigures(price);
 
-  // 1. Round to max significant figures if needed
-  if (sigFigs > MAX_SIGNIFICANT_FIGURES) {
-    roundedPrice = roundToSignificantFigures(price, MAX_SIGNIFICANT_FIGURES);
+  // 1. First, round to max decimal places (this is the precision we can express)
+  roundedPrice = roundToDecimals(roundedPrice, allowedDecimals);
+
+  // 2. If integer part has >= 5 digits, round to integer (integer prices are always allowed)
+  const integerDigits = countIntegerDigits(roundedPrice);
+  if (integerDigits >= MAX_SIGNIFICANT_FIGURES) {
+    roundedPrice = roundToInteger(roundedPrice);
+    return {
+      value: roundedPrice,
+      isInteger: true,
+      allowedDecimals,
+      sigFigs: countSignificantFigures(roundedPrice),
+    };
   }
 
-  // 2. Round to max decimal places
-  roundedPrice = parseFloat(roundedPrice.toFixed(allowedDecimals));
+  // 3. If still too many sig figs, round to 5 sig figs
+  const sigFigs = countSignificantFigures(roundedPrice);
+  if (sigFigs > MAX_SIGNIFICANT_FIGURES) {
+    roundedPrice = roundToSignificantFigures(roundedPrice, MAX_SIGNIFICANT_FIGURES);
+    // Re-apply decimal constraint after sig fig rounding
+    roundedPrice = roundToDecimals(roundedPrice, allowedDecimals);
+  }
 
   // Check if result became an integer after rounding
   const resultIsInteger = Number.isInteger(roundedPrice);
