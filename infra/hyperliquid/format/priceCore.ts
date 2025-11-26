@@ -14,21 +14,17 @@ import Big from 'big.js';
 // Configure Big.js: ROUND_HALF_UP (standard rounding where 0.5 rounds up)
 Big.RM = Big.roundHalfUp;
 
-/** Maximum decimal places for Perp markets */
-export const MAX_DECIMALS = 6;
+/** Maximum decimal places for Perp markets (Spot uses 8) */
+export const MAX_DECIMALS_PERP = 6;
 
 /** Maximum significant figures for non-integer prices */
 export const MAX_SIG_FIGS = 5;
-
-// Re-export for backwards compatibility
-export const MAX_DECIMALS_PERP = MAX_DECIMALS;
-export const MAX_SIGNIFICANT_FIGURES = MAX_SIG_FIGS;
 
 /**
  * Calculate allowed decimal places: 6 - szDecimals
  */
 export function getAllowedDecimals(szDecimals: number): number {
-  return Math.max(0, MAX_DECIMALS - szDecimals);
+  return Math.max(0, MAX_DECIMALS_PERP - szDecimals);
 }
 
 /**
@@ -54,15 +50,8 @@ export function countSigFigs(value: Big): number {
  * countIntegerDigits(new Big('12345.67')) // 5
  * countIntegerDigits(new Big('0.123'))    // 0
  * countIntegerDigits(new Big('1000'))     // 4
- * countIntegerDigits(123.45)              // 3 (legacy number input)
  */
-export function countIntegerDigits(value: Big | number): number {
-  // Handle legacy number input
-  if (typeof value === 'number') {
-    if (value === 0) return 1;
-    return Math.floor(Math.abs(value)).toString().length;
-  }
-
+export function countIntegerDigits(value: Big): number {
   if (value.abs().lt(1)) return 0;
   // e is the exponent: 123.45 has e=2, meaning 1.2345 * 10^2
   // Integer digits = e + 1
@@ -147,63 +136,4 @@ export function isValidPrice(price: number | string, szDecimals: number): boolea
   } catch {
     return false;
   }
-}
-
-// ============================================================================
-// Legacy exports for backwards compatibility
-// ============================================================================
-
-/** @deprecated Use countSigFigs(new Big(num)) instead */
-export function countSignificantFigures(num: number): number {
-  if (num === 0) return 0;
-  return countSigFigs(new Big(num));
-}
-
-/** @deprecated Use roundPrice() instead */
-export function roundToDecimals(num: number, decimals: number): number {
-  return new Big(num).round(decimals).toNumber();
-}
-
-/** @deprecated Use roundPrice() instead */
-export function roundToInteger(num: number): number {
-  return new Big(num).round(0).toNumber();
-}
-
-/** @deprecated Use roundToSigFigs(new Big(num), sigFigs).toNumber() instead */
-export function roundToSignificantFigures(num: number, sigFigs: number): number {
-  if (num === 0) return 0;
-  return new Big(num).prec(sigFigs).toNumber();
-}
-
-/** @deprecated Use roundPrice() and check the result instead */
-export interface PriceRuleResult {
-  value: number;
-  isInteger: boolean;
-  allowedDecimals: number;
-  sigFigs: number;
-}
-
-/** @deprecated Use roundPrice() instead */
-export function applyHyperliquidPriceRules(
-  price: number,
-  szDecimals: number,
-): PriceRuleResult | undefined {
-  if (!isFinite(price) || price <= 0) {
-    return undefined;
-  }
-
-  const result = roundPrice(price, szDecimals);
-  const value = result.toNumber();
-
-  return {
-    value,
-    isInteger: Number.isInteger(value),
-    allowedDecimals: getAllowedDecimals(szDecimals),
-    sigFigs: countSigFigs(result),
-  };
-}
-
-/** @deprecated Use isValidPrice() instead */
-export function isValidHyperliquidPrice(price: number, szDecimals: number): boolean {
-  return isValidPrice(price, szDecimals);
 }
