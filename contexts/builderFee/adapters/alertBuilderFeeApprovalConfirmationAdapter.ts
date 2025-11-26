@@ -23,14 +23,10 @@ export class AlertBuilderFeeApprovalConfirmationAdapter implements BuilderFeeCon
     const wallet = await this.walletService.active();
     const isReown = wallet?.source === 'reown';
 
-    // Calculate fee percentage from rate (25 units = 0.025%)
-    // Formula: rate * 0.001% = percentage
-    const feePercentage = (BUILDER_CONFIG.feeRate * 0.001).toFixed(3);
-
-    const title = 'Builder Fee Approval Required';
+    const title = 'Start Trading Fee-Free';
     const message = isReown
-      ? `This app collects a ${feePercentage}% builder fee on trades to support development. You will be redirected to your mobile wallet app to sign the approval transaction. Do you want to proceed?`
-      : `This app collects a ${feePercentage}% builder fee on trades to support development. You will sign a transaction to approve the maximum fee (${BUILDER_CONFIG.maxFeeRate}). Do you want to proceed?`;
+      ? `Zero trading fees - now and for early adopters!\n\nWhen fees eventually apply, active traders enjoy discounts with a maximum cap of just ${BUILDER_CONFIG.maxFeeRate}. Every fee is shown upfront before you confirm any trade.\n\nYou'll be redirected to your wallet app to sign.`
+      : `Zero trading fees - now and for early adopters!\n\nWhen fees eventually apply, active traders enjoy discounts with a maximum cap of just ${BUILDER_CONFIG.maxFeeRate}. Every fee is shown upfront before you confirm any trade.\n\nSign to approve and start trading fee-free today.`;
 
     return new Promise<boolean>(resolve => {
       Alert.alert(title, message, [
@@ -40,7 +36,7 @@ export class AlertBuilderFeeApprovalConfirmationAdapter implements BuilderFeeCon
           onPress: () => resolve(false),
         },
         {
-          text: 'Approve',
+          text: isReown ? 'Continue' : 'Sign & Start Trading',
           onPress: () => resolve(true),
         },
       ]);
