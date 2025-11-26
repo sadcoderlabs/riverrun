@@ -1,138 +1,118 @@
 /**
- * Price formatting utilities for Hyperliquid order book display
+ * Format price for UI display
  *
- * Uses the shared Hyperliquid price rules from priceCore.
- *
- * Formatting rules for UI display:
- * - If total significant figures < 5: pad with zeros to reach 5
- * - If >= 5 sig figs: remove trailing zeros
- * - Never exceed maxDecimalPlaces = (6 - szDecimals)
+ * Formatting rules:
+ * - Apply Hyperliquid price rules first (round to valid price)
+ * - If < 5 sig figs: pad with zeros to reach 5 (for visual consistency)
+ * - If >= 5 sig figs: show as-is (trailing zeros already removed by Big.js)
+ * - Optionally add thousand separators
  */
 
+import Big from 'big.js';
 import {
-  applyHyperliquidPriceRules,
+  roundPrice,
+  countSigFigs,
   countIntegerDigits,
-  countSignificantFigures,
   getAllowedDecimals,
-  MAX_SIGNIFICANT_FIGURES,
+  MAX_SIG_FIGS,
 } from './priceCore';
 
 /**
  * Format price for display according to Hyperliquid rules
  *
- * This function handles UI display formatting with:
- * - Padding to 5 significant figures for consistency
- * - Optional thousand separators
- * - Intelligent trailing zero handling
- *
  * @param price - Price from API (string or number)
- * @param szDecimals - Asset's szDecimals (from Hyperliquid meta)
+ * @param szDecimals - Asset's szDecimals from Hyperliquid
  * @param thousandsSeparator - Whether to add thousand separators
  * @returns Formatted price string for UI display
  *
  * @example
  * formatPrice(4219, 4, false)      // "4219.0" (pad to 5 sig figs)
  * formatPrice(0.20359, 0, false)   // "0.20359" (already 5 sig figs)
- * formatPrice(114971, 5, true)     // "114,971" (with separator)
+ * formatPrice(114971, 5, true)     // "114,971" (integer, with separator)
  */
 export function formatPrice(
   price: string | number,
   szDecimals: number,
   thousandsSeparator: boolean,
 ): string {
-  // Parse price to number
-  const priceNum = typeof price === 'string' ? parseFloat(price) : price;
+  // Handle zero and invalid input
+  if (price === 0 || price === '0') return '0';
 
-  // Handle invalid prices
-  if (!isFinite(priceNum) || priceNum < 0) {
-    return '0';
-  }
+  const rounded = roundPrice(price, szDecimals);
+  if (rounded.eq(0)) return '0';
 
-  // Handle zero
-  if (priceNum === 0) {
-    return '0';
-  }
-
-  // Apply Hyperliquid price rules first (round to 5 sig figs and allowed decimals)
-  const priceResult = applyHyperliquidPriceRules(priceNum, szDecimals);
-  const roundedPrice = priceResult?.value ?? priceNum;
-
-  const allowedDecimals = getAllowedDecimals(szDecimals);
-  const integerDigits = countIntegerDigits(roundedPrice);
-  const currentSigFigs = countSignificantFigures(roundedPrice);
-
-  // Rule: Integer prices are always allowed
-  // If price >= 1 AND integer part already has >= 5 digits, round to integer
-  if (roundedPrice >= 1 && integerDigits >= MAX_SIGNIFICANT_FIGURES) {
-    const rounded = Math.round(roundedPrice);
-    let formatted = rounded.toString();
-
-    if (thousandsSeparator) {
-      formatted = addThousandsSeparator(formatted);
-    }
-
-    return formatted;
-  }
-
-  // Calculate how many decimal places we can use
-  let allowedDecimalPlaces: number;
-
-  if (roundedPrice >= 1) {
-    // Integer part has < 5 digits, limited by remaining sig figs
-    const remainingSigFigs = MAX_SIGNIFICANT_FIGURES - integerDigits;
-    allowedDecimalPlaces = Math.min(remainingSigFigs, allowedDecimals);
-  } else {
-    // Number < 1, use full allowedDecimals
-    allowedDecimalPlaces = allowedDecimals;
-  }
-
-  // Determine target decimal places for display
-  let targetDecimalPlaces: number;
-
-  if (currentSigFigs < MAX_SIGNIFICANT_FIGURES) {
-    // Need to pad to reach 5 sig figs
-    const needToAdd = MAX_SIGNIFICANT_FIGURES - currentSigFigs;
-
-    // Get current decimal places
-    const str = roundedPrice.toString();
-    const decimalIndex = str.indexOf('.');
-    const currentDecimalPlaces = decimalIndex === -1 ? 0 : str.length - decimalIndex - 1;
-
-    // Target = current + needed (but capped by allowed)
-    targetDecimalPlaces = Math.min(currentDecimalPlaces + needToAdd, allowedDecimalPlaces);
-  } else {
-    // Already have >= 5 sig figs
-    targetDecimalPlaces = allowedDecimalPlaces;
-  }
-
-  // Format with target decimal places
-  let formatted = roundedPrice.toFixed(targetDecimalPlaces);
-
-  // If input has >= 5 sig figs, try to remove trailing zeros for cleaner display
-  // But ensure the result still has >= 5 sig figs
-  if (currentSigFigs >= MAX_SIGNIFICANT_FIGURES) {
-    const withoutTrailingZeros = formatted.replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '');
-    const resultNum = parseFloat(withoutTrailingZeros);
-    const resultSigFigs = countSignificantFigures(resultNum);
-
-    if (resultSigFigs >= MAX_SIGNIFICANT_FIGURES) {
-      formatted = withoutTrailingZeros;
-    }
-  }
+  // Format the price
+  const formatted = formatWithPadding(rounded, szDecimals);
 
   // Add thousand separators if requested
   if (thousandsSeparator) {
-    const parts = formatted.split('.');
-    parts[0] = addThousandsSeparator(parts[0]);
-    formatted = parts.join('.');
+    return addThousandsSeparator(formatted);
   }
 
-  return formatted || '0';
+  return formatted;
 }
 
 /**
- * Add thousand separators to an integer string
+ * Format price with padding to 5 significant figures
+ *
+ * - If integer part >= 5 digits: show as integer (no padding needed)
+ * - If < 5 sig figs: pad with zeros to reach 5 sig figs
+ * - If >= 5 sig figs: show as-is
  */
-function addThousandsSeparator(integerStr: string): string {
-  return integerStr.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+function formatWithPadding(value: Big, szDecimals: number): string {
+  const intDigits = countIntegerDigits(value);
+  const sigFigs = countSigFigs(value);
+  const allowedDecimals = getAllowedDecimals(szDecimals);
+
+  // Large integers: show as integer (no padding)
+  if (intDigits >= MAX_SIG_FIGS) {
+    return value.round(0).toString();
+  }
+
+  // Already has enough sig figs: show as-is
+  if (sigFigs >= MAX_SIG_FIGS) {
+    return value.toString();
+  }
+
+  // Need to pad with zeros to reach 5 sig figs
+  const targetSigFigs = MAX_SIG_FIGS;
+  const neededDecimals = calculateDecimalsForSigFigs(value, targetSigFigs);
+  const finalDecimals = Math.min(neededDecimals, allowedDecimals);
+
+  return value.toFixed(finalDecimals);
+}
+
+/**
+ * Calculate how many decimal places are needed to display N significant figures
+ *
+ * @example
+ * calculateDecimalsForSigFigs(Big('123'), 5)     // 2 (to get 123.00)
+ * calculateDecimalsForSigFigs(Big('0.02'), 5)    // 6 (to get 0.020000)
+ * calculateDecimalsForSigFigs(Big('0.020905'), 5) // 6 (already 5 sig figs)
+ */
+function calculateDecimalsForSigFigs(value: Big, targetSigFigs: number): number {
+  if (value.eq(0)) return 0;
+
+  const currentSigFigs = countSigFigs(value);
+  const intDigits = countIntegerDigits(value);
+
+  if (intDigits > 0) {
+    // Number >= 1: decimals needed = target sig figs - integer digits
+    return Math.max(0, targetSigFigs - intDigits);
+  } else {
+    // Number < 1: need to account for leading zeros
+    // e.g., 0.02 has e=-2, so we need |e| + targetSigFigs - currentSigFigs more decimals
+    const currentDecimals = Math.abs(value.e) + currentSigFigs - 1;
+    const neededMore = targetSigFigs - currentSigFigs;
+    return currentDecimals + neededMore;
+  }
+}
+
+/**
+ * Add thousand separators to a formatted number string
+ */
+function addThousandsSeparator(str: string): string {
+  const parts = str.split('.');
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return parts.join('.');
 }
