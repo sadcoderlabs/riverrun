@@ -214,11 +214,11 @@ export function useBuilderFee(): UseBuilderFeeResult {
    */
   const approveBuilderFee = useCallback(async (): Promise<boolean> => {
     return new Promise<boolean>(resolve => {
-      const feePercentage = (BUILDER_CONFIG.feeRate / 1000).toFixed(3);
+      // const feePercentage = (BUILDER_CONFIG.feeRate / 1000).toFixed(3);
 
       Alert.alert(
         'Approve Builder Fee',
-        `This will approve the app to collect up to ${BUILDER_CONFIG.maxFeeRate} builder fee on trades. The actual fee charged is ${feePercentage}%. You will be redirected to your wallet app to sign the approval.`,
+        `This allows the app to collect builder fees on your trades, with a maximum cap of ${BUILDER_CONFIG.maxFeeRate}. All fees are displayed before you confirm any trade.\n\nYou will be redirected to your wallet app to sign the approval.`,
         [
           {
             text: 'Cancel',
@@ -297,7 +297,7 @@ export function useBuilderFee(): UseBuilderFeeResult {
     return new Promise<boolean>(resolve => {
       Alert.alert(
         'Revoke Builder Fee',
-        'This will set the maximum builder fee to 0%. You will need to approve builder fee again for future trading.',
+        'You will need to approve again before trading. Are you sure you want to revoke?',
         [
           {
             text: 'Cancel',
