@@ -272,6 +272,31 @@ export async function maxBuilderFee(
   );
 }
 
+/**
+ * Get user fee rates and discounts
+ *
+ * Weight: 20
+ *
+ * Returns fee schedule, user's current rates, and active discounts (referral, staking).
+ *
+ * @example
+ * ```typescript
+ * const fees = await userFees({ user: '0x...' });
+ * console.log('Taker rate:', fees.userCrossRate);
+ * console.log('Maker rate:', fees.userAddRate);
+ * console.log('Referral discount:', fees.activeReferralDiscount);
+ * ```
+ */
+export async function userFees(
+  params: Parameters<hl.InfoClient['userFees']>[0],
+): Promise<hl.UserFeesResponse> {
+  const infoClient = getInfoClient();
+  return await hyperliquidRateLimiter.execute(
+    () => infoClient.userFees(params),
+    REQUEST_WEIGHTS.userFees,
+  );
+}
+
 // ============================================================================
 // Agent Management
 // ============================================================================
