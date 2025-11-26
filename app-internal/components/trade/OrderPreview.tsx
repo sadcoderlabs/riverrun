@@ -1,3 +1,4 @@
+import { BUILDER_CONFIG } from '@/contexts/builderFee/config';
 import { formatValue } from '@/infra/hyperliquid/format/formatValue';
 import { Text, XStack, YStack } from 'tamagui';
 
@@ -12,10 +13,15 @@ interface OrderPreviewProps {
  * Shows:
  * - Order value (size × execution price)
  * - Margin required (order value / leverage)
+ * - Builder fee (currently 0% for early adopters)
  *
  * Only displayed when user has entered valid inputs
  */
 export function OrderPreview({ orderValue, marginRequired }: OrderPreviewProps) {
+  // Calculate builder fee: orderValue × (feeRate × 0.001%)
+  // Formula: feeRate is in tenths of basis point, so multiply by 0.001% to get percentage
+  const builderFee = orderValue * ((BUILDER_CONFIG.feeRate * 0.001) / 100);
+
   return (
     <YStack gap="$2.5" marginTop="$2">
       {/* Order Value */}
@@ -35,6 +41,16 @@ export function OrderPreview({ orderValue, marginRequired }: OrderPreviewProps) 
         </Text>
         <Text fontFamily="$interSemiBold" fontSize="$3" color="$color">
           ${formatValue(marginRequired, 2)}
+        </Text>
+      </XStack>
+
+      {/* Builder Fee */}
+      <XStack justifyContent="space-between" alignItems="center">
+        <Text fontFamily="$interRegular" fontSize="$2" color="$gray10">
+          Builder Fee
+        </Text>
+        <Text fontFamily="$interSemiBold" fontSize="$3" color="$color">
+          ${formatValue(builderFee, 2)}
         </Text>
       </XStack>
     </YStack>

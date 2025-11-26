@@ -22,19 +22,23 @@ export const BUILDER_ADDRESS = '0x016f127b609c7933624fb0f48c368d0a04dce37c' as c
  * Example: 0.025% / 0.001% = 25 units
  *
  * Conversion table:
+ * - 0 units = 0% (zero fees) ← Current setting (early adopters)
  * - 1 unit = 0.001% (0.1 basis point)
  * - 10 units = 0.01% (1 basis point)
- * - 25 units = 0.025% (2.5 basis points) ← Current setting
+ * - 25 units = 0.025% (2.5 basis points)
+ * - 50 units = 0.05% (5 basis points)
  * - 100 units = 0.1% (10 basis points)
  */
-export const BUILDER_FEE_RATE = 25 as const;
+export const BUILDER_FEE_RATE = 0 as const;
 
 /**
  * Maximum fee rate to request approval for
  * This is the ceiling of what the builder CAN charge (not what they WILL charge)
  * Max allowed: 0.1% for perps, 1% for spot
+ *
+ * Set to 0.05% to match the promise to early adopters
  */
-export const MAX_FEE_RATE_PERCENT = '0.1%' as const;
+export const MAX_FEE_RATE_PERCENT = '0.05%' as const;
 
 /**
  * Builder configuration object
