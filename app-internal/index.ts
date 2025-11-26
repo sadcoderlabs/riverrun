@@ -39,6 +39,8 @@ export type { UseAgentResult } from './features/agent/hooks/useAgent';
 // Builder Fee
 export { useBuilderFee } from './features/builderFee/hooks/useBuilderFee';
 export type { UseBuilderFeeResult } from './features/builderFee/hooks/useBuilderFee';
+export { useUserFees } from './features/builderFee/hooks/useUserFees';
+export type { UseUserFeesResult } from './features/builderFee/hooks/useUserFees';
 export { getBuilderParam } from '@/contexts/builderFee/config';
 
 // Referral
@@ -94,6 +96,9 @@ export type {
 
 // History Types
 export type { Fill } from '@/contexts/history/ports/types';
+
+// BuilderFee Types
+export type { UserFeeRates } from '@/contexts/builderFee/ports/types';
 
 // Environment
 export {

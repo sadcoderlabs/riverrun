@@ -33,6 +33,7 @@ import { GetBuilderFeeStatusUseCase } from '@/contexts/builderFee/application/us
 import { ApproveBuilderFeeUseCase } from '@/contexts/builderFee/application/usecases/ApproveBuilderFeeUseCase';
 import { RevokeBuilderFeeUseCase } from '@/contexts/builderFee/application/usecases/RevokeBuilderFeeUseCase';
 import { EnsureBuilderFeeUseCase } from '@/contexts/builderFee/application/usecases/EnsureBuilderFeeUseCase';
+import { GetUserFeesUseCase } from '@/contexts/builderFee/application/usecases/GetUserFeesUseCase';
 
 // Referral UseCases
 import { GetReferralStatusUseCase } from '@/contexts/referral/application/usecases/GetReferralStatusUseCase';
@@ -186,6 +187,11 @@ export function createAppContainer(options: CreateContainerOptions): AppContaine
         return new EnsureBuilderFeeUseCase(getBuilderFeeStatusUseCase, approveBuilderFeeUseCase);
       },
     ).singleton(),
+
+    // GetUserFeesUseCase: Query user fee rates with discounts
+    getUserFeesUseCase: asFunction(({ builderFeeExchangePort }) => {
+      return new GetUserFeesUseCase(builderFeeExchangePort);
+    }).singleton(),
   });
 
   // ==========================================================================

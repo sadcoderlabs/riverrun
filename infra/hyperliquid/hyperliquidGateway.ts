@@ -654,6 +654,31 @@ export class HyperliquidGateway
     }
   }
 
+  /**
+   * Get user fee rates and discounts from exchange
+   *
+   * Returns raw fee data for the user including base rates and active discounts.
+   *
+   * @param walletAddress - User wallet address
+   * @returns Raw user fee rates and discounts
+   */
+  async getUserFees(walletAddress: string): Promise<{
+    userCrossRate: string;
+    userAddRate: string;
+    activeReferralDiscount: string;
+    activeStakingDiscount: { discount: string };
+  }> {
+    const response = await infoClient.userFees({ user: walletAddress });
+    return {
+      userCrossRate: response.userCrossRate,
+      userAddRate: response.userAddRate,
+      activeReferralDiscount: response.activeReferralDiscount,
+      activeStakingDiscount: {
+        discount: response.activeStakingDiscount.discount,
+      },
+    };
+  }
+
   // ============================================================================
   // Referral Operations (Write + Read)
   // ============================================================================
