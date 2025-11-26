@@ -42,7 +42,7 @@ export function PerpTradePanel() {
   // Get selected market from store (single source of truth)
   const selectedMarket = useMarketStore(state => state.selectedMarket);
   const coin = selectedMarket?.coin || 'BTC'; // Fallback to BTC if no market selected
-  const szDecimals = selectedMarket?.szDecimals || 4; // Fallback to 4 decimals
+  const szDecimals = selectedMarket?.szDecimals ?? 4; // Fallback to 4 decimals (use ?? to handle szDecimals=0)
 
   // Subscribe to price data
   const { markPrice, isLoading: isLoadingMarkPrice } = useMarkPrice({ coin });

@@ -74,8 +74,9 @@ export function roundPrice(price: number, szDecimals: number, isSpot = false): s
   }
 
   // Then, limit to max decimal places
-  const decimalPlaces = Math.min(allowedDecimals, MAX_SIGNIFICANT_FIGURES);
-  roundedPrice = parseFloat(roundedPrice.toFixed(decimalPlaces));
+  // Note: We use allowedDecimals directly, not limited by MAX_SIGNIFICANT_FIGURES
+  // For prices < 0.1 (e.g., 0.020905), we need more decimal places to represent 5 sig figs
+  roundedPrice = parseFloat(roundedPrice.toFixed(allowedDecimals));
 
   return roundedPrice.toString();
 }
