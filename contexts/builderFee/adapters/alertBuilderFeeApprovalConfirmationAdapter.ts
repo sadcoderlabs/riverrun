@@ -13,7 +13,6 @@
 import { Alert } from 'react-native';
 import type { WalletPort } from '../../wallet/ports/walletPort';
 import type { BuilderFeeConfirmationPort } from '../application/ports/BuilderFeeConfirmationPort';
-import { BUILDER_CONFIG } from '../config';
 
 export class AlertBuilderFeeApprovalConfirmationAdapter implements BuilderFeeConfirmationPort {
   constructor(private readonly walletService: WalletPort) {}
@@ -23,10 +22,10 @@ export class AlertBuilderFeeApprovalConfirmationAdapter implements BuilderFeeCon
     const wallet = await this.walletService.active();
     const isReown = wallet?.source === 'reown';
 
-    const title = 'Start Trading Fee-Free';
+    const title = 'Approve Trading Fee';
     const message = isReown
-      ? `Zero trading fees - now and for early adopters!\n\nWhen fees eventually apply, active traders enjoy discounts with a maximum cap of just ${BUILDER_CONFIG.maxFeeRate}. Every fee is shown upfront before you confirm any trade.\n\nYou'll be redirected to your wallet app to sign.`
-      : `Zero trading fees - now and for early adopters!\n\nWhen fees eventually apply, active traders enjoy discounts with a maximum cap of just ${BUILDER_CONFIG.maxFeeRate}. Every fee is shown upfront before you confirm any trade.\n\nSign to approve and start trading fee-free today.`;
+      ? `Start trading with fees as low as 0.025% per trade.\n\nEvery fee is clearly shown before you confirm - no hidden charges, no surprises.\n\nYou'll be redirected to your wallet app to sign.`
+      : `Start trading with fees as low as 0.025% per trade.\n\nEvery fee is clearly shown before you confirm - no hidden charges, no surprises.\n\nSign to approve and start trading.`;
 
     return new Promise<boolean>(resolve => {
       Alert.alert(title, message, [
