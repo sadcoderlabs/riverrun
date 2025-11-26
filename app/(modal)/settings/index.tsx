@@ -1,13 +1,10 @@
 import { useScreenTracking, useWallet } from '@/app-internal';
 import { CustomHeader } from '@/app-internal/components/global';
-import AdaptiveSelect from '@/app-internal/components/global/AdaptiveSelect';
 import { ListItem } from '@/app-internal/components/global/ListItem';
 import { ListSection } from '@/app-internal/components/global/ListSection';
 import ExportWalletModal from '@/app-internal/components/settings/ExportWalletModal';
-import { type ThemePreference } from '@/app-internal/components/shared/theme/theme.store';
-import { useThemePreference } from '@/app-internal/components/shared/theme/useThemePreference';
-import { useVersionInfo } from '@/app-internal/features/version/hooks/useVersionInfo';
 import { useCustomerSupport } from '@/app-internal/features/customerSupport';
+import { useVersionInfo } from '@/app-internal/features/version/hooks/useVersionInfo';
 import { features } from '@/config/environment';
 import { ArrowUpRight, MessageCircle } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
@@ -18,20 +15,10 @@ import { PortalProvider, ScrollView, View, YStack } from 'tamagui';
 export default function Index() {
   useScreenTracking('Settings');
   const router = useRouter();
-  const { preference, setPreference } = useThemePreference();
   const { wallet } = useWallet();
   const [showExportModal, setShowExportModal] = useState(false);
   const { displayVersion, checkForUpdate, isChecking, isDownloading } = useVersionInfo();
   const { openSupport } = useCustomerSupport();
-
-  const getThemeDisplayName = (theme: ThemePreference) => {
-    const themeMap: Record<ThemePreference, string> = {
-      light: 'Light',
-      dark: 'Dark',
-      system: 'System',
-    };
-    return themeMap[theme];
-  };
 
   return (
     <PortalProvider>
@@ -47,8 +34,8 @@ export default function Index() {
               <ListSection label="Account Settings">
                 {wallet?.type === 'privy' && (
                   <ListItem
-                    title="Export Wallet"
-                    subTitle="Export your wallet private key securely"
+                    title="Private Key"
+                    subTitle="Export your key"
                     showIosChevron={true}
                     onPress={() => setShowExportModal(true)}
                   />
@@ -65,29 +52,6 @@ export default function Index() {
                   showIosChevron={true}
                   onPress={() => router.push('/settings/approval-status')}
                 />
-              </ListSection>
-            </YStack>
-            {/* Preferences Section */}
-            <YStack>
-              <ListSection label="Preferences">
-                <AdaptiveSelect
-                  value={preference ?? 'dark'}
-                  onValueChange={value => setPreference(value as ThemePreference)}
-                  title="Theme"
-                >
-                  <AdaptiveSelect.Trigger>
-                    <ListItem title="Theme" subTitle={getThemeDisplayName(preference ?? 'dark')} />
-                  </AdaptiveSelect.Trigger>
-                  <AdaptiveSelect.Item value="light" index={0}>
-                    Light
-                  </AdaptiveSelect.Item>
-                  <AdaptiveSelect.Item value="dark" index={1}>
-                    Dark
-                  </AdaptiveSelect.Item>
-                  <AdaptiveSelect.Item value="system" index={2}>
-                    System
-                  </AdaptiveSelect.Item>
-                </AdaptiveSelect>
               </ListSection>
             </YStack>
             {/* Socials Section */}

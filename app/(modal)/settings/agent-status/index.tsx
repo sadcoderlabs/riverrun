@@ -193,7 +193,7 @@ export default function AgentStatus() {
                     justifyContent="space-between"
                     borderBottomWidth={otherNamedAgents.length > 0 ? 1 : 0}
                     borderBottomColor="$color10"
-                    backgroundColor="$accent2"
+                    backgroundColor="$gray2"
                   >
                     <YStack flex={1}>
                       <XStack alignItems="center" gap="$2">
@@ -234,8 +234,8 @@ export default function AgentStatus() {
                           level="sm"
                           onPress={() => handleRevokeAgent(DEFAULT_AGENT_NAME)}
                           disabled={isAgentLoading}
-                          backgroundColor="$red9"
-                          color="$red1"
+                          color="$red9"
+                          backgroundColor="$red3"
                           pressStyle={{ backgroundColor: '$red10' }}
                         >
                           Revoke
