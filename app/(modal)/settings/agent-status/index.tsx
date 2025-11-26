@@ -61,15 +61,15 @@ export default function AgentStatus() {
   }, [loadAllStatuses]);
 
   /**
-   * Handle Riverrun Agent approve
+   * Handle PERP GO Agent approve
    */
   const handleApproveRiverrunAgent = useCallback(async () => {
-    // Check if we have reached the limit of 3 non-Riverrun agents
+    // Check if we have reached the limit of 3 non-PERP GO agents
     const nonRiverrunAgents = allAgents.filter(
       agent => agent.name && agent.name !== DEFAULT_AGENT_NAME,
     );
 
-    // If Riverrun Agent doesn't exist and we have 3 other agents
+    // If PERP GO Agent doesn't exist and we have 3 other agents
     if (!isAgentApproved && nonRiverrunAgents.length >= 3) {
       Alert.alert(
         'Agent Limit Reached',
@@ -90,7 +90,7 @@ export default function AgentStatus() {
   }, [allAgents, isAgentApproved, approveAgent]);
 
   /**
-   * Handle revoke agent (Riverrun Agent or other named agents)
+   * Handle revoke agent (PERP GO Agent or other named agents)
    */
   const handleRevokeAgent = useCallback(
     async (agentName: string) => {
@@ -136,7 +136,7 @@ export default function AgentStatus() {
     [revokeAgent, loadAgentStatus],
   );
 
-  // Get other named agents (exclude Riverrun Agent)
+  // Get other named agents (exclude PERP GO Agent)
   const otherNamedAgents = allAgents.filter(
     agent => agent.name && agent.name !== DEFAULT_AGENT_NAME,
   );
@@ -185,7 +185,7 @@ export default function AgentStatus() {
                   Named Agents ({allAgents.filter(a => a.name).length}/3)
                 </Text>
                 <View overflow="hidden" borderRadius="$9" backgroundColor="$background">
-                  {/* Riverrun Agent - always shown */}
+                  {/* PERP GO Agent - always shown */}
                   <XStack
                     paddingHorizontal="$4"
                     paddingVertical="$3"
@@ -193,7 +193,7 @@ export default function AgentStatus() {
                     justifyContent="space-between"
                     borderBottomWidth={otherNamedAgents.length > 0 ? 1 : 0}
                     borderBottomColor="$color10"
-                    backgroundColor="$accent2"
+                    backgroundColor="$gray2"
                   >
                     <YStack flex={1}>
                       <XStack alignItems="center" gap="$2">
@@ -234,8 +234,8 @@ export default function AgentStatus() {
                           level="sm"
                           onPress={() => handleRevokeAgent(DEFAULT_AGENT_NAME)}
                           disabled={isAgentLoading}
-                          backgroundColor="$red9"
-                          color="$red1"
+                          color="$red9"
+                          backgroundColor="$red3"
                           pressStyle={{ backgroundColor: '$red10' }}
                         >
                           Revoke
