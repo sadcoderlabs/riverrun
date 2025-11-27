@@ -8,9 +8,26 @@
  * Implementations should handle:
  * - Querying current max builder fee approval
  * - Executing builder fee approval transactions
+ * - Querying user fee rates and discounts
  */
 
 import type { Signer } from 'ethers';
+
+/**
+ * Raw user fee rates from exchange API
+ */
+export interface RawUserFees {
+  /** Taker rate as decimal string (e.g., "0.00045") */
+  userCrossRate: string;
+  /** Maker rate as decimal string (e.g., "0.00015") */
+  userAddRate: string;
+  /** Referral discount as decimal string (e.g., "0.04" = 4%) */
+  activeReferralDiscount: string;
+  /** Staking discount info */
+  activeStakingDiscount: {
+    discount: string;
+  };
+}
 
 export interface BuilderFeeExchangePort {
   /**
@@ -33,4 +50,15 @@ export interface BuilderFeeExchangePort {
    * @param builderAddress - The builder address to approve for
    */
   approveBuilderFee(signer: Signer, maxFeeRate: string, builderAddress: string): Promise<void>;
+
+  /**
+   * Get user fee rates and discounts from exchange
+   *
+   * Returns raw fee data including base rates and active discounts.
+   * Business logic for calculating effective rates should be in UseCase layer.
+   *
+   * @param walletAddress - The wallet address to get fees for
+   * @returns Raw user fee rates and discounts
+   */
+  getUserFees(walletAddress: string): Promise<RawUserFees>;
 }

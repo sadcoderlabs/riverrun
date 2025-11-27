@@ -60,7 +60,8 @@ describe('formatPrice', () => {
 
       // DOGE: szDecimals=0, maxDecimals=6 → maxDecimalPlaces=6
       expect(formatPrice('0.2', 0, false)).toBe('0.20000');
-      expect(formatPrice('0.203599', 0, false)).toBe('0.203599');
+      // 0.203599 has 6 sig figs → rounds to 5 sig figs → 0.20360
+      expect(formatPrice('0.203599', 0, false)).toBe('0.20360');
     });
   });
 
@@ -86,10 +87,11 @@ describe('formatPrice', () => {
     });
 
     it('should handle numbers at rounding boundary', () => {
-      // 123.445 → 6 sig figs, rounds to 123.44 due to floating point
-      expect(formatPrice('123.445', 4, false)).toBe('123.44');
-      // 123.455 → 6 sig figs, rounds to 123.45 due to floating point
-      expect(formatPrice('123.455', 4, false)).toBe('123.45');
+      // Using Big.js for precise ROUND_HALF_UP rounding
+      // 123.445 → round to 2 decimals → 123.45 (5 rounds up)
+      expect(formatPrice('123.445', 4, false)).toBe('123.45');
+      // 123.455 → round to 2 decimals → 123.46 (5 rounds up)
+      expect(formatPrice('123.455', 4, false)).toBe('123.46');
     });
   });
 
@@ -297,10 +299,11 @@ describe('formatPrice', () => {
 
     it('should not allow decimals when integer part already has 5+ sig figs', () => {
       // BTC: szDecimals=5, maxDecimalPlaces=1
-      // 106307.5 would have 6 sig figs, not allowed since integer part already has 5+ sig figs
-      // Should round to integer
+      // 106307.5 → first round to 1 decimal → 106307.5, then integer part >= 5 digits → round to integer → 106308
       expect(formatPrice('106307.5', 5, false)).toBe('106308');
+      // 106307.4 → first round to 1 decimal → 106307.4, then integer part >= 5 digits → round to integer → 106307
       expect(formatPrice('106307.4', 5, false)).toBe('106307');
+      // 123456.7 → first round to 1 decimal → 123456.7, then integer part >= 5 digits → round to integer → 123457
       expect(formatPrice('123456.7', 5, false)).toBe('123457');
     });
 

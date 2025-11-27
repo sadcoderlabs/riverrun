@@ -43,31 +43,34 @@ export type TelemetryEventName =
   // Navigation
   | 'screen_viewed'
   // Trading - Order
-  | 'order_form_opened'
-  | 'order_submitted'
-  | 'order_confirmed'
+  | 'order_placed'
   | 'order_failed'
   | 'order_cancelled'
-  // Trading - Position
-  | 'position_opened'
-  | 'position_closed'
-  | 'position_modified'
+  | 'close_order_placed'
+  | 'tpsl_order_placed'
   // Trading - Market
   | 'market_selected'
+  | 'market_favorited'
   | 'leverage_changed'
   // Agent
   | 'agent_approved'
   | 'agent_approval_failed'
+  | 'agent_revoked'
   // Builder Fee
-  | 'builder_fee_set'
+  | 'builder_fee_approved'
   | 'builder_fee_failed'
+  | 'builder_fee_revoked'
   // Referral
   | 'referral_code_applied'
   | 'referral_code_failed'
-  // Bridge
-  | 'bridge_initiated'
-  | 'bridge_completed'
-  | 'bridge_failed';
+  // Deposit
+  | 'deposit_initiated'
+  | 'deposit_completed'
+  | 'deposit_failed'
+  // Withdraw
+  | 'withdraw_initiated'
+  | 'withdraw_completed'
+  | 'withdraw_failed';
 
 /**
  * Event properties for each event type
@@ -94,49 +97,42 @@ export interface TelemetryEventProps {
   };
 
   // Trading - Order
-  order_form_opened: {
+  order_placed: {
     market: string;
-    side: 'buy' | 'sell';
-  };
-  order_submitted: {
-    market: string;
-    side: 'buy' | 'sell';
-    orderType: 'limit' | 'market';
-    leverage: number;
+    side: 'long' | 'short';
+    orderType: 'market' | 'limit';
     size: number;
-    reduceOnly?: boolean;
-  };
-  order_confirmed: {
-    market: string;
-    orderId: string;
-    side: 'buy' | 'sell';
+    leverage: number;
+    price?: number;
+    reduceOnly: boolean;
+    hasTpSl: boolean;
   };
   order_failed: {
     market: string;
-    side: 'buy' | 'sell';
+    side: 'long' | 'short';
+    orderType: 'market' | 'limit';
     errorCode?: string;
     reason?: string;
   };
   order_cancelled: {
     market: string;
-    orderId: string;
+    orderId: number;
+    isBatch: boolean;
   };
-
-  // Trading - Position
-  position_opened: {
+  close_order_placed: {
     market: string;
     side: 'long' | 'short';
+    closeType: 'market' | 'limit';
     size: number;
-    leverage: number;
+    price?: number;
   };
-  position_closed: {
+  tpsl_order_placed: {
     market: string;
     side: 'long' | 'short';
-    pnl?: number;
-  };
-  position_modified: {
-    market: string;
-    action: 'tp_sl_set' | 'leverage_changed' | 'margin_added';
+    hasTp: boolean;
+    hasSl: boolean;
+    tpTriggerPrice?: number;
+    slTriggerPrice?: number;
   };
 
   // Trading - Market
@@ -144,27 +140,37 @@ export interface TelemetryEventProps {
     market: string;
     fromMarket?: string;
   };
+  market_favorited: {
+    market: string;
+    isFavorite: boolean;
+  };
   leverage_changed: {
     market: string;
     fromLeverage: number;
     toLeverage: number;
+    marginMode: 'cross' | 'isolated';
   };
 
   // Agent
   agent_approved: {
     agentAddress: string;
+    isAutomatic: boolean;
   };
   agent_approval_failed: {
     reason?: string;
   };
+  agent_revoked: {
+    agentName: string;
+  };
 
   // Builder Fee
-  builder_fee_set: {
+  builder_fee_approved: {
     builderAddress: string;
   };
   builder_fee_failed: {
     reason?: string;
   };
+  builder_fee_revoked: Record<string, never>;
 
   // Referral
   referral_code_applied: {
@@ -175,17 +181,28 @@ export interface TelemetryEventProps {
     reason?: string;
   };
 
-  // Bridge
-  bridge_initiated: {
+  // Deposit
+  deposit_initiated: {
     amount: number;
-    fromChain: string;
-    toChain: string;
   };
-  bridge_completed: {
+  deposit_completed: {
     amount: number;
     txHash: string;
   };
-  bridge_failed: {
+  deposit_failed: {
+    amount: number;
+    reason?: string;
+  };
+
+  // Withdraw
+  withdraw_initiated: {
+    amount: number;
+    destinationAddress: string;
+  };
+  withdraw_completed: {
+    amount: number;
+  };
+  withdraw_failed: {
     amount: number;
     reason?: string;
   };
@@ -197,18 +214,20 @@ export interface TelemetryEventProps {
 
 /**
  * All screen names in the app
+ * Matches actual routes in app/ directory
  */
 export type ScreenName =
   | 'Home'
   | 'Trade'
   | 'Chart'
   | 'Settings'
-  | 'Deposit'
+  | 'DepositCheckpoint'
+  | 'DepositBridge'
   | 'Withdraw'
   | 'AgentStatus'
   | 'BuilderFeeStatus'
   | 'ReferralStatus'
-  | 'Telemetry';
+  | 'Login';
 
 /**
  * Properties for each screen
@@ -217,20 +236,19 @@ export interface ScreenProps {
   Home: undefined;
   Trade: {
     market?: string;
-    tab?: 'order' | 'positions' | 'orders' | 'history';
+    tab?: 'positions' | 'orders' | 'history';
   };
   Chart: {
     market: string;
   };
   Settings: undefined;
-  Deposit: {
-    method?: 'bridge' | 'transfer';
-  };
+  DepositCheckpoint: undefined;
+  DepositBridge: undefined;
   Withdraw: undefined;
   AgentStatus: undefined;
   BuilderFeeStatus: undefined;
   ReferralStatus: undefined;
-  Telemetry: undefined;
+  Login: undefined;
 }
 
 // ============================================================================

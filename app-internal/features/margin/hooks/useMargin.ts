@@ -10,6 +10,7 @@
  * - Get market data
  * - Call SetMarginLeverageUseCase
  * - Manage UI loading state
+ * - Track telemetry events for leverage changes
  */
 
 import { useCallback, useState } from 'react';
@@ -57,6 +58,7 @@ export interface UseMarginResult {
 export function useMargin(): UseMarginResult {
   const setMarginLeverageUseCase = useContainer(c => c.setMarginLeverageUseCase);
   const tryGetAgentWallet = useContainer(c => c.tryGetAgentWalletUseCase);
+  const telemetryService = useContainer(c => c.telemetryService);
 
   // UI state only (for setMarginLeverage operation)
   const [isUpdating, setIsUpdating] = useState(false);
@@ -72,7 +74,7 @@ export function useMargin(): UseMarginResult {
         throw new Error('Margin leverage data is not loaded');
       }
 
-      const { minLeverage, maxLeverage } = currentMarginLeverage;
+      const { minLeverage, maxLeverage, leverage: fromLeverage } = currentMarginLeverage;
       if (newLeverage < minLeverage || newLeverage > maxLeverage) {
         throw new Error(`Leverage must be between ${minLeverage} and ${maxLeverage}`);
       }
@@ -110,13 +112,21 @@ export function useMargin(): UseMarginResult {
           marginMode,
         });
 
+        // Track leverage change
+        telemetryService.trackEvent('leverage_changed', {
+          market: selectedMarket.coin,
+          fromLeverage,
+          toLeverage: newLeverage,
+          marginMode: marginMode as 'cross' | 'isolated',
+        });
+
         // WebSocket will automatically update marginStore with new values
         // No need to manually update the store
       } finally {
         setIsUpdating(false);
       }
     },
-    [setMarginLeverageUseCase, tryGetAgentWallet],
+    [setMarginLeverageUseCase, tryGetAgentWallet, telemetryService],
   );
 
   // Query operation: Get margin/leverage (read from store)

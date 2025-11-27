@@ -13,8 +13,8 @@ import {
 import { AppCompositionProvider, useWallet } from '@/app-internal';
 import { useAppLifecycle } from '@/app-internal/components/shared/hooks/useAppLifecycle';
 import { useThemePreference } from '@/app-internal/components/shared/theme/useThemePreference';
-import { useAutoUpdate } from '@/app-internal/features/version/hooks/useAutoUpdate';
 import { useCustomerSupportWalletSync } from '@/app-internal/features/customerSupport';
+import { useAutoUpdate } from '@/app-internal/features/version/hooks/useAutoUpdate';
 import { subscriptionManager } from '@/infra/hyperliquid/subscription';
 import { queryClient } from '@/infra/reactQuery';
 import { initializeSegment } from '@/infra/segment/segmentConfig';
@@ -189,7 +189,7 @@ export default function RootLayout() {
                     </ActionSheetProvider>
                     <Toaster />
                   </GestureHandlerRootView>
-                  <PrivyElements />
+                  <PrivyElements config={{ appearance: { colorScheme: 'dark' } }} />
                 </TamaguiProvider>
                 <AppKit />
               </AppCompositionProvider>

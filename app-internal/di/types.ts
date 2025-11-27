@@ -16,6 +16,7 @@ import type { GetBuilderFeeStatusUseCase } from '@/contexts/builderFee/applicati
 import type { ApproveBuilderFeeUseCase } from '@/contexts/builderFee/application/usecases/ApproveBuilderFeeUseCase';
 import type { RevokeBuilderFeeUseCase } from '@/contexts/builderFee/application/usecases/RevokeBuilderFeeUseCase';
 import type { EnsureBuilderFeeUseCase } from '@/contexts/builderFee/application/usecases/EnsureBuilderFeeUseCase';
+import type { GetUserFeesUseCase } from '@/contexts/builderFee/application/usecases/GetUserFeesUseCase';
 
 // BuilderFee Ports
 import type { BuilderFeeExchangePort } from '@/contexts/builderFee/application/ports/BuilderFeeExchangePort';
@@ -93,6 +94,9 @@ export interface AppCradle {
 
   // BuilderFee Context - Composition UseCase
   ensureBuilderFeeUseCase: EnsureBuilderFeeUseCase;
+
+  // BuilderFee Context - User Fee Rates
+  getUserFeesUseCase: GetUserFeesUseCase;
 
   // Referral Context - Out Ports
   referralExchangePort: ReferralExchangePort;

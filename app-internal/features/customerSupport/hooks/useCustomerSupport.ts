@@ -23,6 +23,7 @@
 
 import { useCallback } from 'react';
 
+import { useTelemetry } from '@/app-internal/features/telemetry/hooks/useTelemetry';
 import {
   openIntercomMessenger,
   loginIntercomUser,
@@ -55,6 +56,8 @@ export interface UseCustomerSupportResult {
  * Hook for customer support operations
  */
 export function useCustomerSupport(): UseCustomerSupportResult {
+  const { captureWarning } = useTelemetry();
+
   /**
    * Open the Intercom messenger
    * Initializes Intercom on first call (lazy initialization)
@@ -64,21 +67,33 @@ export function useCustomerSupport(): UseCustomerSupportResult {
       await openIntercomMessenger();
     } catch (error) {
       console.error('[useCustomerSupport] Failed to open support:', error);
+      captureWarning('Failed to open customer support', {
+        component: 'useCustomerSupport',
+        action: 'openSupport',
+      });
       throw error;
     }
-  }, []);
+  }, [captureWarning]);
 
   /**
    * Login user in Intercom
    */
-  const loginUser = useCallback(async (userId: string) => {
-    try {
-      await loginIntercomUser(userId);
-    } catch (error) {
-      console.error('[useCustomerSupport] Failed to login user:', error);
-      throw error;
-    }
-  }, []);
+  const loginUser = useCallback(
+    async (userId: string) => {
+      try {
+        await loginIntercomUser(userId);
+      } catch (error) {
+        console.error('[useCustomerSupport] Failed to login user:', error);
+        captureWarning('Failed to login user in customer support', {
+          component: 'useCustomerSupport',
+          action: 'loginUser',
+          extra: { userId },
+        });
+        throw error;
+      }
+    },
+    [captureWarning],
+  );
 
   /**
    * Logout from Intercom
@@ -88,9 +103,13 @@ export function useCustomerSupport(): UseCustomerSupportResult {
       await logoutIntercom();
     } catch (error) {
       console.error('[useCustomerSupport] Failed to logout:', error);
+      captureWarning('Failed to logout from customer support', {
+        component: 'useCustomerSupport',
+        action: 'logout',
+      });
       throw error;
     }
-  }, []);
+  }, [captureWarning]);
 
   return {
     openSupport,

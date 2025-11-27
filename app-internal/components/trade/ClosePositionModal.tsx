@@ -1,13 +1,14 @@
-import { useEffect, useState } from 'react';
-import { Modal, Pressable, StyleSheet } from 'react-native';
-import { Button, Slider, Text, XStack, YStack } from 'tamagui';
-import * as hl from '@nktkas/hyperliquid';
-import { Input } from '@/app-internal/components/global/Input';
 import { useOrder } from '@/app-internal';
-import { formatSize } from '@/infra/hyperliquid/format/formatSize';
-import { formatPrice } from '@/infra/hyperliquid/format/formatPrice';
-import { formatValue } from '@/infra/hyperliquid/format/formatValue';
+import { Button } from '@/app-internal/components/global/Button';
+import { Input } from '@/app-internal/components/global/Input';
 import * as infoClient from '@/infra/hyperliquid/client/infoClient';
+import { formatPrice } from '@/infra/hyperliquid/format/formatPrice';
+import { formatSize } from '@/infra/hyperliquid/format/formatSize';
+import { formatValue } from '@/infra/hyperliquid/format/formatValue';
+import * as hl from '@nktkas/hyperliquid';
+import { useEffect, useState } from 'react';
+import { ScrollView } from 'react-native';
+import { Sheet, Slider, Text, XStack, YStack } from 'tamagui';
 
 type Position = hl.ClearinghouseStateResponse['assetPositions'][number]['position'];
 
@@ -74,30 +75,49 @@ export default function ClosePositionModal({
   // Show loading if szDecimals not yet loaded
   if (szDecimals === undefined) {
     return (
-      <Modal
-        visible={open}
-        transparent
-        animationType="slide"
-        onRequestClose={() => onOpenChange(false)}
-        statusBarTranslucent
+      <Sheet
+        modal
+        native
+        open={open}
+        onOpenChange={() => onOpenChange(false)}
+        position={0}
+        dismissOnSnapToBottom
+        dismissOnOverlayPress
       >
-        <Pressable style={styles.overlay} onPress={() => onOpenChange(false)}>
-          <Pressable style={styles.contentContainer} onPress={e => e.stopPropagation()}>
-            <YStack
-              flex={1}
-              backgroundColor="$background"
-              borderTopLeftRadius="$6"
-              borderTopRightRadius="$6"
-              justifyContent="center"
-              alignItems="center"
-            >
-              <Text fontSize="$4" color="$color9">
-                Loading...
-              </Text>
-            </YStack>
-          </Pressable>
-        </Pressable>
-      </Modal>
+        <Sheet.Overlay
+          enterStyle={{ opacity: 0 }}
+          exitStyle={{ opacity: 0 }}
+          backgroundColor="rgba(0,0,0,0.7)"
+        />
+        <Sheet.Frame
+          padding="$2"
+          backgroundColor="$background"
+          borderTopLeftRadius="$6"
+          borderTopRightRadius="$6"
+        >
+          {/* Handle */}
+          <YStack
+            opacity={0.5}
+            backgroundColor="$gray9"
+            height={3}
+            width={32}
+            alignSelf="center"
+            borderRadius="$12"
+          />
+          <YStack
+            flex={1}
+            backgroundColor="$background"
+            borderTopLeftRadius="$6"
+            borderTopRightRadius="$6"
+            justifyContent="center"
+            alignItems="center"
+          >
+            <Text fontSize="$4" color="$color9">
+              Loading...
+            </Text>
+          </YStack>
+        </Sheet.Frame>
+      </Sheet>
     );
   }
 
@@ -193,46 +213,53 @@ export default function ClosePositionModal({
   })();
 
   return (
-    <Modal
-      visible={open}
-      transparent
-      animationType="slide"
-      onRequestClose={() => onOpenChange(false)}
-      statusBarTranslucent
+    <Sheet
+      modal
+      native
+      open={open}
+      onOpenChange={() => onOpenChange(false)}
+      snapPoints={[90]}
+      position={0}
+      dismissOnSnapToBottom
+      dismissOnOverlayPress
     >
-      <Pressable style={styles.overlay} onPress={() => onOpenChange(false)}>
-        <Pressable
-          style={[styles.contentContainer, orderType === 'limit' && styles.contentContainerLarge]}
-          onPress={e => e.stopPropagation()}
+      <Sheet.Overlay
+        enterStyle={{ opacity: 0 }}
+        exitStyle={{ opacity: 0 }}
+        backgroundColor="rgba(0,0,0,0.7)"
+      />
+      <Sheet.Frame
+        padding="$2"
+        backgroundColor="$background"
+        borderTopLeftRadius="$6"
+        borderTopRightRadius="$6"
+      >
+        {/* Handle */}
+        <YStack
+          opacity={0.5}
+          backgroundColor="$gray9"
+          height={3}
+          width={32}
+          marginTop="$2"
+          alignSelf="center"
+          borderRadius="$12"
+        />
+        <YStack
+          flex={1}
+          backgroundColor="$background"
+          borderTopLeftRadius="$6"
+          borderTopRightRadius="$6"
         >
-          <YStack
-            flex={1}
-            backgroundColor="$background"
-            borderTopLeftRadius="$6"
-            borderTopRightRadius="$6"
-            overflow="hidden"
+          {/* Scrollable Content */}
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ padding: 16, gap: 12 }}
           >
-            {/* Handle bar */}
-            <XStack justifyContent="center" paddingVertical="$2">
-              <YStack
-                opacity={0.5}
-                backgroundColor="$gray9"
-                height={3}
-                width={32}
-                borderRadius="$6"
-              />
-            </XStack>
-
             {/* Header */}
-            <XStack
-              justifyContent="space-between"
-              alignItems="center"
-              paddingHorizontal="$4"
-              paddingBottom="$3"
-            >
+            <XStack justifyContent="space-between" alignItems="center">
               <XStack gap="$2" alignItems="center">
-                <Text fontSize="$6" fontFamily="$interSemiBold">
-                  {position.coin}-USD
+                <Text fontSize="$4" fontWeight={500}>
+                  {position.coin}-USDC
                 </Text>
                 <YStack
                   backgroundColor={isLong ? '$green1' : '$red1'}
@@ -240,29 +267,20 @@ export default function ClosePositionModal({
                   paddingVertical="$1"
                   borderRadius="$2"
                 >
-                  <Text
-                    fontSize="$2"
-                    fontFamily="$interMedium"
-                    color={isLong ? '$green10' : '$red10'}
-                  >
-                    {position.leverage.value}X {isLong ? 'LONG' : 'SHORT'}
+                  <Text fontSize="$2" color={isLong ? '$green10' : '$red10'}>
+                    {isLong ? 'LONG' : 'SHORT'} {position.leverage.value}X
                   </Text>
                 </YStack>
               </XStack>
-              <Pressable onPress={() => onOpenChange(false)}>
-                <Text fontSize="$6" color="$color9">
-                  ✕
-                </Text>
-              </Pressable>
             </XStack>
 
             {/* Position Metrics */}
-            <XStack gap="$2" paddingHorizontal="$4" paddingBottom="$3">
+            <XStack gap="$2">
               <YStack flex={1} gap="$0.5">
                 <Text fontSize="$1" color="$color9">
                   Size
                 </Text>
-                <Text fontSize="$3" fontFamily="$interMedium">
+                <Text fontSize="$3" fontWeight={400}>
                   {formatSize(positionSize, szDecimals, true)}
                 </Text>
               </YStack>
@@ -270,7 +288,7 @@ export default function ClosePositionModal({
                 <Text fontSize="$1" color="$color9">
                   Entry
                 </Text>
-                <Text fontSize="$3" fontFamily="$interMedium">
+                <Text fontSize="$3" fontWeight={400}>
                   {formatPrice(entryPrice, szDecimals, true)}
                 </Text>
               </YStack>
@@ -278,7 +296,7 @@ export default function ClosePositionModal({
                 <Text fontSize="$1" color="$color9">
                   Mark
                 </Text>
-                <Text fontSize="$3" fontFamily="$interMedium">
+                <Text fontSize="$3" fontWeight={400}>
                   {formatPrice(markPrice, szDecimals, true)}
                 </Text>
               </YStack>
@@ -288,7 +306,7 @@ export default function ClosePositionModal({
                 </Text>
                 <Text
                   fontSize="$3"
-                  fontFamily="$interMedium"
+                  fontWeight={400}
                   color={unrealizedPnl >= 0 ? '$green10' : '$red10'}
                 >
                   {unrealizedPnl >= 0 ? '+' : ''}${formatValue(unrealizedPnl, 2)}
@@ -296,14 +314,15 @@ export default function ClosePositionModal({
               </YStack>
             </XStack>
 
-            {/* Scrollable Content */}
-            <YStack flex={1} paddingHorizontal="$4" gap="$3">
+            {/* Order Type and Inputs */}
+            <YStack gap="$3" marginTop="$6">
               {/* Order Type Tabs */}
               <XStack gap="$2">
                 <Button
                   flex={1}
                   size="$3"
-                  backgroundColor={orderType === 'market' ? '$accent9' : '$gray3'}
+                  height="$3"
+                  backgroundColor={orderType === 'market' ? '$accent9' : '$gray5'}
                   onPress={() => setOrderType('market')}
                   pressStyle={{ opacity: 0.8 }}
                 >
@@ -317,7 +336,8 @@ export default function ClosePositionModal({
                 <Button
                   flex={1}
                   size="$3"
-                  backgroundColor={orderType === 'limit' ? '$accent9' : '$gray3'}
+                  height="$3"
+                  backgroundColor={orderType === 'limit' ? '$accent9' : '$gray5'}
                   onPress={() => setOrderType('limit')}
                   pressStyle={{ opacity: 0.8 }}
                 >
@@ -342,6 +362,7 @@ export default function ClosePositionModal({
                       placeholder="0.0"
                       value={limitPrice}
                       onChangeText={setLimitPrice}
+                      backgroundColor="$gray3"
                       keyboardType="numeric"
                       returnKeyType="done"
                     />
@@ -360,7 +381,7 @@ export default function ClosePositionModal({
               )}
 
               {/* Size Input */}
-              <YStack gap="$2">
+              <YStack gap="$2" paddingVertical="$3">
                 <XStack justifyContent="space-between" alignItems="center">
                   <Input
                     flex={1}
@@ -423,9 +444,9 @@ export default function ClosePositionModal({
                       index={0}
                       circular
                       size="$1.5"
-                      backgroundColor="$accent9"
-                      borderWidth={3}
-                      borderColor="white"
+                      backgroundColor="$accent1"
+                      borderWidth={2}
+                      borderColor="$accent9"
                     />
                   </Slider>
                   <XStack gap="$1" alignItems="center">
@@ -457,8 +478,7 @@ export default function ClosePositionModal({
               <XStack
                 justifyContent="space-between"
                 alignItems="center"
-                paddingVertical="$2"
-                paddingHorizontal="$3"
+                padding="$4"
                 backgroundColor="$gray2"
                 borderRadius="$3"
               >
@@ -480,81 +500,67 @@ export default function ClosePositionModal({
                   </Text>
                 )}
               </XStack>
+            </YStack>
+          </ScrollView>
 
-              {/* Confirm Button */}
-              <Button
-                size="$4"
-                backgroundColor={isLong ? '$red9' : '$green9'}
-                disabled={!isOrderValid || isPlacingOrder}
-                opacity={!isOrderValid || isPlacingOrder ? 0.5 : 1}
-                onPress={async () => {
-                  // Validate size
-                  const sizeNum = parseFloat(assetSize);
-                  if (!assetSize || isNaN(sizeNum) || sizeNum <= 0) {
+          {/* Confirm Button - Pinned at Bottom */}
+          <YStack padding="$4" paddingTop="$3" backgroundColor="$background">
+            <Button.Filled
+              height="$5"
+              disabled={!isOrderValid || isPlacingOrder}
+              opacity={!isOrderValid || isPlacingOrder ? 0.5 : 1}
+              onPress={async () => {
+                // Validate size
+                const sizeNum = parseFloat(assetSize);
+                if (!assetSize || isNaN(sizeNum) || sizeNum <= 0) {
+                  return;
+                }
+
+                // Validate limit price for limit orders
+                if (orderType === 'limit') {
+                  const priceNum = parseFloat(limitPrice);
+                  if (!limitPrice || isNaN(priceNum) || priceNum <= 0) {
                     return;
                   }
+                }
 
-                  // Validate limit price for limit orders
-                  if (orderType === 'limit') {
-                    const priceNum = parseFloat(limitPrice);
-                    if (!limitPrice || isNaN(priceNum) || priceNum <= 0) {
-                      return;
-                    }
-                  }
+                // Place close order
+                // Determine order side: close long position = sell (Short), close short position = buy (Long)
+                const closeSide = isLong ? 'Short' : 'Long';
 
-                  // Place close order
-                  // Determine order side: close long position = sell (Short), close short position = buy (Long)
-                  const closeSide = isLong ? 'Short' : 'Long';
+                let success: boolean;
+                if (orderType === 'market') {
+                  success = await placeCloseMarketOrder({
+                    coin: position.coin,
+                    side: closeSide,
+                    size: assetSize,
+                    marketPrice: position.markPx, // Use string directly from position
+                  });
+                } else {
+                  success = await placeCloseLimitOrder({
+                    coin: position.coin,
+                    side: closeSide,
+                    size: assetSize,
+                    price: limitPrice,
+                  });
+                }
 
-                  let success: boolean;
-                  if (orderType === 'market') {
-                    success = await placeCloseMarketOrder({
-                      coin: position.coin,
-                      side: closeSide,
-                      size: assetSize,
-                      marketPrice: position.markPx, // Use string directly from position
-                    });
-                  } else {
-                    success = await placeCloseLimitOrder({
-                      coin: position.coin,
-                      side: closeSide,
-                      size: assetSize,
-                      price: limitPrice,
-                    });
-                  }
-
-                  // Close modal on success
-                  if (success) {
-                    onOpenChange(false);
-                  }
-                }}
-                pressStyle={{ opacity: 0.8 }}
-              >
-                <Text fontSize="$4" fontFamily="$interSemiBold" color="white">
-                  {isPlacingOrder
-                    ? 'Placing Order...'
-                    : `Confirm ${orderType === 'market' ? 'Market' : 'Limit'} Close`}
-                </Text>
-              </Button>
-            </YStack>
+                // Close modal on success
+                if (success) {
+                  onOpenChange(false);
+                }
+              }}
+              pressStyle={{ opacity: 0.8 }}
+            >
+              <Text fontSize="$4" color="$color1">
+                {isPlacingOrder
+                  ? 'Placing Order...'
+                  : `Confirm ${orderType === 'market' ? 'Market' : 'Limit'} Close`}
+              </Text>
+            </Button.Filled>
           </YStack>
-        </Pressable>
-      </Pressable>
-    </Modal>
+        </YStack>
+      </Sheet.Frame>
+    </Sheet>
   );
 }
-
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'flex-end',
-  },
-  contentContainer: {
-    height: '75%',
-    width: '100%',
-  },
-  contentContainerLarge: {
-    height: '80%',
-  },
-});

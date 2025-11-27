@@ -1,5 +1,5 @@
-import { MarketSelectorModal } from '@/app-internal/components/trade/MarketSelectorModal';
 import { useMarketStore } from '@/app-internal';
+import { MarketSelectorModal } from '@/app-internal/components/trade/MarketSelectorModal';
 import type { SelectedMarket } from '@/contexts/market/ports/types';
 import { CandlestickChart, Menu } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
@@ -30,7 +30,7 @@ function CoinInfoContent({ selectedMarket }: { selectedMarket: SelectedMarket })
           >
             <Menu size="$1.5" color="$color" />
             <Text fontFamily="$interSemiBold" fontSize="$4" color="$color">
-              {marketPair}
+              {marketPair.replace('-USD', '-USDC')}
             </Text>
           </XStack>
 

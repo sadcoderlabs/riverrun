@@ -12,6 +12,8 @@
  * an agent wallet (order placement, closing positions, TP/SL, etc.) will
  * automatically trigger user confirmation when needed.
  *
+ * Includes telemetry tracking for agent approval and revocation.
+ *
  * @example
  * ```tsx
  * import { useAgent } from '@/app-internal/features/agent/hooks/useAgent';
@@ -103,6 +105,7 @@ export function useAgent(): UseAgentResult {
   const getAgentStatus = useContainer(c => c.getAgentStatusUseCase);
   const approveAgent = useContainer(c => c.approveAgentUseCase);
   const revokeAgent = useContainer(c => c.revokeAgentUseCase);
+  const telemetryService = useContainer(c => c.telemetryService);
 
   // Get wallet context
   const { wallet, getSigner } = useWallet();
@@ -146,6 +149,11 @@ export function useAgent(): UseAgentResult {
       setAllAgents(status.allAgents);
     } catch (error) {
       console.error('[useAgent] Failed to load agents:', error);
+      telemetryService.captureError(error, {
+        component: 'useAgent',
+        action: 'loadAllAgents',
+        extra: { walletAddress: wallet?.address },
+      });
       setAgentAddress(undefined);
       setAllAgents([]);
     } finally {
@@ -185,18 +193,34 @@ export function useAgent(): UseAgentResult {
       });
 
       if (success) {
+        // Track agent approval
+        telemetryService.trackEvent('agent_approved', {
+          agentAddress: status.agentAddress,
+          isAutomatic: false,
+        });
+
         // Refresh agents after approval
         await loadAllAgents();
       }
 
       return success;
     } catch (error) {
+      // Track agent approval failure
+      telemetryService.trackEvent('agent_approval_failed', {
+        reason: error instanceof Error ? error.message : String(error),
+      });
+      telemetryService.captureError(error, {
+        component: 'useAgent',
+        action: 'approve',
+        extra: { walletAddress: wallet?.address },
+      });
+
       console.error('[useAgent] Failed to approve agent:', error);
       return false;
     } finally {
       setIsLoading(false);
     }
-  }, [wallet, getSigner, getAgentStatus, approveAgent, loadAllAgents]);
+  }, [wallet, getSigner, getAgentStatus, approveAgent, loadAllAgents, telemetryService]);
 
   /**
    * Revoke an agent
@@ -218,18 +242,28 @@ export function useAgent(): UseAgentResult {
           masterAddress: wallet.address,
         });
 
+        // Track agent revocation
+        telemetryService.trackEvent('agent_revoked', {
+          agentName,
+        });
+
         // Refresh agents after revocation
         await loadAllAgents();
 
         return true;
       } catch (error) {
         console.error('[useAgent] Failed to revoke agent:', error);
+        telemetryService.captureError(error, {
+          component: 'useAgent',
+          action: 'revoke',
+          extra: { walletAddress: wallet?.address, agentName },
+        });
         return false;
       } finally {
         setIsLoading(false);
       }
     },
-    [wallet, getSigner, revokeAgent, loadAllAgents],
+    [wallet, getSigner, revokeAgent, loadAllAgents, telemetryService],
   );
 
   return {

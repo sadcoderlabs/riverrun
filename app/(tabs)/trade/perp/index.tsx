@@ -1,3 +1,4 @@
+import { useMarketStore, useScreenTracking } from '@/app-internal';
 import { PerpTradePanel } from '@/app-internal/components/trade/PerpTradePanel';
 import { YStack } from 'tamagui';
 
@@ -9,6 +10,9 @@ import { YStack } from 'tamagui';
  * to initialize the store, then market changes only update the store (no URL sync).
  */
 export default function PerpTradeIndex() {
+  const selectedMarket = useMarketStore(state => state.selectedMarket);
+  useScreenTracking('Trade', { market: selectedMarket?.coin });
+
   return (
     <YStack backgroundColor="$gray3">
       {/* PERP Trade Panel - includes Order Book and Place Order UI */}

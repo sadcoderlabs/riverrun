@@ -10,7 +10,7 @@
  * - MarketPort: Get market metadata
  */
 
-import { roundPrice } from '@/app-internal/components/trade/priceUtils';
+import { roundOrderPrice } from '@/infra/hyperliquid/format/roundOrderPrice';
 import type { TryGetAgentWalletUseCase } from '@/contexts/agent/application/usecases/TryGetAgentWalletUseCase';
 import { getBuilderParam } from '@/contexts/builderFee/config';
 import type { EnsureBuilderFeeUseCase } from '@/contexts/builderFee/application/usecases/EnsureBuilderFeeUseCase';
@@ -71,7 +71,7 @@ export class PlaceCloseMarketOrderUseCase {
       const extremePrice = isLong
         ? marketPriceNum * 1.05 // Buy: 5% above market
         : marketPriceNum * 0.95; // Sell: 5% below market
-      const price = roundPrice(extremePrice, market.szDecimals, false);
+      const price = roundOrderPrice(extremePrice, market.szDecimals);
 
       // 7. Build order parameters
       const orderParams = {

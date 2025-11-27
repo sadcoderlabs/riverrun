@@ -13,6 +13,7 @@
 
 import { useEffect, useRef } from 'react';
 import { useWallet } from '../../wallet/hooks/useWallet';
+import { useTelemetry } from '../../telemetry/hooks/useTelemetry';
 import { useCustomerSupport } from './useCustomerSupport';
 
 /**
@@ -43,6 +44,7 @@ export function useCustomerSupportWalletSync(): void {
 
   // Get customer support operations
   const { loginUser, logout } = useCustomerSupport();
+  const { captureWarning } = useTelemetry();
 
   // Track previous wallet address to detect changes
   const prevAddressRef = useRef<string | undefined>(undefined);
@@ -70,6 +72,11 @@ export function useCustomerSupportWalletSync(): void {
         })
         .catch(error => {
           console.error('[useCustomerSupportWalletSync] Failed to switch wallet:', error);
+          captureWarning('Failed to switch wallet in customer support', {
+            component: 'useCustomerSupportWalletSync',
+            action: 'switchWallet',
+            extra: { previousAddress, currentAddress },
+          });
         });
     }
     // Scenario 2: User connected first wallet (no previous wallet)
@@ -78,6 +85,11 @@ export function useCustomerSupportWalletSync(): void {
 
       void loginUser(currentAddress).catch(error => {
         console.error('[useCustomerSupportWalletSync] Failed to login user:', error);
+        captureWarning('Failed to login user in customer support', {
+          component: 'useCustomerSupportWalletSync',
+          action: 'loginUser',
+          extra: { currentAddress },
+        });
       });
     }
     // Scenario 3: User disconnected wallet
@@ -86,10 +98,15 @@ export function useCustomerSupportWalletSync(): void {
 
       void logout().catch(error => {
         console.error('[useCustomerSupportWalletSync] Failed to logout:', error);
+        captureWarning('Failed to logout from customer support', {
+          component: 'useCustomerSupportWalletSync',
+          action: 'logout',
+          extra: { previousAddress },
+        });
       });
     }
 
     // Update ref for next comparison
     prevAddressRef.current = currentAddress;
-  }, [activeWallet, loginUser, logout]);
+  }, [activeWallet, loginUser, logout, captureWarning]);
 }

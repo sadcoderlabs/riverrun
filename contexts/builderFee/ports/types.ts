@@ -58,3 +58,44 @@ export interface BuilderFeeStatus {
    */
   isApproved: boolean;
 }
+
+/**
+ * User's effective fee rates (includes discounts + builder fee)
+ *
+ * All percentage values are in human-readable format (e.g., 0.0682 means 0.0682%)
+ */
+export interface UserFeeRates {
+  /**
+   * Effective taker fee rate as percentage (e.g., 0.0682 = 0.0682%)
+   * This is the final rate user pays, including discounts and builder fee
+   */
+  takerFeePercent: number;
+
+  /**
+   * Effective maker fee rate as percentage (e.g., 0.0394 = 0.0394%)
+   * This is the final rate user pays, including discounts and builder fee
+   */
+  makerFeePercent: number;
+
+  /**
+   * Base taker rate before discounts and builder fee (percentage)
+   * Used to show the original rate with strikethrough when user has discounts
+   */
+  baseTakerPercent: number;
+
+  /**
+   * Base maker rate before discounts and builder fee (percentage)
+   * Used to show the original rate with strikethrough when user has discounts
+   */
+  baseMakerPercent: number;
+
+  /**
+   * Whether user has an active referral discount
+   */
+  hasReferralDiscount: boolean;
+
+  /**
+   * Whether user has an active staking discount
+   */
+  hasStakingDiscount: boolean;
+}

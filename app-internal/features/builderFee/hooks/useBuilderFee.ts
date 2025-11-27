@@ -6,6 +6,8 @@ import { useWallet } from '@/app-internal/features/wallet/hooks/useWallet';
 import type { BuilderFeeStatus } from '@/contexts/builderFee/ports/types';
 import { BUILDER_CONFIG } from '../../../../contexts/builderFee/config';
 
+// Telemetry tracking for builder fee operations
+
 export interface UseBuilderFeeResult {
   /**
    * Maximum approved fee in 0.1bps units
@@ -110,6 +112,7 @@ export function useBuilderFee(): UseBuilderFeeResult {
   const getStatusUseCase = useContainer(c => c.getBuilderFeeStatusUseCase);
   const approveUseCase = useContainer(c => c.approveBuilderFeeUseCase);
   const revokeUseCase = useContainer(c => c.revokeBuilderFeeUseCase);
+  const telemetryService = useContainer(c => c.telemetryService);
 
   // Wallet access (for getting wallet address and signer)
   const { wallet, getSigner } = useWallet();
@@ -166,14 +169,34 @@ export function useBuilderFee(): UseBuilderFeeResult {
       const success = await approveUseCase.execute({ signer });
 
       if (!success) {
+        // Track builder fee approval failure
+        telemetryService.trackEvent('builder_fee_failed', {
+          reason: 'User cancelled or not confirmed',
+        });
+
         Alert.alert('Approval Failed', 'Builder fee approval was not confirmed. Please try again.');
         return false;
       }
+
+      // Track builder fee approval success
+      telemetryService.trackEvent('builder_fee_approved', {
+        builderAddress: BUILDER_CONFIG.address,
+      });
 
       // UI layer responsibility: reload status to update state
       await loadBuilderFeeStatus();
       return true;
     } catch (error) {
+      // Track builder fee approval failure
+      telemetryService.trackEvent('builder_fee_failed', {
+        reason: error instanceof Error ? error.message : String(error),
+      });
+      telemetryService.captureError(error, {
+        component: 'useBuilderFee',
+        action: 'executeApproval',
+        extra: { walletAddress: wallet?.address },
+      });
+
       console.error('Failed to approve builder fee:', error);
       Alert.alert(
         'Approval Failed',
@@ -183,7 +206,7 @@ export function useBuilderFee(): UseBuilderFeeResult {
     } finally {
       setIsLoading(false);
     }
-  }, [approveUseCase, loadBuilderFeeStatus, wallet, getSigner]);
+  }, [approveUseCase, loadBuilderFeeStatus, wallet, getSigner, telemetryService]);
 
   /**
    * Approve builder fee
@@ -191,11 +214,11 @@ export function useBuilderFee(): UseBuilderFeeResult {
    */
   const approveBuilderFee = useCallback(async (): Promise<boolean> => {
     return new Promise<boolean>(resolve => {
-      const feePercentage = (BUILDER_CONFIG.feeRate / 1000).toFixed(3);
+      // const feePercentage = (BUILDER_CONFIG.feeRate / 1000).toFixed(3);
 
       Alert.alert(
         'Approve Builder Fee',
-        `This will approve the app to collect up to ${BUILDER_CONFIG.maxFeeRate} builder fee on trades. The actual fee charged is ${feePercentage}%. You will be redirected to your wallet app to sign the approval.`,
+        `This allows the app to collect builder fees on your trades, with a maximum cap of ${BUILDER_CONFIG.maxFeeRate}. All fees are displayed before you confirm any trade.\n\nYou will be redirected to your wallet app to sign the approval.`,
         [
           {
             text: 'Cancel',
@@ -250,6 +273,11 @@ export function useBuilderFee(): UseBuilderFeeResult {
       return success;
     } catch (error) {
       console.error('Failed to ensure builder fee approval:', error);
+      telemetryService.captureError(error, {
+        component: 'useBuilderFee',
+        action: 'ensureBuilderFeeApproval',
+        extra: { walletAddress: wallet?.address },
+      });
       Alert.alert(
         'Error',
         error instanceof Error ? error.message : 'Failed to check builder fee approval',
@@ -258,7 +286,7 @@ export function useBuilderFee(): UseBuilderFeeResult {
     } finally {
       setIsLoading(false);
     }
-  }, [getStatusUseCase, approveUseCase, loadBuilderFeeStatus, wallet, getSigner]);
+  }, [getStatusUseCase, approveUseCase, loadBuilderFeeStatus, wallet, getSigner, telemetryService]);
 
   /**
    * Revoke builder fee
@@ -269,7 +297,7 @@ export function useBuilderFee(): UseBuilderFeeResult {
     return new Promise<boolean>(resolve => {
       Alert.alert(
         'Revoke Builder Fee',
-        'This will set the maximum builder fee to 0%. You will need to approve builder fee again for future trading.',
+        'You will need to approve again before trading. Are you sure you want to revoke?',
         [
           {
             text: 'Cancel',
@@ -289,6 +317,9 @@ export function useBuilderFee(): UseBuilderFeeResult {
                 // Execute revocation on-chain
                 await revokeUseCase.execute({ signer });
 
+                // Track builder fee revocation
+                telemetryService.trackEvent('builder_fee_revoked', {});
+
                 // Reload status to update UI state (UI layer responsibility)
                 await loadBuilderFeeStatus();
 
@@ -296,6 +327,11 @@ export function useBuilderFee(): UseBuilderFeeResult {
                 resolve(true);
               } catch (error) {
                 console.error('Failed to revoke builder fee:', error);
+                telemetryService.captureError(error, {
+                  component: 'useBuilderFee',
+                  action: 'revokeBuilderFee',
+                  extra: { walletAddress: wallet?.address },
+                });
                 Alert.alert(
                   'Error',
                   error instanceof Error ? error.message : 'Failed to revoke builder fee',
@@ -309,7 +345,7 @@ export function useBuilderFee(): UseBuilderFeeResult {
         ],
       );
     });
-  }, [revokeUseCase, loadBuilderFeeStatus, getSigner]);
+  }, [revokeUseCase, loadBuilderFeeStatus, getSigner, telemetryService, wallet]);
 
   return {
     // State

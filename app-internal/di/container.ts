@@ -33,6 +33,7 @@ import { GetBuilderFeeStatusUseCase } from '@/contexts/builderFee/application/us
 import { ApproveBuilderFeeUseCase } from '@/contexts/builderFee/application/usecases/ApproveBuilderFeeUseCase';
 import { RevokeBuilderFeeUseCase } from '@/contexts/builderFee/application/usecases/RevokeBuilderFeeUseCase';
 import { EnsureBuilderFeeUseCase } from '@/contexts/builderFee/application/usecases/EnsureBuilderFeeUseCase';
+import { GetUserFeesUseCase } from '@/contexts/builderFee/application/usecases/GetUserFeesUseCase';
 
 // Referral UseCases
 import { GetReferralStatusUseCase } from '@/contexts/referral/application/usecases/GetReferralStatusUseCase';
@@ -186,6 +187,11 @@ export function createAppContainer(options: CreateContainerOptions): AppContaine
         return new EnsureBuilderFeeUseCase(getBuilderFeeStatusUseCase, approveBuilderFeeUseCase);
       },
     ).singleton(),
+
+    // GetUserFeesUseCase: Query user fee rates with discounts
+    getUserFeesUseCase: asFunction(({ builderFeeExchangePort }) => {
+      return new GetUserFeesUseCase(builderFeeExchangePort);
+    }).singleton(),
   });
 
   // ==========================================================================
@@ -221,8 +227,8 @@ export function createAppContainer(options: CreateContainerOptions): AppContaine
 
   container.register({
     // ArbitrumBridgePort: Implemented by ArbitrumBridgeAdapter
-    arbitrumBridgePort: asFunction(() => {
-      return new ArbitrumBridgeAdapter();
+    arbitrumBridgePort: asFunction(({ telemetryService }) => {
+      return new ArbitrumBridgeAdapter(telemetryService);
     }).singleton(),
 
     // HyperliquidBridgePort: Implemented by HyperliquidGateway directly
@@ -379,6 +385,7 @@ export function createAppContainer(options: CreateContainerOptions): AppContaine
         ensureBuilderFeeUseCase,
         marketService,
         walletService,
+        telemetryService,
       }) => {
         return new PlaceOrderUseCase(
           orderExchangePort,
@@ -386,6 +393,7 @@ export function createAppContainer(options: CreateContainerOptions): AppContaine
           ensureBuilderFeeUseCase,
           marketService,
           walletService,
+          telemetryService,
         );
       },
     ).singleton(),

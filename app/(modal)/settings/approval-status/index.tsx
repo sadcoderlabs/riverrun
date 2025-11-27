@@ -1,9 +1,9 @@
-import { useReferral, useReferralHintsStore } from '@/app-internal';
+import { useReferral, useReferralHintsStore, useScreenTracking } from '@/app-internal';
 import { CustomHeader } from '@/app-internal/components/global';
 import { ListButton, ListItem } from '@/app-internal/components/global/ListItem';
 import { ListSection } from '@/app-internal/components/global/ListSection';
 import { useCallback, useEffect, useState } from 'react';
-import { RefreshControl } from 'react-native';
+import { RefreshControl, Switch } from 'react-native';
 import { PortalProvider, ScrollView, Spinner, Text, View, YStack } from 'tamagui';
 
 /**
@@ -15,6 +15,8 @@ function shortenAddress(address: string | undefined): string {
 }
 
 export default function ApprovalStatus() {
+  useScreenTracking('ReferralStatus');
+
   // Referral state and operations
   const {
     referralInfo,
@@ -93,7 +95,7 @@ export default function ApprovalStatus() {
           ) : (
             <YStack backgroundColor="$gray3">
               {/* Referral Section */}
-              <ListSection label="Referral">
+              <ListSection>
                 <ListItem
                   title="Referred By"
                   text={referralInfo.code || 'None'}
@@ -107,6 +109,13 @@ export default function ApprovalStatus() {
                 )}
                 {!hasReferrer && (
                   <>
+                    <ListItem
+                      title="Hide Reminder"
+                      iconAfter={
+                        <Switch value={dontHintReferral} onValueChange={setDontHintReferral} />
+                      }
+                      onPress={() => setDontHintReferral(!dontHintReferral)}
+                    />
                     <ListButton
                       justifyContent="center"
                       onPress={handleSetReferrer}
@@ -114,11 +123,6 @@ export default function ApprovalStatus() {
                     >
                       {isReferralLoading ? 'Setting...' : 'Get 4% Fee Discount'}
                     </ListButton>
-                    <ListItem
-                      title="Don't hint me when trading"
-                      isChecked={dontHintReferral}
-                      onPress={() => setDontHintReferral(!dontHintReferral)}
-                    />
                   </>
                 )}
               </ListSection>

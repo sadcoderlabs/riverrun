@@ -1,5 +1,6 @@
 import { Input } from '@/app-internal/components/global/Input';
 import { OrderSizeInput } from '@/app-internal/components/trade/OrderSizeInput';
+import { roundOrderPrice } from '@/infra/hyperliquid/format/roundOrderPrice';
 import { Text, XStack, YStack } from 'tamagui';
 
 /**
@@ -79,7 +80,7 @@ export function LimitOrderForm({
             fontFamily="$interRegular"
             fontSize="$2"
             color="$accent9"
-            onPress={() => onLimitPriceChange(priceForMidButton.toString())}
+            onPress={() => onLimitPriceChange(roundOrderPrice(priceForMidButton, szDecimals))}
             pressStyle={{ opacity: 0.7 }}
           >
             Mid

@@ -25,6 +25,7 @@ import {
   type SubscriptionHandle,
 } from '@/infra/hyperliquid/hyperliquidGateway';
 import type { MarginLeverage } from '@/contexts/margin/ports/types';
+import type { TelemetryPort } from '@/contexts/telemetry/ports/telemetryPort';
 
 // ============================================================================
 // Data Processing Functions (Testable)
@@ -65,7 +66,7 @@ export function extractMarginData(
  * }
  * ```
  */
-export function useMarginSubscription() {
+export function useMarginSubscription(telemetryService: TelemetryPort) {
   // Get active wallet address from React Context
   const { address: walletAddress } = useWallet();
   const selectedMarket = useStore(marketStore, state => state.selectedMarket);
@@ -104,6 +105,11 @@ export function useMarginSubscription() {
                 useMarginStore.getState().setMarginLeverage(marginData);
               } catch (error) {
                 console.error('[useMarginSubscription] Failed to process margin data:', error);
+                telemetryService.captureError(error, {
+                  component: 'useMarginSubscription',
+                  action: 'processMarginData',
+                  extra: { walletAddress, coin },
+                });
                 useMarginStore
                   .getState()
                   .setError(error instanceof Error ? error : new Error(String(error)));
@@ -113,6 +119,11 @@ export function useMarginSubscription() {
         );
       } catch (error) {
         console.error('[useMarginSubscription] Failed to start subscription:', error);
+        telemetryService.captureError(error, {
+          component: 'useMarginSubscription',
+          action: 'startSubscription',
+          extra: { walletAddress, coin },
+        });
         if (!isCancelled) {
           useMarginStore
             .getState()
@@ -127,5 +138,5 @@ export function useMarginSubscription() {
       subscription?.unsubscribe();
       useMarginStore.getState().clear();
     };
-  }, [walletAddress, coin, gateway]);
+  }, [walletAddress, coin, gateway, telemetryService]);
 }

@@ -28,6 +28,9 @@ import { useOrderSubscription } from '../features/order/hooks/useOrderSubscripti
 import { usePositionSubscription } from '../features/position/hooks/usePositionSubscription';
 import { useMarginSubscription } from '../features/margin/hooks/useMarginSubscription';
 
+// Telemetry wallet sync (tracks wallet connect/disconnect/switch events)
+import { useTelemetryWalletSync } from '../features/telemetry/hooks/useTelemetryWalletSync';
+
 // ============================================================================
 // Context Definition
 // ============================================================================
@@ -106,19 +109,27 @@ export function AppServicesProvider({ children }: AppServicesProviderProps) {
   // ==========================================================================
 
   const marketService = container.resolve('marketService');
+  const telemetryService = container.resolve('telemetryService');
 
   // Margin subscription (auto-manages margin/leverage WebSocket)
-  useMarginSubscription();
+  useMarginSubscription(telemetryService);
 
   // History subscription (auto-manages history fills)
-  useHistorySubscription();
+  useHistorySubscription(telemetryService);
 
   // Order subscription (auto-manages open orders)
-  useOrderSubscription();
+  useOrderSubscription(telemetryService);
 
   // Position subscription (auto-manages open positions)
   // Note: Needs MarketService for enrichment
-  usePositionSubscription(marketService);
+  usePositionSubscription(marketService, telemetryService);
+
+  // ==========================================================================
+  // Telemetry Wallet Sync
+  // ==========================================================================
+
+  // Sync wallet state changes to telemetry (identify user, track events)
+  useTelemetryWalletSync(telemetryService);
 
   // ==========================================================================
   // Provide Container

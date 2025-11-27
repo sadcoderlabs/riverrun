@@ -1,16 +1,16 @@
-import { useWallet } from '@/app-internal';
+import { useScreenTracking, useWallet } from '@/app-internal';
 import { Button } from '@/app-internal/components/global/Button';
+import { Heading } from '@/app-internal/components/global/Heading';
 import { CustomIcons } from '@/app-internal/components/global/icons/CustomIcons';
-import { useThemePreference } from '@/app-internal/components/shared/theme/useThemePreference';
+import { Text } from '@/app-internal/components/global/Text';
 import { useState } from 'react';
-import { Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { toast } from 'sonner-native';
-import { Spinner, Text, View, YStack } from 'tamagui';
+import { Spinner, View, YStack } from 'tamagui';
 
 export default function Login() {
+  useScreenTracking('Login');
   const insets = useSafeAreaInsets();
-  const { effectiveTheme } = useThemePreference();
   const { connect } = useWallet();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
@@ -83,22 +83,18 @@ export default function Login() {
           <CustomIcons.PerpgoLogo width={280} height={80} fillColor="white" />
         </YStack>
 
-        {/* Login Buttons */}
-        <YStack gap="$3" width="100%" maxWidth={400} paddingHorizontal="$4" marginTop="$4">
+        <YStack>
           {/* Tagline */}
-          <Text
-            fontFamily="$interMedium"
-            fontSize={18}
-            color="$color12"
-            textAlign="center"
-            marginTop="$0"
-            marginBottom="$3"
-          >
+          <Heading.H5 color="$color12" textAlign="center" marginTop="$0" marginBottom="$3">
             Futures Trading In Motion
-          </Text>
+          </Heading.H5>
+        </YStack>
+
+        {/* Login Buttons */}
+        <YStack gap="$3" width="100%" maxWidth={400} paddingHorizontal="$4" mt="$4">
           {/* Connect Wallet Button */}
           <Button.Filled level="lg" onPress={handleWalletConnect}>
-            Connect Wallet via Reown
+            Connect Wallet
           </Button.Filled>
 
           {/* Divider with horizontal lines */}
@@ -122,17 +118,11 @@ export default function Login() {
         </YStack>
       </YStack>
 
-      {/* Powered by logo at bottom */}
-      <YStack paddingBottom="$4" alignItems="center" width="100%" padding="$2">
-        <Image
-          source={
-            effectiveTheme === 'dark'
-              ? require('@/app-internal/assets/images/PoweredByHL-light.png')
-              : require('@/app-internal/assets/images/PoweredByHL-dark.png')
-          }
-          style={{ width: 160 }}
-          resizeMode="contain"
-        />
+      {/* User Feedback Link */}
+      <YStack paddingBottom="$4" alignItems="center" width="100%" padding="$4">
+        <Text.Footnote color="$color10" textAlign="center" textDecorationLine="underline">
+          Need another way to sign in?
+        </Text.Footnote>
       </YStack>
     </View>
   );

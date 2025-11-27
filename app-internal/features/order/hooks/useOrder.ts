@@ -5,6 +5,7 @@
  * - Loading states for UI feedback
  * - Toast notifications for success/failure
  * - Error state management
+ * - Telemetry tracking for all order operations
  *
  * For state access (orders, isLoading), use useOrderStore instead for better performance.
  */
@@ -12,6 +13,7 @@
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner-native';
 import { useContainer } from '@/app-internal/di';
+import { useMarginStore } from '@/app-internal/features/margin/hooks/useMarginStore';
 import type {
   PlaceOrderParams,
   CloseMarketOrderParams,
@@ -134,6 +136,7 @@ export function useOrder(): UseOrderResult {
   const placeCloseLimitOrderUseCase = useContainer(c => c.placeCloseLimitOrderUseCase);
   const placeTpSlOrdersUseCase = useContainer(c => c.placeTpSlOrdersUseCase);
   const cancelOrdersUseCase = useContainer(c => c.cancelOrdersUseCase);
+  const telemetryService = useContainer(c => c.telemetryService);
 
   // UI state only
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
@@ -152,16 +155,40 @@ export function useOrder(): UseOrderResult {
       setIsPlacingOrder(true);
       setError(undefined);
 
+      // Get current leverage for telemetry
+      const marginLeverage = useMarginStore.getState().marginLeverage;
+      const leverage = marginLeverage?.leverage ?? 1;
+
       try {
         const result = await placeOrderUseCase.execute(params);
 
         if (result.success) {
+          // Track successful order placement
+          telemetryService.trackEvent('order_placed', {
+            market: params.coin,
+            side: params.side.toLowerCase() as 'long' | 'short',
+            orderType: params.orderType.toLowerCase() as 'market' | 'limit',
+            size: parseFloat(params.size),
+            leverage,
+            price: params.limitPrice ? parseFloat(params.limitPrice) : params.marketPrice,
+            reduceOnly: params.reduceOnly ?? false,
+            hasTpSl: !!params.tpSl,
+          });
+
           const successMessage = buildPlaceOrderSuccessMessage(params);
           toast.success(successMessage.title, {
             description: successMessage.description,
           });
           return true;
         } else {
+          // Track failed order
+          telemetryService.trackEvent('order_failed', {
+            market: params.coin,
+            side: params.side.toLowerCase() as 'long' | 'short',
+            orderType: params.orderType.toLowerCase() as 'market' | 'limit',
+            reason: result.error,
+          });
+
           setError(result.error);
           toast.error('Order Failed', {
             description: result.error,
@@ -172,7 +199,7 @@ export function useOrder(): UseOrderResult {
         setIsPlacingOrder(false);
       }
     },
-    [placeOrderUseCase],
+    [placeOrderUseCase, telemetryService],
   );
 
   /**
@@ -187,11 +214,27 @@ export function useOrder(): UseOrderResult {
         const result = await placeCloseMarketOrderUseCase.execute(params);
 
         if (result.success) {
+          // Track successful close order
+          telemetryService.trackEvent('close_order_placed', {
+            market: params.coin,
+            side: params.side.toLowerCase() as 'long' | 'short',
+            closeType: 'market',
+            size: parseFloat(params.size),
+          });
+
           toast.success('Market Close Order Placed', {
             description: `Market close for ${params.size} ${params.coin}`,
           });
           return true;
         } else {
+          // Track failed order
+          telemetryService.trackEvent('order_failed', {
+            market: params.coin,
+            side: params.side.toLowerCase() as 'long' | 'short',
+            orderType: 'market',
+            reason: result.error,
+          });
+
           setError(result.error);
           toast.error('Market Close Order Failed', {
             description: result.error,
@@ -202,7 +245,7 @@ export function useOrder(): UseOrderResult {
         setIsPlacingOrder(false);
       }
     },
-    [placeCloseMarketOrderUseCase],
+    [placeCloseMarketOrderUseCase, telemetryService],
   );
 
   /**
@@ -217,11 +260,28 @@ export function useOrder(): UseOrderResult {
         const result = await placeCloseLimitOrderUseCase.execute(params);
 
         if (result.success) {
+          // Track successful close order
+          telemetryService.trackEvent('close_order_placed', {
+            market: params.coin,
+            side: params.side.toLowerCase() as 'long' | 'short',
+            closeType: 'limit',
+            size: parseFloat(params.size),
+            price: parseFloat(params.price),
+          });
+
           toast.success('Limit Close Order Placed', {
             description: `Limit close for ${params.size} ${params.coin} @ ${params.price}`,
           });
           return true;
         } else {
+          // Track failed order
+          telemetryService.trackEvent('order_failed', {
+            market: params.coin,
+            side: params.side.toLowerCase() as 'long' | 'short',
+            orderType: 'limit',
+            reason: result.error,
+          });
+
           setError(result.error);
           toast.error('Limit Close Order Failed', {
             description: result.error,
@@ -232,7 +292,7 @@ export function useOrder(): UseOrderResult {
         setIsPlacingOrder(false);
       }
     },
-    [placeCloseLimitOrderUseCase],
+    [placeCloseLimitOrderUseCase, telemetryService],
   );
 
   /**
@@ -247,12 +307,30 @@ export function useOrder(): UseOrderResult {
         const result = await placeTpSlOrdersUseCase.execute(params);
 
         if (result.success) {
+          // Track successful TP/SL order
+          telemetryService.trackEvent('tpsl_order_placed', {
+            market: params.coin,
+            side: params.isLong ? 'long' : 'short',
+            hasTp: !!params.tpTriggerPrice,
+            hasSl: !!params.slTriggerPrice,
+            tpTriggerPrice: params.tpTriggerPrice ? parseFloat(params.tpTriggerPrice) : undefined,
+            slTriggerPrice: params.slTriggerPrice ? parseFloat(params.slTriggerPrice) : undefined,
+          });
+
           const description = buildTpSlSuccessMessage(params);
           toast.success('TP/SL Orders Placed', {
             description,
           });
           return true;
         } else {
+          // Track failed order
+          telemetryService.trackEvent('order_failed', {
+            market: params.coin,
+            side: params.isLong ? 'long' : 'short',
+            orderType: 'limit',
+            reason: result.error,
+          });
+
           setError(result.error);
           toast.error('TP/SL Order Failed', {
             description: result.error,
@@ -263,7 +341,7 @@ export function useOrder(): UseOrderResult {
         setIsPlacingOrder(false);
       }
     },
-    [placeTpSlOrdersUseCase],
+    [placeTpSlOrdersUseCase, telemetryService],
   );
 
   // ==========================================================================
@@ -285,6 +363,13 @@ export function useOrder(): UseOrderResult {
         });
 
         if (result.success) {
+          // Track successful cancellation
+          telemetryService.trackEvent('order_cancelled', {
+            market: params.coin,
+            orderId: params.orderId,
+            isBatch: false,
+          });
+
           toast.success('Order Cancelled', {
             description: `Successfully cancelled order for ${params.coin}`,
           });
@@ -300,7 +385,7 @@ export function useOrder(): UseOrderResult {
         setIsCanceling(false);
       }
     },
-    [cancelOrdersUseCase],
+    [cancelOrdersUseCase, telemetryService],
   );
 
   /**
@@ -315,6 +400,16 @@ export function useOrder(): UseOrderResult {
         const result = await cancelOrdersUseCase.execute(params);
 
         if (result.success) {
+          // Track successful batch cancellation (track first order as representative)
+          if (params.orders.length > 0) {
+            const firstOrder = params.orders[0];
+            telemetryService.trackEvent('order_cancelled', {
+              market: firstOrder.coin,
+              orderId: firstOrder.orderId,
+              isBatch: params.orders.length > 1,
+            });
+          }
+
           toast.success('Orders Cancelled', {
             description: `Successfully cancelled ${params.orders.length} order${params.orders.length > 1 ? 's' : ''}`,
           });
@@ -330,7 +425,7 @@ export function useOrder(): UseOrderResult {
         setIsCanceling(false);
       }
     },
-    [cancelOrdersUseCase],
+    [cancelOrdersUseCase, telemetryService],
   );
 
   // ==========================================================================

@@ -115,6 +115,11 @@ export async function openIntercomMessenger(): Promise<void> {
  * Login user with user attributes in Intercom
  * Associates the current session with a user ID (typically wallet address)
  * This should be called after user authentication
+ *
+ * Note: We logout first to handle cases where:
+ * 1. App restarts but Intercom session persists
+ * 2. Previous login was not properly cleaned up
+ * This prevents "Error in loginUserWithUserAttributes" errors
  */
 export async function loginIntercomUser(userId: string): Promise<void> {
   try {
@@ -123,6 +128,14 @@ export async function loginIntercomUser(userId: string): Promise<void> {
     if (!initialized) {
       console.warn('[Intercom] Cannot login user - initialization failed');
       return;
+    }
+
+    // Logout first to clear any existing session
+    // This prevents errors when the app restarts with a persisted Intercom session
+    try {
+      await Intercom.logout();
+    } catch {
+      // Ignore logout errors - user might not be logged in
     }
 
     await Intercom.loginUserWithUserAttributes({ userId });

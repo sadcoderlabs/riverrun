@@ -1,29 +1,27 @@
 /**
  * AppCompositionProvider - Unified Composition Root
  *
- * This provider now uses a hybrid architecture:
+ * This provider uses a hybrid architecture:
  * 1. WalletCompositionProvider - Wallet management with Privy/Reown hooks (React Context)
- * 2. TelemetryCompositionProvider - Telemetry initialization (React Context, depends on Wallet)
- * 3. AppServicesProvider - All other services via DI Container (Awilix)
+ * 2. AppServicesProvider - All services via DI Container (Awilix)
  *
  * Architecture Migration:
  * - BEFORE: 11+ nested React Context providers
- * - AFTER: 3 providers (Wallet + Telemetry + DI Container)
+ * - AFTER: 2 providers (Wallet + DI Container)
  *
  * Why Hybrid?
  * - WalletCompositionProvider: Requires React hooks (usePrivy, useAccount, etc.)
- * - TelemetryCompositionProvider: Depends on WalletCompositionProvider (uses useWallet)
- * - AppServicesProvider: Pure business logic services via DI
+ * - AppServicesProvider: Pure business logic services via DI (including TelemetryService)
  *
  * Services in DI Container:
- * - marketService, agentService, builderFeeService, referralService
- * - bridgeService, marginService, orderCommandService
- * - Subscriptions: History, Order, Position (managed internally)
+ * - telemetryService, marketService
+ * - All context UseCases (BuilderFee, Referral, Bridge, Agent, Margin, Order)
+ * - Subscriptions: History, Order, Position, Margin (managed internally)
+ * - Telemetry wallet sync (managed internally)
  */
 
 import React from 'react';
 
-import { TelemetryCompositionProvider } from '../features/telemetry/components/telemetryComposition';
 import { WalletCompositionProvider } from '../features/wallet/components/walletComposition';
 import { AppServicesProvider } from './AppServicesProvider';
 
@@ -52,7 +50,7 @@ interface AppCompositionProviderProps {
  *
  * function MyComponent() {
  *   const marketService = useContainer(c => c.marketService);
- *   const orderCommandService = useContainer(c => c.orderCommandService);
+ *   const telemetryService = useContainer(c => c.telemetryService);
  *   // ...
  * }
  * ```
@@ -60,9 +58,7 @@ interface AppCompositionProviderProps {
 export function AppCompositionProvider({ children }: AppCompositionProviderProps) {
   return (
     <WalletCompositionProvider>
-      <TelemetryCompositionProvider>
-        <AppServicesProvider>{children}</AppServicesProvider>
-      </TelemetryCompositionProvider>
+      <AppServicesProvider>{children}</AppServicesProvider>
     </WalletCompositionProvider>
   );
 }

@@ -17,6 +17,7 @@
 
 import { Contract, formatUnits, parseUnits, JsonRpcProvider } from 'ethers';
 import type { ArbitrumBridgePort } from '../application/ports/ArbitrumBridgePort';
+import type { TelemetryPort } from '../../telemetry/ports/telemetryPort';
 import type { ActiveWallet } from '../../wallet/ports/types';
 import { ARBITRUM_CONFIG, ERC20_ABI, GAS_SETTINGS } from '../config';
 
@@ -26,6 +27,7 @@ import { ARBITRUM_CONFIG, ERC20_ABI, GAS_SETTINGS } from '../config';
  * Implements ArbitrumBridgePort for Arbitrum L2 operations.
  */
 export class ArbitrumBridgeAdapter implements ArbitrumBridgePort {
+  constructor(private readonly telemetryService: TelemetryPort) {}
   /**
    * Get USDC balance on Arbitrum
    *
@@ -46,6 +48,11 @@ export class ArbitrumBridgeAdapter implements ArbitrumBridgePort {
       return formattedBalance;
     } catch (err) {
       console.error('[ArbitrumBridgeAdapter] Failed to fetch USDC balance:', err);
+      this.telemetryService.captureWarning('Failed to fetch USDC balance on Arbitrum', {
+        component: 'ArbitrumBridgeAdapter',
+        action: 'getArbitrumBalance',
+        extra: { walletAddress },
+      });
       return undefined;
     }
   }
@@ -69,6 +76,11 @@ export class ArbitrumBridgeAdapter implements ArbitrumBridgePort {
       return formattedBalance;
     } catch (err) {
       console.error('[ArbitrumBridgeAdapter] Failed to fetch ETH balance:', err);
+      this.telemetryService.captureWarning('Failed to fetch ETH balance on Arbitrum', {
+        component: 'ArbitrumBridgeAdapter',
+        action: 'getArbitrumEthBalance',
+        extra: { walletAddress },
+      });
       return undefined;
     }
   }
