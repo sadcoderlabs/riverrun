@@ -15,9 +15,9 @@
     "build:preview": "bash -c 'COMMIT_HASH=$(git rev-parse --short HEAD) && EXPO_PUBLIC_GIT_COMMIT_HASH=$COMMIT_HASH eas build --profile preview --platform all'",
     "build:preview:ios": "bash -c 'COMMIT_HASH=$(git rev-parse --short HEAD) && EXPO_PUBLIC_GIT_COMMIT_HASH=$COMMIT_HASH eas build --profile preview --platform ios'",
     "build:preview:android": "bash -c 'COMMIT_HASH=$(git rev-parse --short HEAD) && EXPO_PUBLIC_GIT_COMMIT_HASH=$COMMIT_HASH eas build --profile preview --platform android'",
-    "build:production": "bash -c 'COMMIT_HASH=$(git rev-parse --short HEAD) && EXPO_PUBLIC_GIT_COMMIT_HASH=$COMMIT_HASH eas build --profile production --platform all'",
-    "build:production:ios": "bash -c 'COMMIT_HASH=$(git rev-parse --short HEAD) && EXPO_PUBLIC_GIT_COMMIT_HASH=$COMMIT_HASH eas build --profile production --platform ios'",
-    "build:production:android": "bash -c 'COMMIT_HASH=$(git rev-parse --short HEAD) && EXPO_PUBLIC_GIT_COMMIT_HASH=$COMMIT_HASH eas build --profile production --platform android'",
+    "build:production": "bash -c 'COMMIT_HASH=$(git rev-parse --short HEAD) && EXPO_PUBLIC_GIT_COMMIT_HASH=$COMMIT_HASH eas build --profile production --platform all --auto-submit'",
+    "build:production:ios": "bash -c 'COMMIT_HASH=$(git rev-parse --short HEAD) && EXPO_PUBLIC_GIT_COMMIT_HASH=$COMMIT_HASH eas build --profile production --platform ios --auto-submit'",
+    "build:production:android": "bash -c 'COMMIT_HASH=$(git rev-parse --short HEAD) && EXPO_PUBLIC_GIT_COMMIT_HASH=$COMMIT_HASH eas build --profile production --platform android --auto-submit'",
     "update:preview": "./scripts/update-preview.sh",
     "update:production": "./scripts/update-production.sh"
   },
