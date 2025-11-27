@@ -149,7 +149,7 @@ importers:
         specifier: 6.0.17
         version: 6.0.17(expo@54.0.23)
       expo-device:
-        specifier: ^8.0.9
+        specifier: 8.0.9
         version: 8.0.9(expo@54.0.23)
       expo-font:
         specifier: 14.0.9
@@ -164,7 +164,7 @@ importers:
         specifier: 8.0.8
         version: 8.0.8(expo@54.0.23)(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0)
       expo-notifications:
-        specifier: ^0.32.13
+        specifier: 0.32.13
         version: 0.32.13(expo@54.0.23)(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0)
       expo-router:
         specifier: 6.0.14
