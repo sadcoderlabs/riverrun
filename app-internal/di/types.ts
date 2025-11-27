@@ -70,6 +70,7 @@ import type { OrderExchangePort } from '@/contexts/order/application/ports/Order
 
 // Notification UseCases
 import type { RegisterDeviceUseCase } from '@/contexts/notification/application/usecases/RegisterDeviceUseCase';
+import type { UnregisterDeviceUseCase } from '@/contexts/notification/application/usecases/UnregisterDeviceUseCase';
 
 // Notification Ports
 import type { NotificationApiPort } from '@/contexts/notification/application/ports/notificationApiPort';
@@ -157,6 +158,7 @@ export interface AppCradle {
 
   // Notification Context - UseCases
   registerDeviceUseCase: RegisterDeviceUseCase;
+  unregisterDeviceUseCase: UnregisterDeviceUseCase;
 }
 
 /**

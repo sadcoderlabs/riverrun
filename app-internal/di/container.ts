@@ -68,6 +68,7 @@ import { RiverrunNotificationAdapter } from '@/contexts/notification/adapters/ri
 
 // Notification UseCases
 import { RegisterDeviceUseCase } from '@/contexts/notification/application/usecases/RegisterDeviceUseCase';
+import { UnregisterDeviceUseCase } from '@/contexts/notification/application/usecases/UnregisterDeviceUseCase';
 
 // Agent Adapters
 import { AgentPkStore } from '@/contexts/agent/adapters/agentPkStore';
@@ -488,6 +489,11 @@ export function createAppContainer(options: CreateContainerOptions): AppContaine
     // RegisterDeviceUseCase: Register device for push notifications
     registerDeviceUseCase: asFunction(({ notificationApiPort }) => {
       return new RegisterDeviceUseCase(notificationApiPort);
+    }).singleton(),
+
+    // UnregisterDeviceUseCase: Unregister device from push notifications
+    unregisterDeviceUseCase: asFunction(({ notificationApiPort }) => {
+      return new UnregisterDeviceUseCase(notificationApiPort);
     }).singleton(),
   });
 
