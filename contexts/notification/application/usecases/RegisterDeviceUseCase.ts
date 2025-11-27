@@ -1,16 +1,15 @@
 /**
  * RegisterDeviceUseCase - Register a device for push notifications
  *
- * This use case handles the process of:
- * 1. Creating a signed message to authenticate wallet ownership
- * 2. Calling the backend API to register the device
+ * This use case handles the process of calling the backend API
+ * to register a device with a pre-signed wallet ownership proof.
  */
 
-import type { Signer } from 'ethers';
+import type { WalletProof } from '@/contexts/wallet/adapters/walletProofStore';
 import type { NotificationApiPort } from '../ports/notificationApiPort';
 
 export interface RegisterDeviceInput {
-  signer: Signer;
+  proof: WalletProof;
   deviceToken: string;
   platform: 'ios' | 'android';
 }
@@ -23,21 +22,12 @@ export class RegisterDeviceUseCase {
   constructor(private notificationApiPort: NotificationApiPort) {}
 
   async execute(input: RegisterDeviceInput): Promise<RegisterDeviceOutput> {
-    const { signer, deviceToken, platform } = input;
+    const { proof, deviceToken, platform } = input;
 
-    // Create message with action and timestamp for replay protection
-    const message = JSON.stringify({
-      action: 'register_device',
-      timestamp: Date.now(),
-    });
-
-    // Sign the message using EIP-191 personal sign
-    const signature = (await signer.signMessage(message)) as `0x${string}`;
-
-    // Call the backend API
+    // Call the backend API with pre-signed proof
     const result = await this.notificationApiPort.registerDevice({
-      signature,
-      message,
+      signature: proof.signature,
+      message: proof.message,
       deviceToken,
       platform,
     });
