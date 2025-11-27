@@ -16,6 +16,9 @@
       "environment": "development",
       "env": {
         "APP_VARIANT": "development"
+      },
+      "ios": {
+        "simulator": true
       }
     },
     "ios-simulator": {
