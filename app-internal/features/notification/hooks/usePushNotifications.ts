@@ -63,6 +63,15 @@ export function usePushNotifications(): void {
       return undefined;
     }
 
+    // Android 13+ requires a notification channel before requesting permissions
+    if (Platform.OS === 'android') {
+      await Notifications.setNotificationChannelAsync('default', {
+        name: 'Default',
+        importance: Notifications.AndroidImportance.HIGH,
+        vibrationPattern: [0, 250, 250, 250],
+      });
+    }
+
     // Check/request permissions
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
@@ -77,8 +86,10 @@ export function usePushNotifications(): void {
       return undefined;
     }
 
-    // Get push token
-    const tokenData = await Notifications.getExpoPushTokenAsync();
+    // Get push token with projectId for EAS compatibility
+    const tokenData = await Notifications.getExpoPushTokenAsync({
+      projectId: '058a60a5-6caf-492e-8330-d0814b655293',
+    });
     return tokenData.data;
   }, []);
 
