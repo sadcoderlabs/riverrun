@@ -58,6 +58,13 @@
           "iosApiKey": "ios_sdk-e5774cb37d2a4066ddf241e1494637775fcf4801",
           "useManualInit": true
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./app-internal/assets/images/icon.png",
+          "color": "#313031"
+        }
       ]
     ],
     "experiments": {
