@@ -62,8 +62,9 @@
       [
         "expo-notifications",
         {
-          "icon": "./app-internal/assets/images/icon.png",
-          "color": "#313031"
+          "icon": "./app-internal/assets/images/android-icon-monochrome.png",
+          "color": "#313031",
+          "defaultChannel": "default"
         }
       ]
     ],
