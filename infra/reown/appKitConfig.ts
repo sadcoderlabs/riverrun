@@ -16,12 +16,12 @@ const projectId = 'REOWN_PROJECT_ID_REMOVED';
 
 // 2. Create metadata
 const metadata = {
-  name: 'Riverrun',
-  description: 'A trading app built by perpetual protocol',
-  url: 'https://riverrun.perp.com',
+  name: 'PERP GO',
+  description: 'Non-custodial crypto futures.',
+  url: 'https://go.perp.com',
   icons: ['https://avatars.githubusercontent.com/u/179229932'],
   redirect: {
-    native: 'YOUR_APP_SCHEME://',
+    native: 'riverrun://',
     universal: 'YOUR_APP_UNIVERSAL_LINK.com',
   },
 };
