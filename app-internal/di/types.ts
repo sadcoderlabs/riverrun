@@ -68,6 +68,12 @@ import type { CancelOrdersUseCase } from '@/contexts/order/application/usecases/
 // Order Ports
 import type { OrderExchangePort } from '@/contexts/order/application/ports/OrderExchangePort';
 
+// Notification UseCases
+import type { RegisterDeviceUseCase } from '@/contexts/notification/application/usecases/RegisterDeviceUseCase';
+
+// Notification Ports
+import type { NotificationApiPort } from '@/contexts/notification/application/ports/notificationApiPort';
+
 /**
  * AppCradle - Type-safe container cradle
  *
@@ -145,6 +151,12 @@ export interface AppCradle {
   placeCloseLimitOrderUseCase: PlaceCloseLimitOrderUseCase;
   placeTpSlOrdersUseCase: PlaceTpSlOrdersUseCase;
   cancelOrdersUseCase: CancelOrdersUseCase;
+
+  // Notification Context - Out Ports
+  notificationApiPort: NotificationApiPort;
+
+  // Notification Context - UseCases
+  registerDeviceUseCase: RegisterDeviceUseCase;
 }
 
 /**

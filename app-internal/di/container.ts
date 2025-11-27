@@ -63,6 +63,12 @@ import { PlaceCloseLimitOrderUseCase } from '@/contexts/order/application/usecas
 import { PlaceTpSlOrdersUseCase } from '@/contexts/order/application/usecases/PlaceTpSlOrdersUseCase';
 import { CancelOrdersUseCase } from '@/contexts/order/application/usecases/CancelOrdersUseCase';
 
+// Notification Adapters
+import { RiverrunNotificationAdapter } from '@/contexts/notification/adapters/riverrunNotificationAdapter';
+
+// Notification UseCases
+import { RegisterDeviceUseCase } from '@/contexts/notification/application/usecases/RegisterDeviceUseCase';
+
 // Agent Adapters
 import { AgentPkStore } from '@/contexts/agent/adapters/agentPkStore';
 
@@ -461,6 +467,28 @@ export function createAppContainer(options: CreateContainerOptions): AppContaine
         return new CancelOrdersUseCase(orderExchangePort, tryGetAgentWalletUseCase, marketService);
       },
     ).singleton(),
+  });
+
+  // ==========================================================================
+  // Notification Context - Out Ports
+  // ==========================================================================
+
+  container.register({
+    // NotificationApiPort: Implemented by RiverrunNotificationAdapter
+    notificationApiPort: asFunction(() => {
+      return new RiverrunNotificationAdapter();
+    }).singleton(),
+  });
+
+  // ==========================================================================
+  // Notification Context - UseCases
+  // ==========================================================================
+
+  container.register({
+    // RegisterDeviceUseCase: Register device for push notifications
+    registerDeviceUseCase: asFunction(({ notificationApiPort }) => {
+      return new RegisterDeviceUseCase(notificationApiPort);
+    }).singleton(),
   });
 
   return container;
