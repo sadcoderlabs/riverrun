@@ -14,6 +14,7 @@ import { AppCompositionProvider, useWallet } from '@/app-internal';
 import { useAppLifecycle } from '@/app-internal/components/shared/hooks/useAppLifecycle';
 import { useThemePreference } from '@/app-internal/components/shared/theme/useThemePreference';
 import { useCustomerSupportWalletSync } from '@/app-internal/features/customerSupport';
+import { usePushNotifications } from '@/app-internal/features/notification';
 import { useAutoUpdate } from '@/app-internal/features/version/hooks/useAutoUpdate';
 import { subscriptionManager } from '@/infra/hyperliquid/subscription';
 import { queryClient } from '@/infra/reactQuery';
@@ -63,6 +64,9 @@ function WalletInfoDisplay() {
   // Sync wallet state with customer support (Intercom)
   // Automatically identifies user when wallet connects and logs out when disconnects
   useCustomerSupportWalletSync();
+
+  // Register device for push notifications when wallet connects
+  usePushNotifications();
 
   // App Lifecycle management for subscription systems
   // When app goes to background, pause all subscriptions to save battery and data
