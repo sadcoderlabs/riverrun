@@ -52,6 +52,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       appVariant: process.env.APP_VARIANT,
       // Segment write key - build-time variable from EAS environment (not EXPO_PUBLIC_ to keep it private)
       segmentWriteKey: process.env.SEGMENT_WRITE_KEY,
+      // Backend API base URL for notification service
+      backendApiBaseUrl: process.env.BACKEND_API_BASE_URL,
     },
   };
 };
