@@ -4,18 +4,22 @@
  * This hook handles:
  * - Requesting notification permissions
  * - Getting Expo push token
- * - Auto-registering device when wallet connects
+ * - Auto-registering device when notifications enabled
+ * - Auto-unregistering device when notifications disabled
  *
- * Registration happens automatically on wallet connect with silent failure.
+ * Registration/unregistration happens automatically based on preference state.
  */
 
-import { useEffect, useRef, useCallback } from 'react';
-import { Platform } from 'react-native';
-import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
+import * as Notifications from 'expo-notifications';
+import { useCallback, useEffect, useRef } from 'react';
+import { Platform } from 'react-native';
 
 import { useContainer } from '@/app-internal/di';
 import { useWallet } from '@/app-internal/features/wallet/hooks/useWallet';
+import { useWalletOwnershipProof } from '@/app-internal/features/wallet/hooks/useWalletOwnershipProof';
+import { useNotificationPreferenceStore } from '../stores/notificationPreferenceStore';
+import { useWalletProofStore } from '@/contexts/wallet/adapters/walletProofStore';
 
 // Configure notification handler
 Notifications.setNotificationHandler({
@@ -47,8 +51,12 @@ Notifications.setNotificationHandler({
  */
 export function usePushNotifications(): void {
   const registerDeviceUseCase = useContainer(c => c.registerDeviceUseCase);
+  const unregisterDeviceUseCase = useContainer(c => c.unregisterDeviceUseCase);
   const telemetryService = useContainer(c => c.telemetryService);
-  const { wallet, getSigner, isConnected } = useWallet();
+  const { wallet, isConnected } = useWallet();
+  const { requestSignature } = useWalletOwnershipProof();
+  const { getProof } = useWalletProofStore();
+  const isNotificationEnabled = useNotificationPreferenceStore(state => state.isEnabled);
 
   // Track if we've already registered for this wallet
   const registeredWalletRef = useRef<string | undefined>(undefined);
@@ -90,6 +98,7 @@ export function usePushNotifications(): void {
     const tokenData = await Notifications.getExpoPushTokenAsync({
       projectId: '058a60a5-6caf-492e-8330-d0814b655293',
     });
+    console.log('[PushNotifications] Expo push token:', tokenData.data);
     return tokenData.data;
   }, []);
 
@@ -98,6 +107,12 @@ export function usePushNotifications(): void {
    */
   const registerDevice = useCallback(async () => {
     if (!isConnected || !wallet) {
+      return;
+    }
+
+    // Skip if notifications are disabled
+    if (!isNotificationEnabled) {
+      console.log('[PushNotifications] Notifications disabled, skipping registration');
       return;
     }
 
@@ -112,11 +127,11 @@ export function usePushNotifications(): void {
         return;
       }
 
-      const signer = await getSigner();
+      const proof = await requestSignature();
       const platform = Platform.OS as 'ios' | 'android';
 
       await registerDeviceUseCase.execute({
-        signer,
+        proof,
         deviceToken,
         platform,
       });
@@ -137,14 +152,62 @@ export function usePushNotifications(): void {
         extra: { walletAddress: wallet?.address },
       });
     }
-  }, [isConnected, wallet, getSigner, getExpoPushToken, registerDeviceUseCase, telemetryService]);
+  }, [
+    isConnected,
+    wallet,
+    isNotificationEnabled,
+    requestSignature,
+    getExpoPushToken,
+    registerDeviceUseCase,
+    telemetryService,
+  ]);
 
-  // Auto-register when wallet connects
+  /**
+   * Unregister device from backend
+   */
+  const unregisterDevice = useCallback(async () => {
+    if (!wallet) {
+      return;
+    }
+
+    // Need a proof to unregister - use cached proof only (don't prompt)
+    const proof = getProof(wallet.address.toLowerCase());
+    if (!proof) {
+      return;
+    }
+
+    try {
+      const tokenData = await Notifications.getExpoPushTokenAsync({
+        projectId: '058a60a5-6caf-492e-8330-d0814b655293',
+      });
+
+      await unregisterDeviceUseCase.execute({
+        proof,
+        deviceToken: tokenData.data,
+      });
+
+      console.log('[PushNotifications] Device unregistered successfully');
+      telemetryService.trackEvent('push_notification_unregistered', {});
+    } catch (error) {
+      // Silent fail
+      console.error('[PushNotifications] Unregistration failed:', error);
+    }
+  }, [wallet, getProof, unregisterDeviceUseCase, telemetryService]);
+
+  // Register device when notifications are enabled
   useEffect(() => {
-    if (isConnected && wallet) {
+    if (isConnected && wallet && isNotificationEnabled) {
       registerDevice();
     }
-  }, [isConnected, wallet, registerDevice]);
+  }, [isConnected, wallet, isNotificationEnabled, registerDevice]);
+
+  // Unregister device and reset state when notifications are disabled
+  useEffect(() => {
+    if (!isNotificationEnabled && registeredWalletRef.current) {
+      unregisterDevice();
+      registeredWalletRef.current = undefined;
+    }
+  }, [isNotificationEnabled, unregisterDevice]);
 
   // Reset registration state when wallet disconnects
   useEffect(() => {
