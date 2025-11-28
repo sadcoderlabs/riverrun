@@ -147,11 +147,6 @@ export function usePushNotifications(): void {
     } catch (error) {
       // Silent fail - don't block user
       console.error('[PushNotifications] Registration failed:', error);
-      telemetryService.captureError(error, {
-        component: 'usePushNotifications',
-        action: 'registerDevice',
-        extra: { walletAddress: wallet?.address },
-      });
     }
   }, [
     isConnected,

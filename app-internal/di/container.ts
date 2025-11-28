@@ -64,7 +64,7 @@ import { PlaceTpSlOrdersUseCase } from '@/contexts/order/application/usecases/Pl
 import { CancelOrdersUseCase } from '@/contexts/order/application/usecases/CancelOrdersUseCase';
 
 // Notification Adapters
-import { RiverrunNotificationAdapter } from '@/contexts/notification/adapters/riverrunNotificationAdapter';
+import { BackendNotificationApiAdapter } from '@/contexts/notification/adapters/backendNotificationApiAdapter';
 
 // Notification UseCases
 import { RegisterDeviceUseCase } from '@/contexts/notification/application/usecases/RegisterDeviceUseCase';
@@ -475,9 +475,9 @@ export function createAppContainer(options: CreateContainerOptions): AppContaine
   // ==========================================================================
 
   container.register({
-    // NotificationApiPort: Implemented by RiverrunNotificationAdapter
+    // NotificationApiPort: Implemented by BackendNotificationApiAdapter
     notificationApiPort: asFunction(() => {
-      return new RiverrunNotificationAdapter();
+      return new BackendNotificationApiAdapter();
     }).singleton(),
   });
 
