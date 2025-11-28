@@ -46,7 +46,7 @@ interface WalletProofState {
  * Signatures are keyed by lowercase wallet address and can be reused
  * for any API calls requiring wallet ownership verification.
  */
-export const walletProofStore = createStore<WalletProofState>()(
+const walletProofStore = createStore<WalletProofState>()(
   persist(
     (set, get) => ({
       proofs: {},
