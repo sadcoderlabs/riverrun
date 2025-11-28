@@ -70,7 +70,9 @@ export type TelemetryEventName =
   // Withdraw
   | 'withdraw_initiated'
   | 'withdraw_completed'
-  | 'withdraw_failed';
+  | 'withdraw_failed'
+  // Login
+  | 'login_alternative_requested';
 
 /**
  * Event properties for each event type
@@ -206,6 +208,9 @@ export interface TelemetryEventProps {
     amount: number;
     reason?: string;
   };
+
+  // Login
+  login_alternative_requested: Record<string, never>;
 }
 
 // ============================================================================

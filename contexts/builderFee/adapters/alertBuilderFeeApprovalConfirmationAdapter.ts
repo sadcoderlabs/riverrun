@@ -24,8 +24,8 @@ export class AlertBuilderFeeApprovalConfirmationAdapter implements BuilderFeeCon
 
     const title = 'Approve Trading Fee';
     const message = isReown
-      ? `Start trading with fees as low as 0.025% per trade.\n\nEvery fee is clearly shown before you confirm - no hidden charges, no surprises.\n\nYou'll be redirected to your wallet app to sign.`
-      : `Start trading with fees as low as 0.025% per trade.\n\nEvery fee is clearly shown before you confirm - no hidden charges, no surprises.\n\nSign to approve and start trading.`;
+      ? `All fees are shown upfront in your order preview before you trade - no hidden costs, no surprises.\n\nYou'll be redirected to your wallet app to sign.`
+      : `All fees are shown upfront in your order preview before you trade - no hidden costs, no surprises.\n\nSign to approve and start trading.`;
 
     return new Promise<boolean>(resolve => {
       Alert.alert(title, message, [
