@@ -17,7 +17,7 @@ export default function ChartPage() {
   const selectedMarket = useMarketStore(state => state.selectedMarket);
 
   const coin = params.coin || selectedMarket?.coin || 'BTC';
-  const marketDisplay = `${coin}-USD`;
+  const marketPair = selectedMarket?.marketPair || `${coin}-USDC`;
 
   useScreenTracking('Chart', { market: coin });
 
@@ -37,7 +37,7 @@ export default function ChartPage() {
         </Pressable>
         <XStack alignItems="center" gap="$2">
           <Text fontFamily="$interSemiBold" fontSize="$6">
-            {marketDisplay}
+            {marketPair}
           </Text>
           <XStack
             backgroundColor="#F97316"

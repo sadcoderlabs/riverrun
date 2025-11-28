@@ -196,13 +196,13 @@ export function generateChartHtml(options: ChartHtmlOptions): string {
       },
 
       resolveSymbol: function(symbolName, onResolve, onError) {
-        // Extract coin from symbol (e.g., "BTC" from "BTC-USD" or just "BTC")
-        const coin = symbolName.replace('-USD', '').replace('-PERP', '').toUpperCase();
+        // Extract coin from symbol (e.g., "BTC" from "BTC-USDC" or just "BTC")
+        const coin = symbolName.replace('-USDC', '').replace('-PERP', '').toUpperCase();
 
         requestData('resolveSymbol', { coin })
           .then((symbolInfo) => {
             onResolve({
-              name: coin + '-USD',
+              name: coin + '-USDC',
               ticker: coin,
               description: coin + ' Perpetual',
               type: 'perpetual',
