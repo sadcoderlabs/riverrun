@@ -71,6 +71,29 @@ interface OrderUpdatesParams {
   user: string;
 }
 
+// Candle subscription params
+interface CandleParams {
+  coin: string;
+  interval:
+    | '1m'
+    | '3m'
+    | '5m'
+    | '15m'
+    | '30m'
+    | '1h'
+    | '2h'
+    | '4h'
+    | '8h'
+    | '12h'
+    | '1d'
+    | '3d'
+    | '1w'
+    | '1M';
+}
+
+// Candle event data (matches SDK's WsCandleEvent)
+type CandleData = hl.WsCandleEvent;
+
 // ============================================================================
 // Configuration: webData2
 // ============================================================================
@@ -250,6 +273,29 @@ subscriptionRegistry.register<OrderUpdatesParams, OrderUpdatesData>('orderUpdate
       (updates: OrderUpdate[]) => {
         // Forward updates array to callback
         callback({ updates });
+      },
+    );
+  },
+});
+
+// ============================================================================
+// Configuration: candle
+// ============================================================================
+
+subscriptionRegistry.register<CandleParams, CandleData>('candle', {
+  // Key by coin and interval
+  getKey: params => `${params.coin.toUpperCase()}-${params.interval}`,
+
+  // WebSocket subscription for real-time candle updates
+  subscribe: async (params, callback) => {
+    const subscriptionClient = getSubscriptionClient();
+    return await subscriptionClient.candle(
+      {
+        coin: params.coin.toUpperCase(),
+        interval: params.interval,
+      },
+      (candleEvent: hl.WsCandleEvent) => {
+        callback(candleEvent);
       },
     );
   },
