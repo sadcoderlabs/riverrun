@@ -129,7 +129,7 @@ export function TradingViewChart({
         // For first request, fetch more data
         const now = Date.now();
         let startTime = params.from;
-        let endTime = params.to;
+        const endTime = params.to;
 
         // Ensure we have enough data by extending the range if needed
         if (params.firstDataRequest) {
@@ -172,7 +172,7 @@ export function TradingViewChart({
         const handle = await subscriptionManager.subscribe(
           'candle',
           { coin: coinSymbol.toUpperCase(), interval },
-          (candleEvent: any) => {
+          (candleEvent: unknown) => {
             // Send candle update to WebView
             sendToWebView({
               type: 'candleUpdate',

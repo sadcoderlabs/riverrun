@@ -114,11 +114,8 @@ export function generateChartHtml(options: ChartHtmlOptions): string {
     }
 
     // Handle responses from React Native
-    function handleMessage(event) {
-      try {
-        const message = JSON.parse(event.data);
-
-        if (message.type === 'response' && message.id) {
+    function handleRNMessage(message) {
+      if (message.type === 'response' && message.id) {
           const pending = pendingRequests.get(message.id);
           if (pending) {
             pendingRequests.delete(message.id);
@@ -137,6 +134,12 @@ export function generateChartHtml(options: ChartHtmlOptions): string {
             window.tvWidget.setSymbol(message.symbol, message.resolution || window.tvWidget.chart().resolution());
           }
         }
+    }
+
+    function handleMessage(event) {
+      try {
+        const message = JSON.parse(event.data);
+        handleRNMessage(message);
       } catch (e) {
         console.error('Error handling message:', e);
       }
