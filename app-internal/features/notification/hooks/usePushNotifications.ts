@@ -18,7 +18,7 @@ import { Platform } from 'react-native';
 
 import { useContainer } from '@/app-internal/di';
 import { useWallet } from '@/app-internal/features/wallet/hooks/useWallet';
-import { useWalletOwnershipProof } from '@/app-internal/features/wallet/hooks/useWalletOwnershipProof';
+import { useWalletProof } from '@/app-internal/features/wallet/hooks/useWalletProof';
 import { useNotificationPreferenceStore } from '../stores/notificationPreferenceStore';
 
 const PROJECT_ID = Constants.easConfig?.projectId;
@@ -56,7 +56,7 @@ export function usePushNotifications(): void {
   const unregisterDeviceUseCase = useContainer(c => c.unregisterDeviceUseCase);
   const telemetryService = useContainer(c => c.telemetryService);
   const { wallet, isConnected } = useWallet();
-  const { requestSignature, getCachedProof } = useWalletOwnershipProof();
+  const { requestSignature, getCachedProof } = useWalletProof();
   const isNotificationEnabled = useNotificationPreferenceStore(state => state.isEnabled);
 
   // Track if we've already registered for this wallet
@@ -177,7 +177,7 @@ export function usePushNotifications(): void {
         deviceToken: tokenData.data,
       });
 
-      console.log('[PushNotifications] Device unregistered successfully');
+      console.log('[PushNotifications] Device unregistered');
     } catch (error) {
       // Silent fail
       console.error('[PushNotifications] Unregistration failed:', error);
@@ -215,14 +215,9 @@ export function usePushNotifications(): void {
               proof,
               deviceToken: tokenData.data,
             });
-            console.log(
-              `[PushNotifications] Unregistered on wallet (${registeredAddress}) disconnect`,
-            );
+            console.log('[PushNotifications] Device unregistered on wallet disconnect');
           } catch (error) {
-            console.error(
-              `[PushNotifications] Failed to unregister on wallet (${registeredAddress}) disconnect:`,
-              error,
-            );
+            console.error('[PushNotifications] Unregistration failed on wallet disconnect:', error);
           }
         })();
       }
