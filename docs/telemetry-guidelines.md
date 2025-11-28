@@ -31,11 +31,9 @@ Always provide context when capturing errors:
 
 ```typescript
 telemetryService.captureError(error, {
-  component: 'ComponentName', // Where the error occurred
-  action: 'actionName', // What operation failed
-  extra: {
-    /* relevant data */
-  }, // Additional context (no PII)
+  component: 'ComponentName',    // Where the error occurred
+  action: 'actionName',          // What operation failed
+  extra: { /* relevant data */ } // Additional context (no PII)
 });
 ```
 
@@ -60,7 +58,7 @@ Never include PII (email, phone, full name) in telemetry context.
 ## Environment Behavior
 
 | Environment | Error Sample Rate | Debug Logs |
-| ----------- | ----------------- | ---------- |
+|-------------|-------------------|------------|
 | Development | 100%              | Yes        |
 | Preview     | 100%              | No         |
 | Production  | 20%               | No         |

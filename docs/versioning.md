@@ -18,39 +18,37 @@
 ```json
 {
   "expo": {
-    "version": "1.2.3", // 唯一真相來源
+    "version": "1.2.3",  // 唯一真相來源
     "runtimeVersion": {
-      "policy": "appVersion" // 自動等於 expo.version
+      "policy": "appVersion"  // 自動等於 expo.version
     }
   }
 }
 ```
 
 ⚠️ **關鍵理解**：
-
 - 修改 `expo.version` → `runtimeVersion` 自動更新
 - `runtimeVersion` 改變 → 舊版 App **無法**收到新的 OTA 更新
 - OTA 只推送給相同 `runtimeVersion` 的 App
 
 ### 1.2 版本號意義
 
-| 欄位                  | 用途                     | 何時修改                      | 影響                              |
-| --------------------- | ------------------------ | ----------------------------- | --------------------------------- |
-| `expo.version`        | App 語意版本號           | 需要新 native build 時        | 改變 runtimeVersion，切斷舊版 OTA |
-| `ios.buildNumber`     | Store 識別 iOS build     | 每次 submit 到 Store          | Store 判斷是否為新 build          |
-| `android.versionCode` | Store 識別 Android build | 每次 submit 到 Store          | Store 判斷是否為新 build          |
-| `runtimeVersion`      | OTA 相容性判斷           | **自動**（跟隨 expo.version） | 決定哪些 App 能收到 OTA           |
-| Commit Hash           | 追蹤 JS bundle 版本      | 自動注入                      | Sentry 追蹤、客服查詢             |
+| 欄位 | 用途 | 何時修改 | 影響 |
+|------|------|----------|------|
+| `expo.version` | App 語意版本號 | 需要新 native build 時 | 改變 runtimeVersion，切斷舊版 OTA |
+| `ios.buildNumber` | Store 識別 iOS build | 每次 submit 到 Store | Store 判斷是否為新 build |
+| `android.versionCode` | Store 識別 Android build | 每次 submit 到 Store | Store 判斷是否為新 build |
+| `runtimeVersion` | OTA 相容性判斷 | **自動**（跟隨 expo.version） | 決定哪些 App 能收到 OTA |
+| Commit Hash | 追蹤 JS bundle 版本 | 自動注入 | Sentry 追蹤、客服查詢 |
 
 ### 1.3 Branch & Channel 策略
 
-| Branch    | Build Profile | Channel      | 用途     | 誰會使用   |
-| --------- | ------------- | ------------ | -------- | ---------- |
-| `develop` | `preview`     | `preview`    | 內部測試 | 開發團隊   |
-| `main`    | `production`  | `production` | 正式版本 | 所有使用者 |
+| Branch | Build Profile | Channel | 用途 | 誰會使用 |
+|--------|--------------|---------|------|----------|
+| `develop` | `preview` | `preview` | 內部測試 | 開發團隊 |
+| `main` | `production` | `production` | 正式版本 | 所有使用者 |
 
 **原則**：
-
 - ✅ 使用者**只會**拿到來自 `main` branch 的代碼
 - ✅ `develop` 僅用於內部開發與測試
 - ✅ 所有 PR 必須先合併到 `main` 再發布 production build
@@ -62,21 +60,18 @@
 ### 2.1 三種更新方式
 
 #### **A. OTA 更新（Over-The-Air）**
-
 - **適用**：純 JS/React 代碼變更
 - **速度**：秒級推送
 - **限制**：不能修改 native code
 - **版本號**：`expo.version` 保持不變
 
 #### **B. Native Build 更新**
-
 - **適用**：Native module、配置變更
 - **速度**：需要 Store 審核（1-7 天）
 - **限制**：必須透過 Store 下載
 - **版本號**：`expo.version` 必須升級
 
 #### **C. Bundle 更新（不升級 expo.version）**
-
 - **適用**：想讓新用戶直接下載最新 JS bundle
 - **速度**：需要 Store 審核
 - **限制**：僅 `buildNumber`/`versionCode` 遞增
@@ -164,7 +159,6 @@ App 冷啟動
 ### 3.2 情境 A：OTA 更新（純 JS 變更）
 
 **適用情況**：
-
 - ✅ UI 調整、樣式修改
 - ✅ 新增/修改 React 組件
 - ✅ 商業邏輯變更
@@ -175,7 +169,6 @@ App 冷啟動
 **操作步驟**：
 
 #### Develop 環境測試
-
 ```bash
 # 1. 開發並提交到 develop
 git checkout develop
@@ -188,7 +181,6 @@ git push origin develop
 ```
 
 #### 發布到 Production
-
 ```bash
 # 4. 測試通過後，合併到 main（建議使用 PR）
 git checkout main
@@ -201,7 +193,6 @@ git push origin main
 ```
 
 **版本號變更**：
-
 - `expo.version`: ❌ 不改
 - `buildNumber`/`versionCode`: ❌ 不改
 - `version-config.json`: ❌ 不改
@@ -213,7 +204,6 @@ git push origin main
 ### 3.3 情境 B：Native Build 更新
 
 **適用情況**：
-
 - ✅ 新增 native module (如 expo-camera)
 - ✅ 修改 app.json 的 native 配置
 - ✅ 修改 iOS/Android 原生代碼
@@ -235,12 +225,12 @@ vi app.json
 ```json
 {
   "expo": {
-    "version": "1.3.0", // 從 1.2.3 升級到 1.3.0
+    "version": "1.3.0",  // 從 1.2.3 升級到 1.3.0
     "ios": {
-      "buildNumber": "46" // 從 45 升級到 46
+      "buildNumber": "46"  // 從 45 升級到 46
     },
     "android": {
-      "versionCode": 46 // 從 45 升級到 46
+      "versionCode": 46  // 從 45 升級到 46
     }
   }
 }
@@ -266,7 +256,6 @@ EXPO_PUBLIC_GIT_COMMIT_HASH=$COMMIT_HASH eas build --profile development --platf
 ```
 
 **為什麼要先發 development build？**
-
 - ✅ 開發者需要在本地測試 native 變更
 - ✅ 確保 development build 可以正常運行
 - ✅ 驗證 native module 整合正確
@@ -291,7 +280,6 @@ EXPO_PUBLIC_GIT_COMMIT_HASH=$COMMIT_HASH eas build --profile preview --platform 
 ```
 
 **為什麼要在本地發 preview build？**
-
 - ✅ 確保 build 成功後才 push
 - ✅ 其他開發者 pull 後可立即下載 preview build 測試
 - ✅ 避免 push 後發現 build 失敗
@@ -349,12 +337,12 @@ vi version-config.json
 ```json
 {
   "ios": {
-    "latestVersion": "1.3.0", // 更新
-    "minVersion": "1.2.0", // 可選：更新最低支援版本
+    "latestVersion": "1.3.0",  // 更新
+    "minVersion": "1.2.0",     // 可選：更新最低支援版本
     "storeUrl": "https://apps.apple.com/app/..."
   },
   "android": {
-    "latestVersion": "1.3.0", // 更新
+    "latestVersion": "1.3.0",  // 更新
     "minVersion": "1.2.0",
     "storeUrl": "https://play.google.com/store/apps/..."
   }
@@ -371,7 +359,6 @@ git push origin main
 ```
 
 **版本號變更**：
-
 - `expo.version`: ✅ 升級 (1.2.3 → 1.3.0)
 - `buildNumber`/`versionCode`: ✅ 升級 (45 → 46)
 - `version-config.json`: ✅ 更新 latestVersion
@@ -379,7 +366,6 @@ git push origin main
 **時間**：約 1-7 天（取決於 Store 審核）
 
 **關鍵提醒**：
-
 - ⚠️ 一旦升級 `expo.version`，舊版 App 將無法收到新的 OTA
 - ⚠️ 必須先在本地發 development build 確認可以正常開發
 - ⚠️ 必須在本地發 preview build 才能 push 到 develop
@@ -390,7 +376,6 @@ git push origin main
 ### 3.4 情境 C：Bundle 更新（不升級 expo.version）
 
 **適用情況**：
-
 - 累積了多個 OTA 更新
 - 想讓新下載的用戶直接獲得最新 JS bundle
 - 作為 OTA 的補充機制
@@ -408,12 +393,12 @@ vi app.json
 ```json
 {
   "expo": {
-    "version": "1.2.3", // 保持不變
+    "version": "1.2.3",  // 保持不變
     "ios": {
-      "buildNumber": "46" // 從 45 升級
+      "buildNumber": "46"  // 從 45 升級
     },
     "android": {
-      "versionCode": 46 // 從 45 升級
+      "versionCode": 46  // 從 45 升級
     }
   }
 }
@@ -436,13 +421,11 @@ eas submit --platform android --latest
 ```
 
 **效果**：
-
 - 舊用戶：透過 OTA 持續更新（runtimeVersion 未變）
 - 新用戶：下載到內嵌最新 JS 的 build
 - version-config.json：不需要修改（latestVersion 未變）
 
 **版本號變更**：
-
 - `expo.version`: ❌ 不改
 - `buildNumber`/`versionCode`: ✅ 升級
 - `version-config.json`: ❌ 不改
@@ -450,7 +433,6 @@ eas submit --platform android --latest
 **時間**：約 1-7 天（Store 審核）
 
 **使用時機**：
-
 - 定期發布（如每週/每月）
 - 累積較多 OTA 更新後
 - 提升新用戶首次體驗
@@ -478,7 +460,6 @@ eas submit --platform android --latest
 ```
 
 **使用方式**：
-
 ```bash
 # Development builds (本地開發測試)
 pnpm run build:development
@@ -497,7 +478,6 @@ pnpm run build:production:android
 ```
 
 **好處**：
-
 - ✅ 自動注入 commit hash
 - ✅ 統一 build 命令
 - ✅ 減少人為錯誤
@@ -510,7 +490,6 @@ pnpm run build:production:android
 ### 5.1 自動 OTA 發布
 
 #### Develop → Preview OTA
-
 ```yaml
 # .github/workflows/eas-update-preview.yml
 on:
@@ -531,7 +510,6 @@ jobs:
 ```
 
 #### Main → Production OTA
-
 ```yaml
 # .github/workflows/eas-update-production.yml
 on:
@@ -609,13 +587,11 @@ jobs:
 ### 6.3 更新時機
 
 **何時更新 latestVersion？**
-
 - ✅ Native build 上架後
 - ❌ 發 OTA 時不更新
 - ❌ 僅升級 buildNumber 時不更新
 
 **何時更新 minVersion？**
-
 - ✅ 有重大安全漏洞修復
 - ✅ 有破壞性 API 變更
 - ✅ 舊版本不再維護
@@ -637,9 +613,9 @@ EXPO_PUBLIC_VERSION_CONFIG_URL=https://s3.ap-southeast-1.amazonaws.com/riverrun.
 ```typescript
 import Constants from 'expo-constants';
 
-const version = Constants.expoConfig?.version; // "1.2.3"
-const commitHash = process.env.EXPO_PUBLIC_GIT_COMMIT_HASH; // "a1b2c3d"
-const buildNumber = Constants.expoConfig?.ios?.buildNumber; // "45"
+const version = Constants.expoConfig?.version;  // "1.2.3"
+const commitHash = process.env.EXPO_PUBLIC_GIT_COMMIT_HASH;  // "a1b2c3d"
+const buildNumber = Constants.expoConfig?.ios?.buildNumber;  // "45"
 
 // 顯示格式: "1.2.3 (45) [a1b2c3d]"
 const displayVersion = `${version} (${buildNumber}) [${commitHash}]`;
@@ -651,12 +627,11 @@ const displayVersion = `${version} (${buildNumber}) [${commitHash}]`;
 Sentry.init({
   dsn: '...',
   release: `${bundleId}@${version}+${buildNumber}`,
-  dist: commitHash, // 用 commit hash 識別 OTA 版本
+  dist: commitHash,  // 用 commit hash 識別 OTA 版本
 });
 ```
 
 **好處**：
-
 - 客服查詢時可以精確定位版本
 - 錯誤追蹤時可以知道具體的 JS bundle 版本
 - 可以區分相同 `expo.version` 但不同 OTA 的問題
@@ -668,7 +643,6 @@ Sentry.init({
 ### Q1: 我可以跳過 preview build 直接發 production 嗎？
 
 ❌ **不建議**。Preview build 是為了：
-
 - 內部測試 native 變更
 - 在 TestFlight/Internal Testing 上驗證
 - 避免將問題帶到 production
@@ -678,13 +652,11 @@ Sentry.init({
 ✅ **必須**。原因：
 
 **Development build**：
-
 - 開發者在本地測試 native 變更
 - 確保可以正常開發和調試
 - 在提交前發現問題
 
 **Preview build**：
-
 - 其他開發者 pull 後可立即下載測試
 - 內部測試人員使用
 - 確保 build 成功才 push 代碼
@@ -692,14 +664,12 @@ Sentry.init({
 ### Q3: 忘記升級 buildNumber 會怎樣？
 
 ❌ Store 會拒絕：
-
 - iOS: "Invalid Bundle. The bundle version must be higher than the previously uploaded version."
 - Android: "Version code XXX has already been used."
 
 ### Q4: 可以降級 expo.version 嗎？
 
 ❌ **不可以**：
-
 - Store 不允許降級
 - 會造成版本混亂
 - 可能導致 OTA 推送錯誤
@@ -711,7 +681,6 @@ Sentry.init({
 ### Q6: 如果 version-config.json 下載失敗怎麼辦？
 
 ✅ **不影響啟動**：
-
 - Native 版本檢查失敗會優雅降級
 - 僅記錄錯誤但不阻擋 App
 - 用戶可以正常使用 App
@@ -719,7 +688,6 @@ Sentry.init({
 ### Q7: 多久應該發一次 native build？
 
 📊 **建議**：
-
 - **必須時**：有 native 變更立即發
 - **定期**：每 1-2 個月發一次（情境 C）
 - **目的**：讓新用戶獲得最佳體驗
@@ -730,12 +698,12 @@ Sentry.init({
 
 ### 9.1 決策表
 
-| 情況           | expo.version | buildNumber | version-config.json | 操作            |
-| -------------- | ------------ | ----------- | ------------------- | --------------- |
-| 純 JS 改動     | 不變         | 不變        | 不改                | Push → 自動 OTA |
-| Native 改動    | 升級         | 升級        | 上架後更新          | 完整 Build 流程 |
-| 優化新用戶體驗 | 不變         | 升級        | 不改                | Build → Submit  |
-| 定期維護       | 不變         | 升級        | 不改                | Build → Submit  |
+| 情況 | expo.version | buildNumber | version-config.json | 操作 |
+|------|-------------|-------------|---------------------|------|
+| 純 JS 改動 | 不變 | 不變 | 不改 | Push → 自動 OTA |
+| Native 改動 | 升級 | 升級 | 上架後更新 | 完整 Build 流程 |
+| 優化新用戶體驗 | 不變 | 升級 | 不改 | Build → Submit |
+| 定期維護 | 不變 | 升級 | 不改 | Build → Submit |
 
 ### 9.2 命令速查
 
@@ -764,13 +732,11 @@ eas submit --platform android --latest
 ### 9.3 檢查清單
 
 #### 發布 OTA 前
-
 - [ ] 代碼已測試通過
 - [ ] 無 native code 變更
 - [ ] 已合併到目標 branch (develop/main)
 
 #### 發布 Native Build 前
-
 - [ ] 已升級 `expo.version`
 - [ ] 已升級 `buildNumber`/`versionCode`
 - [ ] 已在本地發 development build
@@ -781,7 +747,6 @@ eas submit --platform android --latest
 - [ ] 已發 production build
 
 #### Native Build 上架後
-
 - [ ] Store 已顯示「Ready for Sale」
 - [ ] 已更新 `version-config.json`
 - [ ] version-config.json 已推送到 main

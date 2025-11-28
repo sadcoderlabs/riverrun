@@ -58,12 +58,12 @@ const segmentKey = Constants.expoConfig?.extra?.segmentWriteKey;
 
 ## Our Environment Variables
 
-| Variable                      | Type       | Visibility | Used In                      |
-| ----------------------------- | ---------- | ---------- | ---------------------------- |
-| `APP_VARIANT`                 | Build-time | Plain text | `app.config.ts`              |
-| `SEGMENT_WRITE_KEY`           | Build-time | Sensitive  | `app.config.ts` (via extra)  |
+| Variable                      | Type       | Visibility | Used In                     |
+| ----------------------------- | ---------- | ---------- | --------------------------- |
+| `APP_VARIANT`                 | Build-time | Plain text | `app.config.ts`             |
+| `SEGMENT_WRITE_KEY`           | Build-time | Sensitive  | `app.config.ts` (via extra) |
 | `EXPO_PUBLIC_GIT_COMMIT_HASH` | Runtime    | -          | Injected during build/update |
-| `SENTRY_AUTH_TOKEN`           | Build-time | Sensitive  | Build process only           |
+| `SENTRY_AUTH_TOKEN`           | Build-time | Sensitive  | Build process only          |
 
 ## Quick Start
 
