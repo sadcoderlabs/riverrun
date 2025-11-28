@@ -1,4 +1,5 @@
 import { useScreenTracking, useWallet } from '@/app-internal';
+import { marketStore } from '@/contexts/market/adapters/marketStore';
 import { CustomHeader } from '@/app-internal/components/global';
 import { ListItem } from '@/app-internal/components/global/ListItem';
 import { ListSection } from '@/app-internal/components/global/ListSection';
@@ -172,6 +173,17 @@ export default function Index() {
                     subTitle="Manage builder fee approval"
                     showIosChevron={true}
                     onPress={() => router.push('/settings/builder-fee-status')}
+                  />
+                  <ListItem
+                    title="Clear Market Cache"
+                    subTitle="Reset market data and reload"
+                    onPress={() => {
+                      marketStore.getState().clear();
+                      Alert.alert(
+                        'Cache Cleared',
+                        'Market cache has been cleared. Please restart the app.',
+                      );
+                    }}
                   />
                 </ListSection>
               </YStack>
