@@ -230,7 +230,7 @@ export default function AgentStatus() {
                           Approve
                         </Button.Tinted>
                       ) : (
-                        <Button.Gray
+                        <Button.Tinted
                           level="sm"
                           onPress={() => handleRevokeAgent(DEFAULT_AGENT_NAME)}
                           disabled={isAgentLoading}
@@ -239,7 +239,7 @@ export default function AgentStatus() {
                           pressStyle={{ backgroundColor: '$red10' }}
                         >
                           Revoke
-                        </Button.Gray>
+                        </Button.Tinted>
                       )}
                     </XStack>
                   </XStack>
@@ -254,6 +254,7 @@ export default function AgentStatus() {
                       justifyContent="space-between"
                       borderBottomWidth={index < otherNamedAgents.length - 1 ? 1 : 0}
                       borderBottomColor="$color10"
+                      backgroundColor="$gray2"
                     >
                       <YStack flex={1}>
                         <Text fontFamily="$interMedium" fontSize="$4" color="$color">
@@ -269,16 +270,16 @@ export default function AgentStatus() {
                         </Text>
                       </YStack>
                       <XStack flexShrink={0}>
-                        <Button.Gray
+                        <Button.Tinted
                           level="sm"
                           onPress={() => handleRevokeAgent(agent.name || '')}
                           disabled={isAgentLoading}
-                          backgroundColor="$red9"
-                          color="$red1"
+                          color="$red9"
+                          backgroundColor="$red3"
                           pressStyle={{ backgroundColor: '$red10' }}
                         >
                           Revoke
-                        </Button.Gray>
+                        </Button.Tinted>
                       </XStack>
                     </XStack>
                   ))}

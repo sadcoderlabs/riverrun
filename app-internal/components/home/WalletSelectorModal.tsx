@@ -25,6 +25,9 @@ export function WalletSelectorModal({ visible, onClose }: WalletSelectorModalPro
   const privyWallet = availableWallets.find(w => w.source === 'privy');
   const reownWallet = availableWallets.find(w => w.source === 'reown');
 
+  // Dynamic snap point based on connected wallets
+  const snapPoint = availableWallets.length > 1 ? 70 : 50;
+
   const handleSwitchWallet = async (source: 'privy' | 'reown') => {
     try {
       await setActive(source);
@@ -103,11 +106,10 @@ export function WalletSelectorModal({ visible, onClose }: WalletSelectorModalPro
       onOpenChange={(open: boolean) => {
         if (!open) onClose();
       }}
-      snapPoints={[50]}
+      snapPoints={[snapPoint]}
       position={0}
       dismissOnSnapToBottom
       dismissOnOverlayPress
-      zIndex={100000}
     >
       <Sheet.Overlay
         enterStyle={{ opacity: 0 }}
