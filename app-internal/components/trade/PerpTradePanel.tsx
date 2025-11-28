@@ -146,10 +146,12 @@ export function PerpTradePanel() {
 
   return (
     <XStack borderWidth={0}>
-      {/* Left Side - Order Book */}
-      <YStack flex={5} backgroundColor="$background" borderWidth={0}>
+      {/* Left Side - Order Book (height aligns with right column) */}
+      <YStack flex={5} backgroundColor="$background" borderWidth={0} alignSelf="stretch">
         <FundingRate />
-        <OrderBook onPriceClick={handleOrderBookPriceClick} />
+        <YStack flex={1}>
+          <OrderBook onPriceClick={handleOrderBookPriceClick} />
+        </YStack>
       </YStack>
 
       {/* Right Side - Trading Panel */}
@@ -290,10 +292,12 @@ export function PerpTradePanel() {
             </Text>
           </Button>
 
-          {/* Order Preview - Only show when valid inputs */}
-          {orderValidation.hasValidSize && orderValidation.hasValidLimitPrice && (
-            <OrderPreview orderValue={orderValue} marginRequired={marginRequired} />
-          )}
+          {/* Order Preview - Always visible, shows "-" when no valid inputs */}
+          <OrderPreview
+            orderValue={orderValue}
+            marginRequired={marginRequired}
+            hasValidInputs={orderValidation.hasValidSize && orderValidation.hasValidLimitPrice}
+          />
         </YStack>
       </YStack>
     </XStack>

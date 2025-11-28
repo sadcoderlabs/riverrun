@@ -8,6 +8,7 @@ import { Info } from '@tamagui/lucide-icons';
 interface OrderPreviewProps {
   orderValue: number;
   marginRequired: number;
+  hasValidInputs?: boolean;
 }
 
 /**
@@ -19,7 +20,11 @@ interface OrderPreviewProps {
  * - Fee rates (taker/maker with discounts)
  * Only displayed when user has entered valid inputs
  */
-export function OrderPreview({ orderValue, marginRequired }: OrderPreviewProps) {
+export function OrderPreview({
+  orderValue,
+  marginRequired,
+  hasValidInputs = true,
+}: OrderPreviewProps) {
   // Load user fee rates internally
   const { feeRates, loadUserFees } = useUserFees();
   const [tooltipOpen, setTooltipOpen] = useState(false);
@@ -36,7 +41,7 @@ export function OrderPreview({ orderValue, marginRequired }: OrderPreviewProps) 
           Order Value
         </Text>
         <Text fontFamily="$interSemiBold" fontSize="$2" color="$color">
-          ${formatValue(orderValue, 2)}
+          {hasValidInputs ? `$${formatValue(orderValue, 2)}` : '-'}
         </Text>
       </XStack>
 
@@ -46,7 +51,7 @@ export function OrderPreview({ orderValue, marginRequired }: OrderPreviewProps) 
           Margin Req.
         </Text>
         <Text fontFamily="$interSemiBold" fontSize="$2" color="$color">
-          ${formatValue(marginRequired, 2)}
+          {hasValidInputs ? `$${formatValue(marginRequired, 2)}` : '-'}
         </Text>
       </XStack>
 

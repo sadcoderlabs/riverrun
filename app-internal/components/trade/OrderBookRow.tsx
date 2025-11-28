@@ -67,7 +67,7 @@ export const OrderBookRow = memo(function OrderBookRow({
       alignItems="center"
       paddingLeft="$3"
       paddingRight="$1.5"
-      paddingVertical="$0.5"
+      paddingVertical="$0.75"
       onPress={onPress}
       pressStyle={{ opacity: 0.7 }}
     >
