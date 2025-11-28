@@ -1,4 +1,4 @@
-import { ExpoConfig, ConfigContext } from 'expo/config';
+import { ConfigContext, ExpoConfig } from 'expo/config';
 
 const IS_DEV = process.env.APP_VARIANT === 'development';
 const IS_PREVIEW = process.env.APP_VARIANT === 'preview';
@@ -53,7 +53,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       // Segment write key - build-time variable from EAS environment (not EXPO_PUBLIC_ to keep it private)
       segmentWriteKey: process.env.SEGMENT_WRITE_KEY,
       // Backend API base URL for notification service
-      backendApiBaseUrl: process.env.BACKEND_API_BASE_URL,
+      backendApiBaseUrl: process.env.BACKEND_API_BASE_URL || 'https://api.go.perp.com',
     },
   };
 };
