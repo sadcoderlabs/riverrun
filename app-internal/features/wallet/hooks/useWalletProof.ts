@@ -28,12 +28,6 @@ export interface UseWalletProofResult {
    * (e.g., during automatic unregistration on wallet disconnect).
    */
   getCachedProof: (address: string) => WalletProof | undefined;
-
-  /**
-   * Clear the stored signature for the current wallet.
-   * Next call to requestSignature() will prompt for a new signature.
-   */
-  clearSignature: () => void;
 }
 
 const signWalletProofUseCase = new SignWalletProofUseCase();
@@ -47,7 +41,7 @@ const signWalletProofUseCase = new SignWalletProofUseCase();
  *
  * @example
  * ```tsx
- * const { isSigned, requestSignature, clearSignature } = useWalletProof();
+ * const { isSigned, requestSignature } = useWalletProof();
  *
  * // Request signature (returns cached or prompts signing)
  * const proof = await requestSignature();
@@ -57,14 +51,11 @@ const signWalletProofUseCase = new SignWalletProofUseCase();
  * if (isSigned) {
  *   // Can use cached signature
  * }
- *
- * // Revoke signature
- * clearSignature();
  * ```
  */
 export function useWalletProof(): UseWalletProofResult {
   const { wallet, address, getSigner } = useWallet();
-  const { hasProof, getProof, setProof, clearProof } = useWalletProofStore();
+  const { hasProof, getProof, setProof } = useWalletProofStore();
 
   const isSigned = useMemo(() => {
     if (!address) return false;
@@ -92,12 +83,6 @@ export function useWalletProof(): UseWalletProofResult {
     return proof;
   }, [wallet, address, getSigner, getProof, setProof]);
 
-  const clearSignature = useCallback(() => {
-    if (address) {
-      clearProof(address);
-    }
-  }, [address, clearProof]);
-
   const getCachedProof = useCallback(
     (addr: string): WalletProof | undefined => {
       return getProof(addr.toLowerCase());
@@ -109,6 +94,5 @@ export function useWalletProof(): UseWalletProofResult {
     isSigned,
     requestSignature,
     getCachedProof,
-    clearSignature,
   };
 }

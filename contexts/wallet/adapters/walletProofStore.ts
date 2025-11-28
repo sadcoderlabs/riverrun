@@ -30,11 +30,6 @@ interface WalletProofState {
    */
   hasProof: (address: string) => boolean;
 
-  /**
-   * Clear the stored proof for an address
-   */
-  clearProof: (address: string) => void;
-
   _hasHydrated: boolean;
   _setHasHydrated: (state: boolean) => void;
 }
@@ -59,12 +54,6 @@ const walletProofStore = createStore<WalletProofState>()(
       getProof: address => get().proofs[address.toLowerCase()],
 
       hasProof: address => address.toLowerCase() in get().proofs,
-
-      clearProof: address =>
-        set(state => {
-          const { [address.toLowerCase()]: _, ...rest } = state.proofs;
-          return { proofs: rest };
-        }),
 
       _hasHydrated: false,
       _setHasHydrated: state => set({ _hasHydrated: state }),
