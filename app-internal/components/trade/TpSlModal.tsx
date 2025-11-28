@@ -9,7 +9,8 @@ import { Checkbox } from '@tamagui/checkbox';
 import { Check, X } from '@tamagui/lucide-icons';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ScrollView } from 'react-native';
-import { Sheet, Slider, Spinner, Text, XStack, YStack } from 'tamagui';
+import { Sheet, Slider, Spinner, XStack, YStack } from 'tamagui';
+import { Text } from '../global/Text';
 
 type Position = hl.ClearinghouseStateResponse['assetPositions'][number]['position'];
 
@@ -167,7 +168,10 @@ export default function TpSlModal({ open, onOpenChange, position }: TpSlModalPro
     setTpPrice(value);
     const priceNum = parseFloat(value);
     if (!isNaN(priceNum) && priceNum > 0) {
-      const percentChange = ((priceNum - entryPrice) / entryPrice) * 100;
+      // For LONG: gain = (price - entry) / entry, for SHORT: gain = (entry - price) / entry
+      const percentChange = isLong
+        ? ((priceNum - entryPrice) / entryPrice) * 100
+        : ((entryPrice - priceNum) / entryPrice) * 100;
       setTpPercent(percentChange.toFixed(2));
     } else {
       setTpPercent('');
@@ -178,7 +182,10 @@ export default function TpSlModal({ open, onOpenChange, position }: TpSlModalPro
     setTpPercent(value);
     const percentNum = parseFloat(value);
     if (!isNaN(percentNum)) {
-      const price = entryPrice * (1 + percentNum / 100);
+      // For LONG: TP is above entry, for SHORT: TP is below entry
+      const price = isLong
+        ? entryPrice * (1 + percentNum / 100)
+        : entryPrice * (1 - percentNum / 100);
       setTpPrice(formatPrice(price, szDecimals, false));
     } else {
       setTpPrice('');
@@ -190,8 +197,11 @@ export default function TpSlModal({ open, onOpenChange, position }: TpSlModalPro
     setSlPrice(value);
     const priceNum = parseFloat(value);
     if (!isNaN(priceNum) && priceNum > 0) {
-      const percentChange = ((priceNum - entryPrice) / entryPrice) * 100;
-      setSlPercent(Math.abs(percentChange).toFixed(2));
+      // For LONG: loss = (entry - price) / entry, for SHORT: loss = (price - entry) / entry
+      const percentChange = isLong
+        ? ((entryPrice - priceNum) / entryPrice) * 100
+        : ((priceNum - entryPrice) / entryPrice) * 100;
+      setSlPercent(percentChange.toFixed(2));
     } else {
       setSlPercent('');
     }
@@ -201,7 +211,10 @@ export default function TpSlModal({ open, onOpenChange, position }: TpSlModalPro
     setSlPercent(value);
     const percentNum = parseFloat(value);
     if (!isNaN(percentNum)) {
-      const price = entryPrice * (1 - percentNum / 100);
+      // For LONG: SL is below entry, for SHORT: SL is above entry
+      const price = isLong
+        ? entryPrice * (1 - percentNum / 100)
+        : entryPrice * (1 + percentNum / 100);
       setSlPrice(formatPrice(price, szDecimals, false));
     } else {
       setSlPrice('');
@@ -475,9 +488,7 @@ export default function TpSlModal({ open, onOpenChange, position }: TpSlModalPro
             <YStack gap="$3" marginTop="$4">
               {/* Take Profit */}
               <YStack gap="$3">
-                <Text fontSize="$2" color="$color" fontWeight={400}>
-                  Take Profit
-                </Text>
+                <Text.Footnote color="$color">Take Profit</Text.Footnote>
 
                 {existingTpSlOrders.tp ? (
                   <XStack
@@ -490,9 +501,7 @@ export default function TpSlModal({ open, onOpenChange, position }: TpSlModalPro
                     alignItems="center"
                   >
                     <YStack gap="$1">
-                      <Text fontSize="$2" color="$green10" fontFamily="$interMedium">
-                        {existingTpSlOrders.tp.triggerPx}
-                      </Text>
+                      <Text color="$green10">{existingTpSlOrders.tp.triggerPx}</Text>
                       <Text fontSize="$1" color="$color9">
                         Size: {existingTpSlOrders.tp.sz} {position.coin}
                       </Text>
@@ -559,9 +568,7 @@ export default function TpSlModal({ open, onOpenChange, position }: TpSlModalPro
 
               {/* Stop Loss */}
               <YStack gap="$2">
-                <Text fontSize="$2" color="$color" fontFamily="$interMedium">
-                  Stop Loss
-                </Text>
+                <Text.Footnote color="$color">Stop Loss</Text.Footnote>
 
                 {existingTpSlOrders.sl ? (
                   <XStack
@@ -574,9 +581,7 @@ export default function TpSlModal({ open, onOpenChange, position }: TpSlModalPro
                     alignItems="center"
                   >
                     <YStack gap="$1">
-                      <Text fontSize="$2" color="$red10" fontFamily="$interMedium">
-                        {existingTpSlOrders.sl.triggerPx}
-                      </Text>
+                      <Text color="$red10">{existingTpSlOrders.sl.triggerPx}</Text>
                       <Text fontSize="$1" color="$color9">
                         Size: {existingTpSlOrders.sl.sz} {position.coin}
                       </Text>
@@ -645,9 +650,7 @@ export default function TpSlModal({ open, onOpenChange, position }: TpSlModalPro
             {/* Configure Amount */}
             <YStack gap="$2" marginTop="$4">
               <XStack justifyContent="space-between" alignItems="center">
-                <Text fontSize="$2" color="$color" fontFamily="$interMedium">
-                  Configure Amount
-                </Text>
+                <Text.Footnote color="$color">Configure Amount</Text.Footnote>
                 <Checkbox
                   size="$4"
                   checked={configureAmount}
@@ -682,7 +685,7 @@ export default function TpSlModal({ open, onOpenChange, position }: TpSlModalPro
                     min={0}
                     max={100}
                     step={1}
-                    size="$4"
+                    size="$3"
                     marginBottom="$3"
                   >
                     <Slider.Track backgroundColor="$gray5" height="$0.75">
@@ -704,9 +707,7 @@ export default function TpSlModal({ open, onOpenChange, position }: TpSlModalPro
             {/* Limit Price */}
             <YStack gap="$2">
               <XStack justifyContent="space-between" alignItems="center">
-                <Text fontSize="$2" color="$color" fontFamily="$interMedium">
-                  Limit Price
-                </Text>
+                <Text.Footnote color="$color">Limit Price</Text.Footnote>
                 <Checkbox
                   size="$4"
                   checked={limitPrice}

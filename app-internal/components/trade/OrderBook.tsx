@@ -229,7 +229,7 @@ export function OrderBook({ onPriceClick }: OrderBookProps) {
       {/* Selectors Row - Precision & Size Unit Dropdowns */}
       <XStack
         paddingLeft="$3"
-        paddingVertical="$1"
+        paddingVertical="$2"
         backgroundColor="$background"
         justifyContent="space-between"
         alignItems="center"
@@ -310,7 +310,7 @@ export function OrderBook({ onPriceClick }: OrderBookProps) {
       {/* Column Headers */}
       <XStack
         paddingHorizontal="$3"
-        paddingVertical="$0.75"
+        paddingVertical="$1"
         justifyContent="space-between"
         alignItems="center"
       >
@@ -337,7 +337,7 @@ export function OrderBook({ onPriceClick }: OrderBookProps) {
 
         {/* Last Trade Price Display */}
         <YStack
-          paddingVertical="$2"
+          paddingVertical="$2.5"
           paddingHorizontal="$1.5"
           backgroundColor="$background"
           gap="$1"
