@@ -19,7 +19,7 @@ const metadata = {
   name: 'PERP GO',
   description: 'Non-custodial crypto futures.',
   url: 'https://go.perp.com',
-  icons: ['https://avatars.githubusercontent.com/u/179229932'],
+  icons: ['https://s3.ap-southeast-1.amazonaws.com/riverrun.perp.com/perp-go-icon.png'],
   redirect: {
     native: 'riverrun://',
     universal: 'YOUR_APP_UNIVERSAL_LINK.com',
