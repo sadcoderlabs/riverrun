@@ -13,4 +13,3 @@
  */
 
 export * from './client/deviceClient';
-export { getBaseUrl } from './client/getter';
