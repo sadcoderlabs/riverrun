@@ -19,7 +19,6 @@ import { Platform } from 'react-native';
 import { useContainer } from '@/app-internal/di';
 import { useWallet } from '@/app-internal/features/wallet/hooks/useWallet';
 import { useWalletOwnershipProof } from '@/app-internal/features/wallet/hooks/useWalletOwnershipProof';
-import { useWalletProofStore } from '@/contexts/wallet/adapters/walletProofStore';
 import { useNotificationPreferenceStore } from '../stores/notificationPreferenceStore';
 
 const PROJECT_ID = Constants.easConfig?.projectId;
@@ -57,8 +56,7 @@ export function usePushNotifications(): void {
   const unregisterDeviceUseCase = useContainer(c => c.unregisterDeviceUseCase);
   const telemetryService = useContainer(c => c.telemetryService);
   const { wallet, isConnected } = useWallet();
-  const { requestSignature } = useWalletOwnershipProof();
-  const { getProof } = useWalletProofStore();
+  const { requestSignature, getCachedProof } = useWalletOwnershipProof();
   const isNotificationEnabled = useNotificationPreferenceStore(state => state.isEnabled);
 
   // Track if we've already registered for this wallet
@@ -167,7 +165,7 @@ export function usePushNotifications(): void {
     }
 
     // Need a proof to unregister - use cached proof only (don't prompt)
-    const proof = getProof(wallet.address.toLowerCase());
+    const proof = getCachedProof(wallet.address);
     if (!proof) {
       return;
     }
@@ -184,7 +182,7 @@ export function usePushNotifications(): void {
       // Silent fail
       console.error('[PushNotifications] Unregistration failed:', error);
     }
-  }, [wallet, getProof, unregisterDeviceUseCase]);
+  }, [wallet, getCachedProof, unregisterDeviceUseCase]);
 
   // Register device when notifications are enabled
   useEffect(() => {
@@ -207,8 +205,7 @@ export function usePushNotifications(): void {
 
     // Wallet just disconnected - unregister using registered wallet's proof
     if (!isConnected && registeredAddress) {
-      const normalizedAddress = registeredAddress.toLowerCase();
-      const proof = getProof(normalizedAddress);
+      const proof = getCachedProof(registeredAddress);
       if (proof) {
         // Unregister device asynchronously
         (async () => {
@@ -231,5 +228,5 @@ export function usePushNotifications(): void {
       }
       registeredWalletRef.current = undefined;
     }
-  }, [isConnected, getProof, unregisterDeviceUseCase]);
+  }, [isConnected, getCachedProof, unregisterDeviceUseCase]);
 }

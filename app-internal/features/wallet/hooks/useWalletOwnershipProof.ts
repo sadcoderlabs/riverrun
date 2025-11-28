@@ -21,6 +21,15 @@ export interface UseWalletOwnershipProofResult {
   requestSignature: () => Promise<WalletProof>;
 
   /**
+   * Get cached proof for an address without prompting for signing.
+   * Returns undefined if no proof is stored.
+   *
+   * Use this when you need to check for an existing proof silently
+   * (e.g., during automatic unregistration on wallet disconnect).
+   */
+  getCachedProof: (address: string) => WalletProof | undefined;
+
+  /**
    * Clear the stored signature for the current wallet.
    * Next call to requestSignature() will prompt for a new signature.
    */
@@ -89,9 +98,17 @@ export function useWalletOwnershipProof(): UseWalletOwnershipProofResult {
     }
   }, [address, clearProof]);
 
+  const getCachedProof = useCallback(
+    (addr: string): WalletProof | undefined => {
+      return getProof(addr.toLowerCase());
+    },
+    [getProof],
+  );
+
   return {
     isSigned,
     requestSignature,
+    getCachedProof,
     clearSignature,
   };
 }
