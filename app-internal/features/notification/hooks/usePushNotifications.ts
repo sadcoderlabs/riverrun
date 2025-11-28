@@ -156,32 +156,39 @@ export function usePushNotifications(): void {
   ]);
 
   /**
-   * Unregister device from backend
+   * Unregister device from backend using a proof
+   */
+  const unregisterWithProof = useCallback(
+    async (proof: NonNullable<ReturnType<typeof getCachedProof>>) => {
+      try {
+        const tokenData = await Notifications.getExpoPushTokenAsync({ projectId: PROJECT_ID });
+        await unregisterDeviceUseCase.execute({
+          proof,
+          deviceToken: tokenData.data,
+        });
+        console.log('[PushNotifications] Device unregistered');
+      } catch (error) {
+        console.error('[PushNotifications] Unregistration failed:', error);
+      }
+    },
+    [unregisterDeviceUseCase],
+  );
+
+  /**
+   * Unregister device from backend (uses current wallet's cached proof)
    */
   const unregisterDevice = useCallback(async () => {
     if (!wallet) {
       return;
     }
 
-    // Need a proof to unregister - use cached proof only (don't prompt)
     const proof = getCachedProof(wallet.address);
     if (!proof) {
       return;
     }
 
-    try {
-      const tokenData = await Notifications.getExpoPushTokenAsync({ projectId: PROJECT_ID });
-      await unregisterDeviceUseCase.execute({
-        proof,
-        deviceToken: tokenData.data,
-      });
-
-      console.log('[PushNotifications] Device unregistered');
-    } catch (error) {
-      // Silent fail
-      console.error('[PushNotifications] Unregistration failed:', error);
-    }
-  }, [wallet, getCachedProof, unregisterDeviceUseCase]);
+    await unregisterWithProof(proof);
+  }, [wallet, getCachedProof, unregisterWithProof]);
 
   // Register device when notifications are enabled
   useEffect(() => {
@@ -202,25 +209,12 @@ export function usePushNotifications(): void {
   useEffect(() => {
     const registeredAddress = registeredWalletRef.current;
 
-    // Wallet just disconnected - unregister using registered wallet's proof
     if (!isConnected && registeredAddress) {
       const proof = getCachedProof(registeredAddress);
       if (proof) {
-        // Unregister device asynchronously
-        (async () => {
-          try {
-            const tokenData = await Notifications.getExpoPushTokenAsync({ projectId: PROJECT_ID });
-            await unregisterDeviceUseCase.execute({
-              proof,
-              deviceToken: tokenData.data,
-            });
-            console.log('[PushNotifications] Device unregistered on wallet disconnect');
-          } catch (error) {
-            console.error('[PushNotifications] Unregistration failed on wallet disconnect:', error);
-          }
-        })();
+        unregisterWithProof(proof);
       }
       registeredWalletRef.current = undefined;
     }
-  }, [isConnected, getCachedProof, unregisterDeviceUseCase]);
+  }, [isConnected, getCachedProof, unregisterWithProof]);
 }
