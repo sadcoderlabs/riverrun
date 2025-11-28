@@ -10,6 +10,7 @@
  * Registration/unregistration happens automatically based on preference state.
  */
 
+import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { useCallback, useEffect, useRef } from 'react';
@@ -18,8 +19,10 @@ import { Platform } from 'react-native';
 import { useContainer } from '@/app-internal/di';
 import { useWallet } from '@/app-internal/features/wallet/hooks/useWallet';
 import { useWalletOwnershipProof } from '@/app-internal/features/wallet/hooks/useWalletOwnershipProof';
-import { useNotificationPreferenceStore } from '../stores/notificationPreferenceStore';
 import { useWalletProofStore } from '@/contexts/wallet/adapters/walletProofStore';
+import { useNotificationPreferenceStore } from '../stores/notificationPreferenceStore';
+
+const PROJECT_ID = Constants.easConfig?.projectId;
 
 // Configure notification handler
 Notifications.setNotificationHandler({
@@ -95,9 +98,7 @@ export function usePushNotifications(): void {
     }
 
     // Get push token with projectId for EAS compatibility
-    const tokenData = await Notifications.getExpoPushTokenAsync({
-      projectId: '058a60a5-6caf-492e-8330-d0814b655293',
-    });
+    const tokenData = await Notifications.getExpoPushTokenAsync({ projectId: PROJECT_ID });
     console.log('[PushNotifications] Expo push token:', tokenData.data);
     return tokenData.data;
   }, []);
@@ -177,10 +178,7 @@ export function usePushNotifications(): void {
     }
 
     try {
-      const tokenData = await Notifications.getExpoPushTokenAsync({
-        projectId: '058a60a5-6caf-492e-8330-d0814b655293',
-      });
-
+      const tokenData = await Notifications.getExpoPushTokenAsync({ projectId: PROJECT_ID });
       await unregisterDeviceUseCase.execute({
         proof,
         deviceToken: tokenData.data,
