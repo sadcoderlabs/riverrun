@@ -5,7 +5,7 @@ import { Spinner, Text, YStack, XStack, Button } from 'tamagui';
 import { useCandleData, type CandleInterval } from './hooks/useCandleData';
 
 interface ChartUIProps {
-  marketId?: string;
+  coin?: string;
 }
 
 const INTERVALS: { label: string; value: CandleInterval }[] = [
@@ -17,19 +17,12 @@ const INTERVALS: { label: string; value: CandleInterval }[] = [
   { label: '1D', value: '1d' },
 ];
 
-export function ChartUI({ marketId }: ChartUIProps) {
+export function ChartUI({ coin = 'BTC' }: ChartUIProps) {
   const webViewRef = useRef<WebView>(null);
   const [webViewReady, setWebViewReady] = useState(false);
   const [debugInfo, setDebugInfo] = useState<string>('Initializing...');
   const [selectedInterval, setSelectedInterval] = useState<CandleInterval>('1h');
-
-  // Extract coin symbol from marketId (e.g., "BTC-USD" -> "BTC")
-  const getCoinSymbol = (market?: string): string => {
-    if (!market) return 'BTC';
-    return market.split('-')[0];
-  };
-
-  const coin = getCoinSymbol(marketId);
+  const marketId = `${coin}-USD`;
 
   // Fetch candle data from Hyperliquid
   const { data, loading, error, refetch } = useCandleData({

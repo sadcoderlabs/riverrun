@@ -71,6 +71,8 @@ export type TelemetryEventName =
   | 'withdraw_initiated'
   | 'withdraw_completed'
   | 'withdraw_failed'
+  // Push Notifications
+  | 'push_notification_registered'
   // Login
   | 'login_alternative_requested';
 
@@ -207,6 +209,11 @@ export interface TelemetryEventProps {
   withdraw_failed: {
     amount: number;
     reason?: string;
+  };
+
+  // Push Notifications
+  push_notification_registered: {
+    platform: 'ios' | 'android';
   };
 
   // Login
