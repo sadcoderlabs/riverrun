@@ -6,7 +6,7 @@ import ExportWalletModal from '@/app-internal/components/settings/ExportWalletMo
 import { useCustomerSupport } from '@/app-internal/features/customerSupport';
 import { useNotificationPreference } from '@/app-internal/features/notification';
 import { useVersionInfo } from '@/app-internal/features/version/hooks/useVersionInfo';
-import { useWalletOwnershipProof } from '@/app-internal/features/wallet/hooks/useWalletOwnershipProof';
+import { useWalletProof } from '@/app-internal/features/wallet/hooks/useWalletProof';
 import { features } from '@/config/environment';
 import { ArrowUpRight, MessageCircle } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
@@ -24,7 +24,7 @@ export default function Index() {
   const { openSupport } = useCustomerSupport();
   const { isEnabled: isNotificationEnabled, setEnabled: setNotificationEnabled } =
     useNotificationPreference();
-  const { isSigned, requestSignature } = useWalletOwnershipProof();
+  const { isSigned, requestSignature } = useWalletProof();
 
   /**
    * Handle notification toggle.

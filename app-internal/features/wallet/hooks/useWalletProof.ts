@@ -1,12 +1,12 @@
 import { useCallback, useMemo } from 'react';
-import { useWallet } from './useWallet';
 import {
   useWalletProofStore,
   type WalletProof,
 } from '../../../../contexts/wallet/adapters/walletProofStore';
 import { SignWalletProofUseCase } from '../../../../contexts/wallet/application/usecases/SignWalletProofUseCase';
+import { useWallet } from './useWallet';
 
-export interface UseWalletOwnershipProofResult {
+export interface UseWalletProofResult {
   /**
    * Whether the current wallet has a stored ownership signature.
    */
@@ -39,7 +39,7 @@ export interface UseWalletOwnershipProofResult {
 const signWalletProofUseCase = new SignWalletProofUseCase();
 
 /**
- * useWalletOwnershipProof - Manage wallet ownership proof signatures
+ * useWalletProof - Manage wallet ownership proof signatures
  *
  * This hook provides a way to sign and cache wallet ownership proofs.
  * The signature is stored locally and can be reused for any API calls
@@ -47,7 +47,7 @@ const signWalletProofUseCase = new SignWalletProofUseCase();
  *
  * @example
  * ```tsx
- * const { isSigned, requestSignature, clearSignature } = useWalletOwnershipProof();
+ * const { isSigned, requestSignature, clearSignature } = useWalletProof();
  *
  * // Request signature (returns cached or prompts signing)
  * const proof = await requestSignature();
@@ -62,7 +62,7 @@ const signWalletProofUseCase = new SignWalletProofUseCase();
  * clearSignature();
  * ```
  */
-export function useWalletOwnershipProof(): UseWalletOwnershipProofResult {
+export function useWalletProof(): UseWalletProofResult {
   const { wallet, address, getSigner } = useWallet();
   const { hasProof, getProof, setProof, clearProof } = useWalletProofStore();
 
