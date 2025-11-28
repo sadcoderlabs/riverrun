@@ -124,7 +124,7 @@ function PositionCard({ position, onPositionClick, onCloseClick, onTpSlClick }: 
             </Text>
             {position.leverage.type === 'cross' && (
               <View
-                backgroundColor="$gray1"
+                backgroundColor="$gray3"
                 paddingHorizontal="$2"
                 paddingVertical="$1"
                 borderRadius="$4"
@@ -135,12 +135,12 @@ function PositionCard({ position, onPositionClick, onCloseClick, onTpSlClick }: 
               </View>
             )}
             <View
-              backgroundColor={metrics.side === 'Long' ? '$green1' : '$red1'}
+              backgroundColor={metrics.side === 'Long' ? '$green3' : '$red3'}
               paddingHorizontal="$2"
               paddingVertical="$1"
               borderRadius="$4"
             >
-              <Text fontSize="$1" color={metrics.side === 'Long' ? '$green10' : '$red10'}>
+              <Text fontSize="$1" color={metrics.side === 'Long' ? '$green12' : '$red12'}>
                 {metrics.side.toUpperCase()} {leverage}X
               </Text>
             </View>
@@ -247,7 +247,7 @@ function PositionCard({ position, onPositionClick, onCloseClick, onTpSlClick }: 
 
       {/* Action Buttons */}
       <XStack gap="$2" marginTop="$1">
-        <Button.Tinted
+        <Button.Filled
           flex={1}
           size="$2"
           height="$3"
@@ -258,13 +258,11 @@ function PositionCard({ position, onPositionClick, onCloseClick, onTpSlClick }: 
           pressStyle={{ opacity: 0.8 }}
         >
           Set TP/SL
-        </Button.Tinted>
+        </Button.Filled>
         <Button.Tinted
           flex={1}
           size="$2"
           height="$3"
-          backgroundColor="$gray1"
-          color="$color12"
           onPress={(e: any) => {
             e.stopPropagation();
             onCloseClick();
