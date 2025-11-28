@@ -37,7 +37,7 @@ function CoinInfoContent({ selectedMarket }: { selectedMarket: SelectedMarket })
           {/* Right side: Chart icon */}
           <XStack
             onPress={() => {
-              router.push(`/chart/perp/${coin}`);
+              router.push({ pathname: '/(modal)/chart', params: { coin } });
             }}
             pressStyle={{ opacity: 0.7 }}
           >
