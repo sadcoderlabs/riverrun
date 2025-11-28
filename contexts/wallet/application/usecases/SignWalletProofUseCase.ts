@@ -13,13 +13,8 @@ export interface SignWalletProofInput {
   address: string;
 }
 
-export interface SignWalletProofOutput extends WalletProof {
-  signature: `0x${string}`;
-  message: string;
-}
-
 export class SignWalletProofUseCase {
-  async execute(input: SignWalletProofInput): Promise<SignWalletProofOutput> {
+  async execute(input: SignWalletProofInput): Promise<WalletProof> {
     const { signer, address } = input;
 
     // Create message with action and address (no timestamp for reusability)
