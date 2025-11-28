@@ -185,12 +185,11 @@ export function usePushNotifications(): void {
       });
 
       console.log('[PushNotifications] Device unregistered successfully');
-      telemetryService.trackEvent('push_notification_unregistered', {});
     } catch (error) {
       // Silent fail
       console.error('[PushNotifications] Unregistration failed:', error);
     }
-  }, [wallet, getProof, unregisterDeviceUseCase, telemetryService]);
+  }, [wallet, getProof, unregisterDeviceUseCase]);
 
   // Register device when notifications are enabled
   useEffect(() => {
@@ -207,10 +206,35 @@ export function usePushNotifications(): void {
     }
   }, [isNotificationEnabled, unregisterDevice]);
 
-  // Reset registration state when wallet disconnects
+  // Unregister device and reset state when wallet disconnects
   useEffect(() => {
-    if (!isConnected) {
+    const registeredAddress = registeredWalletRef.current;
+
+    // Wallet just disconnected - unregister using registered wallet's proof
+    if (!isConnected && registeredAddress) {
+      const normalizedAddress = registeredAddress.toLowerCase();
+      const proof = getProof(normalizedAddress);
+      if (proof) {
+        // Unregister device asynchronously
+        (async () => {
+          try {
+            const tokenData = await Notifications.getExpoPushTokenAsync({ projectId: PROJECT_ID });
+            await unregisterDeviceUseCase.execute({
+              proof,
+              deviceToken: tokenData.data,
+            });
+            console.log(
+              `[PushNotifications] Unregistered on wallet (${registeredAddress}) disconnect`,
+            );
+          } catch (error) {
+            console.error(
+              `[PushNotifications] Failed to unregister on wallet (${registeredAddress}) disconnect:`,
+              error,
+            );
+          }
+        })();
+      }
       registeredWalletRef.current = undefined;
     }
-  }, [isConnected]);
+  }, [isConnected, getProof, unregisterDeviceUseCase]);
 }

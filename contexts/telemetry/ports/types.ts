@@ -214,7 +214,9 @@ export interface TelemetryEventProps {
   push_notification_registered: {
     platform: 'ios' | 'android';
   };
-  push_notification_unregistered: Record<string, never>;
+  push_notification_unregistered: {
+    reason?: 'preference_disabled' | 'wallet_disconnect';
+  };
 }
 
 // ============================================================================
