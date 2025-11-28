@@ -1,7 +1,7 @@
 {
   "expo": {
     "slug": "riverrun",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "orientation": "portrait",
     "icon": "./app-internal/assets/images/icon.png",
     "scheme": "riverrun",
@@ -57,6 +57,14 @@
           "androidApiKey": "android_sdk-bdb2171ef56a06265b1df0f5aecf5d14adc40d4f",
           "iosApiKey": "ios_sdk-e5774cb37d2a4066ddf241e1494637775fcf4801",
           "useManualInit": true
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./app-internal/assets/images/android-icon-monochrome.png",
+          "color": "#313031",
+          "defaultChannel": "default"
         }
       ]
     ],
