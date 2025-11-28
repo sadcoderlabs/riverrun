@@ -99,6 +99,15 @@ export function PerpTradePanel() {
     tpSlValidation,
   });
 
+  // Check if user has sufficient margin for the order
+  // Only show insufficient margin when we have valid inputs AND margin required exceeds available
+  const hasInsufficientMargin =
+    orderValidation.hasValidSize &&
+    orderValidation.hasValidLimitPrice &&
+    marginRequired > 0 &&
+    availableToTrade > 0 &&
+    marginRequired > availableToTrade;
+
   // Handler for TP/SL changes
   const handleTpSlChange = useCallback(
     (result: TpSlResult | undefined, validation: TpSlValidationResult) => {
@@ -275,20 +284,26 @@ export function PerpTradePanel() {
 
           {/* Place Order Button */}
           <Button
-            backgroundColor={orderSide === 'Long' ? '$green9' : '$red9'}
+            backgroundColor={
+              hasInsufficientMargin ? '$gray6' : orderSide === 'Long' ? '$green9' : '$red9'
+            }
             paddingVertical="$2.5"
             marginTop="$1"
             borderRadius="$3"
-            disabled={isPlacingOrder}
+            disabled={isPlacingOrder || hasInsufficientMargin}
             onPress={handlePlaceOrder}
             pressStyle={{ opacity: 0.8 }}
           >
             <Text
               fontFamily="$interSemiBold"
               fontSize="$3"
-              color={orderSide === 'Long' ? '$green1' : '$red1'}
+              color={hasInsufficientMargin ? '$gray10' : orderSide === 'Long' ? '$green1' : '$red1'}
             >
-              {isPlacingOrder ? 'Placing Order...' : 'Place Order'}
+              {isPlacingOrder
+                ? 'Placing Order...'
+                : hasInsufficientMargin
+                  ? 'Insufficient Margin'
+                  : 'Place Order'}
             </Text>
           </Button>
 
