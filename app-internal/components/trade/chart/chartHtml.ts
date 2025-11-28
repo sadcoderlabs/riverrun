@@ -333,7 +333,9 @@ export function generateChartHtml(options: ChartHtmlOptions): string {
           'move_logo_to_main_pane',
           'hide_left_toolbar_by_default',
           'header_resolutions',
-          'items_favoriting'
+          'items_favoriting',
+          'show_hide_button_in_legend',
+          'side_toolbar_in_fullscreen_mode'
         ],
 
         // Style overrides for dark theme
@@ -369,6 +371,14 @@ export function generateChartHtml(options: ChartHtmlOptions): string {
       });
 
       window.tvWidget.onChartReady(() => {
+        // Add button to toggle left toolbar (drawing tools)
+        const button = window.tvWidget.createButton();
+        button.setAttribute('title', 'Toggle Drawing Tools');
+        button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>';
+        button.addEventListener('click', () => {
+          window.tvWidget.chart().executeActionById('drawingToolbarAction');
+        });
+
         sendToReactNative({ type: 'chartReady' });
       });
     }
