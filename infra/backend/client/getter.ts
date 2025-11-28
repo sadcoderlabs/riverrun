@@ -24,5 +24,6 @@ export function getBaseUrl(): string {
   if (!baseUrl) {
     throw new Error('[Backend] BACKEND_API_BASE_URL not configured');
   }
+  console.log(`[Backend] Using BACKEND_API_BASE_URL: ${baseUrl}`);
   return baseUrl;
 }
