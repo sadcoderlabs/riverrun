@@ -2,6 +2,7 @@ import { useScreenTracking } from '@/app-internal';
 import { AccountEquity } from '@/app-internal/components/home/AccountEquity';
 import { PerpsOverview } from '@/app-internal/components/home/PerpsOverview';
 import { WalletInfo } from '@/app-internal/components/home/WalletInfo';
+import { WelcomeDialog } from '@/app-internal/components/welcome/WelcomeDialog';
 import { ScrollView, YStack } from 'tamagui';
 
 /**
@@ -25,6 +26,9 @@ export default function Index() {
           <PerpsOverview />
         </YStack>
       </ScrollView>
+
+      {/* Welcome Dialog - shown on first sign-in */}
+      <WelcomeDialog />
     </YStack>
   );
 }
