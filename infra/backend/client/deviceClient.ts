@@ -70,15 +70,23 @@ export interface NotificationStatusResponse {
  * ```
  */
 export async function registerDevice(params: RegisterDeviceParams): Promise<DeviceResponse> {
-  const response = await fetch(`${getBaseUrl()}/devices/register`, {
+  const url = `${getBaseUrl()}/devices/register`;
+  console.log(`[DeviceClient] POST ${url}`, { walletAddress: params.walletAddress });
+
+  const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Unknown error' }));
-    throw new Error(`Device registration failed: ${error.error || response.statusText}`);
+    const responseText = await response.text();
+    console.error(
+      `[DeviceClient] registerDevice failed: status=${response.status}, body=${responseText}`,
+    );
+    throw new Error(
+      `Device registration failed: ${response.status} ${response.statusText} - ${responseText}`,
+    );
   }
 
   return response.json();
@@ -131,13 +139,19 @@ export async function unregisterDevice(params: UnregisterDeviceParams): Promise<
 export async function getNotificationStatus(
   walletAddress: string,
 ): Promise<NotificationStatusResponse> {
-  const response = await fetch(
-    `${getBaseUrl()}/devices/status?walletAddress=${encodeURIComponent(walletAddress)}`,
-  );
+  const url = `${getBaseUrl()}/devices/status?walletAddress=${encodeURIComponent(walletAddress)}`;
+  console.log(`[DeviceClient] GET ${url}`);
+
+  const response = await fetch(url);
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Unknown error' }));
-    throw new Error(`Get notification status failed: ${error.error || response.statusText}`);
+    const responseText = await response.text();
+    console.error(
+      `[DeviceClient] getNotificationStatus failed: status=${response.status}, body=${responseText}`,
+    );
+    throw new Error(
+      `Get notification status failed: ${response.status} ${response.statusText} - ${responseText}`,
+    );
   }
 
   return response.json();

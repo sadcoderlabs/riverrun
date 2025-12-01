@@ -10,7 +10,8 @@ import { Heading } from '@/app-internal/components/global/Heading';
 import { Text } from '@/app-internal/components/global/Text';
 import { Bell, TicketPercent } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { XStack, YStack } from 'tamagui';
 
@@ -50,7 +51,7 @@ export default function WelcomeScreen() {
   const insets = useSafeAreaInsets();
   const { address } = useWallet();
   const { setReferrer } = useReferral();
-  const { enableNotifications } = useNotificationSetup();
+  const { setupNotificationsWithBackend, setupComplete, isLoading } = useNotificationSetup();
   const markSeen = useWelcomeStore(state => state.markSeen);
 
   const [currentPage, setCurrentPage] = useState(0);
@@ -88,15 +89,35 @@ export default function WelcomeScreen() {
     if (currentPageId === 'referral') {
       // Trigger referral workflow (shows confirmation dialog)
       await setReferrer();
+      goToNextPage();
     } else if (currentPageId === 'notification') {
-      // Trigger notification setup
-      // - Android: auto-opted in, no action needed
-      // - iOS: request permission or open settings
-      await enableNotifications();
+      // Trigger notification setup with backend registration
+      // Returns true if completed immediately, false if waiting for settings
+      if (address) {
+        const success = await setupNotificationsWithBackend(
+          address,
+          Platform.OS as 'ios' | 'android',
+        );
+        if (success) {
+          goToNextPage();
+        }
+        // If !success, user was sent to settings - wait for setupComplete
+      } else {
+        // No wallet address, just skip notification setup
+        goToNextPage();
+      }
     }
+  }, [currentPage, setReferrer, setupNotificationsWithBackend, address, goToNextPage]);
 
-    goToNextPage();
-  }, [currentPage, setReferrer, enableNotifications, goToNextPage]);
+  /**
+   * Watch for setupComplete - triggered when user returns from settings
+   */
+  useEffect(() => {
+    const currentPageId = WELCOME_PAGES[currentPage]?.id;
+    if (setupComplete && currentPageId === 'notification') {
+      goToNextPage();
+    }
+  }, [setupComplete, currentPage, goToNextPage]);
 
   /**
    * Handle "Set up later" - skip action and advance
@@ -165,11 +186,11 @@ export default function WelcomeScreen() {
 
       {/* CTA Buttons - Bottom */}
       <YStack gap="$3" paddingBottom="$4">
-        <Button.Filled level="lg" width="100%" onPress={handleOk}>
-          OK
+        <Button.Filled level="lg" width="100%" onPress={handleOk} disabled={isLoading}>
+          {isLoading ? 'Setting up...' : 'OK'}
         </Button.Filled>
 
-        <Button.Gray level="lg" width="100%" onPress={handleSetupLater}>
+        <Button.Gray level="lg" width="100%" onPress={handleSetupLater} disabled={isLoading}>
           Set up later
         </Button.Gray>
 
