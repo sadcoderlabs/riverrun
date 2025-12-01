@@ -6,15 +6,13 @@
  */
 
 export interface RegisterDeviceParams {
-  signature: `0x${string}`;
-  message: string;
+  walletAddress: string;
   deviceToken: string;
   platform: 'ios' | 'android';
 }
 
 export interface UnregisterDeviceParams {
-  signature: `0x${string}`;
-  message: string;
+  walletAddress: string;
   deviceToken: string;
 }
 
@@ -22,7 +20,7 @@ export interface NotificationApiPort {
   /**
    * Register a device for push notifications
    *
-   * @param params - Device registration parameters including signed message
+   * @param params - Device registration parameters
    * @returns Success response from backend
    */
   registerDevice(params: RegisterDeviceParams): Promise<{ success: boolean }>;
@@ -30,7 +28,7 @@ export interface NotificationApiPort {
   /**
    * Unregister a device from push notifications
    *
-   * @param params - Wallet ownership proof to identify which device to unregister
+   * @param params - Device to unregister
    * @returns Success response from backend
    */
   unregisterDevice(params: UnregisterDeviceParams): Promise<{ success: boolean }>;

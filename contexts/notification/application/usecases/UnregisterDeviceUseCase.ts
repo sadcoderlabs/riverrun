@@ -2,14 +2,13 @@
  * UnregisterDeviceUseCase - Unregister a device from push notifications
  *
  * This use case handles the process of calling the backend API
- * to unregister a device using a wallet ownership proof.
+ * to unregister a device from push notifications.
  */
 
-import type { WalletProof } from '@/contexts/wallet/adapters/walletProofStore';
 import type { NotificationApiPort } from '../ports/notificationApiPort';
 
 export interface UnregisterDeviceInput {
-  proof: WalletProof;
+  walletAddress: string;
   deviceToken: string;
 }
 
@@ -21,11 +20,10 @@ export class UnregisterDeviceUseCase {
   constructor(private notificationApiPort: NotificationApiPort) {}
 
   async execute(input: UnregisterDeviceInput): Promise<UnregisterDeviceOutput> {
-    const { proof, deviceToken } = input;
+    const { walletAddress, deviceToken } = input;
 
     const result = await this.notificationApiPort.unregisterDevice({
-      signature: proof.signature,
-      message: proof.message,
+      walletAddress,
       deviceToken,
     });
 

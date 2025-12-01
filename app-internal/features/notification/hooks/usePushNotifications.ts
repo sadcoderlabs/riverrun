@@ -18,7 +18,6 @@ import { Platform } from 'react-native';
 
 import { useContainer } from '@/app-internal/di';
 import { useWallet } from '@/app-internal/features/wallet/hooks/useWallet';
-import { useWalletProof } from '@/app-internal/features/wallet/hooks/useWalletProof';
 import { useNotificationPreferenceStore } from '../stores/notificationPreferenceStore';
 
 const PROJECT_ID = Constants.easConfig?.projectId;
@@ -55,7 +54,6 @@ export function usePushNotifications(): void {
   const unregisterDeviceUseCase = useContainer(c => c.unregisterDeviceUseCase);
   const telemetryService = useContainer(c => c.telemetryService);
   const { wallet, isConnected } = useWallet();
-  const { requestSignature, getCachedProof } = useWalletProof();
   const isNotificationEnabled = useNotificationPreferenceStore(state => state.isEnabled);
 
   // Track if we've already registered for this wallet
@@ -125,11 +123,10 @@ export function usePushNotifications(): void {
         return;
       }
 
-      const proof = await requestSignature();
       const platform = Platform.OS as 'ios' | 'android';
 
       await registerDeviceUseCase.execute({
-        proof,
+        walletAddress: wallet.address,
         deviceToken,
         platform,
       });
@@ -149,21 +146,20 @@ export function usePushNotifications(): void {
     isConnected,
     wallet,
     isNotificationEnabled,
-    requestSignature,
     getExpoPushToken,
     registerDeviceUseCase,
     telemetryService,
   ]);
 
   /**
-   * Unregister device from backend using a proof
+   * Unregister device from backend for a given wallet address
    */
-  const unregisterWithProof = useCallback(
-    async (proof: NonNullable<ReturnType<typeof getCachedProof>>) => {
+  const unregisterForAddress = useCallback(
+    async (walletAddress: string) => {
       try {
         const tokenData = await Notifications.getExpoPushTokenAsync({ projectId: PROJECT_ID });
         await unregisterDeviceUseCase.execute({
-          proof,
+          walletAddress,
           deviceToken: tokenData.data,
         });
         console.log('[PushNotifications] Device unregistered');
@@ -175,20 +171,15 @@ export function usePushNotifications(): void {
   );
 
   /**
-   * Unregister device from backend (uses current wallet's cached proof)
+   * Unregister device from backend for current wallet
    */
   const unregisterDevice = useCallback(async () => {
     if (!wallet) {
       return;
     }
 
-    const proof = getCachedProof(wallet.address);
-    if (!proof) {
-      return;
-    }
-
-    await unregisterWithProof(proof);
-  }, [wallet, getCachedProof, unregisterWithProof]);
+    await unregisterForAddress(wallet.address);
+  }, [wallet, unregisterForAddress]);
 
   // Register device when notifications are enabled
   useEffect(() => {
@@ -210,11 +201,8 @@ export function usePushNotifications(): void {
     const registeredAddress = registeredWalletRef.current;
 
     if (!isConnected && registeredAddress) {
-      const proof = getCachedProof(registeredAddress);
-      if (proof) {
-        unregisterWithProof(proof);
-      }
+      unregisterForAddress(registeredAddress);
       registeredWalletRef.current = undefined;
     }
-  }, [isConnected, getCachedProof, unregisterWithProof]);
+  }, [isConnected, unregisterForAddress]);
 }

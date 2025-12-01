@@ -6,60 +6,23 @@ import ExportWalletModal from '@/app-internal/components/settings/ExportWalletMo
 import { useCustomerSupport } from '@/app-internal/features/customerSupport';
 import { useNotificationPreference } from '@/app-internal/features/notification';
 import { useVersionInfo } from '@/app-internal/features/version/hooks/useVersionInfo';
-import { useWalletProof } from '@/app-internal/features/wallet/hooks/useWalletProof';
 import { features } from '@/config/environment';
 import { marketStore } from '@/contexts/market/adapters/marketStore';
 import { ArrowUpRight, MessageCircle } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { Alert, Linking } from 'react-native';
-import { PortalProvider, ScrollView, Spinner, Switch, View, YStack } from 'tamagui';
+import { PortalProvider, ScrollView, Switch, View, YStack } from 'tamagui';
 
 export default function Index() {
   useScreenTracking('Settings');
   const router = useRouter();
   const { wallet } = useWallet();
   const [showExportModal, setShowExportModal] = useState(false);
-  const [isSigningProof, setIsSigningProof] = useState(false);
   const { displayVersion, checkForUpdate, isChecking, isDownloading } = useVersionInfo();
   const { openSupport } = useCustomerSupport();
   const { isEnabled: isNotificationEnabled, setEnabled: setNotificationEnabled } =
     useNotificationPreference();
-  const { isSigned, requestSignature } = useWalletProof();
-
-  /**
-   * Handle notification toggle.
-   * - Disabling: just update preference (unregister handled by usePushNotifications effect)
-   * - Enabling with signature: update preference (register handled by usePushNotifications effect)
-   * - Enabling without signature: request signature first, then update preference
-   */
-  const handleNotificationToggle = useCallback(
-    async (enabled: boolean) => {
-      // Disabling - just update preference, usePushNotifications handles unregister
-      if (!enabled) {
-        setNotificationEnabled(false);
-        return;
-      }
-
-      // Enabling with existing signature - usePushNotifications handles register
-      if (isSigned) {
-        setNotificationEnabled(true);
-        return;
-      }
-
-      // Enabling without signature - request signature first
-      setIsSigningProof(true);
-      try {
-        await requestSignature();
-        setNotificationEnabled(true);
-      } catch {
-        Alert.alert('Signature Required', 'Please sign the message to enable push notifications.');
-      } finally {
-        setIsSigningProof(false);
-      }
-    },
-    [isSigned, requestSignature, setNotificationEnabled],
-  );
 
   return (
     <PortalProvider>
@@ -102,20 +65,13 @@ export default function Index() {
                   title="Push Notifications"
                   subTitle={isNotificationEnabled ? 'Enabled' : 'Disabled'}
                   iconAfter={
-                    isSigningProof ? (
-                      <View marginRight="$2">
-                        <Spinner size="small" />
-                      </View>
-                    ) : (
-                      <Switch
-                        size="$3"
-                        checked={isNotificationEnabled}
-                        onCheckedChange={handleNotificationToggle}
-                        backgroundColor="$green10"
-                      >
-                        <Switch.Thumb animation="quick" />
-                      </Switch>
-                    )
+                    <Switch
+                      size="$3"
+                      checked={isNotificationEnabled}
+                      onCheckedChange={setNotificationEnabled}
+                    >
+                      <Switch.Thumb animation="quick" />
+                    </Switch>
                   }
                 />
               </ListSection>

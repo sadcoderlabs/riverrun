@@ -9,8 +9,7 @@
  * import { registerDevice, unregisterDevice } from '@/infra/backend/client/deviceClient';
  *
  * await registerDevice({
- *   signature: '0x...',
- *   message: 'Sign to verify ownership',
+ *   walletAddress: '0x...',
  *   deviceToken: 'ExponentPushToken[...]',
  *   platform: 'ios',
  * });
@@ -24,15 +23,13 @@ import { getBaseUrl } from './getter';
 // ============================================================================
 
 export interface RegisterDeviceParams {
-  signature: `0x${string}`;
-  message: string;
+  walletAddress: string;
   deviceToken: string;
   platform: 'ios' | 'android';
 }
 
 export interface UnregisterDeviceParams {
-  signature: `0x${string}`;
-  message: string;
+  walletAddress: string;
   deviceToken: string;
 }
 
@@ -54,8 +51,7 @@ export interface DeviceResponse {
  * @example
  * ```typescript
  * const result = await registerDevice({
- *   signature: '0x...',
- *   message: 'Sign to verify wallet ownership',
+ *   walletAddress: '0x...',
  *   deviceToken: 'ExponentPushToken[abc123]',
  *   platform: 'ios',
  * });
@@ -86,8 +82,7 @@ export async function registerDevice(params: RegisterDeviceParams): Promise<Devi
  * @example
  * ```typescript
  * const result = await unregisterDevice({
- *   signature: '0x...',
- *   message: 'Sign to verify wallet ownership',
+ *   walletAddress: '0x...',
  *   deviceToken: 'ExponentPushToken[abc123]',
  * });
  * ```
