@@ -67,6 +67,7 @@ import { CancelOrdersUseCase } from '@/contexts/order/application/usecases/Cance
 import { BackendNotificationApiAdapter } from '@/contexts/notification/adapters/backendNotificationApiAdapter';
 
 // Notification UseCases
+import { GetNotificationStatusUseCase } from '@/contexts/notification/application/usecases/GetNotificationStatusUseCase';
 import { RegisterDeviceUseCase } from '@/contexts/notification/application/usecases/RegisterDeviceUseCase';
 import { UnregisterDeviceUseCase } from '@/contexts/notification/application/usecases/UnregisterDeviceUseCase';
 
@@ -486,6 +487,11 @@ export function createAppContainer(options: CreateContainerOptions): AppContaine
   // ==========================================================================
 
   container.register({
+    // GetNotificationStatusUseCase: Get notification status for a wallet
+    getNotificationStatusUseCase: asFunction(({ notificationApiPort }) => {
+      return new GetNotificationStatusUseCase(notificationApiPort);
+    }).singleton(),
+
     // RegisterDeviceUseCase: Register device for push notifications
     registerDeviceUseCase: asFunction(({ notificationApiPort }) => {
       return new RegisterDeviceUseCase(notificationApiPort);

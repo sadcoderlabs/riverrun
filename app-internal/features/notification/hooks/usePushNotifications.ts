@@ -1,26 +1,13 @@
 /**
- * usePushNotifications - React Hook for Push Notification Registration
+ * usePushNotifications - React Hook for Push Notification Setup
  *
- * This hook handles:
- * - Requesting notification permissions
- * - Getting Expo push token
- * - Auto-registering device when notifications enabled
- * - Auto-unregistering device when notifications disabled
+ * This hook configures the notification handler for the app.
+ * Device registration is now handled by useNotificationStatus in the settings page.
  *
- * Registration/unregistration happens automatically based on preference state.
+ * Call this hook in your root layout to configure notification handling.
  */
 
-import Constants from 'expo-constants';
-import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
-import { useCallback, useEffect, useRef } from 'react';
-import { Platform } from 'react-native';
-
-import { useContainer } from '@/app-internal/di';
-import { useWallet } from '@/app-internal/features/wallet/hooks/useWallet';
-import { useNotificationPreferenceStore } from '../stores/notificationPreferenceStore';
-
-const PROJECT_ID = Constants.easConfig?.projectId;
 
 // Configure notification handler
 Notifications.setNotificationHandler({
@@ -33,10 +20,10 @@ Notifications.setNotificationHandler({
 });
 
 /**
- * Hook for managing push notification registration
+ * Hook for configuring push notification handling.
  *
  * Call this hook in your root layout to enable push notifications.
- * Registration happens automatically when wallet connects.
+ * Device registration/unregistration is handled by useNotificationStatus.
  *
  * @example
  * ```tsx
@@ -50,159 +37,6 @@ Notifications.setNotificationHandler({
  * ```
  */
 export function usePushNotifications(): void {
-  const registerDeviceUseCase = useContainer(c => c.registerDeviceUseCase);
-  const unregisterDeviceUseCase = useContainer(c => c.unregisterDeviceUseCase);
-  const telemetryService = useContainer(c => c.telemetryService);
-  const { wallet, isConnected } = useWallet();
-  const isNotificationEnabled = useNotificationPreferenceStore(state => state.isEnabled);
-
-  // Track if we've already registered for this wallet
-  const registeredWalletRef = useRef<string | undefined>(undefined);
-
-  /**
-   * Get the Expo push token
-   */
-  const getExpoPushToken = useCallback(async (): Promise<string | undefined> => {
-    // Must be a physical device
-    if (!Device.isDevice) {
-      console.log('[PushNotifications] Not a physical device, skipping registration');
-      return undefined;
-    }
-
-    // Android 13+ requires a notification channel before requesting permissions
-    if (Platform.OS === 'android') {
-      await Notifications.setNotificationChannelAsync('default', {
-        name: 'Default',
-        importance: Notifications.AndroidImportance.HIGH,
-        vibrationPattern: [0, 250, 250, 250],
-      });
-    }
-
-    // Check/request permissions
-    const { status: existingStatus } = await Notifications.getPermissionsAsync();
-    let finalStatus = existingStatus;
-
-    if (existingStatus !== 'granted') {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
-    }
-
-    if (finalStatus !== 'granted') {
-      console.log('[PushNotifications] Permission not granted');
-      return undefined;
-    }
-
-    // Get push token with projectId for EAS compatibility
-    const tokenData = await Notifications.getExpoPushTokenAsync({ projectId: PROJECT_ID });
-    console.log('[PushNotifications] Expo push token:', tokenData.data);
-    return tokenData.data;
-  }, []);
-
-  /**
-   * Register device with backend
-   */
-  const registerDevice = useCallback(async () => {
-    if (!isConnected || !wallet) {
-      return;
-    }
-
-    // Skip if notifications are disabled
-    if (!isNotificationEnabled) {
-      console.log('[PushNotifications] Notifications disabled, skipping registration');
-      return;
-    }
-
-    // Skip if already registered for this wallet
-    if (registeredWalletRef.current === wallet.address) {
-      return;
-    }
-
-    try {
-      const deviceToken = await getExpoPushToken();
-      if (!deviceToken) {
-        return;
-      }
-
-      const platform = Platform.OS as 'ios' | 'android';
-
-      await registerDeviceUseCase.execute({
-        walletAddress: wallet.address,
-        deviceToken,
-        platform,
-      });
-
-      // Mark as registered for this wallet
-      registeredWalletRef.current = wallet.address;
-
-      console.log('[PushNotifications] Device registered successfully');
-      telemetryService.trackEvent('push_notification_registered', {
-        platform,
-      });
-    } catch (error) {
-      // Silent fail - don't block user
-      console.error('[PushNotifications] Registration failed:', error);
-    }
-  }, [
-    isConnected,
-    wallet,
-    isNotificationEnabled,
-    getExpoPushToken,
-    registerDeviceUseCase,
-    telemetryService,
-  ]);
-
-  /**
-   * Unregister device from backend for a given wallet address
-   */
-  const unregisterForAddress = useCallback(
-    async (walletAddress: string) => {
-      try {
-        const tokenData = await Notifications.getExpoPushTokenAsync({ projectId: PROJECT_ID });
-        await unregisterDeviceUseCase.execute({
-          walletAddress,
-          deviceToken: tokenData.data,
-        });
-        console.log('[PushNotifications] Device unregistered');
-      } catch (error) {
-        console.error('[PushNotifications] Unregistration failed:', error);
-      }
-    },
-    [unregisterDeviceUseCase],
-  );
-
-  /**
-   * Unregister device from backend for current wallet
-   */
-  const unregisterDevice = useCallback(async () => {
-    if (!wallet) {
-      return;
-    }
-
-    await unregisterForAddress(wallet.address);
-  }, [wallet, unregisterForAddress]);
-
-  // Register device when notifications are enabled
-  useEffect(() => {
-    if (isConnected && wallet && isNotificationEnabled) {
-      registerDevice();
-    }
-  }, [isConnected, wallet, isNotificationEnabled, registerDevice]);
-
-  // Unregister device and reset state when notifications are disabled
-  useEffect(() => {
-    if (!isNotificationEnabled && registeredWalletRef.current) {
-      unregisterDevice();
-      registeredWalletRef.current = undefined;
-    }
-  }, [isNotificationEnabled, unregisterDevice]);
-
-  // Unregister device and reset state when wallet disconnects
-  useEffect(() => {
-    const registeredAddress = registeredWalletRef.current;
-
-    if (!isConnected && registeredAddress) {
-      unregisterForAddress(registeredAddress);
-      registeredWalletRef.current = undefined;
-    }
-  }, [isConnected, unregisterForAddress]);
+  // Notification handler is configured at module level.
+  // This hook is kept for backwards compatibility and future extensibility.
 }

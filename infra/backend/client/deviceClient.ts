@@ -37,6 +37,18 @@ export interface DeviceResponse {
   success: boolean;
 }
 
+export interface DeviceInfo {
+  deviceToken: string;
+  platform: 'ios' | 'android';
+  lastActiveAt: number;
+  enabled: boolean;
+}
+
+export interface NotificationStatusResponse {
+  enabled: boolean;
+  devices: DeviceInfo[];
+}
+
 // ============================================================================
 // API Functions
 // ============================================================================
@@ -97,6 +109,35 @@ export async function unregisterDevice(params: UnregisterDeviceParams): Promise<
   if (!response.ok) {
     const error = await response.json().catch(() => ({ error: 'Unknown error' }));
     throw new Error(`Device unregistration failed: ${error.error || response.statusText}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Get notification status for a wallet
+ *
+ * @param walletAddress - The wallet address to check status for
+ * @returns Notification status including enabled flag and device list
+ * @throws Error if request fails
+ *
+ * @example
+ * ```typescript
+ * const status = await getNotificationStatus('0x...');
+ * console.log(status.enabled); // true/false
+ * console.log(status.devices); // list of registered devices
+ * ```
+ */
+export async function getNotificationStatus(
+  walletAddress: string,
+): Promise<NotificationStatusResponse> {
+  const response = await fetch(
+    `${getBaseUrl()}/devices/status?walletAddress=${encodeURIComponent(walletAddress)}`,
+  );
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'Unknown error' }));
+    throw new Error(`Get notification status failed: ${error.error || response.statusText}`);
   }
 
   return response.json();

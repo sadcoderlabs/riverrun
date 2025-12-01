@@ -5,23 +5,19 @@
  * - Android: Auto-opted in, no action needed
  * - iOS: Request permission if not prompted, or open settings if already prompted
  *
- * Designed to be used in welcome screens and settings.
+ * Designed to be used in welcome screens. For full notification management
+ * including backend registration, use useNotificationStatus instead.
  */
 
 import * as Notifications from 'expo-notifications';
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Linking, Platform } from 'react-native';
 
-import { useWalletProof } from '@/app-internal/features/wallet/hooks/useWalletProof';
-import { useNotificationPreferenceStore } from '../stores/notificationPreferenceStore';
-
 export type NotificationPermissionStatus = 'undetermined' | 'granted' | 'denied';
 
 export interface UseNotificationSetupResult {
   /** Current permission status */
   permissionStatus: NotificationPermissionStatus;
-  /** Whether notifications are enabled in app preferences */
-  isEnabled: boolean;
   /** Whether the hook is ready (permissions checked) */
   isReady: boolean;
   /** Whether an operation is in progress */
@@ -34,10 +30,8 @@ export interface UseNotificationSetupResult {
    * Returns true if permission was granted or user was directed to settings.
    */
   requestOrOpenSettings: () => Promise<boolean>;
-  /** Enable notifications (handles signature if needed) */
+  /** Enable notifications (requests system permission) */
   enableNotifications: () => Promise<boolean>;
-  /** Disable notifications */
-  disableNotifications: () => void;
   /** Refresh permission status */
   refreshStatus: () => Promise<void>;
 }
@@ -60,10 +54,6 @@ export function useNotificationSetup(): UseNotificationSetupResult {
     useState<NotificationPermissionStatus>('undetermined');
   const [isReady, setIsReady] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-
-  const isEnabled = useNotificationPreferenceStore(state => state.isEnabled);
-  const setEnabled = useNotificationPreferenceStore(state => state.setEnabled);
-  const { isSigned, requestSignature } = useWalletProof();
 
   /**
    * Check current permission status
@@ -154,54 +144,27 @@ export function useNotificationSetup(): UseNotificationSetupResult {
   }, []);
 
   /**
-   * Enable notifications with signature handling
+   * Enable notifications (requests system permission)
+   * Note: Backend registration is handled separately by useNotificationStatus
    */
   const enableNotifications = useCallback(async (): Promise<boolean> => {
     setIsLoading(true);
 
     try {
-      // Request permission first
+      // Request system permission
       const permissionGranted = await requestOrOpenSettings();
-      if (!permissionGranted && Platform.OS === 'ios') {
-        return false;
-      }
-
-      // If not signed, request signature
-      if (!isSigned) {
-        try {
-          await requestSignature();
-        } catch {
-          Alert.alert(
-            'Signature Required',
-            'Please sign the message to enable push notifications.',
-          );
-          return false;
-        }
-      }
-
-      // Enable in preferences
-      setEnabled(true);
-      return true;
+      return permissionGranted;
     } finally {
       setIsLoading(false);
     }
-  }, [requestOrOpenSettings, isSigned, requestSignature, setEnabled]);
-
-  /**
-   * Disable notifications
-   */
-  const disableNotifications = useCallback(() => {
-    setEnabled(false);
-  }, [setEnabled]);
+  }, [requestOrOpenSettings]);
 
   return {
     permissionStatus,
-    isEnabled,
     isReady,
     isLoading,
     requestOrOpenSettings,
     enableNotifications,
-    disableNotifications,
     refreshStatus,
   };
 }

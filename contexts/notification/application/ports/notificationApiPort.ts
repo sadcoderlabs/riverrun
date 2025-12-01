@@ -16,6 +16,18 @@ export interface UnregisterDeviceParams {
   deviceToken: string;
 }
 
+export interface DeviceInfo {
+  deviceToken: string;
+  platform: 'ios' | 'android';
+  lastActiveAt: number;
+  enabled: boolean;
+}
+
+export interface NotificationStatusResponse {
+  enabled: boolean;
+  devices: DeviceInfo[];
+}
+
 export interface NotificationApiPort {
   /**
    * Register a device for push notifications
@@ -32,4 +44,12 @@ export interface NotificationApiPort {
    * @returns Success response from backend
    */
   unregisterDevice(params: UnregisterDeviceParams): Promise<{ success: boolean }>;
+
+  /**
+   * Get notification status for a wallet
+   *
+   * @param walletAddress - The wallet address to check status for
+   * @returns Notification status including enabled flag and device list
+   */
+  getNotificationStatus(walletAddress: string): Promise<NotificationStatusResponse>;
 }

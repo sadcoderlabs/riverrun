@@ -69,6 +69,7 @@ import type { CancelOrdersUseCase } from '@/contexts/order/application/usecases/
 import type { OrderExchangePort } from '@/contexts/order/application/ports/OrderExchangePort';
 
 // Notification UseCases
+import type { GetNotificationStatusUseCase } from '@/contexts/notification/application/usecases/GetNotificationStatusUseCase';
 import type { RegisterDeviceUseCase } from '@/contexts/notification/application/usecases/RegisterDeviceUseCase';
 import type { UnregisterDeviceUseCase } from '@/contexts/notification/application/usecases/UnregisterDeviceUseCase';
 
@@ -157,6 +158,7 @@ export interface AppCradle {
   notificationApiPort: NotificationApiPort;
 
   // Notification Context - UseCases
+  getNotificationStatusUseCase: GetNotificationStatusUseCase;
   registerDeviceUseCase: RegisterDeviceUseCase;
   unregisterDeviceUseCase: UnregisterDeviceUseCase;
 }

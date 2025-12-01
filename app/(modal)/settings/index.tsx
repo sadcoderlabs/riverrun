@@ -4,7 +4,6 @@ import { ListItem } from '@/app-internal/components/global/ListItem';
 import { ListSection } from '@/app-internal/components/global/ListSection';
 import ExportWalletModal from '@/app-internal/components/settings/ExportWalletModal';
 import { useCustomerSupport } from '@/app-internal/features/customerSupport';
-import { useNotificationPreference } from '@/app-internal/features/notification';
 import { useVersionInfo } from '@/app-internal/features/version/hooks/useVersionInfo';
 import { features } from '@/config/environment';
 import { marketStore } from '@/contexts/market/adapters/marketStore';
@@ -12,7 +11,7 @@ import { ArrowUpRight, MessageCircle } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Linking } from 'react-native';
-import { PortalProvider, ScrollView, Switch, View, YStack } from 'tamagui';
+import { PortalProvider, ScrollView, View, YStack } from 'tamagui';
 
 export default function Index() {
   useScreenTracking('Settings');
@@ -21,8 +20,6 @@ export default function Index() {
   const [showExportModal, setShowExportModal] = useState(false);
   const { displayVersion, checkForUpdate, isChecking, isDownloading } = useVersionInfo();
   const { openSupport } = useCustomerSupport();
-  const { isEnabled: isNotificationEnabled, setEnabled: setNotificationEnabled } =
-    useNotificationPreference();
 
   return (
     <PortalProvider>
@@ -62,17 +59,10 @@ export default function Index() {
             <YStack>
               <ListSection label="Preferences">
                 <ListItem
-                  title="Push Notifications"
-                  subTitle={isNotificationEnabled ? 'Enabled' : 'Disabled'}
-                  iconAfter={
-                    <Switch
-                      size="$3"
-                      checked={isNotificationEnabled}
-                      onCheckedChange={setNotificationEnabled}
-                    >
-                      <Switch.Thumb animation="quick" />
-                    </Switch>
-                  }
+                  title="Notifications"
+                  subTitle="Manage push notification settings"
+                  showIosChevron={true}
+                  onPress={() => router.push('/settings/notifications')}
                 />
               </ListSection>
             </YStack>

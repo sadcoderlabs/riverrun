@@ -8,6 +8,7 @@
 import * as deviceClient from '@/infra/backend/client/deviceClient';
 import type {
   NotificationApiPort,
+  NotificationStatusResponse,
   RegisterDeviceParams,
   UnregisterDeviceParams,
 } from '../application/ports/notificationApiPort';
@@ -19,5 +20,9 @@ export class BackendNotificationApiAdapter implements NotificationApiPort {
 
   async unregisterDevice(params: UnregisterDeviceParams): Promise<{ success: boolean }> {
     return deviceClient.unregisterDevice(params);
+  }
+
+  async getNotificationStatus(walletAddress: string): Promise<NotificationStatusResponse> {
+    return deviceClient.getNotificationStatus(walletAddress);
   }
 }
