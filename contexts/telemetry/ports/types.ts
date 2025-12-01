@@ -239,7 +239,8 @@ export type ScreenName =
   | 'AgentStatus'
   | 'BuilderFeeStatus'
   | 'ReferralStatus'
-  | 'Login';
+  | 'Login'
+  | 'Welcome';
 
 /**
  * Properties for each screen
@@ -261,6 +262,7 @@ export interface ScreenProps {
   BuilderFeeStatus: undefined;
   ReferralStatus: undefined;
   Login: undefined;
+  Welcome: undefined;
 }
 
 // ============================================================================
