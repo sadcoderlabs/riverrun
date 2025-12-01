@@ -74,7 +74,13 @@ export type TelemetryEventName =
   // Push Notifications
   | 'push_notification_registered'
   // Login
-  | 'login_alternative_requested';
+  | 'login_alternative_requested'
+  // Welcome
+  | 'welcome_referral_accepted'
+  | 'welcome_referral_skipped'
+  | 'welcome_notification_accepted'
+  | 'welcome_notification_skipped'
+  | 'welcome_all_skipped';
 
 /**
  * Event properties for each event type
@@ -218,6 +224,17 @@ export interface TelemetryEventProps {
 
   // Login
   login_alternative_requested: Record<string, never>;
+
+  // Welcome
+  welcome_referral_accepted: Record<string, never>;
+  welcome_referral_skipped: Record<string, never>;
+  welcome_notification_accepted: {
+    platform: 'ios' | 'android';
+  };
+  welcome_notification_skipped: Record<string, never>;
+  welcome_all_skipped: {
+    skippedFrom: 'referral' | 'notification';
+  };
 }
 
 // ============================================================================

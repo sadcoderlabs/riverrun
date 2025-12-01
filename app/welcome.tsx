@@ -2,6 +2,7 @@ import {
   useNotificationSetup,
   useReferral,
   useScreenTracking,
+  useTelemetry,
   useWallet,
   useWelcomeStore,
 } from '@/app-internal';
@@ -83,6 +84,7 @@ export default function WelcomeScreen() {
   const { setReferrer } = useReferral();
   const { setupNotificationsWithBackend, setupComplete, isLoading } = useNotificationSetup();
   const markSeen = useWelcomeStore(state => state.markSeen);
+  const { trackEvent } = useTelemetry();
 
   const [currentPage, setCurrentPage] = useState(0);
   const totalPages = WELCOME_PAGES.length;
@@ -117,10 +119,16 @@ export default function WelcomeScreen() {
 
     // Handle page-specific actions
     if (currentPageId === 'referral') {
+      // Track referral accepted
+      trackEvent('welcome_referral_accepted', {});
       // Trigger referral workflow (shows confirmation dialog)
       await setReferrer();
       goToNextPage();
     } else if (currentPageId === 'notification') {
+      // Track notification accepted
+      trackEvent('welcome_notification_accepted', {
+        platform: Platform.OS as 'ios' | 'android',
+      });
       // Trigger notification setup with backend registration
       // Returns true if completed immediately, false if waiting for settings
       if (address) {
@@ -137,7 +145,7 @@ export default function WelcomeScreen() {
         goToNextPage();
       }
     }
-  }, [currentPage, setReferrer, setupNotificationsWithBackend, address, goToNextPage]);
+  }, [currentPage, setReferrer, setupNotificationsWithBackend, address, goToNextPage, trackEvent]);
 
   /**
    * Watch for setupComplete - triggered when user returns from system Settings
@@ -162,15 +170,31 @@ export default function WelcomeScreen() {
    * Handle "Set up later" - skip action and advance
    */
   const handleSetupLater = useCallback(() => {
+    const currentPageId = WELCOME_PAGES[currentPage]?.id;
+
+    // Track skip events
+    if (currentPageId === 'referral') {
+      trackEvent('welcome_referral_skipped', {});
+    } else if (currentPageId === 'notification') {
+      trackEvent('welcome_notification_skipped', {});
+    }
+
     goToNextPage();
-  }, [goToNextPage]);
+  }, [currentPage, goToNextPage, trackEvent]);
 
   /**
    * Handle "Skip All" - complete welcome immediately
    */
   const handleSkipAll = useCallback(() => {
+    const currentPageId = WELCOME_PAGES[currentPage]?.id;
+
+    // Track skip all event
+    trackEvent('welcome_all_skipped', {
+      skippedFrom: currentPageId as 'referral' | 'notification',
+    });
+
     completeWelcome();
-  }, [completeWelcome]);
+  }, [currentPage, completeWelcome, trackEvent]);
 
   return (
     <YStack
