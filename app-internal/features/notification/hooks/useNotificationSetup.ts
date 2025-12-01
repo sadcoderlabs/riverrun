@@ -1,14 +1,58 @@
 /**
- * useNotificationSetup - Hook for notification permission setup flow
+ * useNotificationSetup - Hook for notification permission setup flow (Welcome Screen)
  *
- * Handles platform-specific notification permission logic:
- * - Android: Auto-opted in, no action needed
- * - iOS: Request permission if not prompted, or open settings if already prompted
+ * ## Design Context
  *
- * Designed to be used in welcome screens. Includes:
- * - System permission handling
- * - Backend device registration
- * - AppState listener for detecting return from system settings
+ * This app uses a **two-layer notification system**:
+ * 1. **System Permission Layer**: iOS/Android device must allow notifications for this app
+ * 2. **Backend Registration Layer**: Device must be registered with our backend to receive pushes
+ *
+ * Both layers must be completed for push notifications to work.
+ *
+ * ## Problem This Hook Solves
+ *
+ * In the welcome flow, when user clicks "OK" on the notification setup page:
+ * - If iOS permission is denied, user is sent to system Settings
+ * - Previously, the app would advance to home immediately, skipping backend registration
+ * - This hook ensures we wait for user to return from Settings and complete both layers
+ *
+ * ## Key Flow
+ *
+ * ```
+ * User clicks OK
+ *       │
+ *       ├── Android: auto-granted → registerDevice → complete
+ *       │
+ *       ├── iOS granted: registerDevice → complete
+ *       │
+ *       ├── iOS undetermined: show dialog
+ *       │         ├── granted → registerDevice → complete
+ *       │         └── denied → complete (user can enable later in Settings)
+ *       │
+ *       └── iOS denied: open Settings → wait for return
+ *                              │
+ *                    AppState listener detects return
+ *                              │
+ *                    re-check permission
+ *                              │
+ *                    ├── granted → registerDevice → setupComplete = true
+ *                    └── denied → setupComplete = true (skip registration)
+ * ```
+ *
+ * ## Usage in Welcome Screen
+ *
+ * The welcome.tsx uses `setupComplete` state to know when to advance:
+ * - If `setupNotificationsWithBackend()` returns true → advance immediately
+ * - If returns false (user sent to Settings) → wait for `setupComplete` via useEffect
+ *
+ * ## Related Files
+ * - `app/welcome.tsx` - Uses this hook for notification setup step
+ * - `useNotificationStatus.ts` - Similar hook for Settings page (toggle on/off)
+ * - `contexts/notification/` - Backend registration use cases
+ *
+ * ## Platform Differences
+ * - **Android**: Notifications auto-opted in, no permission dialog needed
+ * - **iOS**: Must request permission, can be denied, requires Settings redirect
  */
 
 import Constants from 'expo-constants';
@@ -267,7 +311,17 @@ export function useNotificationSetup(): UseNotificationSetupResult {
 
   /**
    * Complete notification setup with backend registration.
-   * Returns true if setup completed immediately, false if user was sent to settings.
+   *
+   * This is the main entry point for the welcome screen notification setup.
+   * It handles both layers: system permission + backend registration.
+   *
+   * Return value semantics:
+   * - `true`: Setup completed synchronously, caller should advance to next page
+   * - `false`: User was sent to Settings, caller should wait for `setupComplete` state
+   *
+   * The `false` case is important - it means the flow is "paused" waiting for
+   * user to return from Settings. The AppState listener (below) will detect
+   * their return and set `setupComplete = true`.
    */
   const setupNotificationsWithBackend = useCallback(
     async (walletAddress: string, platform: 'ios' | 'android'): Promise<boolean> => {
@@ -275,7 +329,7 @@ export function useNotificationSetup(): UseNotificationSetupResult {
       setSetupComplete(false);
 
       try {
-        // Android: auto-granted, just register
+        // Android: notifications auto-granted by system, just register with backend
         if (Platform.OS === 'android') {
           await registerDevice(walletAddress, platform);
           setSetupComplete(true);
@@ -346,11 +400,24 @@ export function useNotificationSetup(): UseNotificationSetupResult {
   );
 
   /**
-   * AppState listener - detect when user returns from settings
+   * AppState listener - detect when user returns from system Settings
+   *
+   * This is the "async continuation" of setupNotificationsWithBackend.
+   * When we send user to Settings (because permission was denied), we need to:
+   * 1. Detect when they return (app becomes 'active')
+   * 2. Re-check if permission is now granted
+   * 3. If granted, register device with backend
+   * 4. Set setupComplete = true so welcome.tsx can advance
+   *
+   * We use pendingRegistrationRef to remember the walletAddress and platform
+   * that were passed to setupNotificationsWithBackend, since we need them
+   * when registering the device after user returns.
    */
   useEffect(() => {
     const handleAppStateChange = async (nextAppState: AppStateStatus) => {
+      // Only listen when we're waiting for user to return from Settings
       if (!isWaitingForSettings) return;
+      // Only act when app becomes active (user returned to app)
       if (nextAppState !== 'active') return;
 
       console.log('[NotificationSetup] App became active, checking permission...');

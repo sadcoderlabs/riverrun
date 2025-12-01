@@ -44,6 +44,36 @@ const WELCOME_PAGES: WelcomePage[] = [
  *
  * Shown to new users on first sign-in to set up referral and notifications.
  * This is a full-screen route, not a modal overlay.
+ *
+ * ## Notification Setup Flow
+ *
+ * This screen handles a **two-layer notification system**:
+ * 1. **System Permission**: iOS/Android device permission
+ * 2. **Backend Registration**: Register device token with our backend
+ *
+ * ### Why the complexity?
+ *
+ * On iOS, if user previously denied notification permission, we can't show
+ * the permission dialog again - we must redirect them to Settings. When they
+ * return from Settings, we need to:
+ * 1. Detect they're back (AppState listener in useNotificationSetup)
+ * 2. Re-check if permission was granted
+ * 3. If granted, register device with backend
+ * 4. Then advance to home
+ *
+ * ### How it works:
+ *
+ * - `setupNotificationsWithBackend()` returns `true` if completed immediately
+ * - If user is sent to Settings, it returns `false` and sets `isWaitingForSettings`
+ * - The `useEffect` watching `setupComplete` triggers `goToNextPage()` when user returns
+ *
+ * ### Button behaviors:
+ *
+ * - **OK**: Runs full notification setup flow (permission + backend registration)
+ * - **Set up later**: Skips notification setup, advances to next page
+ * - **Skip All**: Completes welcome immediately, goes to home
+ *
+ * @see useNotificationSetup - Hook that handles the notification setup logic
  */
 export default function WelcomeScreen() {
   useScreenTracking('Welcome');
@@ -110,7 +140,16 @@ export default function WelcomeScreen() {
   }, [currentPage, setReferrer, setupNotificationsWithBackend, address, goToNextPage]);
 
   /**
-   * Watch for setupComplete - triggered when user returns from settings
+   * Watch for setupComplete - triggered when user returns from system Settings
+   *
+   * This is the "async continuation" of the notification setup flow.
+   * When user is sent to Settings (because permission was denied), we can't
+   * advance immediately. Instead:
+   * 1. setupNotificationsWithBackend() returns false
+   * 2. AppState listener in useNotificationSetup detects user return
+   * 3. It re-checks permission and registers device if granted
+   * 4. It sets setupComplete = true
+   * 5. This useEffect fires and advances to next page
    */
   useEffect(() => {
     const currentPageId = WELCOME_PAGES[currentPage]?.id;
