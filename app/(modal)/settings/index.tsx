@@ -1,5 +1,4 @@
 import { useScreenTracking, useWallet } from '@/app-internal';
-import { marketStore } from '@/contexts/market/adapters/marketStore';
 import { CustomHeader } from '@/app-internal/components/global';
 import { ListItem } from '@/app-internal/components/global/ListItem';
 import { ListSection } from '@/app-internal/components/global/ListSection';
@@ -9,6 +8,7 @@ import { useNotificationPreference } from '@/app-internal/features/notification'
 import { useVersionInfo } from '@/app-internal/features/version/hooks/useVersionInfo';
 import { useWalletProof } from '@/app-internal/features/wallet/hooks/useWalletProof';
 import { features } from '@/config/environment';
+import { marketStore } from '@/contexts/market/adapters/marketStore';
 import { ArrowUpRight, MessageCircle } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
@@ -100,7 +100,7 @@ export default function Index() {
               <ListSection label="Preferences">
                 <ListItem
                   title="Push Notifications"
-                  subTitle="Receive alerts for trades and updates"
+                  subTitle={isNotificationEnabled ? 'Enabled' : 'Disabled'}
                   iconAfter={
                     isSigningProof ? (
                       <View marginRight="$2">
@@ -111,6 +111,7 @@ export default function Index() {
                         size="$3"
                         checked={isNotificationEnabled}
                         onCheckedChange={handleNotificationToggle}
+                        backgroundColor="$accent5"
                       >
                         <Switch.Thumb animation="quick" />
                       </Switch>

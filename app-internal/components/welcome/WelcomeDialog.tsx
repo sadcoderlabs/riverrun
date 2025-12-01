@@ -1,3 +1,4 @@
+import { useNotificationSetup, useReferral } from '@/app-internal';
 import { Bell, TicketPercent } from '@tamagui/lucide-icons';
 import { useCallback, useRef } from 'react';
 import { Dimensions, FlatList, StyleSheet, ViewToken } from 'react-native';
@@ -17,22 +18,22 @@ interface WelcomePage {
   id: string;
   title: string;
   description: string;
+  note?: string;
   icon: React.ReactNode;
 }
 
 const WELCOME_PAGES: WelcomePage[] = [
   {
     id: 'referral',
-    title: 'Join The Referral Program',
-    description:
-      'Invite friends and earn rewards together. Share your referral code and get bonuses when they trade.',
+    title: 'Get 4% Off Trading Fees',
+    description: 'Use our referral code to save 4% on fees for your first $25M in volume.',
+    note: '*Vaults and sub-accounts are excluded',
     icon: <TicketPercent size={48} color="$accent9" />,
   },
   {
     id: 'notification',
-    title: 'Allow Notification',
-    description:
-      'Stay updated with price alerts, order fills, and important account notifications. Never miss a trading opportunity.',
+    title: 'Enable Notifications',
+    description: 'Get alerts for price movements, order fills, and account updates.',
     icon: <Bell size={48} color="$accent9" />,
   },
 ];
@@ -44,6 +45,8 @@ const WELCOME_PAGES: WelcomePage[] = [
 export function WelcomeDialog() {
   const { shouldShow, currentPage, totalPages, setCurrentPage, nextPage, dismiss } =
     useWelcomeScreens();
+  const { setReferrer } = useReferral();
+  const { enableNotifications } = useNotificationSetup();
 
   const flatListRef = useRef<FlatList>(null);
 
@@ -60,16 +63,29 @@ export function WelcomeDialog() {
     itemVisiblePercentThreshold: 50,
   }).current;
 
-  const handleOk = useCallback(() => {
+  const handleOk = useCallback(async () => {
+    const currentPageId = WELCOME_PAGES[currentPage]?.id;
+
+    // Handle page-specific actions
+    if (currentPageId === 'referral') {
+      // Trigger referral workflow (shows confirmation dialog)
+      await setReferrer();
+    } else if (currentPageId === 'notification') {
+      // Trigger notification setup
+      // - Android: auto-opted in, no action needed
+      // - iOS: request permission or open settings
+      await enableNotifications();
+    }
+
+    // Advance to next page or dismiss
     const hasMore = nextPage();
     if (hasMore) {
-      // Scroll to next page
       flatListRef.current?.scrollToIndex({
         index: currentPage + 1,
         animated: true,
       });
     }
-  }, [nextPage, currentPage]);
+  }, [nextPage, currentPage, setReferrer, enableNotifications]);
 
   const handleSetupLater = useCallback(() => {
     const hasMore = nextPage();
@@ -87,7 +103,13 @@ export function WelcomeDialog() {
 
   const renderPage = useCallback(
     ({ item }: { item: WelcomePage }) => (
-      <YStack width={CONTENT_WIDTH} alignItems="center" gap="$3" paddingVertical="$4">
+      <YStack
+        width={CONTENT_WIDTH}
+        gap="$2"
+        alignItems="center"
+        justifyContent="center"
+        paddingVertical="$4"
+      >
         {/* Icon */}
         <YStack
           width={96}
@@ -106,9 +128,14 @@ export function WelcomeDialog() {
         </Heading.H5>
 
         {/* Description */}
-        <Text color="$color11" textAlign="center" paddingHorizontal="$2">
+        <Text.Subhead color="$color11" textAlign="center" paddingHorizontal="$2">
           {item.description}
-        </Text>
+        </Text.Subhead>
+        {item.note && (
+          <Text.Caption color="$color11" textAlign="center" paddingHorizontal="$2">
+            {item.note}
+          </Text.Caption>
+        )}
       </YStack>
     ),
     [],
@@ -192,7 +219,7 @@ export function WelcomeDialog() {
           fontSize="$2"
           fontFamily="$interRegular"
         >
-          Skip ALL
+          Skip All
         </Button>
       </YStack>
     </Modal>
