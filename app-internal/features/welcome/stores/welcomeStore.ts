@@ -11,6 +11,8 @@ interface WelcomeState {
   markSeen: (address: string) => void;
   /** Check if welcome should be shown for a given address */
   shouldShowWelcome: (address: string | undefined) => boolean;
+  /** Reset all welcome screen flags (for testing) */
+  reset: () => void;
   /** Hydration state */
   _hasHydrated: boolean;
   _setHasHydrated: (state: boolean) => void;
@@ -36,6 +38,12 @@ export const useWelcomeStore = create<WelcomeState>()(
         // Show if either: first time on device OR first time with this wallet
         return !state.seenOnDevice || !state.seenWalletAddresses.includes(address);
       },
+
+      reset: () =>
+        set({
+          seenOnDevice: false,
+          seenWalletAddresses: [],
+        }),
 
       _hasHydrated: false,
       _setHasHydrated: state => set({ _hasHydrated: state }),

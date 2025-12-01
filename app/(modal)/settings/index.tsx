@@ -1,4 +1,4 @@
-import { useScreenTracking, useWallet } from '@/app-internal';
+import { useScreenTracking, useWallet, useWelcomeStore } from '@/app-internal';
 import { CustomHeader } from '@/app-internal/components/global';
 import { ListItem } from '@/app-internal/components/global/ListItem';
 import { ListSection } from '@/app-internal/components/global/ListSection';
@@ -111,7 +111,7 @@ export default function Index() {
                         size="$3"
                         checked={isNotificationEnabled}
                         onCheckedChange={handleNotificationToggle}
-                        backgroundColor="$accent5"
+                        backgroundColor="$green10"
                       >
                         <Switch.Thumb animation="quick" />
                       </Switch>
@@ -183,6 +183,17 @@ export default function Index() {
                       Alert.alert(
                         'Cache Cleared',
                         'Market cache has been cleared. Please restart the app.',
+                      );
+                    }}
+                  />
+                  <ListItem
+                    title="Reset Welcome Screens"
+                    subTitle="Show welcome screens again"
+                    onPress={() => {
+                      useWelcomeStore.getState().reset();
+                      Alert.alert(
+                        'Welcome Screens Reset',
+                        'Welcome screens will be shown again on next app launch.',
                       );
                     }}
                   />
