@@ -54,3 +54,4 @@ jobs:
         run: ./scripts/update-production.sh
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}

@@ -14,6 +14,7 @@ import {
 import { formatPrice } from '@/infra/hyperliquid/format/formatPrice';
 import { formatSize } from '@/infra/hyperliquid/format/formatSize';
 import { formatValue } from '@/infra/hyperliquid/format/formatValue';
+import { X } from '@tamagui/lucide-icons';
 import { useMemo, useState } from 'react';
 import { Spinner, Text, View, XStack, YStack } from 'tamagui';
 import { Button } from '../global';
@@ -62,6 +63,17 @@ function OrderCard({ order, onCancel, onPress, canceling }: OrderCardProps) {
 
   const isBuy = order.side === 'B';
 
+  // Color based on order intent: TP = green (profit), SL = red (loss), regular = buy/sell side
+  const isTakeProfit = order.orderType.includes('Take Profit');
+  const isStopLoss = order.orderType.includes('Stop');
+  const directionColor = isTakeProfit
+    ? '$green10'
+    : isStopLoss
+      ? '$red10'
+      : isBuy
+        ? '$green10'
+        : '$red10';
+
   return (
     <YStack
       padding="$3"
@@ -89,14 +101,14 @@ function OrderCard({ order, onCancel, onPress, canceling }: OrderCardProps) {
             </Text>
           </View>
         </XStack>
-        <Button
-          backgroundColor="$gray5"
-          color="$color"
-          disabled={canceling}
-          onPress={() => onCancel(order.oid)}
+        <XStack
+          onPress={() => !canceling && onCancel(order.oid)}
+          padding="$2"
+          pressStyle={{ opacity: 0.6 }}
+          cursor="pointer"
         >
-          {canceling ? 'Canceling...' : 'Cancel'}
-        </Button>
+          {canceling ? <Spinner size="small" color="$color9" /> : <X size={20} color="$color9" />}
+        </XStack>
       </XStack>
 
       {/* Metrics */}
@@ -126,7 +138,7 @@ function OrderCard({ order, onCancel, onPress, canceling }: OrderCardProps) {
           <Text fontSize="$2" color="$color9">
             Direction
           </Text>
-          <Text fontSize="$2" fontFamily="$interSemiBold" color={isBuy ? '$green10' : '$red10'}>
+          <Text fontSize="$2" fontFamily="$interSemiBold" color={directionColor}>
             {direction}
           </Text>
         </XStack>

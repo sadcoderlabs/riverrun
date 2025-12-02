@@ -30,14 +30,14 @@ function CoinInfoContent({ selectedMarket }: { selectedMarket: SelectedMarket })
           >
             <Menu size="$1.5" color="$color" />
             <Text fontFamily="$interSemiBold" fontSize="$4" color="$color">
-              {marketPair.replace('-USD', '-USDC')}
+              {marketPair}
             </Text>
           </XStack>
 
           {/* Right side: Chart icon */}
           <XStack
             onPress={() => {
-              router.push(`/chart/perp/${coin}`);
+              router.push({ pathname: '/(modal)/chart', params: { coin } });
             }}
             pressStyle={{ opacity: 0.7 }}
           >

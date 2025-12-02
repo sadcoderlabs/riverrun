@@ -72,5 +72,9 @@ fi
 EXPO_PUBLIC_GIT_COMMIT_HASH=$COMMIT_HASH pnpm exec eas update "${EAS_UPDATE_ARGS[@]}"
 
 echo ""
+echo "📤 Uploading source maps to Sentry..."
+pnpm exec sentry-expo-upload-sourcemaps dist
+
+echo ""
 echo "✅ Update published successfully"
 echo "📱 Production builds will receive this update"

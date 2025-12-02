@@ -70,7 +70,17 @@ export type TelemetryEventName =
   // Withdraw
   | 'withdraw_initiated'
   | 'withdraw_completed'
-  | 'withdraw_failed';
+  | 'withdraw_failed'
+  // Push Notifications
+  | 'push_notification_registered'
+  // Login
+  | 'login_alternative_requested'
+  // Welcome
+  | 'welcome_referral_accepted'
+  | 'welcome_referral_skipped'
+  | 'welcome_notification_accepted'
+  | 'welcome_notification_skipped'
+  | 'welcome_all_skipped';
 
 /**
  * Event properties for each event type
@@ -206,6 +216,25 @@ export interface TelemetryEventProps {
     amount: number;
     reason?: string;
   };
+
+  // Push Notifications
+  push_notification_registered: {
+    platform: 'ios' | 'android';
+  };
+
+  // Login
+  login_alternative_requested: Record<string, never>;
+
+  // Welcome
+  welcome_referral_accepted: Record<string, never>;
+  welcome_referral_skipped: Record<string, never>;
+  welcome_notification_accepted: {
+    platform: 'ios' | 'android';
+  };
+  welcome_notification_skipped: Record<string, never>;
+  welcome_all_skipped: {
+    skippedFrom: 'referral' | 'notification';
+  };
 }
 
 // ============================================================================
@@ -227,7 +256,8 @@ export type ScreenName =
   | 'AgentStatus'
   | 'BuilderFeeStatus'
   | 'ReferralStatus'
-  | 'Login';
+  | 'Login'
+  | 'Welcome';
 
 /**
  * Properties for each screen
@@ -249,6 +279,7 @@ export interface ScreenProps {
   BuilderFeeStatus: undefined;
   ReferralStatus: undefined;
   Login: undefined;
+  Welcome: undefined;
 }
 
 // ============================================================================

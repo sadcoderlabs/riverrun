@@ -63,6 +63,14 @@ import { PlaceCloseLimitOrderUseCase } from '@/contexts/order/application/usecas
 import { PlaceTpSlOrdersUseCase } from '@/contexts/order/application/usecases/PlaceTpSlOrdersUseCase';
 import { CancelOrdersUseCase } from '@/contexts/order/application/usecases/CancelOrdersUseCase';
 
+// Notification Adapters
+import { BackendNotificationApiAdapter } from '@/contexts/notification/adapters/backendNotificationApiAdapter';
+
+// Notification UseCases
+import { GetNotificationStatusUseCase } from '@/contexts/notification/application/usecases/GetNotificationStatusUseCase';
+import { RegisterDeviceUseCase } from '@/contexts/notification/application/usecases/RegisterDeviceUseCase';
+import { UnregisterDeviceUseCase } from '@/contexts/notification/application/usecases/UnregisterDeviceUseCase';
+
 // Agent Adapters
 import { AgentPkStore } from '@/contexts/agent/adapters/agentPkStore';
 
@@ -461,6 +469,38 @@ export function createAppContainer(options: CreateContainerOptions): AppContaine
         return new CancelOrdersUseCase(orderExchangePort, tryGetAgentWalletUseCase, marketService);
       },
     ).singleton(),
+  });
+
+  // ==========================================================================
+  // Notification Context - Out Ports
+  // ==========================================================================
+
+  container.register({
+    // NotificationApiPort: Implemented by BackendNotificationApiAdapter
+    notificationApiPort: asFunction(() => {
+      return new BackendNotificationApiAdapter();
+    }).singleton(),
+  });
+
+  // ==========================================================================
+  // Notification Context - UseCases
+  // ==========================================================================
+
+  container.register({
+    // GetNotificationStatusUseCase: Get notification status for a wallet
+    getNotificationStatusUseCase: asFunction(({ notificationApiPort }) => {
+      return new GetNotificationStatusUseCase(notificationApiPort);
+    }).singleton(),
+
+    // RegisterDeviceUseCase: Register device for push notifications
+    registerDeviceUseCase: asFunction(({ notificationApiPort }) => {
+      return new RegisterDeviceUseCase(notificationApiPort);
+    }).singleton(),
+
+    // UnregisterDeviceUseCase: Unregister device from push notifications
+    unregisterDeviceUseCase: asFunction(({ notificationApiPort }) => {
+      return new UnregisterDeviceUseCase(notificationApiPort);
+    }).singleton(),
   });
 
   return container;

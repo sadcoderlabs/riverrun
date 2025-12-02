@@ -11,7 +11,7 @@
  * and dynamic data (price, change, fundingRate, volume).
  */
 export type Market = {
-  /** Market trading pair (e.g., "BTC-USD" for perpetuals) */
+  /** Market trading pair (e.g., "BTC-USDC" for perpetuals) */
   marketPair: string;
   /** Coin symbol (e.g., "BTC", "ETH") */
   coin: string;
@@ -42,7 +42,7 @@ export type Market = {
 export interface SelectedMarket {
   /** Market coin symbol (e.g., "BTC", "ETH") */
   coin: string;
-  /** Full market trading pair (e.g., "BTC-USD", "ETH-USD") */
+  /** Full market trading pair (e.g., "BTC-USDC", "ETH-USDC") */
   marketPair: string;
   /** Size decimals for price formatting */
   szDecimals: number;
@@ -127,7 +127,7 @@ export function convertRawMarket(
   const priceChange = prevDayPrice > 0 ? ((currentPrice - prevDayPrice) / prevDayPrice) * 100 : 0;
   const fundingRate = parseFloat(ctx.funding) * 100;
   const volume = parseFloat(ctx.dayNtlVlm || '0');
-  const marketPair = `${assetName}-USD`;
+  const marketPair = `${assetName}-USDC`;
 
   return {
     marketPair,

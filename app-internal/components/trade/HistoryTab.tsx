@@ -56,7 +56,7 @@ const FillCard = React.memo<FillCardProps>(({ fill, szDecimals, onPress }) => {
             {fill.coin}-USDC
           </Text>
           <View
-            backgroundColor="$gray1"
+            backgroundColor="$gray3"
             paddingHorizontal="$2"
             paddingVertical="$1"
             borderRadius="$4"

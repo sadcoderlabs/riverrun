@@ -1,4 +1,4 @@
-import { useScreenTracking, useWallet } from '@/app-internal';
+import { useScreenTracking, useWallet, useWelcomeStore } from '@/app-internal';
 import { CustomHeader } from '@/app-internal/components/global';
 import { ListItem } from '@/app-internal/components/global/ListItem';
 import { ListSection } from '@/app-internal/components/global/ListSection';
@@ -6,10 +6,11 @@ import ExportWalletModal from '@/app-internal/components/settings/ExportWalletMo
 import { useCustomerSupport } from '@/app-internal/features/customerSupport';
 import { useVersionInfo } from '@/app-internal/features/version/hooks/useVersionInfo';
 import { features } from '@/config/environment';
+import { marketStore } from '@/contexts/market/adapters/marketStore';
 import { ArrowUpRight, MessageCircle } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Linking } from 'react-native';
+import { Alert, Linking } from 'react-native';
 import { PortalProvider, ScrollView, View, YStack } from 'tamagui';
 
 export default function Index() {
@@ -51,6 +52,17 @@ export default function Index() {
                   subTitle="Manage referral code"
                   showIosChevron={true}
                   onPress={() => router.push('/settings/approval-status')}
+                />
+              </ListSection>
+            </YStack>
+            {/* Preferences Section */}
+            <YStack>
+              <ListSection label="Preferences">
+                <ListItem
+                  title="Notifications"
+                  subTitle="Manage push notification settings"
+                  showIosChevron={true}
+                  onPress={() => router.push('/settings/notifications')}
                 />
               </ListSection>
             </YStack>
@@ -108,6 +120,28 @@ export default function Index() {
                     subTitle="Manage builder fee approval"
                     showIosChevron={true}
                     onPress={() => router.push('/settings/builder-fee-status')}
+                  />
+                  <ListItem
+                    title="Clear Market Cache"
+                    subTitle="Reset market data and reload"
+                    onPress={() => {
+                      marketStore.getState().clear();
+                      Alert.alert(
+                        'Cache Cleared',
+                        'Market cache has been cleared. Please restart the app.',
+                      );
+                    }}
+                  />
+                  <ListItem
+                    title="Reset Welcome Screens"
+                    subTitle="Show welcome screens again"
+                    onPress={() => {
+                      useWelcomeStore.getState().reset();
+                      Alert.alert(
+                        'Welcome Screens Reset',
+                        'Welcome screens will be shown again on next app launch.',
+                      );
+                    }}
                   />
                 </ListSection>
               </YStack>

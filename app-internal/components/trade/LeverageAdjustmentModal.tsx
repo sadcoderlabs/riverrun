@@ -1,7 +1,6 @@
 import { useMargin, useMarginStore } from '@/app-internal';
 import { Button } from '@/app-internal/components/global/Button';
 import { Text } from '@/app-internal/components/global/Text';
-import { AlertTriangle } from '@tamagui/lucide-icons';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner-native';
 import { Sheet, Slider, Spinner, XStack, YStack } from 'tamagui';
@@ -295,33 +294,26 @@ export function LeverageAdjustmentModal({ open, onOpenChange }: LeverageAdjustme
                       {leverageMin}x - {leverageMax}x
                     </Text>
                   </XStack>
+                  {/* Info */}
+                  <YStack
+                    backgroundColor="$gray2"
+                    padding="$3"
+                    borderRadius="$3"
+                    gap="$1.5"
+                    marginTop="$2"
+                  >
+                    <Text.Caption color="$color10" lineHeight={16}>
+                      • Higher leverage increases liquidation risk
+                    </Text.Caption>
+                    <Text.Caption color="$color10" lineHeight={16}>
+                      • Leverage changes apply to your entire position
+                    </Text.Caption>
+                  </YStack>
                 </YStack>
               </YStack>
 
               {/* Confirm Section - Pinned at Bottom */}
               <YStack gap="$4">
-                {/* Warning Text */}
-                <XStack
-                  padding="$3"
-                  backgroundColor="$yellow2"
-                  borderRadius="$3"
-                  gap="$2.5"
-                  alignItems="flex-start"
-                >
-                  <AlertTriangle size={16} color="$yellow9" />
-                  <YStack flex={1}>
-                    <YStack gap="$1" alignItems="flex-start" style={{ marginTop: -3 }}>
-                      <Text.Footnote color="$yellow9" fontWeight="700">
-                        Important
-                      </Text.Footnote>
-                      <Text.Footnote color="$yellow9">
-                        Placing high leverage increases your liquidation risk. Always manage your
-                        risk by monitoring your positions closely.
-                      </Text.Footnote>
-                    </YStack>
-                  </YStack>
-                </XStack>
-
                 {/* Confirm Button */}
                 <Button
                   width="100%"

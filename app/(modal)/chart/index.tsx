@@ -1,7 +1,6 @@
 import { ArrowLeft } from '@tamagui/lucide-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Pressable } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, XStack, YStack } from 'tamagui';
 import { ChartUI } from '@/app-internal/components/trade/ChartUi';
 import { useMarketStore, useScreenTracking } from '@/app-internal';
@@ -14,22 +13,16 @@ import { useMarketStore, useScreenTracking } from '@/app-internal';
  */
 export default function ChartPage() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ coin: string }>();
   const selectedMarket = useMarketStore(state => state.selectedMarket);
 
-  useScreenTracking('Chart', { market: params.coin || selectedMarket?.coin || '' });
+  const coin = params.coin || selectedMarket?.coin || 'BTC';
+  const marketPair = selectedMarket?.marketPair || `${coin}-USDC`;
 
-  // Use marketPair from selected market (e.g., "BTC-USD")
-  const marketDisplay = selectedMarket?.marketPair || `${params.coin}-USD`;
+  useScreenTracking('Chart', { market: coin });
 
   return (
-    <YStack
-      flex={1}
-      backgroundColor="$background"
-      paddingTop={insets.top}
-      paddingBottom={insets.bottom}
-    >
+    <YStack flex={1} backgroundColor="$background">
       {/* Header */}
       <XStack
         alignItems="center"
@@ -44,7 +37,7 @@ export default function ChartPage() {
         </Pressable>
         <XStack alignItems="center" gap="$2">
           <Text fontFamily="$interSemiBold" fontSize="$6">
-            {marketDisplay}
+            {marketPair}
           </Text>
           <XStack
             backgroundColor="#F97316"
@@ -60,7 +53,7 @@ export default function ChartPage() {
       </XStack>
 
       {/* Full-Screen Chart */}
-      <ChartUI marketId={marketDisplay} />
+      <ChartUI coin={coin} />
     </YStack>
   );
 }
