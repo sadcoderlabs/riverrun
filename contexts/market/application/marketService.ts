@@ -12,8 +12,19 @@
  */
 
 import type { MarketPort } from '../ports/marketPort';
-import type { Market, SelectedMarket, RawMarketMeta, RawAssetContext } from '../ports/types';
-import { getMarketByCoin, getDefaultSelectedMarket, convertRawMarket } from '../ports/types';
+import type {
+  Market,
+  SelectedMarket,
+  RawMarketMeta,
+  RawAssetContext,
+  Hip3RawMarketMeta,
+} from '../ports/types';
+import {
+  getMarketByCoin,
+  getDefaultSelectedMarket,
+  convertRawMarket,
+  convertHip3RawMarket,
+} from '../ports/types';
 import { marketStore } from '../adapters/marketStore';
 import type { HyperliquidGateway } from '@/infra/hyperliquid/hyperliquidGateway';
 
@@ -29,40 +40,27 @@ export class MarketService implements MarketPort {
    * Load market data from Hyperliquid API
    *
    * Fetches market metadata and updates the store.
+   * Includes both validator perps and HIP-3 builder-deployed perps.
    * Auto-selects BTC as default if no market is currently selected.
    */
   async loadMarkets(): Promise<void> {
     try {
-      // Fetch raw market data from Hyperliquid via Gateway
-      const [meta, assetCtxs] = await this.hyperliquidGateway.fetchMetaAndAssetCtxs();
+      // 1. Fetch validator perps
+      const validatorMarkets = await this.loadValidatorMarkets();
 
-      // Business logic: Convert raw data to domain Market type
-      const markets: Market[] = meta.universe.map((asset: any, index: number) => {
-        const rawMeta: RawMarketMeta = {
-          name: asset.name,
-          szDecimals: asset.szDecimals || 0,
-          maxLeverage: asset.maxLeverage || 1,
-        };
+      // 2. Fetch HIP-3 markets
+      const hip3Markets = await this.loadHip3Markets();
 
-        const ctx = assetCtxs[index];
-        const rawCtx: RawAssetContext = {
-          markPx: ctx.markPx,
-          prevDayPx: ctx.prevDayPx,
-          funding: ctx.funding,
-          dayNtlVlm: ctx.dayNtlVlm,
-        };
-
-        // Use pure function from ports to convert
-        return convertRawMarket(rawMeta, rawCtx, index);
-      });
+      // 3. Merge all markets
+      const allMarkets = [...validatorMarkets, ...hip3Markets];
 
       // Update store
-      marketStore.getState().setMarkets(markets);
+      marketStore.getState().setMarkets(allMarkets);
 
       // Auto-select default market (BTC) if none selected
       const currentSelectedMarket = marketStore.getState().selectedMarket;
-      if (!currentSelectedMarket && markets.length > 0) {
-        const defaultMarket = getDefaultSelectedMarket(markets);
+      if (!currentSelectedMarket && allMarkets.length > 0) {
+        const defaultMarket = getDefaultSelectedMarket(allMarkets);
         if (defaultMarket) {
           marketStore.getState().setSelectedMarket(defaultMarket);
         }
@@ -71,6 +69,108 @@ export class MarketService implements MarketPort {
       console.error('[MarketService] Failed to load markets:', error);
       throw error;
     }
+  }
+
+  /**
+   * Load validator-operated perps (default DEX)
+   */
+  private async loadValidatorMarkets(): Promise<Market[]> {
+    const [meta, assetCtxs] = await this.hyperliquidGateway.fetchMetaAndAssetCtxs();
+
+    return meta.universe.map((asset: any, index: number) => {
+      const rawMeta: RawMarketMeta = {
+        name: asset.name,
+        szDecimals: asset.szDecimals || 0,
+        maxLeverage: asset.maxLeverage || 1,
+      };
+
+      const ctx = assetCtxs[index];
+      const rawCtx: RawAssetContext = {
+        markPx: ctx.markPx,
+        prevDayPx: ctx.prevDayPx,
+        funding: ctx.funding,
+        dayNtlVlm: ctx.dayNtlVlm,
+      };
+
+      return convertRawMarket(rawMeta, rawCtx, index);
+    });
+  }
+
+  /**
+   * Load HIP-3 builder-deployed perps from all active DEXs
+   */
+  private async loadHip3Markets(): Promise<Market[]> {
+    try {
+      // Fetch all HIP-3 DEXs
+      const perpDexs = await this.hyperliquidGateway.fetchPerpDexs();
+
+      const allHip3Markets: Market[] = [];
+
+      // Iterate through DEXs (index 0 is null for validator perps)
+      for (let perpDexIndex = 1; perpDexIndex < perpDexs.length; perpDexIndex++) {
+        const dex = perpDexs[perpDexIndex];
+        if (!dex) continue;
+
+        try {
+          const dexMarkets = await this.loadSingleHip3Dex(dex.name, perpDexIndex);
+          allHip3Markets.push(...dexMarkets);
+        } catch (error) {
+          console.warn(`[MarketService] Failed to load HIP-3 DEX ${dex.name}:`, error);
+          // Continue loading other DEXs
+        }
+      }
+
+      return allHip3Markets;
+    } catch (error) {
+      console.warn('[MarketService] Failed to load HIP-3 DEXs:', error);
+      return []; // Return empty array, don't fail entire load
+    }
+  }
+
+  /**
+   * Load markets from a single HIP-3 DEX
+   */
+  private async loadSingleHip3Dex(dexName: string, perpDexIndex: number): Promise<Market[]> {
+    const [meta, assetCtxs] = await this.hyperliquidGateway.fetchMetaAndAssetCtxs(dexName);
+
+    // Get collateral token info from meta
+    const collateralTokenIndex = (meta as any).collateralToken ?? 0;
+    const collateralTokenName =
+      collateralTokenIndex === 0 ? 'USDC' : `Token#${collateralTokenIndex}`;
+
+    return meta.universe
+      .map((asset: any, indexInMeta: number) => {
+        // Skip delisted assets
+        if (asset.isDelisted) return null;
+
+        const rawMeta: Hip3RawMarketMeta = {
+          name: asset.name,
+          szDecimals: asset.szDecimals || 0,
+          maxLeverage: asset.maxLeverage || 1,
+          onlyIsolated: asset.onlyIsolated,
+          marginMode: asset.marginMode,
+          isDelisted: asset.isDelisted,
+        };
+
+        const ctx = assetCtxs[indexInMeta];
+        const rawCtx: RawAssetContext = {
+          markPx: ctx.markPx,
+          prevDayPx: ctx.prevDayPx,
+          funding: ctx.funding,
+          dayNtlVlm: ctx.dayNtlVlm,
+        };
+
+        return convertHip3RawMarket(
+          rawMeta,
+          rawCtx,
+          indexInMeta,
+          dexName,
+          perpDexIndex,
+          collateralTokenIndex,
+          collateralTokenName,
+        );
+      })
+      .filter((market): market is Market => market !== null);
   }
 
   /**
