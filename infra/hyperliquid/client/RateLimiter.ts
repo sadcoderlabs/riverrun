@@ -28,6 +28,7 @@ export const REQUEST_WEIGHTS = {
 
   // Medium (weight = 20) - most info requests
   metaAndAssetCtxs: 20,
+  perpDexs: 20,
   frontendOpenOrders: 20,
   userFills: 20,
   webData2: 20,
