@@ -137,27 +137,32 @@ export class HyperliquidGateway
    * 2. WebSocket subscription for real-time updates
    *
    * @param callback - Called when prices are updated
+   * @param dex - Optional DEX name for HIP-3 assets (e.g., "xyz")
    * @returns Subscription handle for cleanup
    *
    * @example
    * ```typescript
    * const gateway = new HyperliquidGateway();
+   *
+   * // Validator perps
    * const handle = await gateway.subscribeAllMids((prices) => {
    *   console.log('BTC price:', prices['BTC']);
-   *   console.log('ETH price:', prices['ETH']);
    * });
    *
-   * // Later...
-   * await handle.unsubscribe();
+   * // HIP-3 DEX
+   * const hip3Handle = await gateway.subscribeAllMids((prices) => {
+   *   console.log('xyz:TSLA price:', prices['xyz:TSLA']);
+   * }, 'xyz');
    * ```
    */
   async subscribeAllMids(
     callback: (prices: Record<string, string>) => void,
+    dex?: string,
   ): Promise<SubscriptionHandle> {
     // Step 1: HTTP fetch for immediate data
     // This provides fast initial display (~100ms)
     try {
-      const httpPrices = await infoClient.allMids();
+      const httpPrices = await infoClient.allMids(dex ? { dex } : undefined);
       callback(httpPrices); // Invoke callback immediately with HTTP data
     } catch (error) {
       // HTTP failure is not fatal - WebSocket will provide data shortly
@@ -168,7 +173,7 @@ export class HyperliquidGateway
     // This provides continuous updates (~1s for initial connection)
     const handle = await subscriptionManager.subscribe(
       'allMids',
-      {}, // No params needed for allMids
+      { dex }, // Pass dex parameter for HIP-3
       data => {
         // data is AllMidsData { mids: Record<string, string> }
         callback(data.mids);
@@ -256,21 +261,34 @@ export class HyperliquidGateway
    *
    * Business logic (e.g., convertRawMarket) should be handled in Service layer.
    *
+   * @param dex - Optional DEX name for HIP-3 assets (e.g., "xyz")
    * @returns Tuple of [Meta, AssetCtx[]]
    *
    * @example
    * ```typescript
    * const gateway = new HyperliquidGateway();
+   *
+   * // Validator perps
    * const [meta, assetCtxs] = await gateway.fetchMetaAndAssetCtxs();
    *
-   * // Process in Service layer
-   * const markets = meta.universe.map((asset, idx) =>
-   *   convertRawMarket(asset, assetCtxs[idx], idx)
-   * );
+   * // HIP-3 DEX
+   * const [hip3Meta, hip3Ctxs] = await gateway.fetchMetaAndAssetCtxs('xyz');
    * ```
    */
-  async fetchMetaAndAssetCtxs(): Promise<hl.MetaAndAssetCtxsResponse> {
-    return await infoClient.metaAndAssetCtxs();
+  async fetchMetaAndAssetCtxs(dex?: string): Promise<hl.MetaAndAssetCtxsResponse> {
+    return await infoClient.metaAndAssetCtxs(dex ? { dex } : undefined);
+  }
+
+  /**
+   * Fetch all HIP-3 perp DEXs
+   *
+   * Returns array where index 0 is null (validator perps),
+   * followed by HIP-3 DEX info objects.
+   *
+   * @returns Array of PerpDex info (or null for index 0)
+   */
+  async fetchPerpDexs(): Promise<(infoClient.PerpDex | null)[]> {
+    return await infoClient.perpDexs();
   }
 
   // ============================================================================
