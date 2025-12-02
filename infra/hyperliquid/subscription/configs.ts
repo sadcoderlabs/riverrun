@@ -29,10 +29,9 @@ interface WebData2Params {
 // Use the SDK's WebData2Response type directly
 type WebData2Data = hl.WebData2Response;
 
-// AllMids has no parameters (subscribes to all markets)
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+// AllMids params - optional dex for HIP-3
 interface AllMidsParams {
-  // No parameters needed
+  dex?: string; // DEX name for HIP-3 (e.g., "xyz"), undefined for validator perps
 }
 
 // AllMids data contains price information for all markets
@@ -121,15 +120,14 @@ subscriptionRegistry.register<WebData2Params, WebData2Data>('webData2', {
 // ============================================================================
 
 subscriptionRegistry.register<AllMidsParams, AllMidsData>('allMids', {
-  // Single shared subscription for all markets (no user-specific key)
-  getKey: () => 'global',
+  // Key by dex name (or 'default' for validator perps)
+  getKey: params => params.dex ?? 'default',
 
-  // WebSocket subscription for real-time price updates across all markets
-  subscribe: async (_params, callback) => {
+  // WebSocket subscription for real-time price updates
+  subscribe: async (params, callback) => {
     const subscriptionClient = getSubscriptionClient();
-    return await subscriptionClient.allMids((event: hl.WsAllMidsEvent) => {
+    return await subscriptionClient.allMids({ dex: params.dex }, (event: hl.WsAllMidsEvent) => {
       // Extract mids from the event to match AllMidsData interface
-      // event structure: { mids: { [coin: string]: string }, dex?: string }
       callback({ mids: event.mids });
     });
   },
