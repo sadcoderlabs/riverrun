@@ -13,7 +13,7 @@
 export type Market = {
   /** Market trading pair (e.g., "BTC-USDC" for perpetuals) */
   marketPair: string;
-  /** Coin symbol (e.g., "BTC", "ETH") */
+  /** Coin symbol (e.g., "BTC", "ETH", "xyz:TSLA" for HIP-3) */
   coin: string;
   /** Asset ID used by Hyperliquid API for order placement */
   assetId: number;
@@ -31,6 +31,20 @@ export type Market = {
   volume: number;
   /** Size decimals for price formatting (from Hyperliquid meta) */
   szDecimals: number;
+
+  // HIP-3 specific fields
+  /** DEX name for HIP-3 assets (e.g., "xyz"), undefined for validator perps */
+  dex?: string;
+  /** Array index from perpDexs response (1, 2, 3...), undefined for validator perps */
+  perpDexIndex?: number;
+  /** Whether this is a HIP-3 builder-deployed perp */
+  isHip3: boolean;
+  /** Whether only isolated margin is allowed (always true for HIP-3) */
+  isolatedOnly: boolean;
+  /** Collateral token index (0 = USDC) */
+  collateralTokenIndex: number;
+  /** Collateral token name (e.g., "USDC") */
+  collateralTokenName: string;
 };
 
 /**
@@ -109,7 +123,7 @@ export function mergeRealtimePrices(markets: Market[], prices: Record<string, st
 }
 
 /**
- * Convert raw Hyperliquid API data to Market domain type
+ * Convert raw Hyperliquid API data to Market domain type (validator perps)
  *
  * @param meta - Market metadata from meta.universe
  * @param ctx - Asset context from assetCtxs
@@ -140,6 +154,75 @@ export function convertRawMarket(
     fundingRate,
     volume,
     szDecimals: meta.szDecimals || 0,
+    // Validator perps defaults
+    dex: undefined,
+    perpDexIndex: undefined,
+    isHip3: false,
+    isolatedOnly: false,
+    collateralTokenIndex: 0,
+    collateralTokenName: 'USDC',
+  };
+}
+
+/**
+ * HIP-3 specific raw market meta from API
+ */
+export interface Hip3RawMarketMeta extends RawMarketMeta {
+  onlyIsolated?: boolean;
+  marginMode?: 'strictIsolated' | 'noCross';
+  isDelisted?: boolean;
+}
+
+/**
+ * Convert raw HIP-3 API data to Market domain type
+ *
+ * @param meta - Market metadata from meta.universe
+ * @param ctx - Asset context from assetCtxs
+ * @param indexInMeta - Index in the DEX's meta.universe array
+ * @param dex - DEX name (e.g., "xyz")
+ * @param perpDexIndex - Array index from perpDexs response (1, 2, 3...)
+ * @param collateralTokenIndex - Collateral token index (0 = USDC)
+ * @param collateralTokenName - Collateral token name
+ * @returns Market domain object
+ */
+export function convertHip3RawMarket(
+  meta: Hip3RawMarketMeta,
+  ctx: RawAssetContext,
+  indexInMeta: number,
+  dex: string,
+  perpDexIndex: number,
+  collateralTokenIndex: number,
+  collateralTokenName: string,
+): Market {
+  // HIP-3 asset ID formula: 100000 + (perpDexIndex * 10000) + indexInMeta
+  const assetId = 100000 + perpDexIndex * 10000 + indexInMeta;
+
+  const assetName = meta.name; // Already includes dex prefix like "xyz:TSLA"
+  const currentPrice = parseFloat(ctx.markPx);
+  const prevDayPrice = parseFloat(ctx.prevDayPx);
+  const priceChange = prevDayPrice > 0 ? ((currentPrice - prevDayPrice) / prevDayPrice) * 100 : 0;
+  const fundingRate = parseFloat(ctx.funding) * 100;
+  const volume = parseFloat(ctx.dayNtlVlm || '0');
+  const marketPair = `${assetName}-${collateralTokenName}`;
+
+  return {
+    marketPair,
+    coin: assetName,
+    assetId,
+    price: currentPrice,
+    markPx: ctx.markPx,
+    change: priceChange,
+    maxLeverage: meta.maxLeverage || 1,
+    fundingRate,
+    volume,
+    szDecimals: meta.szDecimals || 0,
+    // HIP-3 specific
+    dex,
+    perpDexIndex,
+    isHip3: true,
+    isolatedOnly: true, // HIP-3 is always isolated-only
+    collateralTokenIndex,
+    collateralTokenName,
   };
 }
 
