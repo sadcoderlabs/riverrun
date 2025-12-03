@@ -106,7 +106,7 @@ export default function LoginFeedbackModal({ open, onOpenChange }: LoginFeedback
                 onChangeText={setFeedback}
                 multiline
                 numberOfLines={3}
-                textAlignVertical="top"
+                style={{ textAlignVertical: 'top' }}
                 minHeight={80}
               />
             </YStack>
