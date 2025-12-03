@@ -1,10 +1,10 @@
-import { useScreenTracking, useTelemetry, useWallet } from '@/app-internal';
+import { useScreenTracking, useWallet } from '@/app-internal';
 import { Button } from '@/app-internal/components/global/Button';
 import { Heading } from '@/app-internal/components/global/Heading';
 import { CustomIcons } from '@/app-internal/components/global/icons/CustomIcons';
 import { Text } from '@/app-internal/components/global/Text';
+import LoginFeedbackModal from '@/app-internal/components/login/LoginFeedbackModal';
 import { useState } from 'react';
-import { Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { toast } from 'sonner-native';
 import { Spinner, View, YStack } from 'tamagui';
@@ -13,8 +13,8 @@ export default function Login() {
   useScreenTracking('Login');
   const insets = useSafeAreaInsets();
   const { connect } = useWallet();
-  const { trackEvent } = useTelemetry();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
 
   // Handle email login via Privy
   const handleEmailLogin = async () => {
@@ -126,18 +126,14 @@ export default function Login() {
           color="$color10"
           textAlign="center"
           textDecorationLine="underline"
-          onPress={() => {
-            trackEvent('login_alternative_requested', {});
-            Alert.alert(
-              'Thanks for your feedback!',
-              "We're always looking to improve. Stay tuned for updates!",
-              [{ text: 'OK' }],
-            );
-          }}
+          onPress={() => setIsFeedbackModalOpen(true)}
         >
           Need another way to sign in?
         </Text.Footnote>
       </YStack>
+
+      {/* Login Feedback Modal */}
+      <LoginFeedbackModal open={isFeedbackModalOpen} onOpenChange={setIsFeedbackModalOpen} />
     </View>
   );
 }

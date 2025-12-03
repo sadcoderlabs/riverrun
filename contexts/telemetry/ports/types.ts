@@ -223,7 +223,9 @@ export interface TelemetryEventProps {
   };
 
   // Login
-  login_alternative_requested: Record<string, never>;
+  login_alternative_requested: {
+    feedback: string;
+  };
 
   // Welcome
   welcome_referral_accepted: Record<string, never>;
