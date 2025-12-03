@@ -19,7 +19,8 @@
     "build:production:ios": "./scripts/build.sh production ios",
     "build:production:android": "./scripts/build.sh production android",
     "update:preview": "./scripts/update-preview.sh",
-    "update:production": "./scripts/update-production.sh"
+    "update:production": "./scripts/update-production.sh",
+    "eas-build-post-install": "./scripts/eas-build-post-install.sh"
   },
   "jest": {
     "preset": "jest-expo"
