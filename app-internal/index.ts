@@ -21,8 +21,8 @@ export type { UseTelemetryResult } from './features/telemetry/hooks/useTelemetry
 
 // Wallet
 export {
-    useWalletComposition,
-    WalletCompositionProvider
+  useWalletComposition,
+  WalletCompositionProvider,
 } from './features/wallet/components/walletComposition';
 export { useWallet } from './features/wallet/hooks/useWallet';
 export type { UseWalletResult } from './features/wallet/hooks/useWallet';
@@ -44,7 +44,6 @@ export { useUserFees } from './features/builderFee/hooks/useUserFees';
 export type { UseUserFeesResult } from './features/builderFee/hooks/useUserFees';
 
 // Referral
-export { useReferralHintsStore } from '@/contexts/referral/adapters/referralHintsStore';
 export { REFERRAL_CONFIG } from '@/contexts/referral/config';
 export { useReferral } from './features/referral/hooks/useReferral';
 export type { UseReferralResult } from './features/referral/hooks/useReferral';
@@ -61,11 +60,11 @@ export { useMarginStore } from './features/margin/hooks/useMarginStore';
 
 // Order
 export {
-    useAvailableToTrade,
-    useMarginRequired,
-    useOrderCount,
-    useOrderValidation,
-    useOrderValue
+  useAvailableToTrade,
+  useMarginRequired,
+  useOrderCount,
+  useOrderValidation,
+  useOrderValue,
 } from './features/order/hooks';
 export { useOrder } from './features/order/hooks/useOrder';
 export type { UseOrderResult } from './features/order/hooks/useOrder';
@@ -85,8 +84,8 @@ export type { UseWelcomeScreensResult } from './features/welcome/hooks/useWelcom
 // Notification
 export { useNotificationSetup } from './features/notification';
 export type {
-    NotificationPermissionStatus,
-    UseNotificationSetupResult
+  NotificationPermissionStatus,
+  UseNotificationSetupResult,
 } from './features/notification';
 
 // ============================================================================
@@ -95,14 +94,14 @@ export type {
 
 // Telemetry Types
 export type {
-    ScreenName,
-    ScreenProps,
-    SpanContext,
-    SpanName,
-    TelemetryErrorContext,
-    TelemetryEventName,
-    TelemetryEventProps,
-    TelemetryUser
+  ScreenName,
+  ScreenProps,
+  SpanContext,
+  SpanName,
+  TelemetryErrorContext,
+  TelemetryEventName,
+  TelemetryEventProps,
+  TelemetryUser,
 } from '@/contexts/telemetry/ports/types';
 
 // History Types
@@ -113,11 +112,10 @@ export type { UserFeeRates } from '@/contexts/builderFee/ports/types';
 
 // Environment
 export {
-    appVariant,
-    features,
-    isDevelopmentBuild,
-    isPreviewBuild,
-    isProductionBuild
+  appVariant,
+  features,
+  isDevelopmentBuild,
+  isPreviewBuild,
+  isProductionBuild,
 } from '@/config/environment';
 export type { AppVariant } from '@/config/environment';
-
