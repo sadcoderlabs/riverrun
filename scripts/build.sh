@@ -72,7 +72,11 @@ if [[ "${NODE_OPTIONS:-}" != *"--max-old-space-size="* ]]; then
   export NODE_OPTIONS="--max-old-space-size=4096 ${NODE_OPTIONS:-}"
 fi
 
-# Git commit hash
+# Git commit hash (for display only)
+# NOTE: EXPO_PUBLIC_GIT_COMMIT_HASH is set by eas-build-post-install hook on EAS servers.
+# Setting it here locally has NO effect because eas build runs on EAS cloud servers,
+# not locally. The hook uses EAS_BUILD_GIT_COMMIT_HASH (built-in EAS variable) instead.
+# See: scripts/eas-build-post-install.sh
 COMMIT_HASH=$(git rev-parse --short HEAD)
 
 # 建構 EAS build 參數
@@ -96,6 +100,6 @@ echo "   Profile: $PROFILE"
 echo "   Platform: $PLATFORM"
 echo "   Commit: $COMMIT_HASH"
 
-EXPO_PUBLIC_GIT_COMMIT_HASH=$COMMIT_HASH pnpm exec eas build "${EAS_BUILD_ARGS[@]}"
+pnpm exec eas build "${EAS_BUILD_ARGS[@]}"
 
 echo "✅ Build completed successfully!"
