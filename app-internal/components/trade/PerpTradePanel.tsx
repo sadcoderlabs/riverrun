@@ -42,6 +42,7 @@ export function PerpTradePanel() {
   // Get selected market from store (single source of truth)
   const selectedMarket = useMarketStore(state => state.selectedMarket);
   const coin = selectedMarket?.coin || 'BTC'; // Fallback to BTC if no market selected
+  const displayName = selectedMarket?.displayName || 'BTC'; // For UI display (strips dex prefix for HIP-3)
   const szDecimals = selectedMarket?.szDecimals ?? 4; // Fallback to 4 decimals (use ?? to handle szDecimals=0)
 
   // Subscribe to price data
@@ -174,7 +175,7 @@ export function PerpTradePanel() {
           <PositionSummary
             availableToTrade={availableToTrade}
             currentPositionSize={currentPositionSize}
-            coin={coin}
+            displayName={displayName}
             szDecimals={szDecimals}
             isLoadingAssetData={isLoadingMarkPrice}
           />
@@ -236,7 +237,7 @@ export function PerpTradePanel() {
               leverage={leverage}
               availableToTrade={availableToTrade}
               markPrice={markPrice}
-              coin={coin}
+              displayName={displayName}
               szDecimals={szDecimals}
             />
           )}
@@ -253,7 +254,7 @@ export function PerpTradePanel() {
               availableToTrade={availableToTrade}
               midPrice={midPrice}
               markPrice={markPrice}
-              coin={coin}
+              displayName={displayName}
               szDecimals={szDecimals}
             />
           )}

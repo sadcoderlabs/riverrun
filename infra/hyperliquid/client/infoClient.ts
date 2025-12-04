@@ -36,17 +36,78 @@ import { hyperliquidRateLimiter, REQUEST_WEIGHTS } from './RateLimiter';
  * Weight: 20
  * Returns: [Meta, AssetCtx[]]
  *
+ * @param params - Optional parameters
+ * @param params.dex - DEX name for HIP-3 assets (e.g., "xyz"). If omitted, returns validator perps.
+ *
  * @example
  * ```typescript
+ * // Validator perps
  * const [meta, assetCtxs] = await metaAndAssetCtxs();
- * console.log('Available markets:', meta.universe);
+ *
+ * // HIP-3 DEX
+ * const [hip3Meta, hip3Ctxs] = await metaAndAssetCtxs({ dex: 'xyz' });
  * ```
  */
-export async function metaAndAssetCtxs(): Promise<hl.MetaAndAssetCtxsResponse> {
+export async function metaAndAssetCtxs(params?: {
+  dex?: string;
+}): Promise<hl.MetaAndAssetCtxsResponse> {
   const infoClient = getInfoClient();
   return await hyperliquidRateLimiter.execute(
-    () => infoClient.metaAndAssetCtxs(),
+    () => infoClient.metaAndAssetCtxs(params),
     REQUEST_WEIGHTS.metaAndAssetCtxs,
+  );
+}
+
+// ============================================================================
+// HIP-3 DEX Information
+// ============================================================================
+
+/**
+ * Get all HIP-3 perp DEXs
+ *
+ * Weight: 20
+ * Returns: Array where index 0 is null (validator perps), followed by HIP-3 DEXs
+ *
+ * @example
+ * ```typescript
+ * const dexs = await perpDexs();
+ * // dexs[0] = null (validator perps)
+ * // dexs[1] = { name: 'xyz', fullName: 'XYZ', ... }
+ * ```
+ */
+export async function perpDexs(): Promise<hl.PerpDexsResponse> {
+  const infoClient = getInfoClient();
+  return await hyperliquidRateLimiter.execute(
+    () => infoClient.perpDexs(),
+    REQUEST_WEIGHTS.perpDexs,
+  );
+}
+
+// ============================================================================
+// Spot Metadata
+// ============================================================================
+
+/**
+ * Get spot meta information including tokens list
+ *
+ * Weight: 20
+ * Returns: SpotMetaResponse with tokens array containing index -> name mapping
+ *
+ * Used to resolve collateral token names for HIP-3 DEXs that use non-USDC collateral.
+ *
+ * @example
+ * ```typescript
+ * const spotMeta = await spotMeta();
+ * // Find token name by index
+ * const usdh = spotMeta.tokens.find(t => t.index === 123);
+ * console.log('Token name:', usdh?.name); // "USDH"
+ * ```
+ */
+export async function spotMeta(): Promise<hl.SpotMetaResponse> {
+  const infoClient = getInfoClient();
+  return await hyperliquidRateLimiter.execute(
+    () => infoClient.spotMeta(),
+    REQUEST_WEIGHTS.spotMetaAndAssetCtxs,
   );
 }
 
@@ -60,15 +121,26 @@ export async function metaAndAssetCtxs(): Promise<hl.MetaAndAssetCtxsResponse> {
  * Weight: 2
  * Returns: Record<string, string> - Map of coin symbol to mid price
  *
+ * @param params - Optional parameters
+ * @param params.dex - DEX name for HIP-3 assets (e.g., "xyz"). If omitted, returns validator perps.
+ *
  * @example
  * ```typescript
+ * // Validator perps
  * const mids = await allMids();
  * console.log('BTC mid price:', mids['BTC']);
+ *
+ * // HIP-3 DEX
+ * const hip3Mids = await allMids({ dex: 'xyz' });
+ * console.log('xyz:TSLA price:', hip3Mids['xyz:TSLA']);
  * ```
  */
-export async function allMids(): Promise<hl.AllMidsResponse> {
+export async function allMids(params?: { dex?: string }): Promise<hl.AllMidsResponse> {
   const infoClient = getInfoClient();
-  return await hyperliquidRateLimiter.execute(() => infoClient.allMids(), REQUEST_WEIGHTS.allMids);
+  return await hyperliquidRateLimiter.execute(
+    () => infoClient.allMids(params),
+    REQUEST_WEIGHTS.allMids,
+  );
 }
 
 /**

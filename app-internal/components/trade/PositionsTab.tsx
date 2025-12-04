@@ -1,11 +1,11 @@
-import { useMarket, usePositionStore, useWallet } from '@/app-internal';
+import { useMarket, useMarketStore, usePositionStore, useWallet } from '@/app-internal';
 import type { EnrichedPosition } from '@/app-internal/features/position/types/position';
 import { calculatePositionMetrics } from '@/app-internal/features/position/types/position';
 import { formatPercent } from '@/infra/hyperliquid/format/formatPercent';
 import { formatPrice } from '@/infra/hyperliquid/format/formatPrice';
 import { formatSize } from '@/infra/hyperliquid/format/formatSize';
 import { formatValue } from '@/infra/hyperliquid/format/formatValue';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Spinner, Text, View, XStack, YStack } from 'tamagui';
 import { Button } from '../global';
 import ClosePositionModal from './ClosePositionModal';
@@ -94,6 +94,14 @@ interface PositionCardProps {
 }
 
 function PositionCard({ position, onPositionClick, onCloseClick, onTpSlClick }: PositionCardProps) {
+  const markets = useMarketStore(state => state.markets);
+
+  // Get market pair for HIP-3 support (includes correct collateral token)
+  const marketPair = useMemo(() => {
+    const market = markets.find(m => m.coin === position.coin);
+    return market?.marketPair ?? `${position.coin}-USDC`;
+  }, [markets, position.coin]);
+
   // Calculate metrics using business logic
   const metrics = calculatePositionMetrics(position);
 
@@ -120,7 +128,7 @@ function PositionCard({ position, onPositionClick, onCloseClick, onTpSlClick }: 
         <XStack gap="$1" justifyContent="space-between" alignItems="center">
           <XStack gap="$2" alignItems="center">
             <Text fontFamily="$interBold" fontSize="$3">
-              {position.coin}-USDC
+              {marketPair}
             </Text>
             {position.leverage.type === 'cross' && (
               <View
@@ -150,7 +158,7 @@ function PositionCard({ position, onPositionClick, onCloseClick, onTpSlClick }: 
 
       <XStack justifyContent="space-between" alignItems="center">
         <Text fontSize="$2" color="$color9">
-          Unrealised P&L
+          Unrealized P&L
         </Text>
         <Text
           fontSize="$3"

@@ -5,12 +5,13 @@ import { Text, XStack, YStack } from 'tamagui';
 
 type Market = {
   marketPair: string;
-  coin: string;
+  displayName: string;
   price: number;
   change: number;
   maxLeverage: number;
   volume: number;
   szDecimals: number;
+  isHip3?: boolean;
 };
 
 interface MarketListItemProps extends Market {
@@ -25,12 +26,13 @@ interface MarketListItemProps extends Market {
  */
 const MarketListItemComponent = ({
   marketPair,
-  coin,
+  displayName,
   price,
   change,
   maxLeverage,
   volume,
   szDecimals,
+  isHip3 = false,
   isFavorite = false,
   onPress,
   onToggleFavorite,
@@ -75,15 +77,14 @@ const MarketListItemComponent = ({
         </XStack>
 
         {/* Market Name + Leverage + Volume */}
-        <YStack gap="$0.5" flex={1}>
-          {/* Market Name + Leverage Badge */}
+        <YStack gap="$0.25" flex={1}>
+          {/* Market Name + Badges */}
           <XStack alignItems="center" gap="$2">
             <Text fontSize="$3" color="$color">
-              {coin}
+              {displayName}
             </Text>
             <XStack
               backgroundColor="$color1"
-              opacity={0.6}
               paddingHorizontal="$1.5"
               paddingVertical="$0.5"
               borderRadius="$2"
@@ -94,6 +95,20 @@ const MarketListItemComponent = ({
                 {maxLeverage}x
               </Text>
             </XStack>
+            {isHip3 ? (
+              <XStack
+                backgroundColor="$color1"
+                paddingHorizontal="$1.5"
+                paddingVertical="$0.5"
+                borderRadius="$2"
+                borderWidth={1}
+                borderColor="$color12"
+              >
+                <Text fontSize="$1" fontFamily="$interMedium" color="rgb(80, 210, 193)">
+                  HIP-3
+                </Text>
+              </XStack>
+            ) : null}
           </XStack>
 
           {/* Volume */}
@@ -150,9 +165,10 @@ function arePropsEqual(prev: MarketListItemProps, next: MarketListItemProps): bo
   if (prev.volume !== next.volume) return false;
 
   // Static data - should never change, but check for safety
-  if (prev.coin !== next.coin) return false;
+  if (prev.displayName !== next.displayName) return false;
   if (prev.maxLeverage !== next.maxLeverage) return false;
   if (prev.szDecimals !== next.szDecimals) return false;
+  if (prev.isHip3 !== next.isHip3) return false;
 
   // Callbacks are stable from useCallback, but check if reference changed
   if (prev.onPress !== next.onPress) return false;

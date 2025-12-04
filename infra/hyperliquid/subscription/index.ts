@@ -35,4 +35,6 @@ export type {
   Trade,
   OrderUpdatesData,
   OrderUpdate,
+  WebData2Data,
+  WebData3Data,
 } from './types/subscriptionData';

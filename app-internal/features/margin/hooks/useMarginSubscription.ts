@@ -15,17 +15,17 @@
  * - Updates marginStore directly
  */
 
-import { useEffect, useMemo } from 'react';
-import { useStore } from 'zustand';
-import { useMarginStore } from './useMarginStore';
-import { useWallet } from '../../wallet/hooks/useWallet';
+import type { MarginLeverage } from '@/contexts/margin/ports/types';
 import { marketStore } from '@/contexts/market/adapters/marketStore';
+import type { TelemetryPort } from '@/contexts/telemetry/ports/telemetryPort';
 import {
   HyperliquidGateway,
   type SubscriptionHandle,
 } from '@/infra/hyperliquid/hyperliquidGateway';
-import type { MarginLeverage } from '@/contexts/margin/ports/types';
-import type { TelemetryPort } from '@/contexts/telemetry/ports/telemetryPort';
+import { useEffect, useMemo } from 'react';
+import { useStore } from 'zustand';
+import { useWallet } from '../../wallet/hooks/useWallet';
+import { useMarginStore } from './useMarginStore';
 
 // ============================================================================
 // Data Processing Functions (Testable)
@@ -38,7 +38,7 @@ import type { TelemetryPort } from '@/contexts/telemetry/ports/telemetryPort';
 export function extractMarginData(
   data: any,
   coin: string,
-  markets: Array<{ coin: string; maxLeverage: number }>,
+  markets: { coin: string; maxLeverage: number }[],
 ): MarginLeverage {
   // Find market to get maxLeverage
   const market = markets.find(m => m.coin.toUpperCase() === coin.toUpperCase());
@@ -80,6 +80,7 @@ export function useMarginSubscription(telemetryService: TelemetryPort) {
       return;
     }
 
+    // Note: activeAssetData works with HIP-3 coin names (e.g., "xyz:GOOGL")
     let subscription: SubscriptionHandle | undefined;
     let isCancelled = false;
 

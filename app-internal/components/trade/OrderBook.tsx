@@ -76,6 +76,7 @@ export function OrderBook({ onPriceClick }: OrderBookProps) {
   const effectiveNSigFigs = selectedPrecision ?? precisionMenuItems[0]?.nSigFigs ?? null;
 
   // Subscribe to order book data
+  // Note: l2Book works with HIP-3 coin names (e.g., "xyz:GOOGL")
   const {
     data: rawData,
     isLoading,

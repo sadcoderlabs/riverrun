@@ -77,6 +77,7 @@ Infrastructure Layer (Gateway, Adapters)
 **每個 UseCase 只做一件事**
 
 ❌ **錯誤範例：組合邏輯在 UseCase**
+
 ```typescript
 // ❌ EnsureApprovalUseCase - 做太多事
 class EnsureApprovalUseCase {
@@ -89,6 +90,7 @@ class EnsureApprovalUseCase {
 ```
 
 ✅ **正確範例：單一職責 + 使用端組合**
+
 ```typescript
 // ✅ GetStatusUseCase - 只負責查詢
 class GetStatusUseCase {
@@ -153,7 +155,7 @@ export interface OrderExchangePort {
 // ✅ UseCase 依賴抽象（Port）
 export class PlaceOrderUseCase {
   constructor(
-    private readonly orderExchange: OrderExchangePort  // 依賴介面
+    private readonly orderExchange: OrderExchangePort, // 依賴介面
   ) {}
 }
 
@@ -166,6 +168,7 @@ export class HyperliquidGateway implements OrderExchangePort {
 ```
 
 **好處：**
+
 - UseCase 不依賴具體實作
 - 可測試（mock Port）
 - 可替換實作（不影響業務邏輯）
@@ -187,7 +190,10 @@ interface ReferralExchangePort {
 }
 
 interface MarginExchangePort {
-  updateLeverage(signer: Signer, params: { asset: number; isCross: boolean; leverage: number }): Promise<void>;
+  updateLeverage(
+    signer: Signer,
+    params: { asset: number; isCross: boolean; leverage: number },
+  ): Promise<void>;
 }
 
 interface OrderExchangePort {
@@ -197,6 +203,7 @@ interface OrderExchangePort {
 ```
 
 **模式：**
+
 1. **第一個參數永遠是 `signer: Signer`**
 2. 其他參數可以是單獨參數或結構化的 `params` 物件
 3. Gateway 內部負責創建 client（不由 UseCase 創建）
@@ -215,21 +222,22 @@ export class PlaceOrderUseCase {
     const masterWallet = await this.walletPort.active();
     const masterSigner = await this.walletPort.getSigner();
     const feeResult = await this.ensureBuilderFee.execute({
-      signer: masterSigner,  // ✅ 主 Wallet
+      signer: masterSigner, // ✅ 主 Wallet
       walletAddress: masterWallet.address,
     });
 
     // 2. 使用 Agent Wallet 下單
     const { agentWallet } = await this.tryGetAgentWallet.execute();
     const response = await this.orderExchange.placeOrder(
-      agentWallet.signer,  // ✅ Agent Wallet
-      { orders, grouping, builder }
+      agentWallet.signer, // ✅ Agent Wallet
+      { orders, grouping, builder },
     );
   }
 }
 ```
 
 **原則：**
+
 - **BuilderFee Approval** → 必須使用**主 Wallet**
 - **Agent Approval** → 必須使用**主 Wallet**
 - **訂單操作** → 使用 **Agent Wallet**（已被主 Wallet 授權）
@@ -243,14 +251,14 @@ export class PlaceOrderUseCase {
 
 **一個 Context = 一個業務領域**
 
-| Context | 職責 | 主要 UseCases |
-|---------|------|--------------|
-| **BuilderFee** | 手續費管理 | Get/Approve/Revoke/Ensure |
-| **Referral** | 推薦碼管理 | Get/Set |
-| **Bridge** | 跨鏈橋接 | Deposit/Withdraw/GetBalance |
-| **Agent** | Agent Wallet 管理 | Get/Approve/Revoke/TryGet |
-| **Margin** | 保證金槓桿 | SetLeverage |
-| **Order** | 訂單管理 | Place/Close/TpSl/Cancel |
+| Context        | 職責              | 主要 UseCases               |
+| -------------- | ----------------- | --------------------------- |
+| **BuilderFee** | 手續費管理        | Get/Approve/Revoke/Ensure   |
+| **Referral**   | 推薦碼管理        | Get/Set                     |
+| **Bridge**     | 跨鏈橋接          | Deposit/Withdraw/GetBalance |
+| **Agent**      | Agent Wallet 管理 | Get/Approve/Revoke/TryGet   |
+| **Margin**     | 保證金槓桿        | SetLeverage                 |
+| **Order**      | 訂單管理          | Place/Close/TpSl/Cancel     |
 
 ### Context 目錄結構
 
@@ -324,6 +332,7 @@ export class XxxUseCase {
 ### Command vs Query
 
 **Command (寫操作):**
+
 ```typescript
 // Command: 改變狀態
 export class ApproveBuilderFeeUseCase {
@@ -334,6 +343,7 @@ export class ApproveBuilderFeeUseCase {
 ```
 
 **Query (讀操作):**
+
 ```typescript
 // Query: 不改變狀態
 export class GetBuilderFeeStatusUseCase {
@@ -352,6 +362,7 @@ export class GetBuilderFeeStatusUseCase {
 #### 策略 1: Gateway 直接實作（推薦）
 
 **適用情況：**
+
 - Gateway 已有對應方法
 - 方法簽名一致
 - 無需額外轉換邏輯
@@ -372,7 +383,7 @@ export class HyperliquidGateway implements BuilderFeeExchangePort {
 // ✅ DI 註冊
 container.register({
   builderFeeExchangePort: asFunction(({ hyperliquidGateway }) => {
-    return hyperliquidGateway;  // 直接返回 Gateway
+    return hyperliquidGateway; // 直接返回 Gateway
   }).singleton(),
 });
 ```
@@ -380,6 +391,7 @@ container.register({
 #### 策略 2: 使用 Adapter
 
 **適用情況：**
+
 - 需要複雜適配邏輯
 - Gateway 與 Port 介面差異大
 - 需要組合多個 Gateway 方法
@@ -485,6 +497,7 @@ export function useReferral() {
 ### 模式 1: useState (本地狀態)
 
 **適用情況：**
+
 - 單一使用端
 - 狀態不需要跨組件共享
 - 按需調用 API（非實時訂閱）
@@ -518,15 +531,16 @@ export function useBuilderFee() {
 ### 模式 2: Zustand Store (全局狀態)
 
 **適用情況：**
+
 - WebSocket 實時訂閱
 - 多個組件需要響應式訂閱同一狀態
 
 ```typescript
 // ✅ Zustand Store 定義
-export const useOrderStore = create<OrderStore>((set) => ({
+export const useOrderStore = create<OrderStore>(set => ({
   orders: [],
   isLoading: false,
-  setOrders: (orders) => set({ orders }),
+  setOrders: orders => set({ orders }),
   clear: () => set({ orders: [], isLoading: false }),
 }));
 
@@ -542,15 +556,12 @@ export function useOrderSubscription() {
     let isCancelled = false;
 
     (async () => {
-      subscription = await gateway.subscribeOrders(
-        { user: wallet.address },
-        (data) => {
-          if (!isCancelled) {
-            // 更新全局 Store
-            useOrderStore.getState().setOrders(data.orders);
-          }
+      subscription = await gateway.subscribeOrders({ user: wallet.address }, data => {
+        if (!isCancelled) {
+          // 更新全局 Store
+          useOrderStore.getState().setOrders(data.orders);
         }
-      );
+      });
     })();
 
     return () => {
@@ -562,23 +573,23 @@ export function useOrderSubscription() {
 
 // ✅ 組件訂閱 Store
 export function OrderList() {
-  const orders = useOrderStore(state => state.orders);  // 響應式訂閱
+  const orders = useOrderStore(state => state.orders); // 響應式訂閱
   // ...
 }
 ```
 
 ### 狀態管理經驗總結
 
-| Context | 使用端數量 | 決策 | 原因 |
-|---------|-----------|------|------|
-| **BuilderFee** | 1 個 | useState | 單一使用端，按需調用 |
-| **Referral** | 1 個 | useState | 單一使用端，按需調用 |
-| **Bridge** | 2 個（獨立） | useState | 使用端各自獨立，無共享需求 |
-| **Agent** | 3 個（獨立） | useState | 按需調用，無即時同步需求 |
-| **Margin** | 多個 | Zustand | WebSocket 實時訂閱 |
-| **Order** | 多個 | Zustand | WebSocket 實時訂閱 |
-| **Position** | 多個 | Zustand | WebSocket 實時訂閱 |
-| **History** | 多個 | Zustand | WebSocket 實時訂閱 |
+| Context        | 使用端數量   | 決策     | 原因                       |
+| -------------- | ------------ | -------- | -------------------------- |
+| **BuilderFee** | 1 個         | useState | 單一使用端，按需調用       |
+| **Referral**   | 1 個         | useState | 單一使用端，按需調用       |
+| **Bridge**     | 2 個（獨立） | useState | 使用端各自獨立，無共享需求 |
+| **Agent**      | 3 個（獨立） | useState | 按需調用，無即時同步需求   |
+| **Margin**     | 多個         | Zustand  | WebSocket 實時訂閱         |
+| **Order**      | 多個         | Zustand  | WebSocket 實時訂閱         |
+| **Position**   | 多個         | Zustand  | WebSocket 實時訂閱         |
+| **History**    | 多個         | Zustand  | WebSocket 實時訂閱         |
 
 **教訓：不只看使用端數量，更要分析是否需要即時同步狀態**
 
@@ -601,7 +612,7 @@ export function createContainer(options: CreateContainerOptions): AppContainer {
   // 2. 註冊 Out Ports
   container.register({
     xxxExchangePort: asFunction(({ hyperliquidGateway }) => {
-      return hyperliquidGateway;  // Gateway 直接實作
+      return hyperliquidGateway; // Gateway 直接實作
     }).singleton(),
   });
 
@@ -671,12 +682,14 @@ export type AppContainer = AwilixContainer<AppCradle>;
 ### Hook 的職責
 
 **Hook 只負責 UI 層邏輯：**
+
 1. 調用 UseCases
 2. 管理 UI 狀態（loading, error）
 3. 顯示 Toast 通知
 4. 組合多個 UseCases（如需要）
 
 **Hook 不應該：**
+
 - ❌ 包含業務邏輯
 - ❌ 直接調用 Gateway
 - ❌ 處理區塊鏈邏輯
@@ -758,17 +771,15 @@ export function useXxxSubscription() {
     }
 
     let subscription: SubscriptionHandle | undefined;
-    let isCancelled = false;  // Race condition 保護
+    let isCancelled = false; // Race condition 保護
 
     (async () => {
-      subscription = await gateway.subscribeXxx(
-        { user: wallet.address },
-        (data) => {
-          if (!isCancelled) {  // 檢查是否已 unmount
-            useXxxStore.getState().setXxx(data);
-          }
+      subscription = await gateway.subscribeXxx({ user: wallet.address }, data => {
+        if (!isCancelled) {
+          // 檢查是否已 unmount
+          useXxxStore.getState().setXxx(data);
         }
-      );
+      });
     })();
 
     return () => {
@@ -831,9 +842,7 @@ import type { XxxExchangePort } from '../ports/XxxExchangePort';
 import type { XxxParams, XxxResult } from '../../ports/types';
 
 export class DoSomethingUseCase {
-  constructor(
-    private readonly exchange: XxxExchangePort,
-  ) {}
+  constructor(private readonly exchange: XxxExchangePort) {}
 
   async execute(params: XxxParams): Promise<XxxResult> {
     try {
@@ -901,21 +910,24 @@ export function useXxx() {
   const doSomething = useContainer(c => c.doSomethingUseCase);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleDoSomething = useCallback(async (params: XxxParams) => {
-    setIsLoading(true);
-    try {
-      const result = await doSomething.execute(params);
-      if (result.success) {
-        toast.success('Success');
-        return true;
-      } else {
-        toast.error(result.error);
-        return false;
+  const handleDoSomething = useCallback(
+    async (params: XxxParams) => {
+      setIsLoading(true);
+      try {
+        const result = await doSomething.execute(params);
+        if (result.success) {
+          toast.success('Success');
+          return true;
+        } else {
+          toast.error(result.error);
+          return false;
+        }
+      } finally {
+        setIsLoading(false);
       }
-    } finally {
-      setIsLoading(false);
-    }
-  }, [doSomething]);
+    },
+    [doSomething],
+  );
 
   return { handleDoSomething, isLoading };
 }
@@ -942,6 +954,7 @@ npx prettier --write "contexts/xxx/**/*.ts" "app-internal/**/*.ts"
 ### 陷阱 1: UseCase 包含太多職責
 
 ❌ **錯誤：**
+
 ```typescript
 class PlaceOrderUseCase {
   async execute(params: PlaceOrderParams) {
@@ -956,6 +969,7 @@ class PlaceOrderUseCase {
 ```
 
 ✅ **解決方案：拆分 + 組合**
+
 ```typescript
 // ✅ 每個 UseCase 單一職責
 class PlaceOrderUseCase {
@@ -979,32 +993,35 @@ class PlaceOrderUseCase {
 ### 陷阱 2: Wallet 角色混淆
 
 ❌ **錯誤：使用 Agent Wallet approve BuilderFee**
+
 ```typescript
 const { agentWallet } = await this.tryGetAgentWallet.execute();
 await this.ensureBuilderFee.execute({
-  signer: agentWallet.signer,  // ❌ 錯誤！
+  signer: agentWallet.signer, // ❌ 錯誤！
 });
 ```
 
 ✅ **解決方案：分離 Wallet 角色**
+
 ```typescript
 // 1. 主 Wallet approve BuilderFee
 const masterWallet = await this.walletPort.active();
 const masterSigner = await this.walletPort.getSigner();
 await this.ensureBuilderFee.execute({
-  signer: masterSigner,  // ✅ 主 Wallet
+  signer: masterSigner, // ✅ 主 Wallet
 });
 
 // 2. Agent Wallet 下單
 const { agentWallet } = await this.tryGetAgentWallet.execute();
 await this.orderExchange.placeOrder(
-  agentWallet.signer,  // ✅ Agent Wallet
+  agentWallet.signer, // ✅ Agent Wallet
 );
 ```
 
 ### 陷阱 3: Port 介面不一致
 
 ❌ **錯誤：需要外部創建 client**
+
 ```typescript
 interface MarginExchangePort {
   getClient(signer: Signer): ExchangeClient;
@@ -1012,11 +1029,12 @@ interface MarginExchangePort {
 }
 
 // UseCase 需要手動創建 client
-const client = this.exchange.getClient(signer);  // ❌ 麻煩
+const client = this.exchange.getClient(signer); // ❌ 麻煩
 await this.exchange.updateLeverage(client, params);
 ```
 
 ✅ **解決方案：Port 內部處理 client**
+
 ```typescript
 interface MarginExchangePort {
   updateLeverage(signer: Signer, params: Params): Promise<void>;
@@ -1032,6 +1050,7 @@ async updateLeverage(signer: Signer, params: Params) {
 ### 陷阱 4: 過度使用 Zustand Store
 
 ❌ **錯誤：單一使用端也用 Zustand**
+
 ```typescript
 // ❌ BuilderFee 只有一個使用端，卻用 Zustand
 export const useBuilderFeeStore = create<BuilderFeeStore>(...);
@@ -1043,6 +1062,7 @@ export function useBuilderFee() {
 ```
 
 ✅ **解決方案：使用 useState**
+
 ```typescript
 // ✅ 單一使用端，使用 useState
 export function useBuilderFee() {
@@ -1055,18 +1075,16 @@ export function useBuilderFee() {
 ### 陷阱 5: WebSocket Subscription 缺少 Race Condition 保護
 
 ❌ **錯誤：沒有 isCancelled 檢查**
+
 ```typescript
 useEffect(() => {
   let subscription: SubscriptionHandle | undefined;
 
   (async () => {
-    subscription = await gateway.subscribe(
-      params,
-      (data) => {
-        // ❌ 沒有檢查是否已 unmount
-        useStore.getState().setData(data);
-      }
-    );
+    subscription = await gateway.subscribe(params, data => {
+      // ❌ 沒有檢查是否已 unmount
+      useStore.getState().setData(data);
+    });
   })();
 
   return () => {
@@ -1076,24 +1094,23 @@ useEffect(() => {
 ```
 
 ✅ **解決方案：添加 isCancelled 保護**
+
 ```typescript
 useEffect(() => {
   let subscription: SubscriptionHandle | undefined;
-  let isCancelled = false;  // ✅ Race condition 保護
+  let isCancelled = false; // ✅ Race condition 保護
 
   (async () => {
-    subscription = await gateway.subscribe(
-      params,
-      (data) => {
-        if (!isCancelled) {  // ✅ 檢查
-          useStore.getState().setData(data);
-        }
+    subscription = await gateway.subscribe(params, data => {
+      if (!isCancelled) {
+        // ✅ 檢查
+        useStore.getState().setData(data);
       }
-    );
+    });
   })();
 
   return () => {
-    isCancelled = true;  // ✅ 設置 flag
+    isCancelled = true; // ✅ 設置 flag
     subscription?.unsubscribe();
   };
 }, []);

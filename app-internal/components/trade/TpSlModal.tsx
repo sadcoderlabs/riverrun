@@ -1,4 +1,4 @@
-import { useOrder, useOrderStore } from '@/app-internal';
+import { useMarketStore, useOrder, useOrderStore } from '@/app-internal';
 import { Button } from '@/app-internal/components/global/Button';
 import { Input } from '@/app-internal/components/global/Input';
 import { formatPrice } from '@/infra/hyperliquid/format/formatPrice';
@@ -28,12 +28,20 @@ interface TpSlModalProps {
 export default function TpSlModal({ open, onOpenChange, position }: TpSlModalProps) {
   const { placeTpSlOrders, cancelOrder, isPlacingOrder } = useOrder();
   const orders = useOrderStore(state => state.orders);
+  const markets = useMarketStore(state => state.markets);
 
   // Refs
   const scrollViewRef = useRef<ScrollView>(null);
 
   // Get szDecimals from position (available from WebData2 subscription)
   const szDecimals = position?.szDecimals;
+
+  // Get market pair for display
+  const marketPair = useMemo(() => {
+    if (!position) return '';
+    const market = markets.find(m => m.coin === position.coin);
+    return market?.marketPair ?? `${position.coin}-USDC`;
+  }, [markets, position]);
 
   // Find existing TP/SL orders for this position
   const existingTpSlOrders = useMemo(() => {
@@ -429,7 +437,7 @@ export default function TpSlModal({ open, onOpenChange, position }: TpSlModalPro
             <XStack justifyContent="space-between" alignItems="center">
               <XStack gap="$2" alignItems="center">
                 <Text fontSize="$4" fontWeight={500}>
-                  {position.coin}-USDC
+                  {marketPair}
                 </Text>
                 <YStack
                   backgroundColor={isLong ? '$green1' : '$red1'}

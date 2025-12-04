@@ -14,7 +14,7 @@ function CoinInfoContent({ selectedMarket }: { selectedMarket: SelectedMarket })
   const [isMarketSelectorOpen, setMarketSelectorOpen] = useState(false);
 
   // Extract market data (no fallback needed - selectedMarket is guaranteed to exist)
-  const { coin, marketPair } = selectedMarket;
+  const { coin, marketPair, isHip3, dex } = selectedMarket;
 
   return (
     <>
@@ -32,6 +32,34 @@ function CoinInfoContent({ selectedMarket }: { selectedMarket: SelectedMarket })
             <Text fontFamily="$interSemiBold" fontSize="$4" color="$color">
               {marketPair}
             </Text>
+            {isHip3 && (
+              <XStack
+                backgroundColor="$color1"
+                paddingHorizontal="$1.5"
+                paddingVertical="$0.5"
+                borderRadius="$2"
+                borderWidth={1}
+                borderColor="$color12"
+              >
+                <Text fontSize="$1" fontFamily="$interMedium" color="rgb(80, 210, 193)">
+                  HIP-3
+                </Text>
+              </XStack>
+            )}
+            {dex && (
+              <XStack
+                backgroundColor="$color1"
+                paddingHorizontal="$1.5"
+                paddingVertical="$0.5"
+                borderRadius="$2"
+                borderWidth={1}
+                borderColor="$color12"
+              >
+                <Text fontSize="$1" fontFamily="$interMedium">
+                  {dex}
+                </Text>
+              </XStack>
+            )}
           </XStack>
 
           {/* Right side: Chart icon */}

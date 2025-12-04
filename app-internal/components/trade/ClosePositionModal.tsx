@@ -1,4 +1,4 @@
-import { useOrder } from '@/app-internal';
+import { useMarketStore, useOrder } from '@/app-internal';
 import { Button } from '@/app-internal/components/global/Button';
 import { Input } from '@/app-internal/components/global/Input';
 import * as infoClient from '@/infra/hyperliquid/client/infoClient';
@@ -6,7 +6,7 @@ import { formatPrice } from '@/infra/hyperliquid/format/formatPrice';
 import { formatSize } from '@/infra/hyperliquid/format/formatSize';
 import { formatValue } from '@/infra/hyperliquid/format/formatValue';
 import * as hl from '@nktkas/hyperliquid';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ScrollView } from 'react-native';
 import { Sheet, Slider, Text, XStack, YStack } from 'tamagui';
 
@@ -32,6 +32,15 @@ export default function ClosePositionModal({
   position,
 }: ClosePositionModalProps) {
   const { placeCloseMarketOrder, placeCloseLimitOrder, isPlacingOrder } = useOrder();
+  const markets = useMarketStore(state => state.markets);
+
+  // Get market pair for display
+  const marketPair = useMemo(() => {
+    if (!position) return '';
+    const market = markets.find(m => m.coin === position.coin);
+    return market?.marketPair ?? `${position.coin}-USDC`;
+  }, [markets, position]);
+
   const [orderType, setOrderType] = useState<OrderType>('market');
   const [sizeUnit, setSizeUnit] = useState<SizeUnit>('asset');
   const [percentage, setPercentage] = useState<number>(100);
@@ -259,7 +268,7 @@ export default function ClosePositionModal({
             <XStack justifyContent="space-between" alignItems="center">
               <XStack gap="$2" alignItems="center">
                 <Text fontSize="$4" fontWeight={500}>
-                  {position.coin}-USDC
+                  {marketPair}
                 </Text>
                 <YStack
                   backgroundColor={isLong ? '$green1' : '$red1'}

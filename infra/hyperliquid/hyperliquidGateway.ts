@@ -126,6 +126,54 @@ export class HyperliquidGateway
   }
 
   /**
+   * Subscribe to WebData3 stream for positions across ALL DEXs
+   *
+   * WebData3 contains positions from ALL perpDexStates:
+   * - Validator perps (index 0)
+   * - HIP-3 DEXs (index 1+): xyz, etc.
+   *
+   * Use this to display HIP-3 positions like GOOGL, TSLA, etc.
+   *
+   * Note: WebData3 is WebSocket-only (no HTTP endpoint), so initial data
+   * may take slightly longer (~1s) compared to webData2's hybrid approach.
+   *
+   * @param userAddress - User wallet address
+   * @param callback - Called when data arrives
+   * @returns Subscription handle for cleanup
+   *
+   * @example
+   * ```typescript
+   * const gateway = new HyperliquidGateway();
+   * const handle = await gateway.subscribeWebData3('0x123...', (data) => {
+   *   // Positions from ALL DEXs
+   *   data.perpDexStates.forEach(dex => {
+   *     console.log('Positions:', dex.clearinghouseState.assetPositions);
+   *   });
+   * });
+   *
+   * // Later...
+   * await handle.unsubscribe();
+   * ```
+   */
+  async subscribeWebData3(
+    userAddress: string,
+    callback: (data: hl.WsWebData3Event) => void,
+  ): Promise<SubscriptionHandle> {
+    // WebData3 is WebSocket-only - no HTTP endpoint available
+    const handle = await subscriptionManager.subscribe<hl.WsWebData3Event>(
+      'webData3',
+      { user: userAddress },
+      callback,
+    );
+
+    return {
+      unsubscribe: async () => {
+        await subscriptionManager.unsubscribe(handle);
+      },
+    };
+  }
+
+  /**
    * Subscribe to allMids stream with HTTP+WS hybrid strategy
    *
    * Corresponds to Hyperliquid's allMids subscription.
@@ -137,27 +185,32 @@ export class HyperliquidGateway
    * 2. WebSocket subscription for real-time updates
    *
    * @param callback - Called when prices are updated
+   * @param dex - Optional DEX name for HIP-3 assets (e.g., "xyz")
    * @returns Subscription handle for cleanup
    *
    * @example
    * ```typescript
    * const gateway = new HyperliquidGateway();
+   *
+   * // Validator perps
    * const handle = await gateway.subscribeAllMids((prices) => {
    *   console.log('BTC price:', prices['BTC']);
-   *   console.log('ETH price:', prices['ETH']);
    * });
    *
-   * // Later...
-   * await handle.unsubscribe();
+   * // HIP-3 DEX
+   * const hip3Handle = await gateway.subscribeAllMids((prices) => {
+   *   console.log('xyz:TSLA price:', prices['xyz:TSLA']);
+   * }, 'xyz');
    * ```
    */
   async subscribeAllMids(
     callback: (prices: Record<string, string>) => void,
+    dex?: string,
   ): Promise<SubscriptionHandle> {
     // Step 1: HTTP fetch for immediate data
     // This provides fast initial display (~100ms)
     try {
-      const httpPrices = await infoClient.allMids();
+      const httpPrices = await infoClient.allMids(dex ? { dex } : undefined);
       callback(httpPrices); // Invoke callback immediately with HTTP data
     } catch (error) {
       // HTTP failure is not fatal - WebSocket will provide data shortly
@@ -168,7 +221,7 @@ export class HyperliquidGateway
     // This provides continuous updates (~1s for initial connection)
     const handle = await subscriptionManager.subscribe(
       'allMids',
-      {}, // No params needed for allMids
+      dex ? { dex } : {}, // Only pass dex if defined
       data => {
         // data is AllMidsData { mids: Record<string, string> }
         callback(data.mids);
@@ -218,10 +271,11 @@ export class HyperliquidGateway
   ): Promise<SubscriptionHandle> {
     // Step 1: HTTP fetch for immediate data
     // This provides fast initial display (~100ms)
+    // Note: Do NOT use toUpperCase() - HIP-3 assets require lowercase DEX prefix
     try {
       const httpData = await infoClient.activeAssetData({
         user: params.user,
-        coin: params.coin.toUpperCase(),
+        coin: params.coin,
       });
       callback(httpData); // Invoke callback immediately
     } catch (error) {
@@ -256,21 +310,46 @@ export class HyperliquidGateway
    *
    * Business logic (e.g., convertRawMarket) should be handled in Service layer.
    *
+   * @param dex - Optional DEX name for HIP-3 assets (e.g., "xyz")
    * @returns Tuple of [Meta, AssetCtx[]]
    *
    * @example
    * ```typescript
    * const gateway = new HyperliquidGateway();
+   *
+   * // Validator perps
    * const [meta, assetCtxs] = await gateway.fetchMetaAndAssetCtxs();
    *
-   * // Process in Service layer
-   * const markets = meta.universe.map((asset, idx) =>
-   *   convertRawMarket(asset, assetCtxs[idx], idx)
-   * );
+   * // HIP-3 DEX
+   * const [hip3Meta, hip3Ctxs] = await gateway.fetchMetaAndAssetCtxs('xyz');
    * ```
    */
-  async fetchMetaAndAssetCtxs(): Promise<hl.MetaAndAssetCtxsResponse> {
-    return await infoClient.metaAndAssetCtxs();
+  async fetchMetaAndAssetCtxs(dex?: string): Promise<hl.MetaAndAssetCtxsResponse> {
+    return await infoClient.metaAndAssetCtxs(dex ? { dex } : undefined);
+  }
+
+  /**
+   * Fetch all HIP-3 perp DEXs
+   *
+   * Returns array where index 0 is null (validator perps),
+   * followed by HIP-3 DEX info objects.
+   *
+   * @returns Array of PerpDex info (or null for index 0)
+   */
+  async fetchPerpDexs(): Promise<hl.PerpDexsResponse> {
+    return await infoClient.perpDexs();
+  }
+
+  /**
+   * Fetch spot metadata including tokens list
+   *
+   * Used to resolve collateral token names for HIP-3 DEXs.
+   * Returns tokens array with index -> name mapping.
+   *
+   * @returns Spot metadata with tokens list
+   */
+  async fetchSpotMeta(): Promise<hl.SpotMetaResponse> {
+    return await infoClient.spotMeta();
   }
 
   // ============================================================================
@@ -322,15 +401,29 @@ export class HyperliquidGateway
   // ============================================================================
 
   /**
-   * Fetch frontend open orders via HTTP
+   * Fetch frontend open orders via HTTP from ALL DEXs
    *
-   * Returns the current open orders for a user from Hyperliquid API.
+   * Returns the current open orders for a user from Hyperliquid API,
+   * including both validator perps and HIP-3 DEXs (like xyz for GOOGL, TSLA).
    *
    * @param userAddress - User wallet address
-   * @returns Promise resolving to open orders data
+   * @param hip3DexNames - HIP-3 DEX names to fetch orders from (e.g., ['xyz'])
+   * @returns Promise resolving to merged open orders from all DEXs
    */
-  async getFrontendOpenOrders(userAddress: string): Promise<unknown> {
-    return await infoClient.frontendOpenOrders({ user: userAddress });
+  async getFrontendOpenOrders(
+    userAddress: string,
+    hip3DexNames: string[] = [],
+  ): Promise<unknown[]> {
+    // Fetch validator perps orders + HIP-3 DEX orders in parallel
+    const [validatorOrders, ...hip3OrdersArrays] = await Promise.all([
+      infoClient.frontendOpenOrders({ user: userAddress }),
+      ...hip3DexNames.map(dexName =>
+        infoClient.frontendOpenOrders({ user: userAddress, dex: dexName }),
+      ),
+    ]);
+
+    // Merge all orders
+    return [...validatorOrders, ...hip3OrdersArrays.flat()];
   }
 
   /**

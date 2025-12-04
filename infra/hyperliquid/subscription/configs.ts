@@ -29,10 +29,16 @@ interface WebData2Params {
 // Use the SDK's WebData2Response type directly
 type WebData2Data = hl.WebData2Response;
 
-// AllMids has no parameters (subscribes to all markets)
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+interface WebData3Params {
+  user: string;
+}
+
+// Use the SDK's WsWebData3Event type directly
+type WebData3Data = hl.WsWebData3Event;
+
+// AllMids params - optional dex for HIP-3
 interface AllMidsParams {
-  // No parameters needed
+  dex?: string; // DEX name for HIP-3 (e.g., "xyz"), undefined for validator perps
 }
 
 // AllMids data contains price information for all markets
@@ -117,19 +123,42 @@ subscriptionRegistry.register<WebData2Params, WebData2Data>('webData2', {
 });
 
 // ============================================================================
+// Configuration: webData3
+// ============================================================================
+
+subscriptionRegistry.register<WebData3Params, WebData3Data>('webData3', {
+  // Key by user address
+  getKey: params => params.user,
+
+  // WebSocket subscription for real-time position updates across ALL DEXs (including HIP-3)
+  subscribe: async (params, callback) => {
+    const subscriptionClient = getSubscriptionClient();
+    return await subscriptionClient.webData3(
+      {
+        user: params.user,
+      },
+      (event: hl.WsWebData3Event) => {
+        callback(event);
+      },
+    );
+  },
+});
+
+// ============================================================================
 // Configuration: allMids
 // ============================================================================
 
 subscriptionRegistry.register<AllMidsParams, AllMidsData>('allMids', {
-  // Single shared subscription for all markets (no user-specific key)
-  getKey: () => 'global',
+  // Key by dex name (or 'default' for validator perps)
+  getKey: params => params.dex ?? 'default',
 
-  // WebSocket subscription for real-time price updates across all markets
-  subscribe: async (_params, callback) => {
+  // WebSocket subscription for real-time price updates
+  subscribe: async (params, callback) => {
     const subscriptionClient = getSubscriptionClient();
-    return await subscriptionClient.allMids((event: hl.WsAllMidsEvent) => {
+    // Only pass dex param if defined (SDK may not handle undefined well)
+    const subscriptionParams = params.dex ? { dex: params.dex } : {};
+    return await subscriptionClient.allMids(subscriptionParams, (event: hl.WsAllMidsEvent) => {
       // Extract mids from the event to match AllMidsData interface
-      // event structure: { mids: { [coin: string]: string }, dex?: string }
       callback({ mids: event.mids });
     });
   },
@@ -162,15 +191,16 @@ subscriptionRegistry.register<UserFillsParams, UserFillsData>('userFills', {
 // ============================================================================
 
 subscriptionRegistry.register<ActiveAssetDataParams, ActiveAssetData>('activeAssetData', {
-  // Key by user and coin
+  // Key by user and coin (preserve case for HIP-3 assets like "xyz:GOOGL")
   getKey: params => `${params.user}-${params.coin}`,
 
   // WebSocket subscription for real-time leverage and position updates
+  // Note: Do NOT use toUpperCase() - HIP-3 assets require lowercase DEX prefix
   subscribe: async (params, callback) => {
     const subscriptionClient = getSubscriptionClient();
     return await subscriptionClient.activeAssetData(
       {
-        coin: params.coin.toUpperCase(),
+        coin: params.coin,
         user: params.user,
       },
       (assetData: any) => {
@@ -185,15 +215,16 @@ subscriptionRegistry.register<ActiveAssetDataParams, ActiveAssetData>('activeAss
 // ============================================================================
 
 subscriptionRegistry.register<ActiveAssetCtxParams, ActiveAssetCtxData>('activeAssetCtx', {
-  // Key by coin
-  getKey: params => params.coin.toUpperCase(),
+  // Key by coin (preserve case for HIP-3 assets like "xyz:GOOGL")
+  getKey: params => params.coin,
 
   // WebSocket subscription for real-time market data
+  // Note: Do NOT use toUpperCase() - HIP-3 assets require lowercase DEX prefix
   subscribe: async (params, callback) => {
     const subscriptionClient = getSubscriptionClient();
     return await subscriptionClient.activeAssetCtx(
       {
-        coin: params.coin.toUpperCase(),
+        coin: params.coin,
       },
       (assetCtx: any) => {
         callback(assetCtx);
@@ -207,15 +238,16 @@ subscriptionRegistry.register<ActiveAssetCtxParams, ActiveAssetCtxData>('activeA
 // ============================================================================
 
 subscriptionRegistry.register<OrderBookParams, OrderBookData>('orderBook', {
-  // Key includes both coin and precision level
+  // Key includes both coin and precision level (preserve case for HIP-3)
   getKey: params => `${params.coin}-${params.nSigFigs ?? 'full'}`,
 
   // WebSocket subscription
+  // Note: Do NOT use toUpperCase() - HIP-3 assets require lowercase DEX prefix
   subscribe: async (params, callback) => {
     const subscriptionClient = getSubscriptionClient();
     return await subscriptionClient.l2Book(
       {
-        coin: params.coin.toUpperCase(),
+        coin: params.coin,
         nSigFigs: params.nSigFigs ?? undefined,
       },
       (orderBookEvent: any) => {
@@ -237,15 +269,16 @@ subscriptionRegistry.register<OrderBookParams, OrderBookData>('orderBook', {
 // ============================================================================
 
 subscriptionRegistry.register<TradesParams, TradesData>('trades', {
-  // Key by coin
-  getKey: params => params.coin.toUpperCase(),
+  // Key by coin (preserve case for HIP-3)
+  getKey: params => params.coin,
 
   // WebSocket subscription for real-time trades
+  // Note: Do NOT use toUpperCase() - HIP-3 assets require lowercase DEX prefix
   subscribe: async (params, callback) => {
     const subscriptionClient = getSubscriptionClient();
     return await subscriptionClient.trades(
       {
-        coin: params.coin.toUpperCase(),
+        coin: params.coin,
       },
       (trades: Trade[]) => {
         // Forward trades array to callback
@@ -283,15 +316,16 @@ subscriptionRegistry.register<OrderUpdatesParams, OrderUpdatesData>('orderUpdate
 // ============================================================================
 
 subscriptionRegistry.register<CandleParams, CandleData>('candle', {
-  // Key by coin and interval
-  getKey: params => `${params.coin.toUpperCase()}-${params.interval}`,
+  // Key by coin and interval (preserve case for HIP-3)
+  getKey: params => `${params.coin}-${params.interval}`,
 
   // WebSocket subscription for real-time candle updates
+  // Note: Do NOT use toUpperCase() - HIP-3 assets require lowercase DEX prefix
   subscribe: async (params, callback) => {
     const subscriptionClient = getSubscriptionClient();
     return await subscriptionClient.candle(
       {
-        coin: params.coin.toUpperCase(),
+        coin: params.coin,
         interval: params.interval,
       },
       (candleEvent: hl.WsCandleEvent) => {

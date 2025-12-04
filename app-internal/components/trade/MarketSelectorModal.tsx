@@ -327,12 +327,13 @@ export function MarketSelectorModal({ open, onOpenChange }: MarketSelectorModalP
             renderItem={({ item: market }) => (
               <MarketListItem
                 marketPair={market.marketPair}
-                coin={market.coin}
+                displayName={market.displayName}
                 price={market.price}
                 change={market.change}
                 maxLeverage={market.maxLeverage}
                 volume={market.volume}
                 szDecimals={market.szDecimals}
+                isHip3={market.isHip3}
                 isFavorite={favorites.includes(market.marketPair)}
                 onPress={() => navigateToMarket(market.marketPair)}
                 onToggleFavorite={handleToggleFavorite}
