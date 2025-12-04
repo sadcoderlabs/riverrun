@@ -178,8 +178,15 @@ export class MarketService implements MarketPort {
   ): Promise<Market[]> {
     const [meta, assetCtxs] = await this.hyperliquidGateway.fetchMetaAndAssetCtxs(dexName);
 
-    // Get collateral token info from meta, resolve name from spot meta
+    // Get collateral token info from meta
     const collateralTokenIndex = (meta as any).collateralToken ?? 0;
+
+    // Skip DEXs that don't use USDC as collateral (e.g., flx/vntl use USDH)
+    // Users can't acquire non-USDC collateral tokens without spot trading support
+    if (collateralTokenIndex !== 0) {
+      return [];
+    }
+
     const collateralTokenName = tokenNameMap.get(collateralTokenIndex) ?? 'USDC';
 
     return meta.universe
