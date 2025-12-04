@@ -54,10 +54,6 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       segmentWriteKey: process.env.SEGMENT_WRITE_KEY,
       // Backend API base URL for notification service
       backendApiBaseUrl: process.env.BACKEND_API_BASE_URL || 'https://api.go.perp.com',
-      // Hyperliquid API URLs (defaults to official endpoints)
-      // You could get one from Alchemy
-      hyperliquidHttpUrl: process.env.HYPERLIQUID_HTTP_URL || 'https://api.hyperliquid.xyz',
-      hyperliquidWsUrl: process.env.HYPERLIQUID_WS_URL || 'wss://api.hyperliquid.xyz/ws',
     },
   };
 };
