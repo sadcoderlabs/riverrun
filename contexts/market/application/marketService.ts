@@ -45,13 +45,13 @@ export class MarketService implements MarketPort {
    */
   async loadMarkets(): Promise<void> {
     try {
-      // 1. Fetch validator perps
-      const validatorMarkets = await this.loadValidatorMarkets();
+      // Fetch validator perps and HIP-3 markets in parallel
+      const [validatorMarkets, hip3Markets] = await Promise.all([
+        this.loadValidatorMarkets(),
+        this.loadHip3Markets(),
+      ]);
 
-      // 2. Fetch HIP-3 markets
-      const hip3Markets = await this.loadHip3Markets();
-
-      // 3. Merge all markets
+      // Merge all markets
       const allMarkets = [...validatorMarkets, ...hip3Markets];
       console.log(
         `[MarketService] Total markets: ${allMarkets.length} (validator: ${validatorMarkets.length}, hip3: ${hip3Markets.length})`,
@@ -108,6 +108,14 @@ export class MarketService implements MarketPort {
       // Fetch all HIP-3 DEXs
       const perpDexs = await this.hyperliquidGateway.fetchPerpDexs();
       // console.log('[MarketService] perpDexs response:', JSON.stringify(perpDexs, null, 2));
+
+      // Extract HIP-3 DEX names (index 0 is null for validator perps)
+      const hip3DexNames = perpDexs
+        .filter((dex): dex is NonNullable<typeof dex> => dex !== null)
+        .map(dex => dex.name);
+
+      // Store HIP-3 DEX names for use by other contexts (e.g., order fetching)
+      marketStore.getState().setHip3Dexes(hip3DexNames);
 
       const allHip3Markets: Market[] = [];
 

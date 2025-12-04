@@ -21,6 +21,7 @@ import {
   type SubscriptionHandle,
 } from '@/infra/hyperliquid/hyperliquidGateway';
 import { orderStore } from '../../../../contexts/order/adapters/orderStore';
+import { marketStore } from '../../../../contexts/market/adapters/marketStore';
 import type { Order } from '../../../../contexts/order/ports/types';
 import type { TelemetryPort } from '../../../../contexts/telemetry/ports/telemetryPort';
 import type { TelemetryErrorContext } from '../../../../contexts/telemetry/ports/types';
@@ -188,8 +189,9 @@ export function useOrderSubscription(telemetryService: TelemetryPort) {
       try {
         orderStore.getState().setLoading(true);
 
-        // Step 1: HTTP fetch initial open orders
-        const initialOrders = await gateway.getFrontendOpenOrders(walletAddress);
+        // Step 1: HTTP fetch initial open orders from all DEXs
+        const hip3Dexes = marketStore.getState().hip3Dexes;
+        const initialOrders = await gateway.getFrontendOpenOrders(walletAddress, hip3Dexes);
 
         // Check if effect was cancelled during async operation
         if (isCancelled) return;

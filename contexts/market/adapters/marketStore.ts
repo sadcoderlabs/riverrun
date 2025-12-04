@@ -20,6 +20,8 @@ interface MarketState {
   selectedMarket: SelectedMarket | undefined;
   /** User's favorite market coins */
   favorites: string[];
+  /** HIP-3 DEX names (e.g., ['xyz']) for fetching orders across all DEXs */
+  hip3Dexes: string[];
 }
 
 /**
@@ -41,6 +43,9 @@ interface MarketStateActions {
   /** Toggle favorite status for a coin */
   toggleFavorite: (coin: string) => void;
 
+  /** Set HIP-3 DEX names */
+  setHip3Dexes: (dexes: string[]) => void;
+
   /** Clear all state (reset to initial) */
   clear: () => void;
 }
@@ -52,6 +57,7 @@ const initialState: MarketState = {
   markets: [],
   selectedMarket: undefined,
   favorites: [],
+  hip3Dexes: [],
 };
 
 /**
@@ -96,6 +102,8 @@ export const marketStore = createStore<MarketState & MarketStateActions>()(
             : [...state.favorites, coin],
         })),
 
+      setHip3Dexes: (hip3Dexes: string[]) => set({ hip3Dexes }),
+
       clear: () => set(initialState),
     }),
     {
@@ -105,6 +113,7 @@ export const marketStore = createStore<MarketState & MarketStateActions>()(
         markets: state.markets,
         selectedMarket: state.selectedMarket,
         favorites: state.favorites,
+        hip3Dexes: state.hip3Dexes,
       }),
     },
   ),
