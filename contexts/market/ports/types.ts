@@ -70,6 +70,8 @@ export interface SelectedMarket {
   assetId: number;
   /** Whether this is a HIP-3 builder-deployed perp */
   isHip3: boolean;
+  /** DEX name for HIP-3 assets (e.g., "xyz"), undefined for validator perps */
+  dex?: string;
 }
 
 /**
@@ -255,6 +257,7 @@ export function getDefaultSelectedMarket(markets: Market[]): SelectedMarket | un
         maxLeverage: btcMarket.maxLeverage,
         assetId: btcMarket.assetId,
         isHip3: btcMarket.isHip3,
+        dex: btcMarket.dex,
       }
     : undefined;
 }

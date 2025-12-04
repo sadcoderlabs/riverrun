@@ -213,6 +213,7 @@ export class MarketService implements MarketPort {
         maxLeverage: market.maxLeverage,
         assetId: market.assetId,
         isHip3: market.isHip3,
+        dex: market.dex,
       };
       marketStore.getState().setSelectedMarket(selectedMarket);
     } else {
