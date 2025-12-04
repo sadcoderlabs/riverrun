@@ -34,11 +34,12 @@ function OrderCard({ order, onCancel, onPress, canceling }: OrderCardProps) {
   const markets = useMarketStore(state => state.markets);
 
   // Get market data for display (from metaAndAssetCtxs subscription)
-  const { szDecimals, displayName } = useMemo(() => {
+  const { szDecimals, displayName, marketPair } = useMemo(() => {
     const market = markets.find(m => m.coin === order.coin);
     return {
       szDecimals: market?.szDecimals ?? 4,
       displayName: market?.displayName ?? order.coin,
+      marketPair: market?.marketPair ?? `${order.coin}-USDC`,
     };
   }, [markets, order.coin]);
 
@@ -91,7 +92,7 @@ function OrderCard({ order, onCancel, onPress, canceling }: OrderCardProps) {
       <XStack justifyContent="space-between" alignItems="center">
         <XStack gap="$2" alignItems="center">
           <Text fontFamily="$interBold" fontSize="$3">
-            {displayName}-USDC
+            {marketPair}
           </Text>
           <View
             backgroundColor="$gray1"

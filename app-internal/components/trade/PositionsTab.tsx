@@ -96,10 +96,10 @@ interface PositionCardProps {
 function PositionCard({ position, onPositionClick, onCloseClick, onTpSlClick }: PositionCardProps) {
   const markets = useMarketStore(state => state.markets);
 
-  // Get displayName from market data for HIP-3 support
-  const displayName = useMemo(() => {
+  // Get market pair for HIP-3 support (includes correct collateral token)
+  const marketPair = useMemo(() => {
     const market = markets.find(m => m.coin === position.coin);
-    return market?.displayName ?? position.coin;
+    return market?.marketPair ?? `${position.coin}-USDC`;
   }, [markets, position.coin]);
 
   // Calculate metrics using business logic
@@ -128,7 +128,7 @@ function PositionCard({ position, onPositionClick, onCloseClick, onTpSlClick }: 
         <XStack gap="$1" justifyContent="space-between" alignItems="center">
           <XStack gap="$2" alignItems="center">
             <Text fontFamily="$interBold" fontSize="$3">
-              {displayName}-USDC
+              {marketPair}
             </Text>
             {position.leverage.type === 'cross' && (
               <View

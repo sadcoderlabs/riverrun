@@ -45,17 +45,17 @@ export class MarketService implements MarketPort {
    */
   async loadMarkets(): Promise<void> {
     try {
+      // Fetch spot meta first to build token index -> name map for collateral resolution
+      const tokenNameMap = await this.buildTokenNameMap();
+
       // Fetch validator perps and HIP-3 markets in parallel
       const [validatorMarkets, hip3Markets] = await Promise.all([
         this.loadValidatorMarkets(),
-        this.loadHip3Markets(),
+        this.loadHip3Markets(tokenNameMap),
       ]);
 
       // Merge all markets
       const allMarkets = [...validatorMarkets, ...hip3Markets];
-      console.log(
-        `[MarketService] Total markets: ${allMarkets.length} (validator: ${validatorMarkets.length}, hip3: ${hip3Markets.length})`,
-      );
 
       // Update store
       marketStore.getState().setMarkets(allMarkets);
@@ -71,6 +71,30 @@ export class MarketService implements MarketPort {
     } catch (error) {
       console.error('[MarketService] Failed to load markets:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Build token index -> name map from spot meta
+   *
+   * Used to resolve collateral token names for HIP-3 DEXs.
+   * Some DEXs like flx and vntl use USDH instead of USDC.
+   */
+  private async buildTokenNameMap(): Promise<Map<number, string>> {
+    try {
+      const spotMeta = await this.hyperliquidGateway.fetchSpotMeta();
+      const map = new Map<number, string>();
+      for (const token of spotMeta.tokens) {
+        map.set(token.index, token.name);
+      }
+      return map;
+    } catch (error) {
+      console.warn(
+        '[MarketService] Failed to fetch spot meta, using fallback for token names:',
+        error,
+      );
+      // Return a minimal fallback map
+      return new Map([[0, 'USDC']]);
     }
   }
 
@@ -101,12 +125,13 @@ export class MarketService implements MarketPort {
 
   /**
    * Load HIP-3 builder-deployed perps from all active DEXs
+   *
+   * @param tokenNameMap - Map of token index -> name for resolving collateral tokens
    */
-  private async loadHip3Markets(): Promise<Market[]> {
+  private async loadHip3Markets(tokenNameMap: Map<number, string>): Promise<Market[]> {
     try {
       // Fetch all HIP-3 DEXs
       const perpDexs = await this.hyperliquidGateway.fetchPerpDexs();
-      // console.log('[MarketService] perpDexs response:', JSON.stringify(perpDexs, null, 2));
 
       // Extract HIP-3 DEX names (index 0 is null for validator perps)
       const hip3DexNames = perpDexs
@@ -124,7 +149,7 @@ export class MarketService implements MarketPort {
         if (!dex) continue;
 
         try {
-          const dexMarkets = await this.loadSingleHip3Dex(dex.name, perpDexIndex);
+          const dexMarkets = await this.loadSingleHip3Dex(dex.name, perpDexIndex, tokenNameMap);
           allHip3Markets.push(...dexMarkets);
         } catch (error) {
           console.warn(`[MarketService] Failed to load HIP-3 DEX ${dex.name}:`, error);
@@ -141,14 +166,21 @@ export class MarketService implements MarketPort {
 
   /**
    * Load markets from a single HIP-3 DEX
+   *
+   * @param dexName - DEX name (e.g., "xyz", "flx", "vntl")
+   * @param perpDexIndex - Array index from perpDexs response
+   * @param tokenNameMap - Map of token index -> name for resolving collateral tokens
    */
-  private async loadSingleHip3Dex(dexName: string, perpDexIndex: number): Promise<Market[]> {
+  private async loadSingleHip3Dex(
+    dexName: string,
+    perpDexIndex: number,
+    tokenNameMap: Map<number, string>,
+  ): Promise<Market[]> {
     const [meta, assetCtxs] = await this.hyperliquidGateway.fetchMetaAndAssetCtxs(dexName);
 
-    // Get collateral token info from meta
+    // Get collateral token info from meta, resolve name from spot meta
     const collateralTokenIndex = (meta as any).collateralToken ?? 0;
-    const collateralTokenName =
-      collateralTokenIndex === 0 ? 'USDC' : `Token#${collateralTokenIndex}`;
+    const collateralTokenName = tokenNameMap.get(collateralTokenIndex) ?? 'USDC';
 
     return meta.universe
       .map((asset: any, indexInMeta: number) => {

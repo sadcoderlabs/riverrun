@@ -340,6 +340,18 @@ export class HyperliquidGateway
     return await infoClient.perpDexs();
   }
 
+  /**
+   * Fetch spot metadata including tokens list
+   *
+   * Used to resolve collateral token names for HIP-3 DEXs.
+   * Returns tokens array with index -> name mapping.
+   *
+   * @returns Spot metadata with tokens list
+   */
+  async fetchSpotMeta(): Promise<hl.SpotMetaResponse> {
+    return await infoClient.spotMeta();
+  }
+
   // ============================================================================
   // History Operations (Read)
   // ============================================================================

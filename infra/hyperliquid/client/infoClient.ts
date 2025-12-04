@@ -84,6 +84,34 @@ export async function perpDexs(): Promise<hl.PerpDexsResponse> {
 }
 
 // ============================================================================
+// Spot Metadata
+// ============================================================================
+
+/**
+ * Get spot meta information including tokens list
+ *
+ * Weight: 20
+ * Returns: SpotMetaResponse with tokens array containing index -> name mapping
+ *
+ * Used to resolve collateral token names for HIP-3 DEXs that use non-USDC collateral.
+ *
+ * @example
+ * ```typescript
+ * const spotMeta = await spotMeta();
+ * // Find token name by index
+ * const usdh = spotMeta.tokens.find(t => t.index === 123);
+ * console.log('Token name:', usdh?.name); // "USDH"
+ * ```
+ */
+export async function spotMeta(): Promise<hl.SpotMetaResponse> {
+  const infoClient = getInfoClient();
+  return await hyperliquidRateLimiter.execute(
+    () => infoClient.spotMeta(),
+    REQUEST_WEIGHTS.spotMetaAndAssetCtxs,
+  );
+}
+
+// ============================================================================
 // Market Data
 // ============================================================================
 

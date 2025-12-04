@@ -20,117 +20,120 @@ interface FillCardProps {
   fill: Fill;
   szDecimals: number;
   displayName: string;
+  marketPair: string;
   onPress: () => void;
 }
 
-const FillCard = React.memo<FillCardProps>(({ fill, szDecimals, displayName, onPress }) => {
-  // Early return if fill data is invalid
-  if (!fill.coin) {
-    return null;
-  }
+const FillCard = React.memo<FillCardProps>(
+  ({ fill, szDecimals, displayName, marketPair, onPress }) => {
+    // Early return if fill data is invalid
+    if (!fill.coin) {
+      return null;
+    }
 
-  const price = parseFloat(fill.px);
-  const size = parseFloat(fill.sz);
-  const fee = parseFloat(fill.fee);
-  const closedPnl = parseFloat(fill.closedPnl);
+    const price = parseFloat(fill.px);
+    const size = parseFloat(fill.sz);
+    const fee = parseFloat(fill.fee);
+    const closedPnl = parseFloat(fill.closedPnl);
 
-  // Determine color based on direction
-  // Long/Open Long/Buy = green, Short/Open Short/Sell = red
-  const isLongDirection =
-    fill.dir === 'Open Long' || fill.dir === 'Close Short' || fill.dir === 'Buy';
-  const directionColor = isLongDirection ? '$green10' : '$red10';
+    // Determine color based on direction
+    // Long/Open Long/Buy = green, Short/Open Short/Sell = red
+    const isLongDirection =
+      fill.dir === 'Open Long' || fill.dir === 'Close Short' || fill.dir === 'Buy';
+    const directionColor = isLongDirection ? '$green10' : '$red10';
 
-  return (
-    <YStack
-      padding="$3"
-      backgroundColor="$gray2"
-      borderRadius="$3"
-      borderWidth={1}
-      borderColor="$gray5"
-      gap="$2"
-      marginBottom="$3"
-    >
-      {/* Header row: Coin + PERP badge */}
-      <XStack justifyContent="space-between" alignItems="center">
-        <XStack gap="$2" alignItems="center">
-          <Text fontFamily="$interBold" fontSize="$3">
-            {displayName}-USDC
-          </Text>
-          <View
-            backgroundColor="$gray3"
-            paddingHorizontal="$2"
-            paddingVertical="$1"
-            borderRadius="$4"
-          >
-            <Text fontSize="$1" fontFamily="$interMedium" color="$color12">
-              PERP
+    return (
+      <YStack
+        padding="$3"
+        backgroundColor="$gray2"
+        borderRadius="$3"
+        borderWidth={1}
+        borderColor="$gray5"
+        gap="$2"
+        marginBottom="$3"
+      >
+        {/* Header row: Coin + PERP badge */}
+        <XStack justifyContent="space-between" alignItems="center">
+          <XStack gap="$2" alignItems="center">
+            <Text fontFamily="$interBold" fontSize="$3">
+              {marketPair}
             </Text>
-          </View>
+            <View
+              backgroundColor="$gray3"
+              paddingHorizontal="$2"
+              paddingVertical="$1"
+              borderRadius="$4"
+            >
+              <Text fontSize="$1" fontFamily="$interMedium" color="$color12">
+                PERP
+              </Text>
+            </View>
+          </XStack>
+          {/* Show PnL if it exists and is non-zero */}
+          {closedPnl !== 0 && (
+            <Text
+              fontSize="$2"
+              fontFamily="$interSemiBold"
+              color={closedPnl > 0 ? '$green10' : '$red10'}
+            >
+              {closedPnl > 0 ? '+' : '-'}${formatValue(Math.abs(closedPnl), 2)}
+            </Text>
+          )}
         </XStack>
-        {/* Show PnL if it exists and is non-zero */}
-        {closedPnl !== 0 && (
-          <Text
-            fontSize="$2"
-            fontFamily="$interSemiBold"
-            color={closedPnl > 0 ? '$green10' : '$red10'}
-          >
-            {closedPnl > 0 ? '+' : '-'}${formatValue(Math.abs(closedPnl), 2)}
+
+        {/* Time Row */}
+        <XStack justifyContent="space-between" alignItems="center">
+          <Text fontSize="$2" color="$color9">
+            Time
           </Text>
-        )}
-      </XStack>
+          <Text fontSize="$2" fontFamily="$interMedium">
+            {formatTimestamp(fill.time)}
+          </Text>
+        </XStack>
 
-      {/* Time Row */}
-      <XStack justifyContent="space-between" alignItems="center">
-        <Text fontSize="$2" color="$color9">
-          Time
-        </Text>
-        <Text fontSize="$2" fontFamily="$interMedium">
-          {formatTimestamp(fill.time)}
-        </Text>
-      </XStack>
+        {/* Direction Row */}
+        <XStack justifyContent="space-between" alignItems="center">
+          <Text fontSize="$2" color="$color9">
+            Direction
+          </Text>
+          <Text fontSize="$2" fontFamily="$interSemiBold" color={directionColor}>
+            {fill.dir}
+          </Text>
+        </XStack>
 
-      {/* Direction Row */}
-      <XStack justifyContent="space-between" alignItems="center">
-        <Text fontSize="$2" color="$color9">
-          Direction
-        </Text>
-        <Text fontSize="$2" fontFamily="$interSemiBold" color={directionColor}>
-          {fill.dir}
-        </Text>
-      </XStack>
+        {/* Price Row */}
+        <XStack justifyContent="space-between" alignItems="center">
+          <Text fontSize="$2" color="$color9">
+            Price
+          </Text>
+          <Text fontSize="$2" fontFamily="$interMedium">
+            {formatPrice(price, 2, true)}
+          </Text>
+        </XStack>
 
-      {/* Price Row */}
-      <XStack justifyContent="space-between" alignItems="center">
-        <Text fontSize="$2" color="$color9">
-          Price
-        </Text>
-        <Text fontSize="$2" fontFamily="$interMedium">
-          {formatPrice(price, 2, true)}
-        </Text>
-      </XStack>
+        {/* Size Row */}
+        <XStack justifyContent="space-between" alignItems="center">
+          <Text fontSize="$2" color="$color9">
+            Size
+          </Text>
+          <Text fontSize="$2" fontFamily="$interMedium">
+            {formatSize(size, szDecimals, true)} {displayName}
+          </Text>
+        </XStack>
 
-      {/* Size Row */}
-      <XStack justifyContent="space-between" alignItems="center">
-        <Text fontSize="$2" color="$color9">
-          Size
-        </Text>
-        <Text fontSize="$2" fontFamily="$interMedium">
-          {formatSize(size, szDecimals, true)} {displayName}
-        </Text>
-      </XStack>
-
-      {/* Fee Row */}
-      <XStack justifyContent="space-between" alignItems="center">
-        <Text fontSize="$2" color="$color9">
-          Fee
-        </Text>
-        <Text fontSize="$2" fontFamily="$interMedium" color={fee < 0 ? '$green10' : '$color'}>
-          {fee < 0 ? '+' : '-'}${Math.abs(fee)}
-        </Text>
-      </XStack>
-    </YStack>
-  );
-});
+        {/* Fee Row */}
+        <XStack justifyContent="space-between" alignItems="center">
+          <Text fontSize="$2" color="$color9">
+            Fee
+          </Text>
+          <Text fontSize="$2" fontFamily="$interMedium" color={fee < 0 ? '$green10' : '$color'}>
+            {fee < 0 ? '+' : '-'}${Math.abs(fee)}
+          </Text>
+        </XStack>
+      </YStack>
+    );
+  },
+);
 
 FillCard.displayName = 'FillCard';
 
@@ -155,9 +158,13 @@ export function HistoryTabContent() {
 
   // Build coin -> market data map once for all fills
   const coinMarketMap = useMemo(() => {
-    const map = new Map<string, { szDecimals: number; displayName: string }>();
+    const map = new Map<string, { szDecimals: number; displayName: string; marketPair: string }>();
     markets.forEach(market => {
-      map.set(market.coin, { szDecimals: market.szDecimals, displayName: market.displayName });
+      map.set(market.coin, {
+        szDecimals: market.szDecimals,
+        displayName: market.displayName,
+        marketPair: market.marketPair,
+      });
     });
     return map;
   }, [markets]);
@@ -296,6 +303,7 @@ export function HistoryTabContent() {
                 fill={fill}
                 szDecimals={marketData?.szDecimals ?? 4}
                 displayName={marketData?.displayName ?? fill.coin}
+                marketPair={marketData?.marketPair ?? `${fill.coin}-USDC`}
                 onPress={() => handleFillClick(fill.coin)}
               />
             );
