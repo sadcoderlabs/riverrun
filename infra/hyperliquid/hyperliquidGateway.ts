@@ -389,15 +389,35 @@ export class HyperliquidGateway
   // ============================================================================
 
   /**
-   * Fetch frontend open orders via HTTP
+   * Fetch frontend open orders via HTTP from ALL DEXs
    *
-   * Returns the current open orders for a user from Hyperliquid API.
+   * Returns the current open orders for a user from Hyperliquid API,
+   * including both validator perps and HIP-3 DEXs (like xyz for GOOGL, TSLA).
    *
    * @param userAddress - User wallet address
-   * @returns Promise resolving to open orders data
+   * @returns Promise resolving to merged open orders from all DEXs
    */
-  async getFrontendOpenOrders(userAddress: string): Promise<unknown> {
-    return await infoClient.frontendOpenOrders({ user: userAddress });
+  async getFrontendOpenOrders(userAddress: string): Promise<unknown[]> {
+    // Fetch orders from all DEXs in parallel
+    const [validatorOrders, perpDexs] = await Promise.all([
+      infoClient.frontendOpenOrders({ user: userAddress }),
+      infoClient.perpDexs(),
+    ]);
+
+    // Get HIP-3 DEX names (index 0 is null for validator perps)
+    const hip3DexNames = perpDexs
+      .filter((dex): dex is NonNullable<typeof dex> => dex !== null)
+      .map(dex => dex.name);
+
+    // Fetch orders from each HIP-3 DEX in parallel
+    const hip3OrdersArrays = await Promise.all(
+      hip3DexNames.map(dexName =>
+        infoClient.frontendOpenOrders({ user: userAddress, dex: dexName }),
+      ),
+    );
+
+    // Merge all orders
+    return [...validatorOrders, ...hip3OrdersArrays.flat()];
   }
 
   /**
