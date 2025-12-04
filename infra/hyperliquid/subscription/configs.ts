@@ -126,7 +126,9 @@ subscriptionRegistry.register<AllMidsParams, AllMidsData>('allMids', {
   // WebSocket subscription for real-time price updates
   subscribe: async (params, callback) => {
     const subscriptionClient = getSubscriptionClient();
-    return await subscriptionClient.allMids({ dex: params.dex }, (event: hl.WsAllMidsEvent) => {
+    // Only pass dex param if defined (SDK may not handle undefined well)
+    const subscriptionParams = params.dex ? { dex: params.dex } : {};
+    return await subscriptionClient.allMids(subscriptionParams, (event: hl.WsAllMidsEvent) => {
       // Extract mids from the event to match AllMidsData interface
       callback({ mids: event.mids });
     });

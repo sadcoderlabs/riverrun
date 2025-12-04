@@ -173,7 +173,7 @@ export class HyperliquidGateway
     // This provides continuous updates (~1s for initial connection)
     const handle = await subscriptionManager.subscribe(
       'allMids',
-      { dex }, // Pass dex parameter for HIP-3
+      dex ? { dex } : {}, // Only pass dex if defined
       data => {
         // data is AllMidsData { mids: Record<string, string> }
         callback(data.mids);
