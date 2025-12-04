@@ -1,51 +1,30 @@
 /**
  * ArbitrumBridgeAdapter - Implementation of ArbitrumBridgePort
  *
- * This adapter implements the ArbitrumBridgePort interface and handles
- * all Arbitrum L2 interactions:
- * - Query USDC balance from ERC20 contract
- * - Query ETH balance from Arbitrum L2
- * - Transfer USDC to Hyperliquid bridge contract
- * - Handle different wallet types (Privy embedded vs external wallets)
- * - Network switching to Arbitrum if needed
+ * Handles Arbitrum L2 interactions for bridging USDC to Hyperliquid.
  *
- * Design principles:
- * - Pure infrastructure logic (no business rules)
- * - Handles wallet provider differences
- * - Throws errors for upper layers to handle
+ * Key implementation note:
+ * Arbitrum gas includes L1 data posting costs, so ERC20 transfers require
+ * ~250,000+ gas (vs ~65,000 on Ethereum mainnet). We use eth_estimateGas
+ * to get accurate gas limits.
  */
 
-import { Contract, formatUnits, parseUnits, JsonRpcProvider } from 'ethers';
+import { Contract, formatUnits, parseUnits, JsonRpcProvider, Transaction, Signature } from 'ethers';
 import type { ArbitrumBridgePort } from '../application/ports/ArbitrumBridgePort';
 import type { TelemetryPort } from '../../telemetry/ports/telemetryPort';
 import type { ActiveWallet } from '../../wallet/ports/types';
 import { ARBITRUM_CONFIG, ERC20_ABI, GAS_SETTINGS } from '../config';
 
-/**
- * ArbitrumBridgeAdapter
- *
- * Implements ArbitrumBridgePort for Arbitrum L2 operations.
- */
 export class ArbitrumBridgeAdapter implements ArbitrumBridgePort {
   constructor(private readonly telemetryService: TelemetryPort) {}
-  /**
-   * Get USDC balance on Arbitrum
-   *
-   * @param walletAddress - User's wallet address
-   * @returns Formatted USDC balance (e.g., "10.5") or undefined if unavailable
-   */
+
   async getArbitrumBalance(walletAddress: string): Promise<string | undefined> {
     try {
-      // Use public RPC provider for read-only operation
       const provider = new JsonRpcProvider(ARBITRUM_CONFIG.rpcUrl);
-
       const usdcContract = new Contract(ARBITRUM_CONFIG.usdcAddress, ERC20_ABI, provider);
       const balanceRaw = await usdcContract.balanceOf(walletAddress);
       const decimals = await usdcContract.decimals();
-
-      // Format balance to human-readable string
-      const formattedBalance = formatUnits(balanceRaw, decimals);
-      return formattedBalance;
+      return formatUnits(balanceRaw, decimals);
     } catch (err) {
       console.error('[ArbitrumBridgeAdapter] Failed to fetch USDC balance:', err);
       this.telemetryService.captureWarning('Failed to fetch USDC balance on Arbitrum', {
@@ -57,23 +36,11 @@ export class ArbitrumBridgeAdapter implements ArbitrumBridgePort {
     }
   }
 
-  /**
-   * Get ETH balance on Arbitrum
-   *
-   * @param walletAddress - User's wallet address
-   * @returns Formatted ETH balance (e.g., "0.5") or undefined if unavailable
-   */
   async getArbitrumEthBalance(walletAddress: string): Promise<string | undefined> {
     try {
-      // Use public RPC provider for read-only operation
       const provider = new JsonRpcProvider(ARBITRUM_CONFIG.rpcUrl);
-
-      // Get native ETH balance (no contract needed)
       const balanceRaw = await provider.getBalance(walletAddress);
-
-      // Format balance to human-readable string (ETH has 18 decimals)
-      const formattedBalance = formatUnits(balanceRaw, 18);
-      return formattedBalance;
+      return formatUnits(balanceRaw, 18);
     } catch (err) {
       console.error('[ArbitrumBridgeAdapter] Failed to fetch ETH balance:', err);
       this.telemetryService.captureWarning('Failed to fetch ETH balance on Arbitrum', {
@@ -85,21 +52,7 @@ export class ArbitrumBridgeAdapter implements ArbitrumBridgePort {
     }
   }
 
-  /**
-   * Deposit USDC from Arbitrum to Hyperliquid
-   *
-   * Handles wallet type differences internally:
-   * - Privy: Uses eth_signTransaction + independent RPC broadcast
-   * - External: Uses standard ethers.js contract interaction
-   *
-   * @param wallet - User's active wallet (contains type, provider, address)
-   * @param amount - Amount in USDC (human-readable, e.g., "10.5")
-   * @param bridgeAddress - Destination bridge contract address
-   * @returns Transaction hash
-   * @throws Error if transaction fails or validation fails
-   */
   async depositUsdc(wallet: ActiveWallet, amount: string, bridgeAddress: string): Promise<string> {
-    // Dispatch based on wallet type
     if (wallet.type === 'privy') {
       return this.depositUsdcWithPrivy(wallet, bridgeAddress, amount);
     } else if (wallet.type === 'external') {
@@ -112,85 +65,86 @@ export class ArbitrumBridgeAdapter implements ArbitrumBridgePort {
   /**
    * Deposit USDC using Privy embedded wallet
    *
-   * Uses eth_signTransaction + independent RPC broadcast to work around
-   * Privy's gas estimation bug.
-   *
-   * @param wallet - Privy embedded wallet
-   * @param to - Recipient address (bridge contract)
-   * @param amount - Amount in USDC (human-readable, e.g., "10.5")
-   * @returns Transaction hash
-   * @throws Error if transaction fails
+   * Uses eth_sign for transaction signing because Privy's eth_signTransaction
+   * may override gas parameters. We build and sign the transaction manually
+   * to ensure correct gas settings for Arbitrum.
    */
   private async depositUsdcWithPrivy(
     wallet: ActiveWallet,
     to: string,
     amount: string,
   ): Promise<string> {
-    const provider = await wallet.getProvider();
-    if (!provider) {
+    const walletProvider = await wallet.getProvider();
+    if (!walletProvider) {
       throw new Error('Provider not available');
     }
 
-    // Create independent RPC provider for reading blockchain state and broadcasting
-    const independentProvider = new JsonRpcProvider(ARBITRUM_CONFIG.rpcUrl);
+    // Use independent provider for RPC calls (more reliable than Privy's provider)
+    const provider = new JsonRpcProvider(ARBITRUM_CONFIG.rpcUrl);
+    const usdcContract = new Contract(ARBITRUM_CONFIG.usdcAddress, ERC20_ABI, provider);
 
-    // Get token info
-    const usdcContract = new Contract(ARBITRUM_CONFIG.usdcAddress, ERC20_ABI, independentProvider);
+    // Validate USDC balance
     const decimals = await usdcContract.decimals();
     const amountRaw = parseUnits(amount, decimals);
-
-    // Check balance
-    const balanceRaw = await usdcContract.balanceOf(wallet.address);
-    if (balanceRaw < amountRaw) {
+    const usdcBalance = await usdcContract.balanceOf(wallet.address);
+    if (usdcBalance < amountRaw) {
       throw new Error(
-        `Insufficient balance. You have ${formatUnits(balanceRaw, decimals)} but need ${amount}`,
+        `Insufficient USDC balance. You have ${formatUnits(usdcBalance, decimals)} USDC but need ${amount} USDC`,
       );
     }
 
-    // Encode transfer function
+    // Prepare transaction data
     const transferData = usdcContract.interface.encodeFunctionData('transfer', [to, amountRaw]);
+    const [feeData, nonce, gasLimit] = await Promise.all([
+      provider.getFeeData(),
+      provider.getTransactionCount(wallet.address, 'pending'),
+      this.estimateGas(provider, wallet.address, transferData),
+    ]);
 
-    // Get fee data and nonce
-    const feeData = await independentProvider.getFeeData();
-    const nonce = await independentProvider.getTransactionCount(wallet.address, 'pending');
+    // Calculate gas price with safety margin
+    const maxFeePerGas = this.getMaxFeePerGas(feeData);
+    const maxPriorityFeePerGas = GAS_SETTINGS.minMaxPriorityFeePerGas;
 
-    // Build transaction for signing
-    const txToSign = {
-      from: wallet.address,
+    // Validate ETH balance for gas
+    const ethBalance = await provider.getBalance(wallet.address);
+    const maxGasCost = gasLimit * maxFeePerGas;
+    if (ethBalance < maxGasCost) {
+      throw new Error(
+        `Insufficient ETH for gas. You need approximately ${parseFloat(formatUnits(maxGasCost, 18)).toFixed(6)} ETH but only have ${parseFloat(formatUnits(ethBalance, 18)).toFixed(6)} ETH`,
+      );
+    }
+
+    // Build and sign transaction manually
+    const tx = Transaction.from({
       to: ARBITRUM_CONFIG.usdcAddress,
-      value: '0x0',
       data: transferData,
-      gasLimit: '0x' + GAS_SETTINGS.erc20TransferGasLimit.toString(16),
-      maxFeePerGas: feeData.maxFeePerGas ? '0x' + feeData.maxFeePerGas.toString(16) : undefined,
-      maxPriorityFeePerGas: feeData.maxPriorityFeePerGas
-        ? '0x' + feeData.maxPriorityFeePerGas.toString(16)
-        : undefined,
-      nonce: '0x' + nonce.toString(16),
-      chainId: '0x' + ARBITRUM_CONFIG.chainId.toString(16),
-    };
+      value: 0n,
+      gasLimit,
+      maxFeePerGas,
+      maxPriorityFeePerGas,
+      nonce,
+      chainId: BigInt(ARBITRUM_CONFIG.chainId),
+      type: 2,
+    });
 
-    // Sign with Privy provider using BrowserProvider.send()
-    const signedTx = (await provider.send('eth_signTransaction', [txToSign])) as string;
+    const signature = (await walletProvider.send('eth_sign', [
+      wallet.address,
+      tx.unsignedHash,
+    ])) as string;
+    tx.signature = Signature.from(signature);
 
-    // Broadcast with independent provider
-    const txHash = await independentProvider.send('eth_sendRawTransaction', [signedTx]);
-
-    // Wait for confirmation
-    await independentProvider.waitForTransaction(txHash);
+    // Broadcast and wait
+    const txHash = await provider.send('eth_sendRawTransaction', [tx.serialized]);
+    await provider.waitForTransaction(txHash);
 
     return txHash;
   }
 
   /**
-   * Deposit USDC using external wallet (Reown)
+   * Deposit USDC using external wallet (Reown/WalletConnect)
    *
-   * Uses standard ethers.js contract interaction.
-   *
-   * @param wallet - External wallet (e.g., Reown)
-   * @param to - Recipient address (bridge contract)
-   * @param amount - Amount in USDC (human-readable, e.g., "10.5")
-   * @returns Transaction hash
-   * @throws Error if transaction fails
+   * Uses standard ethers.js contract interaction - external wallets
+   * handle gas estimation correctly.
    */
   private async depositUsdcWithExternalWallet(
     wallet: ActiveWallet,
@@ -202,11 +156,10 @@ export class ArbitrumBridgeAdapter implements ArbitrumBridgePort {
       throw new Error('Provider not available');
     }
 
-    // Check network
     const network = await provider.getNetwork();
     if (network.chainId !== BigInt(ARBITRUM_CONFIG.chainId)) {
       throw new Error(
-        `Wrong network. Please switch to Arbitrum (chainId: ${ARBITRUM_CONFIG.chainId}, current: ${network.chainId})`,
+        `Wrong network. Please switch to Arbitrum (chainId: ${ARBITRUM_CONFIG.chainId})`,
       );
     }
 
@@ -216,20 +169,47 @@ export class ArbitrumBridgeAdapter implements ArbitrumBridgePort {
     const decimals = await usdcContract.decimals();
     const amountRaw = parseUnits(amount, decimals);
 
-    // Check balance
     const balanceRaw = await usdcContract.balanceOf(wallet.address);
     if (balanceRaw < amountRaw) {
       throw new Error(
-        `Insufficient balance. You have ${formatUnits(balanceRaw, decimals)} but need ${amount}`,
+        `Insufficient USDC balance. You have ${formatUnits(balanceRaw, decimals)} USDC but need ${amount} USDC`,
       );
     }
 
-    // Send transaction
     const tx = await usdcContract.transfer(to, amountRaw);
-
-    // Wait for confirmation
     await tx.wait();
 
     return tx.hash;
+  }
+
+  /**
+   * Estimate gas for Arbitrum transaction.
+   * Arbitrum gas includes L1 data posting costs (~250k+ for ERC20 transfer).
+   */
+  private async estimateGas(
+    provider: JsonRpcProvider,
+    from: string,
+    data: string,
+  ): Promise<bigint> {
+    try {
+      const estimated = await provider.send('eth_estimateGas', [
+        { from, to: ARBITRUM_CONFIG.usdcAddress, data },
+      ]);
+      // Add 20% buffer
+      return (BigInt(estimated) * 120n) / 100n;
+    } catch {
+      return GAS_SETTINGS.erc20TransferGasLimit;
+    }
+  }
+
+  private getMaxFeePerGas(feeData: {
+    maxFeePerGas: bigint | null;
+    gasPrice: bigint | null;
+  }): bigint {
+    const baseFee = feeData.maxFeePerGas ?? feeData.gasPrice ?? 0n;
+    const withMultiplier = BigInt(Math.ceil(Number(baseFee) * GAS_SETTINGS.gasPriceMultiplier));
+    return withMultiplier > GAS_SETTINGS.minMaxFeePerGas
+      ? withMultiplier
+      : GAS_SETTINGS.minMaxFeePerGas;
   }
 }
