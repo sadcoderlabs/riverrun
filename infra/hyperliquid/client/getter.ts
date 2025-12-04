@@ -1,5 +1,12 @@
 import * as hl from '@nktkas/hyperliquid';
 import type { Signer } from 'ethers';
+import Constants from 'expo-constants';
+
+// API URLs from app config, with defaults to official Hyperliquid endpoints
+const HYPERLIQUID_HTTP_URL: string =
+  Constants.expoConfig?.extra?.hyperliquidHttpUrl || 'https://api.hyperliquid.xyz';
+const HYPERLIQUID_WS_URL: string =
+  Constants.expoConfig?.extra?.hyperliquidWsUrl || 'wss://api.hyperliquid.xyz/ws';
 
 // Singleton instances - shared across all usages
 let transport: hl.HttpTransport | undefined;
@@ -9,7 +16,11 @@ let subscriptionClient: hl.SubscriptionClient | undefined;
 
 export function getTransport(): hl.HttpTransport {
   if (!transport) {
-    transport = new hl.HttpTransport();
+    transport = new hl.HttpTransport({
+      server: {
+        mainnet: { api: HYPERLIQUID_HTTP_URL },
+      },
+    });
   }
   return transport;
 }
@@ -23,7 +34,7 @@ export function getInfoClient(): hl.InfoClient {
 
 export function getSubscriptionClient(): hl.SubscriptionClient {
   if (!subscriptionClient || !wsTransport) {
-    wsTransport = new hl.WebSocketTransport();
+    wsTransport = new hl.WebSocketTransport({ url: HYPERLIQUID_WS_URL });
     subscriptionClient = new hl.SubscriptionClient({ transport: wsTransport });
   }
   return subscriptionClient;
