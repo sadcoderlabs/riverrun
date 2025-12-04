@@ -6,7 +6,7 @@
 
 export const ARBITRUM_CONFIG = {
   chainId: 42161,
-  rpcUrl: process.env.EXPO_PUBLIC_ARBITRUM_RPC_URL || 'https://arb1.arbitrum.io/rpc',
+  rpcUrl: 'https://arb1.arbitrum.io/rpc',
   usdcAddress: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831' as const,
   bridgeAddress: '0x2Df1c51E09aECF9cacB7bc98cB1742757f163dF7' as const,
 } as const;
