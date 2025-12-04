@@ -80,6 +80,21 @@ export function useMarginSubscription(telemetryService: TelemetryPort) {
       return;
     }
 
+    // HIP-3 assets: skip subscription, use defaults (always isolated)
+    // activeAssetData WebSocket doesn't support HIP-3 assets
+    const isHip3 = selectedMarket?.isHip3 ?? false;
+    if (isHip3) {
+      const markets = marketStore.getState().markets;
+      const market = markets.find(m => m.coin.toUpperCase() === coin.toUpperCase());
+      useMarginStore.getState().setMarginLeverage({
+        leverage: 1, // Default leverage for HIP-3
+        marginMode: 'isolated', // HIP-3 is always isolated
+        minLeverage: 1,
+        maxLeverage: market?.maxLeverage || 1,
+      });
+      return;
+    }
+
     let subscription: SubscriptionHandle | undefined;
     let isCancelled = false;
 
@@ -138,5 +153,5 @@ export function useMarginSubscription(telemetryService: TelemetryPort) {
       subscription?.unsubscribe();
       useMarginStore.getState().clear();
     };
-  }, [walletAddress, coin, gateway, telemetryService]);
+  }, [walletAddress, coin, selectedMarket?.isHip3, gateway, telemetryService]);
 }
