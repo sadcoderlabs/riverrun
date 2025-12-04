@@ -162,15 +162,16 @@ subscriptionRegistry.register<UserFillsParams, UserFillsData>('userFills', {
 // ============================================================================
 
 subscriptionRegistry.register<ActiveAssetDataParams, ActiveAssetData>('activeAssetData', {
-  // Key by user and coin
+  // Key by user and coin (preserve case for HIP-3 assets like "xyz:GOOGL")
   getKey: params => `${params.user}-${params.coin}`,
 
   // WebSocket subscription for real-time leverage and position updates
+  // Note: Do NOT use toUpperCase() - HIP-3 assets require lowercase DEX prefix
   subscribe: async (params, callback) => {
     const subscriptionClient = getSubscriptionClient();
     return await subscriptionClient.activeAssetData(
       {
-        coin: params.coin.toUpperCase(),
+        coin: params.coin,
         user: params.user,
       },
       (assetData: any) => {
@@ -185,15 +186,16 @@ subscriptionRegistry.register<ActiveAssetDataParams, ActiveAssetData>('activeAss
 // ============================================================================
 
 subscriptionRegistry.register<ActiveAssetCtxParams, ActiveAssetCtxData>('activeAssetCtx', {
-  // Key by coin
-  getKey: params => params.coin.toUpperCase(),
+  // Key by coin (preserve case for HIP-3 assets like "xyz:GOOGL")
+  getKey: params => params.coin,
 
   // WebSocket subscription for real-time market data
+  // Note: Do NOT use toUpperCase() - HIP-3 assets require lowercase DEX prefix
   subscribe: async (params, callback) => {
     const subscriptionClient = getSubscriptionClient();
     return await subscriptionClient.activeAssetCtx(
       {
-        coin: params.coin.toUpperCase(),
+        coin: params.coin,
       },
       (assetCtx: any) => {
         callback(assetCtx);
@@ -207,15 +209,16 @@ subscriptionRegistry.register<ActiveAssetCtxParams, ActiveAssetCtxData>('activeA
 // ============================================================================
 
 subscriptionRegistry.register<OrderBookParams, OrderBookData>('orderBook', {
-  // Key includes both coin and precision level
+  // Key includes both coin and precision level (preserve case for HIP-3)
   getKey: params => `${params.coin}-${params.nSigFigs ?? 'full'}`,
 
   // WebSocket subscription
+  // Note: Do NOT use toUpperCase() - HIP-3 assets require lowercase DEX prefix
   subscribe: async (params, callback) => {
     const subscriptionClient = getSubscriptionClient();
     return await subscriptionClient.l2Book(
       {
-        coin: params.coin.toUpperCase(),
+        coin: params.coin,
         nSigFigs: params.nSigFigs ?? undefined,
       },
       (orderBookEvent: any) => {
@@ -237,15 +240,16 @@ subscriptionRegistry.register<OrderBookParams, OrderBookData>('orderBook', {
 // ============================================================================
 
 subscriptionRegistry.register<TradesParams, TradesData>('trades', {
-  // Key by coin
-  getKey: params => params.coin.toUpperCase(),
+  // Key by coin (preserve case for HIP-3)
+  getKey: params => params.coin,
 
   // WebSocket subscription for real-time trades
+  // Note: Do NOT use toUpperCase() - HIP-3 assets require lowercase DEX prefix
   subscribe: async (params, callback) => {
     const subscriptionClient = getSubscriptionClient();
     return await subscriptionClient.trades(
       {
-        coin: params.coin.toUpperCase(),
+        coin: params.coin,
       },
       (trades: Trade[]) => {
         // Forward trades array to callback
@@ -283,15 +287,16 @@ subscriptionRegistry.register<OrderUpdatesParams, OrderUpdatesData>('orderUpdate
 // ============================================================================
 
 subscriptionRegistry.register<CandleParams, CandleData>('candle', {
-  // Key by coin and interval
-  getKey: params => `${params.coin.toUpperCase()}-${params.interval}`,
+  // Key by coin and interval (preserve case for HIP-3)
+  getKey: params => `${params.coin}-${params.interval}`,
 
   // WebSocket subscription for real-time candle updates
+  // Note: Do NOT use toUpperCase() - HIP-3 assets require lowercase DEX prefix
   subscribe: async (params, callback) => {
     const subscriptionClient = getSubscriptionClient();
     return await subscriptionClient.candle(
       {
-        coin: params.coin.toUpperCase(),
+        coin: params.coin,
         interval: params.interval,
       },
       (candleEvent: hl.WsCandleEvent) => {

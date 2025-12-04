@@ -76,15 +76,16 @@ export function OrderBook({ onPriceClick }: OrderBookProps) {
   // Use null instead of undefined to prevent subscription from restarting when precisionMenuItems loads
   const effectiveNSigFigs = selectedPrecision ?? precisionMenuItems[0]?.nSigFigs ?? null;
 
-  // Subscribe to order book data (skip for HIP-3 assets - WebSocket not supported)
+  // Subscribe to order book data
+  // Note: l2Book works with HIP-3 coin names (e.g., "xyz:GOOGL")
   const {
     data: rawData,
     isLoading,
     error,
-  } = useSubscription<OrderBookData>(
-    'orderBook',
-    isHip3 ? undefined : { coin, nSigFigs: effectiveNSigFigs },
-  );
+  } = useSubscription<OrderBookData>('orderBook', {
+    coin,
+    nSigFigs: effectiveNSigFigs,
+  });
 
   // Throttle UI updates to max 5 updates/sec to prevent mobile performance issues
   const [data, setData] = useState<OrderBookData | undefined>(rawData);
@@ -209,17 +210,6 @@ export function OrderBook({ onPriceClick }: OrderBookProps) {
         </Text>
         <Text fontFamily="$interRegular" fontSize="$2" color="$gray10" marginTop="$2">
           {error.message}
-        </Text>
-      </YStack>
-    );
-  }
-
-  // HIP-3 assets don't support order book WebSocket
-  if (isHip3) {
-    return (
-      <YStack flex={1} justifyContent="center" alignItems="center" padding="$4">
-        <Text fontFamily="$interRegular" fontSize="$3" color="$gray10">
-          Order book not available for HIP-3 assets
         </Text>
       </YStack>
     );

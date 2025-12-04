@@ -223,10 +223,11 @@ export class HyperliquidGateway
   ): Promise<SubscriptionHandle> {
     // Step 1: HTTP fetch for immediate data
     // This provides fast initial display (~100ms)
+    // Note: Do NOT use toUpperCase() - HIP-3 assets require lowercase DEX prefix
     try {
       const httpData = await infoClient.activeAssetData({
         user: params.user,
-        coin: params.coin.toUpperCase(),
+        coin: params.coin,
       });
       callback(httpData); // Invoke callback immediately
     } catch (error) {
