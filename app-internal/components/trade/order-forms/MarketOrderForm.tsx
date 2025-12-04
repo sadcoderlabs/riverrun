@@ -6,7 +6,6 @@ interface MarketOrderFormProps {
   leverage: number;
   availableToTrade: number;
   markPrice: number;
-  coin: string;
   displayName: string;
   szDecimals: number;
 }
@@ -17,7 +16,6 @@ export function MarketOrderForm({
   leverage,
   availableToTrade,
   markPrice,
-  coin,
   displayName,
   szDecimals,
 }: MarketOrderFormProps) {
@@ -28,7 +26,6 @@ export function MarketOrderForm({
       leverage={leverage}
       availableToTrade={availableToTrade}
       priceForCalculation={markPrice}
-      coin={coin}
       displayName={displayName}
       szDecimals={szDecimals}
     />

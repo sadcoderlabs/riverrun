@@ -46,7 +46,6 @@ export function OrderBook({ onPriceClick }: OrderBookProps) {
   const selectedMarket = useMarketStore(state => state.selectedMarket);
   const coin = selectedMarket?.coin || 'BTC';
   const szDecimals = selectedMarket?.szDecimals ?? 2; // Use ?? to handle szDecimals=0
-  const isHip3 = selectedMarket?.isHip3 ?? false;
 
   // Subscribe to real-time asset context data for markPx
   const { data: assetCtx } = useActiveAssetCtx({ coin });

@@ -45,7 +45,6 @@ interface OrderSizeInputProps {
   leverage: number;
   availableToTrade: number;
   priceForCalculation: number; // Price used to calculate asset quantity from USD amount
-  coin: string; // The asset symbol (e.g., 'BTC', 'ETH', 'xyz:GOOGL')
   displayName: string; // Display name for UI (e.g., 'BTC', 'GOOGL' - strips dex prefix)
   szDecimals: number; // Number of decimal places for size
 }
@@ -56,7 +55,6 @@ export function OrderSizeInput({
   leverage,
   availableToTrade,
   priceForCalculation,
-  coin,
   displayName,
   szDecimals,
 }: OrderSizeInputProps) {

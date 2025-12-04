@@ -237,7 +237,6 @@ export function PerpTradePanel() {
               leverage={leverage}
               availableToTrade={availableToTrade}
               markPrice={markPrice}
-              coin={coin}
               displayName={displayName}
               szDecimals={szDecimals}
             />
@@ -255,7 +254,6 @@ export function PerpTradePanel() {
               availableToTrade={availableToTrade}
               midPrice={midPrice}
               markPrice={markPrice}
-              coin={coin}
               displayName={displayName}
               szDecimals={szDecimals}
             />

@@ -45,7 +45,6 @@ interface LimitOrderFormProps {
   availableToTrade: number;
   midPrice: number | undefined;
   markPrice: number;
-  coin: string;
   displayName: string;
   szDecimals: number;
 }
@@ -59,7 +58,6 @@ export function LimitOrderForm({
   availableToTrade,
   midPrice,
   markPrice,
-  coin,
   displayName,
   szDecimals,
 }: LimitOrderFormProps) {
@@ -124,7 +122,6 @@ export function LimitOrderForm({
         leverage={leverage}
         availableToTrade={availableToTrade}
         priceForCalculation={priceForCalculation}
-        coin={coin}
         displayName={displayName}
         szDecimals={szDecimals}
       />
