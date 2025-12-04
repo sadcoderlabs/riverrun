@@ -46,6 +46,7 @@ export function OrderBook({ onPriceClick }: OrderBookProps) {
   const selectedMarket = useMarketStore(state => state.selectedMarket);
   const coin = selectedMarket?.coin || 'BTC';
   const szDecimals = selectedMarket?.szDecimals ?? 2; // Use ?? to handle szDecimals=0
+  const isHip3 = selectedMarket?.isHip3 ?? false;
 
   // Subscribe to real-time asset context data for markPx
   const { data: assetCtx } = useActiveAssetCtx({ coin });
@@ -75,15 +76,15 @@ export function OrderBook({ onPriceClick }: OrderBookProps) {
   // Use null instead of undefined to prevent subscription from restarting when precisionMenuItems loads
   const effectiveNSigFigs = selectedPrecision ?? precisionMenuItems[0]?.nSigFigs ?? null;
 
-  // Subscribe to order book data
+  // Subscribe to order book data (skip for HIP-3 assets - WebSocket not supported)
   const {
     data: rawData,
     isLoading,
     error,
-  } = useSubscription<OrderBookData>('orderBook', {
-    coin,
-    nSigFigs: effectiveNSigFigs,
-  });
+  } = useSubscription<OrderBookData>(
+    'orderBook',
+    isHip3 ? undefined : { coin, nSigFigs: effectiveNSigFigs },
+  );
 
   // Throttle UI updates to max 5 updates/sec to prevent mobile performance issues
   const [data, setData] = useState<OrderBookData | undefined>(rawData);
@@ -208,6 +209,17 @@ export function OrderBook({ onPriceClick }: OrderBookProps) {
         </Text>
         <Text fontFamily="$interRegular" fontSize="$2" color="$gray10" marginTop="$2">
           {error.message}
+        </Text>
+      </YStack>
+    );
+  }
+
+  // HIP-3 assets don't support order book WebSocket
+  if (isHip3) {
+    return (
+      <YStack flex={1} justifyContent="center" alignItems="center" padding="$4">
+        <Text fontFamily="$interRegular" fontSize="$3" color="$gray10">
+          Order book not available for HIP-3 assets
         </Text>
       </YStack>
     );
