@@ -158,7 +158,7 @@ function PositionCard({ position, onPositionClick, onCloseClick, onTpSlClick }: 
 
       <XStack justifyContent="space-between" alignItems="center">
         <Text fontSize="$2" color="$color9">
-          Unrealised P&L
+          Unrealized P&L
         </Text>
         <Text
           fontSize="$3"
