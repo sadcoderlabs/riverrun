@@ -33,10 +33,13 @@ interface OrderCardProps {
 function OrderCard({ order, onCancel, onPress, canceling }: OrderCardProps) {
   const markets = useMarketStore(state => state.markets);
 
-  // Get szDecimals from markets data (from metaAndAssetCtxs subscription)
-  const szDecimals = useMemo(() => {
+  // Get market data for display (from metaAndAssetCtxs subscription)
+  const { szDecimals, displayName } = useMemo(() => {
     const market = markets.find(m => m.coin === order.coin);
-    return market?.szDecimals ?? 4;
+    return {
+      szDecimals: market?.szDecimals ?? 4,
+      displayName: market?.displayName ?? order.coin,
+    };
   }, [markets, order.coin]);
 
   // Early return if order data is invalid
@@ -88,7 +91,7 @@ function OrderCard({ order, onCancel, onPress, canceling }: OrderCardProps) {
       <XStack justifyContent="space-between" alignItems="center">
         <XStack gap="$2" alignItems="center">
           <Text fontFamily="$interBold" fontSize="$3">
-            {order.coin}-USDC
+            {displayName}-USDC
           </Text>
           <View
             backgroundColor="$gray1"
@@ -150,7 +153,7 @@ function OrderCard({ order, onCancel, onPress, canceling }: OrderCardProps) {
           </Text>
           <Text fontSize="$2" fontFamily="$interMedium">
             {formatSize(metrics.filledSize, szDecimals, true)} /{' '}
-            {formatSize(metrics.size, szDecimals, true)} {order.coin}
+            {formatSize(metrics.size, szDecimals, true)} {displayName}
           </Text>
         </XStack>
 
