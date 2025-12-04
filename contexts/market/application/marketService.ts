@@ -199,6 +199,7 @@ export class MarketService implements MarketPort {
     if (market) {
       const selectedMarket: SelectedMarket = {
         coin: market.coin,
+        displayName: market.displayName,
         marketPair: market.marketPair,
         szDecimals: market.szDecimals,
         maxLeverage: market.maxLeverage,

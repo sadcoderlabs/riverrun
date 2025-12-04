@@ -15,6 +15,8 @@ export type Market = {
   marketPair: string;
   /** Coin symbol (e.g., "BTC", "ETH", "xyz:TSLA" for HIP-3) */
   coin: string;
+  /** Display name for UI (e.g., "BTC", "TSLA" - strips dex prefix for HIP-3) */
+  displayName: string;
   /** Asset ID used by Hyperliquid API for order placement */
   assetId: number;
   /** Current market price (number) */
@@ -56,7 +58,9 @@ export type Market = {
 export interface SelectedMarket {
   /** Market coin symbol (e.g., "BTC", "ETH") */
   coin: string;
-  /** Full market trading pair (e.g., "BTC-USDC", "ETH-USDC") */
+  /** Display name for UI (e.g., "BTC", "TSLA" - strips dex prefix for HIP-3) */
+  displayName: string;
+  /** Market trading pair for display (e.g., "BTC-USDC", "GOOGL-USDC") */
   marketPair: string;
   /** Size decimals for price formatting */
   szDecimals: number;
@@ -150,6 +154,7 @@ export function convertRawMarket(
   return {
     marketPair,
     coin: assetName,
+    displayName: assetName,
     assetId,
     price: currentPrice,
     markPx: ctx.markPx,
@@ -202,16 +207,19 @@ export function convertHip3RawMarket(
   const assetId = 100000 + perpDexIndex * 10000 + indexInMeta;
 
   const assetName = meta.name; // Already includes dex prefix like "xyz:TSLA"
+  // Extract display name by stripping dex prefix (e.g., "xyz:TSLA" -> "TSLA")
+  const displayName = assetName.includes(':') ? assetName.split(':')[1] : assetName;
   const currentPrice = parseFloat(ctx.markPx);
   const prevDayPrice = parseFloat(ctx.prevDayPx);
   const priceChange = prevDayPrice > 0 ? ((currentPrice - prevDayPrice) / prevDayPrice) * 100 : 0;
   const fundingRate = parseFloat(ctx.funding) * 100;
   const volume = parseFloat(ctx.dayNtlVlm || '0');
-  const marketPair = `${assetName}-${collateralTokenName}`;
+  const marketPair = `${displayName}-${collateralTokenName}`;
 
   return {
     marketPair,
     coin: assetName,
+    displayName,
     assetId,
     price: currentPrice,
     markPx: ctx.markPx,
@@ -241,6 +249,7 @@ export function getDefaultSelectedMarket(markets: Market[]): SelectedMarket | un
   return btcMarket
     ? {
         coin: btcMarket.coin,
+        displayName: btcMarket.displayName,
         marketPair: btcMarket.marketPair,
         szDecimals: btcMarket.szDecimals,
         maxLeverage: btcMarket.maxLeverage,
