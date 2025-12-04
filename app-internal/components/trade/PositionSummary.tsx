@@ -31,7 +31,7 @@ export function PositionSummary({
         <Text fontFamily="$interRegular" fontSize="$2" color="$gray10">
           Available to trade
         </Text>
-        <Text fontFamily="$interSemiBold" fontSize="$3" color="$color">
+        <Text fontFamily="$interSemiBold" fontSize="$2" color="$color">
           {isLoadingAssetData ? (
             <Text color="$gray10">Loading...</Text>
           ) : (
@@ -47,7 +47,7 @@ export function PositionSummary({
         </Text>
         <Text
           fontFamily="$interSemiBold"
-          fontSize="$3"
+          fontSize="$2"
           color={
             currentPositionSize !== 0 ? (currentPositionSize > 0 ? '$green10' : '$red10') : '$color'
           }
