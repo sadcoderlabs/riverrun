@@ -19,10 +19,11 @@ import { Button } from '../global';
 interface FillCardProps {
   fill: Fill;
   szDecimals: number;
+  displayName: string;
   onPress: () => void;
 }
 
-const FillCard = React.memo<FillCardProps>(({ fill, szDecimals, onPress }) => {
+const FillCard = React.memo<FillCardProps>(({ fill, szDecimals, displayName, onPress }) => {
   // Early return if fill data is invalid
   if (!fill.coin) {
     return null;
@@ -53,7 +54,7 @@ const FillCard = React.memo<FillCardProps>(({ fill, szDecimals, onPress }) => {
       <XStack justifyContent="space-between" alignItems="center">
         <XStack gap="$2" alignItems="center">
           <Text fontFamily="$interBold" fontSize="$3">
-            {fill.coin}-USDC
+            {displayName}-USDC
           </Text>
           <View
             backgroundColor="$gray3"
@@ -114,7 +115,7 @@ const FillCard = React.memo<FillCardProps>(({ fill, szDecimals, onPress }) => {
           Size
         </Text>
         <Text fontSize="$2" fontFamily="$interMedium">
-          {formatSize(size, szDecimals, true)} {fill.coin}
+          {formatSize(size, szDecimals, true)} {displayName}
         </Text>
       </XStack>
 
@@ -152,11 +153,11 @@ export function HistoryTabContent() {
   const [filter, setFilter] = useState<FillFilter>('all');
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Build coin -> szDecimals map once for all fills
-  const coinDecimalsMap = useMemo(() => {
-    const map = new Map<string, number>();
+  // Build coin -> market data map once for all fills
+  const coinMarketMap = useMemo(() => {
+    const map = new Map<string, { szDecimals: number; displayName: string }>();
     markets.forEach(market => {
-      map.set(market.coin, market.szDecimals);
+      map.set(market.coin, { szDecimals: market.szDecimals, displayName: market.displayName });
     });
     return map;
   }, [markets]);
@@ -288,12 +289,13 @@ export function HistoryTabContent() {
 
           {/* Fill Cards */}
           {paginatedFills.map(fill => {
-            const szDecimals = coinDecimalsMap.get(fill.coin) ?? 4;
+            const marketData = coinMarketMap.get(fill.coin);
             return (
               <FillCard
                 key={`fill-${fill.tid}`}
                 fill={fill}
-                szDecimals={szDecimals}
+                szDecimals={marketData?.szDecimals ?? 4}
+                displayName={marketData?.displayName ?? fill.coin}
                 onPress={() => handleFillClick(fill.coin)}
               />
             );
