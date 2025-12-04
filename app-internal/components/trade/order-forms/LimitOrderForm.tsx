@@ -46,6 +46,7 @@ interface LimitOrderFormProps {
   midPrice: number | undefined;
   markPrice: number;
   coin: string;
+  displayName: string;
   szDecimals: number;
 }
 
@@ -59,6 +60,7 @@ export function LimitOrderForm({
   midPrice,
   markPrice,
   coin,
+  displayName,
   szDecimals,
 }: LimitOrderFormProps) {
   // Use mid price for "Mid" button, fallback to mark price if unavailable
@@ -123,6 +125,7 @@ export function LimitOrderForm({
         availableToTrade={availableToTrade}
         priceForCalculation={priceForCalculation}
         coin={coin}
+        displayName={displayName}
         szDecimals={szDecimals}
       />
     </YStack>

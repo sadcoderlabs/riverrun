@@ -7,6 +7,7 @@ interface MarketOrderFormProps {
   availableToTrade: number;
   markPrice: number;
   coin: string;
+  displayName: string;
   szDecimals: number;
 }
 
@@ -17,6 +18,7 @@ export function MarketOrderForm({
   availableToTrade,
   markPrice,
   coin,
+  displayName,
   szDecimals,
 }: MarketOrderFormProps) {
   return (
@@ -27,6 +29,7 @@ export function MarketOrderForm({
       availableToTrade={availableToTrade}
       priceForCalculation={markPrice}
       coin={coin}
+      displayName={displayName}
       szDecimals={szDecimals}
     />
   );
