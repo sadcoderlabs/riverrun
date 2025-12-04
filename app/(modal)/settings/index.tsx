@@ -35,21 +35,21 @@ export default function Index() {
               <ListSection label="Account Settings">
                 {wallet?.type === 'privy' && (
                   <ListItem
-                    title="Private Key"
-                    subTitle="Export your key"
+                    title="Export Private Key"
+                    subTitle="Handle with care"
                     showIosChevron={true}
                     onPress={() => setShowExportModal(true)}
                   />
                 )}
                 <ListItem
-                  title="Agent Status"
-                  subTitle="Manage trading agents"
+                  title="Trading Agent"
+                  subTitle="Manage session signers"
                   showIosChevron={true}
                   onPress={() => router.push('/settings/agent-status')}
                 />
                 <ListItem
                   title="Referral Status"
-                  subTitle="Manage referral code"
+                  subTitle="Get tx fee discounts"
                   showIosChevron={true}
                   onPress={() => router.push('/settings/approval-status')}
                 />
@@ -60,7 +60,7 @@ export default function Index() {
               <ListSection label="Preferences">
                 <ListItem
                   title="Notifications"
-                  subTitle="Manage push notification settings"
+                  subTitle="Manage push notifications"
                   showIosChevron={true}
                   onPress={() => router.push('/settings/notifications')}
                 />
@@ -80,7 +80,7 @@ export default function Index() {
                   onPress={() => Linking.openURL('https://x.com/perpprotocol')}
                 />
                 <ListItem
-                  title="Contact Support"
+                  title="Support"
                   subTitle="Get help from our team"
                   iconAfter={
                     <View marginRight={'$1.5'}>

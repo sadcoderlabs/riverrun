@@ -2,9 +2,11 @@ import { useReferral, useScreenTracking } from '@/app-internal';
 import { CustomHeader } from '@/app-internal/components/global';
 import { ListButton, ListItem } from '@/app-internal/components/global/ListItem';
 import { ListSection } from '@/app-internal/components/global/ListSection';
+import { Text } from '@/app-internal/components/global/Text';
+import { Check } from '@tamagui/lucide-icons';
 import { useCallback, useEffect, useState } from 'react';
 import { RefreshControl } from 'react-native';
-import { PortalProvider, ScrollView, Spinner, Text, View, YStack } from 'tamagui';
+import { PortalProvider, ScrollView, Spinner, View, XStack, YStack } from 'tamagui';
 
 /**
  * Helper function to shorten address for display
@@ -91,6 +93,26 @@ export default function ApprovalStatus() {
             </View>
           ) : (
             <YStack backgroundColor="$gray3">
+              {/* Referral Status Banner */}
+              <XStack
+                paddingHorizontal="$4"
+                paddingTop="$6"
+                gap="$1.5"
+                alignItems="center"
+                justifyContent="center"
+              >
+                <Text.Subhead color="$color10" textAlign="center">
+                  {hasReferrer
+                    ? 'Your 4% fee discount is active'
+                    : 'Join to get 4% off trading fees'}
+                </Text.Subhead>
+                {hasReferrer ? (
+                  <Check size={20} color="$accent9" />
+                ) : (
+                  <Check size={20} color="$color5" />
+                )}
+              </XStack>
+
               {/* Referral Section */}
               <ListSection>
                 <ListItem

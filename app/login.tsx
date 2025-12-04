@@ -82,7 +82,7 @@ export default function Login() {
       <YStack flex={1} justifyContent="center" alignItems="center" gap="$2" width="100%">
         {/* App Logo */}
         <YStack marginTop="$2" alignItems="center" justifyContent="flex-start" width="100%">
-          <CustomIcons.PerpgoLogo width={280} height={80} fillColor="white" />
+          <CustomIcons.PerpgoLogo width={196} height={56} fillColor="white" />
         </YStack>
 
         <YStack>

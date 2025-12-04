@@ -111,16 +111,6 @@ export function OrderPreview({
             <Text fontFamily="$interSemiBold" fontSize="$2" color="$color">
               {feeRates.takerFeePercent.toFixed(4)}% / {feeRates.makerFeePercent.toFixed(4)}%
             </Text>
-            {(feeRates.hasReferralDiscount || feeRates.hasStakingDiscount) && (
-              <Text
-                fontFamily="$interRegular"
-                fontSize="$1"
-                color="$gray8"
-                textDecorationLine="line-through"
-              >
-                {feeRates.baseTakerPercent.toFixed(4)}% / {feeRates.baseMakerPercent.toFixed(4)}%
-              </Text>
-            )}
           </YStack>
         </XStack>
       )}

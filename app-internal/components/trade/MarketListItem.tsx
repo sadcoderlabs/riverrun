@@ -47,9 +47,9 @@ const MarketListItemComponent = ({
 
   // Format volume in compact form (e.g., $4.77b, $2.52b)
   const formatVolume = (vol: number): string => {
-    if (vol >= 1e9) return `$${(vol / 1e9).toFixed(2)}b`;
-    if (vol >= 1e6) return `$${(vol / 1e6).toFixed(2)}m`;
-    if (vol >= 1e3) return `$${(vol / 1e3).toFixed(2)}k`;
+    if (vol >= 1e9) return `$${(vol / 1e9).toFixed(2)}B`;
+    if (vol >= 1e6) return `$${(vol / 1e6).toFixed(2)}M`;
+    if (vol >= 1e3) return `$${(vol / 1e3).toFixed(2)}K`;
     return `$${vol.toFixed(2)}`;
   };
 
@@ -78,7 +78,7 @@ const MarketListItemComponent = ({
         <YStack gap="$0.5" flex={1}>
           {/* Market Name + Leverage Badge */}
           <XStack alignItems="center" gap="$2">
-            <Text fontFamily="$interSemiBold" fontSize="$3" color="$color">
+            <Text fontSize="$3" color="$color">
               {coin}
             </Text>
             <XStack
@@ -88,9 +88,9 @@ const MarketListItemComponent = ({
               paddingVertical="$0.5"
               borderRadius="$2"
               borderWidth={1}
-              borderColor="$color10"
+              borderColor="$color12"
             >
-              <Text fontSize="$1" color="$color" fontFamily="$interMedium">
+              <Text fontSize="$1" fontFamily="$interMedium">
                 {maxLeverage}x
               </Text>
             </XStack>
@@ -105,7 +105,7 @@ const MarketListItemComponent = ({
 
       {/* Middle Column: Price */}
       <YStack alignItems="flex-end" minWidth={100}>
-        <Text fontFamily="$interSemiBold" fontSize="$4" color="$color">
+        <Text fontSize="$3" color="$color">
           ${formattedPrice}
         </Text>
       </YStack>
@@ -118,11 +118,7 @@ const MarketListItemComponent = ({
           paddingVertical="$1.5"
           borderRadius="$2"
         >
-          <Text
-            fontFamily="$interSemiBold"
-            fontSize="$3"
-            color={isPriceUp ? 'rgba(130,178,102,1)' : 'rgba(255, 100, 100, 1)'}
-          >
+          <Text fontSize="$2" color={isPriceUp ? 'rgba(74, 197, 95, 1)' : 'rgba(255, 100, 100, 1)'}>
             {isPriceUp ? '+' : ''}
             {change.toFixed(2)}%
           </Text>
