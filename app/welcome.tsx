@@ -29,13 +29,12 @@ const WELCOME_PAGES: WelcomePage[] = [
     id: 'referral',
     title: 'Get 4% Off Trading Fees',
     description: 'Use our referral code to save 4% on fees for your first $25M in volume.',
-    note: '*Vaults and sub-accounts are excluded',
     icon: <TicketPercent size={48} color="$accent9" />,
   },
   {
     id: 'notification',
     title: 'Enable Notifications',
-    description: 'Get alerts for price movements, order fills, and account updates.',
+    description: 'Get alerts for price movements, order fills, and the latest updates.',
     icon: <Bell size={48} color="$accent9" />,
   },
 ];
@@ -207,6 +206,14 @@ export default function WelcomeScreen() {
     >
       {/* Main Content - Centered */}
       <YStack flex={1} justifyContent="center" alignItems="center" padding="$4">
+        <YStack paddingVertical="$10">
+          <Heading.H3 color="$color12" textAlign="center">
+            Welcome to Trade
+          </Heading.H3>
+          <Text.Subhead color="$color11" textAlign="center">
+            Let&#39;s get you started
+          </Text.Subhead>
+        </YStack>
         {/* Icon */}
         <YStack
           width={96}
@@ -225,7 +232,7 @@ export default function WelcomeScreen() {
         </Heading.H5>
 
         {/* Description */}
-        <Text.Subhead color="$color11" textAlign="center" marginTop="$2">
+        <Text.Subhead color="$color11" textAlign="center">
           {currentPageData.description}
         </Text.Subhead>
         {currentPageData.note && (
