@@ -5,11 +5,11 @@ on:
     branches:
       - main
     paths:
-      - 'version-config.json'
+      - "version-config.json"
   workflow_dispatch:
     inputs:
       ref:
-        description: 'Branch, tag, or commit SHA to upload from'
+        description: "Branch, tag, or commit SHA to upload from"
         required: false
         default: main
 
@@ -30,7 +30,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_PRODUCTION_WEB_DEPLOY_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_PRODUCTION_WEB_DEPLOY_SECRET_ACCESS_KEY }}
-          aws-region: 'ap-southeast-1'
+          aws-region: "ap-southeast-1"
 
       - name: Upload version-config.json to S3
         run: |
