@@ -53,6 +53,9 @@ export class MarketService implements MarketPort {
 
       // 3. Merge all markets
       const allMarkets = [...validatorMarkets, ...hip3Markets];
+      console.log(
+        `[MarketService] Total markets: ${allMarkets.length} (validator: ${validatorMarkets.length}, hip3: ${hip3Markets.length})`,
+      );
 
       // Update store
       marketStore.getState().setMarkets(allMarkets);
@@ -76,6 +79,7 @@ export class MarketService implements MarketPort {
    */
   private async loadValidatorMarkets(): Promise<Market[]> {
     const [meta, assetCtxs] = await this.hyperliquidGateway.fetchMetaAndAssetCtxs();
+    console.log(`[MarketService] Validator perps: ${meta.universe.length} markets`);
 
     return meta.universe.map((asset: any, index: number) => {
       const rawMeta: RawMarketMeta = {
@@ -103,16 +107,20 @@ export class MarketService implements MarketPort {
     try {
       // Fetch all HIP-3 DEXs
       const perpDexs = await this.hyperliquidGateway.fetchPerpDexs();
+      console.log('[MarketService] perpDexs response:', JSON.stringify(perpDexs, null, 2));
 
       const allHip3Markets: Market[] = [];
 
       // Iterate through DEXs (index 0 is null for validator perps)
       for (let perpDexIndex = 1; perpDexIndex < perpDexs.length; perpDexIndex++) {
         const dex = perpDexs[perpDexIndex];
+        console.log(`[MarketService] Processing DEX at index ${perpDexIndex}:`, dex);
         if (!dex) continue;
 
         try {
+          console.log(`[MarketService] Loading HIP-3 DEX: ${dex.name}`);
           const dexMarkets = await this.loadSingleHip3Dex(dex.name, perpDexIndex);
+          console.log(`[MarketService] Loaded ${dexMarkets.length} markets from ${dex.name}`);
           allHip3Markets.push(...dexMarkets);
         } catch (error) {
           console.warn(`[MarketService] Failed to load HIP-3 DEX ${dex.name}:`, error);
@@ -120,6 +128,7 @@ export class MarketService implements MarketPort {
         }
       }
 
+      console.log(`[MarketService] Total HIP-3 markets loaded: ${allHip3Markets.length}`);
       return allHip3Markets;
     } catch (error) {
       console.warn('[MarketService] Failed to load HIP-3 DEXs:', error);
@@ -132,6 +141,11 @@ export class MarketService implements MarketPort {
    */
   private async loadSingleHip3Dex(dexName: string, perpDexIndex: number): Promise<Market[]> {
     const [meta, assetCtxs] = await this.hyperliquidGateway.fetchMetaAndAssetCtxs(dexName);
+    console.log(`[MarketService] HIP-3 DEX ${dexName} raw response:`, {
+      universeLength: meta.universe.length,
+      universe: meta.universe,
+      assetCtxsLength: assetCtxs.length,
+    });
 
     // Get collateral token info from meta
     const collateralTokenIndex = (meta as any).collateralToken ?? 0;
