@@ -1,10 +1,10 @@
+import { useMarket, useMarketStore } from '@/app-internal';
 import { CoinInfo } from '@/app-internal/components/trade/CoinInfo';
 import { PerpTabs } from '@/app-internal/components/trade/PerpTabs';
-import { useMarketStore, useMarket } from '@/app-internal';
 import { useWelcomeTrigger } from '@/app-internal/features/welcome';
 import { Slot, usePathname } from 'expo-router';
 import React from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 /**
  * Trade Layout with Fixed Header

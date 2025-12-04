@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useRef } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback } from 'react';
+import { useAccountMetrics } from '../../../components/home/hooks/useAccountMetrics';
 import { useWallet } from '../../wallet/hooks/useWallet';
 import { useWelcomeStore } from '../stores/welcomeStore';
-import { useAccountMetrics } from '../../../components/home/hooks/useAccountMetrics';
 
 /**
  * useWelcomeTrigger - Hook to trigger welcome screen from Trade tab
@@ -19,9 +19,6 @@ import { useAccountMetrics } from '../../../components/home/hooks/useAccountMetr
  * - Store is hydrated (loaded from AsyncStorage)
  *
  * The hook will automatically navigate to the welcome screen.
- *
- * Additionally, it detects margin transitions from 0 to > 0 while the user
- * is on the Trade tab, and auto-triggers the welcome screen in that case.
  *
  * @example
  * ```tsx
@@ -57,7 +54,7 @@ export function useWelcomeTrigger(): void {
   useFocusEffect(
     useCallback(() => {
       if (shouldTrigger) {
-        router.push('/welcome');
+        router.replace('/welcome');
       }
     }, [shouldTrigger, router]),
   );

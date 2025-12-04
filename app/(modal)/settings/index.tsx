@@ -49,7 +49,7 @@ export default function Index() {
                 />
                 <ListItem
                   title="Referral Status"
-                  subTitle="Get tx fee discounts"
+                  subTitle="Get trading fee discounts"
                   showIosChevron={true}
                   onPress={() => router.push('/settings/approval-status')}
                 />
