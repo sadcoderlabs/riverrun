@@ -126,6 +126,54 @@ export class HyperliquidGateway
   }
 
   /**
+   * Subscribe to WebData3 stream for positions across ALL DEXs
+   *
+   * WebData3 contains positions from ALL perpDexStates:
+   * - Validator perps (index 0)
+   * - HIP-3 DEXs (index 1+): xyz, etc.
+   *
+   * Use this to display HIP-3 positions like GOOGL, TSLA, etc.
+   *
+   * Note: WebData3 is WebSocket-only (no HTTP endpoint), so initial data
+   * may take slightly longer (~1s) compared to webData2's hybrid approach.
+   *
+   * @param userAddress - User wallet address
+   * @param callback - Called when data arrives
+   * @returns Subscription handle for cleanup
+   *
+   * @example
+   * ```typescript
+   * const gateway = new HyperliquidGateway();
+   * const handle = await gateway.subscribeWebData3('0x123...', (data) => {
+   *   // Positions from ALL DEXs
+   *   data.perpDexStates.forEach(dex => {
+   *     console.log('Positions:', dex.clearinghouseState.assetPositions);
+   *   });
+   * });
+   *
+   * // Later...
+   * await handle.unsubscribe();
+   * ```
+   */
+  async subscribeWebData3(
+    userAddress: string,
+    callback: (data: hl.WsWebData3Event) => void,
+  ): Promise<SubscriptionHandle> {
+    // WebData3 is WebSocket-only - no HTTP endpoint available
+    const handle = await subscriptionManager.subscribe<hl.WsWebData3Event>(
+      'webData3',
+      { user: userAddress },
+      callback,
+    );
+
+    return {
+      unsubscribe: async () => {
+        await subscriptionManager.unsubscribe(handle);
+      },
+    };
+  }
+
+  /**
    * Subscribe to allMids stream with HTTP+WS hybrid strategy
    *
    * Corresponds to Hyperliquid's allMids subscription.
