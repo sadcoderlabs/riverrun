@@ -1,10 +1,9 @@
 import { useCallback, useMemo } from 'react';
 import { useWebData2 } from '@/infra/hyperliquid/hooks/useWebData2';
-import type { WebData2Data } from '@/infra/hyperliquid/subscription';
+import { useWebData3 } from '@/infra/hyperliquid/hooks/useWebData3';
+import type { WebData2Data, WebData3Data } from '@/infra/hyperliquid/subscription';
 
 export interface UseAccountMetricsResult {
-  // Raw data
-  data: WebData2Data | undefined;
   // Account Equity
   totalAccountValue: number | undefined;
   perpAccountValue: number | undefined;
@@ -20,12 +19,13 @@ export interface UseAccountMetricsResult {
 }
 
 /**
- * Hook to calculate account metrics from Hyperliquid webData2
+ * Hook to calculate account metrics from Hyperliquid
  *
- * Built on top of useWebData2, this hook provides:
- * - Total account value (perps + spot)
- * - Perp account metrics (balance, PnL, margin ratio, leverage)
- * - Spot account value
+ * Uses both webData2 and webData3 for complete account metrics:
+ * - webData2: Spot balances (spotState)
+ * - webData3: Perp metrics across ALL DEXs (validator perps + HIP-3)
+ *
+ * This ensures HIP-3 positions (GOOGL, TSLA, etc.) are included in account equity.
  *
  * IMPORTANT: This hook safely handles accounts with no positions.
  * When an account has no spot positions, the API may not return the `spotState` field at all.
@@ -44,7 +44,10 @@ export interface UseAccountMetricsResult {
  * ```
  */
 export function useAccountMetrics(): UseAccountMetricsResult {
-  const { data, isLoading, error } = useWebData2();
+  // webData2 for spot balances
+  const { data: webData2, isLoading: isLoadingWebData2, error: errorWebData2 } = useWebData2();
+  // webData3 for perp metrics across ALL DEXs (including HIP-3)
+  const { data: webData3, isLoading: isLoadingWebData3, error: errorWebData3 } = useWebData3();
 
   /**
    * Helper function to calculate spot account value from balances.
@@ -56,14 +59,16 @@ export function useAccountMetrics(): UseAccountMetricsResult {
    * @param balances - Optional array of spot balances from webData2 response
    * @returns Total spot account value in USD
    */
-  const calculateSpotValue = useCallback((balances?: WebData2Data['spotState']['balances']) => {
+  type SpotBalance = NonNullable<WebData2Data['spotState']>['balances'][number];
+
+  const calculateSpotValue = useCallback((balances: SpotBalance[] | undefined) => {
     // Return 0 for empty accounts (no spot positions)
     if (!balances || balances.length === 0) {
       return 0;
     }
 
     // Sum up all spot balances
-    return balances.reduce((sum, balance) => {
+    return balances.reduce((sum: number, balance: SpotBalance) => {
       const total = parseFloat(balance.total);
       const entryNtl = parseFloat(balance.entryNtl);
 
@@ -77,25 +82,48 @@ export function useAccountMetrics(): UseAccountMetricsResult {
     }, 0);
   }, []);
 
-  // Calculate account values
-  const perpAccountValue = data?.clearinghouseState?.marginSummary?.accountValue
-    ? parseFloat(data.clearinghouseState.marginSummary.accountValue)
-    : undefined;
+  /**
+   * Calculate perp account value from webData3 (includes ALL DEXs)
+   * Sum accountValue from all perpDexStates
+   */
+  const perpAccountValue = useMemo(() => {
+    if (!webData3?.perpDexStates) return undefined;
 
-  // Calculate spot account value using optional chaining to handle accounts with no spot positions
-  const spotAccountValue = data ? calculateSpotValue(data.spotState?.balances) : undefined;
+    return webData3.perpDexStates.reduce(
+      (sum: number, dexState: WebData3Data['perpDexStates'][number]) => {
+        const accountValue = dexState.clearinghouseState?.marginSummary?.accountValue;
+        return sum + (accountValue ? parseFloat(accountValue) : 0);
+      },
+      0,
+    );
+  }, [webData3?.perpDexStates]);
+
+  // Calculate spot account value from webData2
+  const spotAccountValue = webData2 ? calculateSpotValue(webData2.spotState?.balances) : undefined;
 
   const totalAccountValue =
     perpAccountValue !== undefined && spotAccountValue !== undefined
       ? perpAccountValue + spotAccountValue
       : undefined;
 
-  // Calculate Perps Overview metrics
-  const unrealizedPnl = data?.clearinghouseState?.assetPositions
-    ? data.clearinghouseState.assetPositions.reduce((sum, asset) => {
+  /**
+   * Calculate unrealized PnL from webData3 (includes ALL DEXs)
+   * Sum unrealizedPnl from all positions across all perpDexStates
+   */
+  const unrealizedPnl = useMemo(() => {
+    if (!webData3?.perpDexStates) return undefined;
+
+    type DexState = WebData3Data['perpDexStates'][number];
+    type AssetPosition = NonNullable<DexState['clearinghouseState']>['assetPositions'][number];
+
+    return webData3.perpDexStates.reduce((total: number, dexState: DexState) => {
+      const positions = dexState.clearinghouseState?.assetPositions || [];
+      const dexPnl = positions.reduce((sum: number, asset: AssetPosition) => {
         return sum + parseFloat(asset.position.unrealizedPnl);
-      }, 0)
-    : undefined;
+      }, 0);
+      return total + dexPnl;
+    }, 0);
+  }, [webData3?.perpDexStates]);
 
   // Balance = perpAccountValue - unrealizedPnl
   const perpBalance =
@@ -103,24 +131,49 @@ export function useAccountMetrics(): UseAccountMetricsResult {
       ? perpAccountValue - unrealizedPnl
       : undefined;
 
-  // Cross Margin Ratio = Maintenance Margin / Portfolio Value
-  const maintenanceMargin = data?.clearinghouseState?.crossMaintenanceMarginUsed
-    ? parseFloat(data.clearinghouseState.crossMaintenanceMarginUsed)
-    : undefined;
+  /**
+   * Calculate maintenance margin from webData3 (includes ALL DEXs)
+   * Sum crossMaintenanceMarginUsed from all perpDexStates
+   */
+  const maintenanceMargin = useMemo(() => {
+    if (!webData3?.perpDexStates) return undefined;
+
+    type DexState = WebData3Data['perpDexStates'][number];
+
+    return webData3.perpDexStates.reduce((sum: number, dexState: DexState) => {
+      const margin = dexState.clearinghouseState?.crossMaintenanceMarginUsed;
+      return sum + (margin ? parseFloat(margin) : 0);
+    }, 0);
+  }, [webData3?.perpDexStates]);
 
   const crossMarginRatio =
     maintenanceMargin !== undefined && perpAccountValue
       ? (maintenanceMargin / perpAccountValue) * 100
       : undefined;
 
+  /**
+   * Calculate total notional position from webData3 (includes ALL DEXs)
+   * Sum totalNtlPos from all perpDexStates
+   */
+  const totalNtlPos = useMemo(() => {
+    if (!webData3?.perpDexStates) return undefined;
+
+    type DexState = WebData3Data['perpDexStates'][number];
+
+    return webData3.perpDexStates.reduce((sum: number, dexState: DexState) => {
+      const ntlPos = dexState.clearinghouseState?.marginSummary?.totalNtlPos;
+      return sum + (ntlPos ? Math.abs(parseFloat(ntlPos)) : 0);
+    }, 0);
+  }, [webData3?.perpDexStates]);
+
   const crossAccountLeverage =
-    data?.clearinghouseState?.marginSummary?.totalNtlPos && perpAccountValue
-      ? Math.abs(parseFloat(data.clearinghouseState.marginSummary.totalNtlPos)) / perpAccountValue
-      : undefined;
+    totalNtlPos !== undefined && perpAccountValue ? totalNtlPos / perpAccountValue : undefined;
+
+  const isLoading = isLoadingWebData2 || isLoadingWebData3;
+  const error = errorWebData2 || errorWebData3;
 
   return useMemo(
     () => ({
-      data,
       totalAccountValue,
       perpAccountValue,
       spotAccountValue,
@@ -133,7 +186,6 @@ export function useAccountMetrics(): UseAccountMetricsResult {
       error,
     }),
     [
-      data,
       totalAccountValue,
       perpAccountValue,
       spotAccountValue,
