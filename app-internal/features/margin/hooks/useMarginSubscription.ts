@@ -109,6 +109,8 @@ export function useMarginSubscription(telemetryService: TelemetryPort) {
           (data: any) => {
             // Don't process if effect was cancelled
             if (!isCancelled) {
+              console.log('[useMarginSubscription] Received margin data:', data);
+
               try {
                 // Get current markets for enrichment
                 const markets = marketStore.getState().markets;
