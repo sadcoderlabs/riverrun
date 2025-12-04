@@ -3,6 +3,11 @@ import { useWebData2 } from '@/infra/hyperliquid/hooks/useWebData2';
 import { useWebData3 } from '@/infra/hyperliquid/hooks/useWebData3';
 import type { WebData2Data, WebData3Data } from '@/infra/hyperliquid/subscription';
 
+// Type aliases for webData responses
+type SpotBalance = NonNullable<WebData2Data['spotState']>['balances'][number];
+type DexState = WebData3Data['perpDexStates'][number];
+type AssetPosition = NonNullable<DexState['clearinghouseState']>['assetPositions'][number];
+
 export interface UseAccountMetricsResult {
   // Account Equity
   totalAccountValue: number | undefined;
@@ -49,18 +54,6 @@ export function useAccountMetrics(): UseAccountMetricsResult {
   // webData3 for perp metrics across ALL DEXs (including HIP-3)
   const { data: webData3, isLoading: isLoadingWebData3, error: errorWebData3 } = useWebData3();
 
-  /**
-   * Helper function to calculate spot account value from balances.
-   *
-   * NOTE: When an account has no spot positions, the API may not include
-   * the `spotState` field at all, or `spotState.balances` may be undefined.
-   * This function safely handles undefined balances by returning 0.
-   *
-   * @param balances - Optional array of spot balances from webData2 response
-   * @returns Total spot account value in USD
-   */
-  type SpotBalance = NonNullable<WebData2Data['spotState']>['balances'][number];
-
   const calculateSpotValue = useCallback((balances: SpotBalance[] | undefined) => {
     // Return 0 for empty accounts (no spot positions)
     if (!balances || balances.length === 0) {
@@ -89,13 +82,10 @@ export function useAccountMetrics(): UseAccountMetricsResult {
   const perpAccountValue = useMemo(() => {
     if (!webData3?.perpDexStates) return undefined;
 
-    return webData3.perpDexStates.reduce(
-      (sum: number, dexState: WebData3Data['perpDexStates'][number]) => {
-        const accountValue = dexState.clearinghouseState?.marginSummary?.accountValue;
-        return sum + (accountValue ? parseFloat(accountValue) : 0);
-      },
-      0,
-    );
+    return webData3.perpDexStates.reduce((sum: number, dexState: DexState) => {
+      const accountValue = dexState.clearinghouseState?.marginSummary?.accountValue;
+      return sum + (accountValue ? parseFloat(accountValue) : 0);
+    }, 0);
   }, [webData3?.perpDexStates]);
 
   // Calculate spot account value from webData2
@@ -112,9 +102,6 @@ export function useAccountMetrics(): UseAccountMetricsResult {
    */
   const unrealizedPnl = useMemo(() => {
     if (!webData3?.perpDexStates) return undefined;
-
-    type DexState = WebData3Data['perpDexStates'][number];
-    type AssetPosition = NonNullable<DexState['clearinghouseState']>['assetPositions'][number];
 
     return webData3.perpDexStates.reduce((total: number, dexState: DexState) => {
       const positions = dexState.clearinghouseState?.assetPositions || [];
@@ -138,8 +125,6 @@ export function useAccountMetrics(): UseAccountMetricsResult {
   const maintenanceMargin = useMemo(() => {
     if (!webData3?.perpDexStates) return undefined;
 
-    type DexState = WebData3Data['perpDexStates'][number];
-
     return webData3.perpDexStates.reduce((sum: number, dexState: DexState) => {
       const margin = dexState.clearinghouseState?.crossMaintenanceMarginUsed;
       return sum + (margin ? parseFloat(margin) : 0);
@@ -157,8 +142,6 @@ export function useAccountMetrics(): UseAccountMetricsResult {
    */
   const totalNtlPos = useMemo(() => {
     if (!webData3?.perpDexStates) return undefined;
-
-    type DexState = WebData3Data['perpDexStates'][number];
 
     return webData3.perpDexStates.reduce((sum: number, dexState: DexState) => {
       const ntlPos = dexState.clearinghouseState?.marginSummary?.totalNtlPos;

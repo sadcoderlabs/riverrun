@@ -95,7 +95,7 @@ const MarketListItemComponent = ({
                 {maxLeverage}x
               </Text>
             </XStack>
-            {isHip3 === true ? (
+            {isHip3 ? (
               <XStack
                 backgroundColor="$color1"
                 paddingHorizontal="$1.5"

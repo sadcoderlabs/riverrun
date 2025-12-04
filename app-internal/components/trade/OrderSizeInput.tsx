@@ -108,7 +108,7 @@ export function OrderSizeInput({
   };
 
   const getEstimateLabel = (): string => {
-    return sizeUnit === 'ASSET' ? 'USD' : coin;
+    return sizeUnit === 'ASSET' ? 'USD' : displayName;
   };
 
   // Toggle between asset and USD
