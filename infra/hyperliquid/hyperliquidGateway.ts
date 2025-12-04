@@ -287,7 +287,7 @@ export class HyperliquidGateway
    *
    * @returns Array of PerpDex info (or null for index 0)
    */
-  async fetchPerpDexs(): Promise<(infoClient.PerpDex | null)[]> {
+  async fetchPerpDexs(): Promise<hl.PerpDexsResponse> {
     return await infoClient.perpDexs();
   }
 

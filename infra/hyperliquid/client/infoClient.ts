@@ -63,21 +63,6 @@ export async function metaAndAssetCtxs(params?: {
 // ============================================================================
 
 /**
- * PerpDex information from perpDexs endpoint
- */
-export interface PerpDex {
-  name: string;
-  fullName: string;
-  deployer: string;
-  oracleUpdater: string | null;
-  feeRecipient: string;
-  assetToStreamingOiCap: [string, string][];
-  subDeployers: [string, string[]][];
-  deployerFeeScale: string;
-  lastDeployerFeeScaleChangeTime: string;
-}
-
-/**
  * Get all HIP-3 perp DEXs
  *
  * Weight: 20
@@ -90,10 +75,10 @@ export interface PerpDex {
  * // dexs[1] = { name: 'xyz', fullName: 'XYZ', ... }
  * ```
  */
-export async function perpDexs(): Promise<(PerpDex | null)[]> {
+export async function perpDexs(): Promise<hl.PerpDexsResponse> {
   const infoClient = getInfoClient();
   return await hyperliquidRateLimiter.execute(
-    () => infoClient.custom<(PerpDex | null)[]>({ type: 'perpDexs' }),
+    () => infoClient.perpDexs(),
     REQUEST_WEIGHTS.perpDexs,
   );
 }
