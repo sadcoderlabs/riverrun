@@ -11,22 +11,22 @@
  * This service only loads static market metadata.
  */
 
+import type { HyperliquidGateway } from '@/infra/hyperliquid/hyperliquidGateway';
+import { marketStore } from '../adapters/marketStore';
 import type { MarketPort } from '../ports/marketPort';
 import type {
-  Market,
-  SelectedMarket,
-  RawMarketMeta,
-  RawAssetContext,
   Hip3RawMarketMeta,
+  Market,
+  RawAssetContext,
+  RawMarketMeta,
+  SelectedMarket,
 } from '../ports/types';
 import {
-  getMarketByCoin,
-  getDefaultSelectedMarket,
-  convertRawMarket,
   convertHip3RawMarket,
+  convertRawMarket,
+  getDefaultSelectedMarket,
+  getMarketByCoin,
 } from '../ports/types';
-import { marketStore } from '../adapters/marketStore';
-import type { HyperliquidGateway } from '@/infra/hyperliquid/hyperliquidGateway';
 
 /**
  * Market Service Implementation
@@ -107,7 +107,7 @@ export class MarketService implements MarketPort {
     try {
       // Fetch all HIP-3 DEXs
       const perpDexs = await this.hyperliquidGateway.fetchPerpDexs();
-      console.log('[MarketService] perpDexs response:', JSON.stringify(perpDexs, null, 2));
+      // console.log('[MarketService] perpDexs response:', JSON.stringify(perpDexs, null, 2));
 
       const allHip3Markets: Market[] = [];
 
@@ -202,6 +202,7 @@ export class MarketService implements MarketPort {
         marketPair: market.marketPair,
         szDecimals: market.szDecimals,
         maxLeverage: market.maxLeverage,
+        assetId: market.assetId,
         isHip3: market.isHip3,
       };
       marketStore.getState().setSelectedMarket(selectedMarket);

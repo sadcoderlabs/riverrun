@@ -62,6 +62,8 @@ export interface SelectedMarket {
   szDecimals: number;
   /** Maximum leverage available for this market */
   maxLeverage: number;
+  /** Asset ID used by Hyperliquid API */
+  assetId: number;
   /** Whether this is a HIP-3 builder-deployed perp */
   isHip3: boolean;
 }
@@ -242,6 +244,7 @@ export function getDefaultSelectedMarket(markets: Market[]): SelectedMarket | un
         marketPair: btcMarket.marketPair,
         szDecimals: btcMarket.szDecimals,
         maxLeverage: btcMarket.maxLeverage,
+        assetId: btcMarket.assetId,
         isHip3: btcMarket.isHip3,
       }
     : undefined;
