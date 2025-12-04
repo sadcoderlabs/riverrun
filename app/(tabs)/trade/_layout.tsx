@@ -1,6 +1,7 @@
 import { CoinInfo } from '@/app-internal/components/trade/CoinInfo';
 import { PerpTabs } from '@/app-internal/components/trade/PerpTabs';
 import { useMarketStore, useMarket } from '@/app-internal';
+import { useWelcomeTrigger } from '@/app-internal/features/welcome';
 import { Slot, usePathname } from 'expo-router';
 import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
@@ -27,6 +28,10 @@ export default function TradeLayout() {
   const selectedMarket = useMarketStore(state => state.selectedMarket);
   // Business operations
   const { setSelectedMarketByCoin } = useMarket();
+
+  // Welcome screen trigger - shows welcome when conditions are met
+  // (first visit to Trade tab + margin > 0 + not seen before)
+  useWelcomeTrigger();
 
   // Deep link support: read URL query params once to initialize store
   // Example: /trade/perp?coin=BTC

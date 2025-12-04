@@ -139,7 +139,7 @@ export default function Index() {
                       useWelcomeStore.getState().reset();
                       Alert.alert(
                         'Welcome Screens Reset',
-                        'Welcome screens will be shown again on next app launch.',
+                        'Welcome screens will be shown again when you visit the Trade tab.',
                       );
                     }}
                   />

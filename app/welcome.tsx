@@ -91,13 +91,14 @@ export default function WelcomeScreen() {
   const currentPageData = WELCOME_PAGES[currentPage];
 
   /**
-   * Complete welcome flow and navigate to home
+   * Complete welcome flow and navigate back to trade tab
    */
   const completeWelcome = useCallback(() => {
     if (address) {
       markSeen(address);
     }
-    router.replace('/(tabs)/home');
+    // Navigate back to trade tab where user came from
+    router.replace('/(tabs)/trade/perp');
   }, [address, markSeen, router]);
 
   /**
