@@ -133,15 +133,8 @@ export class MarketService implements MarketPort {
       // Fetch all HIP-3 DEXs
       const perpDexs = await this.hyperliquidGateway.fetchPerpDexs();
 
-      // Extract HIP-3 DEX names (index 0 is null for validator perps)
-      const hip3DexNames = perpDexs
-        .filter((dex): dex is NonNullable<typeof dex> => dex !== null)
-        .map(dex => dex.name);
-
-      // Store HIP-3 DEX names for use by other contexts (e.g., order fetching)
-      marketStore.getState().setHip3Dexes(hip3DexNames);
-
       const allHip3Markets: Market[] = [];
+      const loadedDexNames: string[] = [];
 
       // Iterate through DEXs (index 0 is null for validator perps)
       for (let perpDexIndex = 1; perpDexIndex < perpDexs.length; perpDexIndex++) {
@@ -150,12 +143,19 @@ export class MarketService implements MarketPort {
 
         try {
           const dexMarkets = await this.loadSingleHip3Dex(dex.name, perpDexIndex, tokenNameMap);
-          allHip3Markets.push(...dexMarkets);
+          // Only track DEXs that returned markets (USDC collateral only)
+          if (dexMarkets.length > 0) {
+            allHip3Markets.push(...dexMarkets);
+            loadedDexNames.push(dex.name);
+          }
         } catch (error) {
           console.warn(`[MarketService] Failed to load HIP-3 DEX ${dex.name}:`, error);
           // Continue loading other DEXs
         }
       }
+
+      // Store only USDC-collateral HIP-3 DEX names for use by other contexts
+      marketStore.getState().setHip3Dexes(loadedDexNames);
 
       return allHip3Markets;
     } catch (error) {
