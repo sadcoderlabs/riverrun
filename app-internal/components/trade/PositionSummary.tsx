@@ -5,7 +5,7 @@ import { Text, XStack, YStack } from 'tamagui';
 interface PositionSummaryProps {
   availableToTrade: number;
   currentPositionSize: number;
-  coin: string;
+  displayName: string;
   szDecimals: number;
   isLoadingAssetData?: boolean;
 }
@@ -20,7 +20,7 @@ interface PositionSummaryProps {
 export function PositionSummary({
   availableToTrade,
   currentPositionSize,
-  coin,
+  displayName,
   szDecimals,
   isLoadingAssetData,
 }: PositionSummaryProps) {
@@ -53,8 +53,8 @@ export function PositionSummary({
           }
         >
           {currentPositionSize !== 0
-            ? `${formatSize(Math.abs(currentPositionSize), szDecimals, false)} ${coin}`
-            : `0 ${coin}`}
+            ? `${formatSize(Math.abs(currentPositionSize), szDecimals, false)} ${displayName}`
+            : `0 ${displayName}`}
         </Text>
       </XStack>
     </YStack>

@@ -175,7 +175,7 @@ export function PerpTradePanel() {
           <PositionSummary
             availableToTrade={availableToTrade}
             currentPositionSize={currentPositionSize}
-            coin={coin}
+            displayName={displayName}
             szDecimals={szDecimals}
             isLoadingAssetData={isLoadingMarkPrice}
           />
