@@ -4,7 +4,7 @@
  * This hook automatically:
  * - Monitors active wallet changes
  * - Subscribes to position data via HTTP + WebSocket hybrid
- * - Extracts non-zero positions from data stream
+ * - Extracts non-zero positions from ALL DEXs (validator perps + HIP-3)
  * - Enriches positions with market data (markPx, szDecimals)
  * - Updates position store with enriched data
  *
@@ -32,20 +32,28 @@ import type { EnrichedPosition, Position } from '../types/position';
 // ============================================================================
 
 /**
- * Extract non-zero positions from WebData2 response
+ * Extract non-zero positions from WebData3 response
+ * Flattens positions from ALL perpDexStates (validator perps + HIP-3 DEXs)
  * Exported for testing purposes
  */
-export function extractPositions(data: hl.WebData2Response): Position[] {
-  if (!data.clearinghouseState?.assetPositions) {
+export function extractPositions(data: hl.WsWebData3Event): Position[] {
+  if (!data.perpDexStates) {
     return [];
   }
 
-  return data.clearinghouseState.assetPositions
-    .filter(asset => {
-      const szi = Number(asset.position.szi);
-      return szi !== 0;
-    })
-    .map(asset => asset.position);
+  // Flatten positions from all DEXs
+  return data.perpDexStates.flatMap(dexState => {
+    if (!dexState.clearinghouseState?.assetPositions) {
+      return [];
+    }
+
+    return dexState.clearinghouseState.assetPositions
+      .filter(asset => {
+        const szi = Number(asset.position.szi);
+        return szi !== 0;
+      })
+      .map(asset => asset.position);
+  });
 }
 
 /**
@@ -107,13 +115,14 @@ export function usePositionSubscription(
 
         // Subscribe to position data via Gateway
         // Gateway handles HTTP + WS hybrid strategy internally
-        subscription = await gateway.subscribeWebData2(
+        // Using webData3 to get positions from ALL DEXs (validator perps + HIP-3)
+        subscription = await gateway.subscribeWebData3(
           walletAddress,
-          (data: hl.WebData2Response) => {
+          (data: hl.WsWebData3Event) => {
             // Don't process if effect was cancelled
             if (!isCancelled) {
               try {
-                // Extract non-zero positions
+                // Extract non-zero positions from all DEXs
                 const positions = extractPositions(data);
 
                 // Enrich with market data
