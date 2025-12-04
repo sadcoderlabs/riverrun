@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       ref:
-        description: 'Branch, tag, or commit SHA to publish'
+        description: "Branch, tag, or commit SHA to publish"
         required: false
         default: develop
 
