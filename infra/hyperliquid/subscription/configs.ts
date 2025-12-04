@@ -29,6 +29,13 @@ interface WebData2Params {
 // Use the SDK's WebData2Response type directly
 type WebData2Data = hl.WebData2Response;
 
+interface WebData3Params {
+  user: string;
+}
+
+// Use the SDK's WsWebData3Event type directly
+type WebData3Data = hl.WsWebData3Event;
+
 // AllMids params - optional dex for HIP-3
 interface AllMidsParams {
   dex?: string; // DEX name for HIP-3 (e.g., "xyz"), undefined for validator perps
@@ -109,6 +116,28 @@ subscriptionRegistry.register<WebData2Params, WebData2Data>('webData2', {
         user: params.user,
       },
       (event: hl.WsWebData2Event) => {
+        callback(event);
+      },
+    );
+  },
+});
+
+// ============================================================================
+// Configuration: webData3
+// ============================================================================
+
+subscriptionRegistry.register<WebData3Params, WebData3Data>('webData3', {
+  // Key by user address
+  getKey: params => params.user,
+
+  // WebSocket subscription for real-time position updates across ALL DEXs (including HIP-3)
+  subscribe: async (params, callback) => {
+    const subscriptionClient = getSubscriptionClient();
+    return await subscriptionClient.webData3(
+      {
+        user: params.user,
+      },
+      (event: hl.WsWebData3Event) => {
         callback(event);
       },
     );

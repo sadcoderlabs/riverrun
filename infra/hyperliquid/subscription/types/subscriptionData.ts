@@ -83,6 +83,13 @@ export interface ActiveAssetData {
 export type WebData2Data = hl.WebData2Response;
 
 /**
+ * WebData3 subscription data
+ * Contains positions across ALL DEXs (validator perps + HIP-3)
+ * Use this for position data to include HIP-3 assets like GOOGL, TSLA, etc.
+ */
+export type WebData3Data = hl.WsWebData3Event;
+
+/**
  * ActiveAssetCtx subscription data
  * Contains real-time market data for a specific coin
  */
