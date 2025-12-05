@@ -3,10 +3,15 @@
  *
  * Provides separate values for long and short positions based on the user's
  * current margin availability from Hyperliquid's activeAssetData feed.
+ *
+ * For HIP-3 assets, automatically enables DEX abstraction to show the
+ * abstracted balance from main perps account.
  */
 
-import { useMemo } from 'react';
+import { useAccountMetrics } from '@/app-internal/components/home/hooks/useAccountMetrics';
 import { useActiveAssetData } from '@/infra/hyperliquid/hooks/useActiveAssetData';
+import { useEffect, useMemo } from 'react';
+import { useEnableDexAbstraction } from './useEnableDexAbstraction';
 
 interface UseAvailableToTradeParams {
   coin: string;
@@ -40,8 +45,25 @@ interface UseAvailableToTradeResult {
 export function useAvailableToTrade({
   coin,
 }: UseAvailableToTradeParams): UseAvailableToTradeResult {
+  // Get perp balance to check if user has funds
+  const { perpBalance } = useAccountMetrics();
+
+  // Enable DEX abstraction for HIP-3 assets (shows loading while enabling)
+  const { isEnabling: isEnablingDexAbstraction, enable: enableDexAbstraction } =
+    useEnableDexAbstraction();
+
+  // Detect HIP-3 assets (format: "dex:SYMBOL", e.g., "xyz:NVDA")
+  const isHip3 = coin.includes(':');
+
+  // Enable DEX abstraction when viewing HIP-3 assets with perp balance
+  useEffect(() => {
+    if (isHip3 && perpBalance !== undefined && perpBalance > 0) {
+      enableDexAbstraction();
+    }
+  }, [isHip3, perpBalance, enableDexAbstraction]);
+
   // Subscribe to active asset data for real-time margin updates
-  const { data: activeAssetData, isLoading, error } = useActiveAssetData({ coin });
+  const { data: activeAssetData, isLoading: isLoadingData, error } = useActiveAssetData({ coin });
 
   // Parse and memoize available margin values
   const { longAvailableToTrade, shortAvailableToTrade } = useMemo(() => {
@@ -59,6 +81,9 @@ export function useAvailableToTrade({
       shortAvailableToTrade: parseFloat(activeAssetData.availableToTrade[1] || '0'),
     };
   }, [activeAssetData]);
+
+  // Show loading while enabling DEX abstraction OR loading data
+  const isLoading = isEnablingDexAbstraction || isLoadingData;
 
   return {
     longAvailableToTrade,
