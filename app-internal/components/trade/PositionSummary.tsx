@@ -29,7 +29,7 @@ export function PositionSummary({
       {/* Available to Trade */}
       <XStack justifyContent="space-between" alignItems="center">
         <Text fontFamily="$interRegular" fontSize="$2" color="$gray10">
-          Available to trade
+          Available Fund
         </Text>
         <Text fontFamily="$interSemiBold" fontSize="$2" color="$color">
           {isLoadingAssetData ? (
