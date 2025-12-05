@@ -99,3 +99,27 @@ export interface UserFeeRates {
    */
   hasStakingDiscount: boolean;
 }
+
+/**
+ * Market fee parameters for HIP-3 fee calculation
+ *
+ * When provided, the fee calculation will apply HIP-3 specific multipliers.
+ * For validator perps (non-HIP-3), these parameters should be omitted.
+ */
+export interface MarketFeeParams {
+  /**
+   * Whether this is a HIP-3 builder-deployed perp
+   */
+  isHip3: boolean;
+
+  /**
+   * Deployer fee scale from perpDexs response
+   * Affects the HIP-3 fee multiplier calculation
+   */
+  deployerFeeScale?: number;
+
+  /**
+   * Growth mode status (reduces fees by 90% when enabled)
+   */
+  growthMode?: 'enabled';
+}
