@@ -103,4 +103,17 @@ export interface OrderExchangePort {
    * @returns Promise that resolves when cancellation is complete
    */
   cancelOrders(signer: Signer, request: CancelRequest): Promise<void>;
+
+  /**
+   * Enable HIP-3 DEX abstraction for the user
+   *
+   * This allows automatic collateral transfer from the main perps balance
+   * when trading HIP-3 assets. Uses agent wallet signature (no user prompt).
+   *
+   * Note: This only works when transitioning from null to true (first-time enable).
+   * Subsequent calls are no-ops.
+   *
+   * @param signer - Signer for the agent wallet
+   */
+  enableDexAbstraction(signer: Signer): Promise<void>;
 }
