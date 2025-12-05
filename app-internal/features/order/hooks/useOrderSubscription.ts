@@ -13,7 +13,7 @@
  * - Updates orderStore directly
  */
 
-import { useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 
 import { useWallet } from '../../wallet/hooks/useWallet';
 import {
@@ -171,9 +171,12 @@ export function useOrderSubscription(telemetryService: TelemetryPort) {
   const gateway = useMemo(() => new HyperliquidGateway(), []);
 
   // Create a stable captureError function for use in handleOrderUpdates
-  const captureError = (error: unknown, context?: TelemetryErrorContext) => {
-    telemetryService.captureError(error, context);
-  };
+  const captureError = useCallback(
+    (error: unknown, context?: TelemetryErrorContext) => {
+      return telemetryService.captureError(error, context);
+    },
+    [telemetryService],
+  );
 
   useEffect(() => {
     // No wallet - clear orders
