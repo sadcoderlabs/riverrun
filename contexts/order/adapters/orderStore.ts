@@ -61,7 +61,7 @@ interface OrderStateActions {
 
 const initialState: OrderState = {
   orders: [],
-  isLoading: false,
+  isLoading: true,
 };
 
 // ============================================================================

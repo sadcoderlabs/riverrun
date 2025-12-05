@@ -631,6 +631,26 @@ export class HyperliquidGateway
   }
 
   // ============================================================================
+  // HIP-3 DEX Abstraction
+  // ============================================================================
+
+  /**
+   * Enable HIP-3 DEX abstraction for the user
+   *
+   * This allows automatic collateral transfer from the main perps balance
+   * when trading HIP-3 assets. Uses agent wallet signature (no user prompt).
+   *
+   * Note: This only works when transitioning from null to true (first-time enable).
+   * Subsequent calls are no-ops but won't throw errors.
+   *
+   * @param signer - Signer for the agent wallet
+   */
+  async enableDexAbstraction(signer: Signer): Promise<void> {
+    const client = getAgentExchangeClient(signer);
+    await client.agentEnableDexAbstraction();
+  }
+
+  // ============================================================================
   // Order Operations (OrderExchangePort)
   // ============================================================================
 

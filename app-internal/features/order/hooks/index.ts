@@ -10,3 +10,4 @@ export * from './useMarginRequired';
 export * from './useOrderValidation';
 export * from './useOrderCount';
 export * from './useAvailableToTrade';
+export * from './useEnableDexAbstraction';
