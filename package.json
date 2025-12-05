@@ -33,7 +33,7 @@
     "@expo/vector-icons": "15.0.3",
     "@hookform/resolvers": "5.2.2",
     "@intercom/intercom-react-native": "^9.3.3",
-    "@nktkas/hyperliquid": "0.25.9",
+    "@nktkas/hyperliquid": "0.28.0",
     "@privy-io/chains": "^0.0.4",
     "@privy-io/expo": "0.60.0",
     "@privy-io/expo-native-extensions": "0.0.5",

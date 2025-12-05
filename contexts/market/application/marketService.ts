@@ -142,7 +142,15 @@ export class MarketService implements MarketPort {
         if (!dex) continue;
 
         try {
-          const dexMarkets = await this.loadSingleHip3Dex(dex.name, perpDexIndex, tokenNameMap);
+          // Parse deployerFeeScale from perpDexs response (string -> number)
+          const deployerFeeScale = parseFloat(dex.deployerFeeScale);
+
+          const dexMarkets = await this.loadSingleHip3Dex(
+            dex.name,
+            perpDexIndex,
+            tokenNameMap,
+            deployerFeeScale,
+          );
           // Only track DEXs that returned markets (USDC collateral only)
           if (dexMarkets.length > 0) {
             allHip3Markets.push(...dexMarkets);
@@ -170,11 +178,13 @@ export class MarketService implements MarketPort {
    * @param dexName - DEX name (e.g., "xyz", "flx", "vntl")
    * @param perpDexIndex - Array index from perpDexs response
    * @param tokenNameMap - Map of token index -> name for resolving collateral tokens
+   * @param deployerFeeScale - Fee scale from perpDexs response (affects HIP-3 fee multiplier)
    */
   private async loadSingleHip3Dex(
     dexName: string,
     perpDexIndex: number,
     tokenNameMap: Map<number, string>,
+    deployerFeeScale: number,
   ): Promise<Market[]> {
     const [meta, assetCtxs] = await this.hyperliquidGateway.fetchMetaAndAssetCtxs(dexName);
 
@@ -201,6 +211,7 @@ export class MarketService implements MarketPort {
           onlyIsolated: asset.onlyIsolated,
           marginMode: asset.marginMode,
           isDelisted: asset.isDelisted,
+          growthMode: asset.growthMode,
         };
 
         const ctx = assetCtxs[indexInMeta];
@@ -219,6 +230,7 @@ export class MarketService implements MarketPort {
           perpDexIndex,
           collateralTokenIndex,
           collateralTokenName,
+          deployerFeeScale,
         );
       })
       .filter((market): market is Market => market !== null);
@@ -243,6 +255,8 @@ export class MarketService implements MarketPort {
         assetId: market.assetId,
         isHip3: market.isHip3,
         dex: market.dex,
+        growthMode: market.growthMode,
+        deployerFeeScale: market.deployerFeeScale,
       };
       marketStore.getState().setSelectedMarket(selectedMarket);
     } else {

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Button, Popover, Text, XStack, YStack } from 'tamagui';
 
-import { useUserFees } from '@/app-internal';
+import { useMarketStore, useUserFees } from '@/app-internal';
 import { formatValue } from '@/infra/hyperliquid/format/formatValue';
 import { Info } from '@tamagui/lucide-icons';
 
@@ -25,13 +25,26 @@ export function OrderPreview({
   marginRequired,
   hasValidInputs = true,
 }: OrderPreviewProps) {
+  // Get selected market for fee calculation
+  const selectedMarket = useMarketStore(state => state.selectedMarket);
+
   // Load user fee rates internally
   const { feeRates, loadUserFees } = useUserFees();
   const [tooltipOpen, setTooltipOpen] = useState(false);
 
+  // Load fees when component mounts or when selected market changes
+  // For HIP-3 markets, pass market params to calculate correct fees
   useEffect(() => {
-    loadUserFees();
-  }, [loadUserFees]);
+    loadUserFees(
+      selectedMarket?.isHip3
+        ? {
+            isHip3: true,
+            deployerFeeScale: selectedMarket.deployerFeeScale,
+            growthMode: selectedMarket.growthMode,
+          }
+        : undefined,
+    );
+  }, [loadUserFees, selectedMarket?.coin]);
 
   return (
     <YStack gap="$2.5" marginTop="$2">

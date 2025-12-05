@@ -47,6 +47,12 @@ export type Market = {
   collateralTokenIndex: number;
   /** Collateral token name (e.g., "USDC") */
   collateralTokenName: string;
+
+  // HIP-3 fee-related fields
+  /** Growth mode status for HIP-3 assets (reduces fees by 90% when enabled) */
+  growthMode?: 'enabled';
+  /** Deployer fee scale from perpDexs (affects HIP-3 fee multiplier) */
+  deployerFeeScale?: number;
 };
 
 /**
@@ -72,6 +78,10 @@ export interface SelectedMarket {
   isHip3: boolean;
   /** DEX name for HIP-3 assets (e.g., "xyz"), undefined for validator perps */
   dex?: string;
+  /** Growth mode status for HIP-3 assets (reduces fees by 90% when enabled) */
+  growthMode?: 'enabled';
+  /** Deployer fee scale from perpDexs (affects HIP-3 fee multiplier) */
+  deployerFeeScale?: number;
 }
 
 /**
@@ -182,6 +192,8 @@ export interface Hip3RawMarketMeta extends RawMarketMeta {
   onlyIsolated?: boolean;
   marginMode?: 'strictIsolated' | 'noCross';
   isDelisted?: boolean;
+  /** Growth mode status (reduces fees by 90% when enabled) */
+  growthMode?: 'enabled';
 }
 
 /**
@@ -194,6 +206,7 @@ export interface Hip3RawMarketMeta extends RawMarketMeta {
  * @param perpDexIndex - Array index from perpDexs response (1, 2, 3...)
  * @param collateralTokenIndex - Collateral token index (0 = USDC)
  * @param collateralTokenName - Collateral token name
+ * @param deployerFeeScale - Fee scale from perpDexs response (affects HIP-3 fee multiplier)
  * @returns Market domain object
  */
 export function convertHip3RawMarket(
@@ -204,6 +217,7 @@ export function convertHip3RawMarket(
   perpDexIndex: number,
   collateralTokenIndex: number,
   collateralTokenName: string,
+  deployerFeeScale: number,
 ): Market {
   // HIP-3 asset ID formula: 100000 + (perpDexIndex * 10000) + indexInMeta
   const assetId = 100000 + perpDexIndex * 10000 + indexInMeta;
@@ -237,6 +251,9 @@ export function convertHip3RawMarket(
     isolatedOnly: true, // HIP-3 is always isolated-only
     collateralTokenIndex,
     collateralTokenName,
+    // HIP-3 fee-related
+    growthMode: meta.growthMode,
+    deployerFeeScale,
   };
 }
 
@@ -258,6 +275,8 @@ export function getDefaultSelectedMarket(markets: Market[]): SelectedMarket | un
         assetId: btcMarket.assetId,
         isHip3: btcMarket.isHip3,
         dex: btcMarket.dex,
+        growthMode: btcMarket.growthMode,
+        deployerFeeScale: btcMarket.deployerFeeScale,
       }
     : undefined;
 }

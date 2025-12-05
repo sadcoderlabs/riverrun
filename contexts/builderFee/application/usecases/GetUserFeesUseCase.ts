@@ -23,7 +23,7 @@
  * - Direct API calls (delegated to port implementation)
  */
 
-import type { UserFeeRates } from '../../ports/types';
+import type { MarketFeeParams, UserFeeRates } from '../../ports/types';
 import type { BuilderFeeExchangePort } from '../ports/BuilderFeeExchangePort';
 import { BUILDER_FEE_RATE } from '../../config';
 
@@ -35,6 +35,12 @@ export interface GetUserFeesCommand {
    * Wallet address to get fee rates for
    */
   walletAddress: string;
+
+  /**
+   * Optional market parameters for HIP-3 fee calculation
+   * When provided, fees will be calculated with HIP-3 specific multipliers
+   */
+  marketParams?: MarketFeeParams;
 }
 
 export class GetUserFeesUseCase {
@@ -43,11 +49,11 @@ export class GetUserFeesUseCase {
   /**
    * Execute the use case
    *
-   * @param command - Command containing the wallet address
+   * @param command - Command containing the wallet address and optional market params
    * @returns User's effective fee rates
    */
   async execute(command: GetUserFeesCommand): Promise<UserFeeRates> {
-    const { walletAddress } = command;
+    const { walletAddress, marketParams } = command;
 
     // Query fee rates from exchange via port
     const response = await this.exchange.getUserFees(walletAddress);
@@ -62,20 +68,49 @@ export class GetUserFeesUseCase {
     // BUILDER_FEE_RATE is in 0.1bps units, so divide by 100000 to get decimal rate
     const builderFeeRate = BUILDER_FEE_RATE / 100000;
 
+    // Calculate HIP-3 fee multipliers if applicable
+    // Formula from Hyperliquid docs:
+    // - scaleIfHip3: deployerFeeScale < 1 ? deployerFeeScale + 1 : deployerFeeScale * 2
+    // - growthModeScale: 0.1 when growth mode enabled, 1 otherwise
+    let scaleIfHip3 = 1;
+    let growthModeScale = 1;
+
+    if (marketParams?.isHip3 && marketParams.deployerFeeScale !== undefined) {
+      scaleIfHip3 =
+        marketParams.deployerFeeScale < 1
+          ? marketParams.deployerFeeScale + 1
+          : marketParams.deployerFeeScale * 2;
+      growthModeScale = marketParams.growthMode === 'enabled' ? 0.1 : 1;
+    }
+
     // Calculate effective rates
-    // Formula: baseRate × (1 - referralDiscount) × (1 - stakingDiscount) + builderFee
+    // For HIP-3: baseRate × scaleIfHip3 × growthModeScale × (1 - referralDiscount) × (1 - stakingDiscount) + builderFee
+    // For validator perps: baseRate × (1 - referralDiscount) × (1 - stakingDiscount) + builderFee
     const effectiveTakerRate =
-      baseTakerRate * (1 - referralDiscount) * (1 - stakingDiscount) + builderFeeRate;
+      baseTakerRate *
+        scaleIfHip3 *
+        growthModeScale *
+        (1 - referralDiscount) *
+        (1 - stakingDiscount) +
+      builderFeeRate;
     const effectiveMakerRate =
-      baseMakerRate * (1 - referralDiscount) * (1 - stakingDiscount) + builderFeeRate;
+      baseMakerRate *
+        scaleIfHip3 *
+        growthModeScale *
+        (1 - referralDiscount) *
+        (1 - stakingDiscount) +
+      builderFeeRate;
+
+    // Base rates include HIP-3 scaling but not discounts (for comparison display)
+    const baseTakerWithScale = baseTakerRate * scaleIfHip3 * growthModeScale + builderFeeRate;
+    const baseMakerWithScale = baseMakerRate * scaleIfHip3 * growthModeScale + builderFeeRate;
 
     // Convert to percentage for display (multiply by 100)
-    // Also add builder fee to base rates for comparison display
     return {
       takerFeePercent: effectiveTakerRate * 100,
       makerFeePercent: effectiveMakerRate * 100,
-      baseTakerPercent: (baseTakerRate + builderFeeRate) * 100,
-      baseMakerPercent: (baseMakerRate + builderFeeRate) * 100,
+      baseTakerPercent: baseTakerWithScale * 100,
+      baseMakerPercent: baseMakerWithScale * 100,
       hasReferralDiscount: referralDiscount > 0,
       hasStakingDiscount: stakingDiscount > 0,
     };
