@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type * as hl from '@nktkas/hyperliquid';
 import type { AllDexsClearinghouseStateEvent } from '@nktkas/hyperliquid/api/subscription';
 import { useWallet } from '@/app-internal/features/wallet/hooks/useWallet';
 import { subscriptionManager } from '../subscription';
+import type { SubscriptionHandle } from '../subscription/types';
 
 /**
  * Aggregated clearinghouse state across all DEXs (validator perps + HIP-3)
@@ -107,40 +108,57 @@ function convertEventToDexStates(event: AllDexsClearinghouseStateEvent): DexClea
  * @returns Aggregated clearinghouse state with loading and error states
  */
 export function useMultiDexClearinghouse(): UseMultiDexClearinghouseResult {
-  const { wallet } = useWallet();
+  const { address } = useWallet();
   const [wsData, setWsData] = useState<AllDexsClearinghouseStateEvent | undefined>();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | undefined>();
 
+  // Use ref to store the handle, so cleanup can access it even if async subscribe hasn't completed
+  const handleRef = useRef<SubscriptionHandle | undefined>(undefined);
+  const isCancelledRef = useRef(false);
+
+  // Clear data when wallet changes to prevent showing stale data from previous wallet
+  useEffect(() => {
+    setWsData(undefined);
+    setIsLoading(true);
+    setError(undefined);
+  }, [address]);
+
   // Subscribe to allDexsClearinghouseState WebSocket
   useEffect(() => {
-    if (!wallet) {
+    if (!address) {
       setWsData(undefined);
       setIsLoading(false);
       return;
     }
 
-    let isCancelled = false;
-    let unsubscribe: (() => Promise<void>) | undefined;
-
-    setIsLoading(true);
-    setError(undefined);
+    // Reset refs for new subscription
+    handleRef.current = undefined;
+    isCancelledRef.current = false;
 
     (async () => {
       try {
         const handle = await subscriptionManager.subscribe<AllDexsClearinghouseStateEvent>(
           'allDexsClearinghouseState',
-          { user: wallet.address },
+          { user: address },
           data => {
-            if (!isCancelled) {
+            // Check if this subscription was cancelled while waiting
+            if (!isCancelledRef.current) {
               setWsData(data);
               setIsLoading(false);
             }
           },
         );
-        unsubscribe = () => subscriptionManager.unsubscribe(handle);
+
+        // Store handle in ref for cleanup
+        handleRef.current = handle;
+
+        // If cancelled while subscribing, immediately unsubscribe
+        if (isCancelledRef.current) {
+          await subscriptionManager.unsubscribe(handle);
+        }
       } catch (err) {
-        if (!isCancelled) {
+        if (!isCancelledRef.current) {
           console.warn('[useMultiDexClearinghouse] WebSocket subscription failed:', err);
           setError(err instanceof Error ? err : new Error(String(err)));
           setIsLoading(false);
@@ -149,10 +167,15 @@ export function useMultiDexClearinghouse(): UseMultiDexClearinghouseResult {
     })();
 
     return () => {
-      isCancelled = true;
-      unsubscribe?.();
+      // Mark as cancelled immediately
+      isCancelledRef.current = true;
+
+      // Unsubscribe if handle is available
+      if (handleRef.current) {
+        void subscriptionManager.unsubscribe(handleRef.current);
+      }
     };
-  }, [wallet]);
+  }, [address]);
 
   // Convert WebSocket data to aggregated format
   const aggregatedData = useMemo(() => {

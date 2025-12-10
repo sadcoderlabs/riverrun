@@ -18,6 +18,14 @@
 import { subscriptionRegistry } from './subscriptionRegistry';
 import type { SubscriptionEntry, SubscriptionHandle } from './types';
 
+// Counter for generating unique callback IDs
+let callbackIdCounter = 0;
+
+function generateCallbackId(): string {
+  callbackIdCounter += 1;
+  return `cb_${callbackIdCounter}_${Date.now()}`;
+}
+
 class SubscriptionManager {
   /**
    * Internal state - Map of all active subscriptions
@@ -53,20 +61,15 @@ class SubscriptionManager {
     const storeKey = `${type}:${key}`;
 
     const existing = this.subscriptions.get(storeKey);
+    const callbackId = generateCallbackId();
 
-    // Case 1: Subscription exists - increment refCount and add callback
+    // Case 1: Subscription exists - increment refCount and add callback to map
     if (existing) {
       existing.refCount++;
-
-      // Merge callbacks - call both old and new
-      const oldCallback = existing.callback;
-      existing.callback = (data: TData) => {
-        oldCallback?.(data);
-        callback(data);
-      };
+      existing.callbacks.set(callbackId, callback);
 
       console.log(
-        `[SubscriptionManager] 🔄 Reusing subscription for ${type}:${key} (refCount: ${existing.refCount})`,
+        `[SubscriptionManager] 🔄 Reusing subscription for ${type}:${key} (refCount: ${existing.refCount}, callbacks: ${existing.callbacks.size})`,
       );
 
       // If data is already available, call callback immediately
@@ -74,11 +77,14 @@ class SubscriptionManager {
         callback(existing.data);
       }
 
-      return { type, key };
+      return { type, key, callbackId };
     }
 
     // Case 2: Create new subscription
     console.log(`[SubscriptionManager] ✨ Creating new subscription for ${type}:${key}`);
+
+    const callbacks = new Map<string, (data: TData) => void>();
+    callbacks.set(callbackId, callback);
 
     const newEntry: SubscriptionEntry<TData> = {
       type,
@@ -90,7 +96,7 @@ class SubscriptionManager {
       subscription: null,
       isPaused: false,
       params,
-      callback,
+      callbacks,
     };
 
     // Store entry immediately
@@ -105,9 +111,9 @@ class SubscriptionManager {
           entry.data = data;
           entry.isLoading = false;
 
-          // Call all callbacks
-          if (entry.callback) {
-            entry.callback(data);
+          // Call all callbacks in the map
+          for (const cb of entry.callbacks.values()) {
+            cb(data);
           }
         }
       });
@@ -132,18 +138,19 @@ class SubscriptionManager {
       }
     }
 
-    return { type, key };
+    return { type, key, callbackId };
   }
 
   /**
    * Unsubscribe from a data feed
    *
-   * Decrements refCount. When refCount reaches 0, cleans up the subscription.
+   * Removes the specific callback by ID. When all callbacks are removed (refCount = 0),
+   * cleans up the WebSocket subscription.
    *
    * @param handle - Handle returned by subscribe()
    */
   async unsubscribe(handle: SubscriptionHandle): Promise<void> {
-    const { type, key } = handle;
+    const { type, key, callbackId } = handle;
     const storeKey = `${type}:${key}`;
 
     const entry = this.subscriptions.get(storeKey);
@@ -155,12 +162,20 @@ class SubscriptionManager {
       return;
     }
 
+    // Remove this specific callback
+    const removed = entry.callbacks.delete(callbackId);
+    if (!removed) {
+      console.warn(
+        `[SubscriptionManager] ⚠️  Callback ${callbackId} not found in subscription: ${storeKey}`,
+      );
+    }
+
     entry.refCount--;
 
     // If still in use by other subscribers, just update refCount
     if (entry.refCount > 0) {
       console.log(
-        `[SubscriptionManager] 📉 Decremented refCount for ${storeKey} (refCount: ${entry.refCount})`,
+        `[SubscriptionManager] 📉 Decremented refCount for ${storeKey} (refCount: ${entry.refCount}, callbacks: ${entry.callbacks.size})`,
       );
       return;
     }
@@ -232,9 +247,9 @@ class SubscriptionManager {
               currentEntry.data = data;
               currentEntry.isLoading = false;
 
-              // Call stored callback
-              if (currentEntry.callback) {
-                currentEntry.callback(data);
+              // Call all stored callbacks
+              for (const cb of currentEntry.callbacks.values()) {
+                cb(data);
               }
             }
           });

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { subscriptionManager } from '../subscriptionManager';
 import type { SubscriptionHandle } from '../types';
 
@@ -52,36 +52,68 @@ export function useSubscription<TData = any>(type: string, params?: any): Subscr
   // Serialize params for stable comparison in useEffect
   const serializedParams = useMemo(() => JSON.stringify(params), [params]);
 
+  // Use refs to handle race conditions with async subscribe
+  const handleRef = useRef<SubscriptionHandle | undefined>(undefined);
+  const isCancelledRef = useRef(false);
+
+  // Clear data when params change to prevent showing stale data
   useEffect(() => {
-    let handle: SubscriptionHandle | null = null;
+    setData(undefined);
+    setIsLoading(true);
+    setError(undefined);
+  }, [type, serializedParams]);
+
+  useEffect(() => {
+    // Reset refs for new subscription
+    handleRef.current = undefined;
+    isCancelledRef.current = false;
+
+    // Skip subscription if params is undefined (wallet not ready yet)
+    if (params === undefined) {
+      setIsLoading(false);
+      return;
+    }
 
     // Setup subscription
-    const setupSubscription = async () => {
-      // Skip subscription if params is undefined (wallet not ready yet)
-      if (params === undefined) {
-        setIsLoading(false);
-        return;
-      }
-
+    (async () => {
       try {
-        handle = await subscriptionManager.subscribe<TData>(type, params, (newData: TData) => {
-          setData(newData);
-          setIsLoading(false);
-          setError(undefined);
-        });
-      } catch (err) {
-        console.error(`[useSubscription] Error subscribing to ${type}:`, err);
-        setError(err instanceof Error ? err : new Error('Failed to subscribe'));
-        setIsLoading(false);
-      }
-    };
+        const handle = await subscriptionManager.subscribe<TData>(
+          type,
+          params,
+          (newData: TData) => {
+            // Check if this subscription was cancelled while waiting
+            if (!isCancelledRef.current) {
+              setData(newData);
+              setIsLoading(false);
+              setError(undefined);
+            }
+          },
+        );
 
-    void setupSubscription();
+        // Store handle in ref for cleanup
+        handleRef.current = handle;
+
+        // If cancelled while subscribing, immediately unsubscribe
+        if (isCancelledRef.current) {
+          await subscriptionManager.unsubscribe(handle);
+        }
+      } catch (err) {
+        if (!isCancelledRef.current) {
+          console.error(`[useSubscription] Error subscribing to ${type}:`, err);
+          setError(err instanceof Error ? err : new Error('Failed to subscribe'));
+          setIsLoading(false);
+        }
+      }
+    })();
 
     // Cleanup on unmount or when dependencies change
     return () => {
-      if (handle) {
-        void subscriptionManager.unsubscribe(handle);
+      // Mark as cancelled immediately
+      isCancelledRef.current = true;
+
+      // Unsubscribe if handle is available
+      if (handleRef.current) {
+        void subscriptionManager.unsubscribe(handleRef.current);
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
