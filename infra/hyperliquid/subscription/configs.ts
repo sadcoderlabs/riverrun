@@ -334,3 +334,36 @@ subscriptionRegistry.register<CandleParams, CandleData>('candle', {
     );
   },
 });
+
+// ============================================================================
+// Configuration: allDexsClearinghouseState (SDK v0.29.1+)
+// ============================================================================
+
+// AllDexsClearinghouseState params
+interface AllDexsClearinghouseStateParams {
+  user: string;
+}
+
+// AllDexsClearinghouseState event data - use SDK type
+type AllDexsClearinghouseStateData = hl.AllDexsClearinghouseStateWsEvent;
+
+subscriptionRegistry.register<AllDexsClearinghouseStateParams, AllDexsClearinghouseStateData>(
+  'allDexsClearinghouseState',
+  {
+    // Key by user address
+    getKey: params => params.user,
+
+    // WebSocket subscription for real-time clearinghouse state updates across ALL DEXs
+    subscribe: async (params, callback) => {
+      const subscriptionClient = getSubscriptionClient();
+      return await subscriptionClient.allDexsClearinghouseState(
+        {
+          user: params.user,
+        },
+        (event: hl.AllDexsClearinghouseStateWsEvent) => {
+          callback(event);
+        },
+      );
+    },
+  },
+);

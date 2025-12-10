@@ -1,12 +1,10 @@
 import { useCallback, useMemo } from 'react';
 import { useWebData2 } from '@/infra/hyperliquid/hooks/useWebData2';
-import { useWebData3 } from '@/infra/hyperliquid/hooks/useWebData3';
-import type { WebData2Data, WebData3Data } from '@/infra/hyperliquid/subscription';
+import { useMultiDexClearinghouse } from '@/infra/hyperliquid/hooks/useMultiDexClearinghouse';
+import type { WebData2Data } from '@/infra/hyperliquid/subscription';
 
 // Type aliases for webData responses
 type SpotBalance = NonNullable<WebData2Data['spotState']>['balances'][number];
-type DexState = WebData3Data['perpDexStates'][number];
-type AssetPosition = NonNullable<DexState['clearinghouseState']>['assetPositions'][number];
 
 export interface UseAccountMetricsResult {
   // Account Equity
@@ -26,9 +24,9 @@ export interface UseAccountMetricsResult {
 /**
  * Hook to calculate account metrics from Hyperliquid
  *
- * Uses both webData2 and webData3 for complete account metrics:
- * - webData2: Spot balances (spotState)
- * - webData3: Perp metrics across ALL DEXs (validator perps + HIP-3)
+ * Uses multiple data sources for complete account metrics:
+ * - useMultiDexClearinghouse: Perp account value, margin, positions from ALL DEXs (validator perps + HIP-3)
+ * - webData2.spotState: Spot balances
  *
  * This ensures HIP-3 positions (GOOGL, TSLA, etc.) are included in account equity.
  *
@@ -49,10 +47,15 @@ export interface UseAccountMetricsResult {
  * ```
  */
 export function useAccountMetrics(): UseAccountMetricsResult {
-  // webData2 for spot balances
-  const { data: webData2, isLoading: isLoadingWebData2, error: errorWebData2 } = useWebData2();
-  // webData3 for perp metrics across ALL DEXs (including HIP-3)
-  const { data: webData3, isLoading: isLoadingWebData3, error: errorWebData3 } = useWebData3();
+  // Multi-DEX clearinghouse data for perp metrics (validator perps + HIP-3)
+  const {
+    data: multiDexData,
+    isLoading: isLoadingMultiDex,
+    error: multiDexError,
+  } = useMultiDexClearinghouse();
+
+  // webData2 for spot balances only
+  const { data: webData2, isLoading: isLoadingWebData2, error: webData2Error } = useWebData2();
 
   const calculateSpotValue = useCallback((balances: SpotBalance[] | undefined) => {
     // Return 0 for empty accounts (no spot positions)
@@ -76,17 +79,9 @@ export function useAccountMetrics(): UseAccountMetricsResult {
   }, []);
 
   /**
-   * Calculate perp account value from webData3 (includes ALL DEXs)
-   * Sum accountValue from all perpDexStates
+   * Perp account value from multi-DEX data (includes HIP-3)
    */
-  const perpAccountValue = useMemo(() => {
-    if (!webData3?.perpDexStates) return undefined;
-
-    return webData3.perpDexStates.reduce((sum: number, dexState: DexState) => {
-      const accountValue = dexState.clearinghouseState?.marginSummary?.accountValue;
-      return sum + (accountValue ? parseFloat(accountValue) : 0);
-    }, 0);
-  }, [webData3?.perpDexStates]);
+  const perpAccountValue = multiDexData?.totalAccountValue;
 
   // Calculate spot account value from webData2
   const spotAccountValue = webData2 ? calculateSpotValue(webData2.spotState?.balances) : undefined;
@@ -97,20 +92,15 @@ export function useAccountMetrics(): UseAccountMetricsResult {
       : undefined;
 
   /**
-   * Calculate unrealized PnL from webData3 (includes ALL DEXs)
-   * Sum unrealizedPnl from all positions across all perpDexStates
+   * Calculate unrealized PnL from all positions across all DEXs
    */
   const unrealizedPnl = useMemo(() => {
-    if (!webData3?.perpDexStates) return undefined;
+    if (!multiDexData?.allPositions) return undefined;
 
-    return webData3.perpDexStates.reduce((total: number, dexState: DexState) => {
-      const positions = dexState.clearinghouseState?.assetPositions || [];
-      const dexPnl = positions.reduce((sum: number, asset: AssetPosition) => {
-        return sum + parseFloat(asset.position.unrealizedPnl);
-      }, 0);
-      return total + dexPnl;
+    return multiDexData.allPositions.reduce((sum, { position }) => {
+      return sum + parseFloat(position.unrealizedPnl);
     }, 0);
-  }, [webData3?.perpDexStates]);
+  }, [multiDexData?.allPositions]);
 
   // Balance = perpAccountValue - unrealizedPnl
   const perpBalance =
@@ -119,17 +109,9 @@ export function useAccountMetrics(): UseAccountMetricsResult {
       : undefined;
 
   /**
-   * Calculate maintenance margin from webData3 (includes ALL DEXs)
-   * Sum crossMaintenanceMarginUsed from all perpDexStates
+   * Maintenance margin from multi-DEX data
    */
-  const maintenanceMargin = useMemo(() => {
-    if (!webData3?.perpDexStates) return undefined;
-
-    return webData3.perpDexStates.reduce((sum: number, dexState: DexState) => {
-      const margin = dexState.clearinghouseState?.crossMaintenanceMarginUsed;
-      return sum + (margin ? parseFloat(margin) : 0);
-    }, 0);
-  }, [webData3?.perpDexStates]);
+  const maintenanceMargin = multiDexData?.totalMaintenanceMarginUsed;
 
   const crossMarginRatio =
     maintenanceMargin !== undefined && perpAccountValue
@@ -137,23 +119,15 @@ export function useAccountMetrics(): UseAccountMetricsResult {
       : undefined;
 
   /**
-   * Calculate total notional position from webData3 (includes ALL DEXs)
-   * Sum totalNtlPos from all perpDexStates
+   * Total notional position from multi-DEX data
    */
-  const totalNtlPos = useMemo(() => {
-    if (!webData3?.perpDexStates) return undefined;
-
-    return webData3.perpDexStates.reduce((sum: number, dexState: DexState) => {
-      const ntlPos = dexState.clearinghouseState?.marginSummary?.totalNtlPos;
-      return sum + (ntlPos ? Math.abs(parseFloat(ntlPos)) : 0);
-    }, 0);
-  }, [webData3?.perpDexStates]);
+  const totalNtlPos = multiDexData?.totalNtlPos;
 
   const crossAccountLeverage =
     totalNtlPos !== undefined && perpAccountValue ? totalNtlPos / perpAccountValue : undefined;
 
-  const isLoading = isLoadingWebData2 || isLoadingWebData3;
-  const error = errorWebData2 || errorWebData3;
+  const isLoading = isLoadingMultiDex || isLoadingWebData2;
+  const error = multiDexError || webData2Error;
 
   return useMemo(
     () => ({

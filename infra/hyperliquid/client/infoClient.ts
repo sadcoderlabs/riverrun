@@ -393,3 +393,33 @@ export async function extraAgents(
     REQUEST_WEIGHTS.extraAgents,
   );
 }
+
+// ============================================================================
+// HIP-3 DEX Abstraction
+// ============================================================================
+
+/**
+ * Get user's DEX abstraction status
+ *
+ * Weight: 20
+ * Returns: true if enabled, false if disabled, null if never set
+ *
+ * @example
+ * ```typescript
+ * const status = await userDexAbstraction({ user: '0x...' });
+ * if (status === null) {
+ *   // First time - can enable
+ * } else if (status === true) {
+ *   // Already enabled - no need to enable again
+ * }
+ * ```
+ */
+export async function userDexAbstraction(
+  params: Parameters<hl.InfoClient['userDexAbstraction']>[0],
+): Promise<hl.UserDexAbstractionInfoResponse> {
+  const infoClient = getInfoClient();
+  return await hyperliquidRateLimiter.execute(
+    () => infoClient.userDexAbstraction(params),
+    REQUEST_WEIGHTS.default, // Using default weight (20)
+  );
+}
