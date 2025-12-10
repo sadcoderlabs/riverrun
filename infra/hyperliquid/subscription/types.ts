@@ -77,8 +77,12 @@ export interface SubscriptionEntry<TData = any> {
   /** Stored params for resuming after pause */
   params: any;
 
-  /** Stored callback for data updates */
-  callback: ((data: TData) => void) | null;
+  /**
+   * Map of callbacks by unique ID
+   * Each subscriber has their own callback identified by a unique ID.
+   * When unsubscribing, only that specific callback is removed.
+   */
+  callbacks: Map<string, (data: TData) => void>;
 }
 
 /**
@@ -90,6 +94,9 @@ export interface SubscriptionHandle {
 
   /** Subscription key */
   key: string;
+
+  /** Unique callback ID for this subscriber */
+  callbackId: string;
 }
 
 // ============================================================================
