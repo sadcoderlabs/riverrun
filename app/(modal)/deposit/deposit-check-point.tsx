@@ -5,8 +5,8 @@ import { Text } from '@/app-internal/components/global/Text';
 import { AlertTriangle, Copy, QrCode, X } from '@tamagui/lucide-icons';
 import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Image, Modal, Pressable, ScrollView } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { Image, Modal, Pressable, RefreshControl, ScrollView } from 'react-native';
 import { toast } from 'sonner-native';
 import { Spinner, XStack, YStack } from 'tamagui';
 
@@ -30,6 +30,9 @@ export default function DepositCheckpointPage() {
   // Wallet and bridge hooks
   const { wallet } = useWallet();
   const { arbitrumBalance, arbitrumEthBalance, refreshBalances, isLoadingBalances } = useBridge();
+
+  // Pull-to-refresh state
+  const [refreshing, setRefreshing] = useState(false);
 
   // QR code modal state
   const [showQRModal, setShowQRModal] = useState(false);
@@ -65,6 +68,13 @@ export default function DepositCheckpointPage() {
   // Refresh balances on mount
   useEffect(() => {
     refreshBalances();
+  }, [refreshBalances]);
+
+  // Pull-to-refresh handler
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refreshBalances();
+    setRefreshing(false);
   }, [refreshBalances]);
 
   // Pre-generate QR code on mount
@@ -124,7 +134,11 @@ export default function DepositCheckpointPage() {
       {/* Main Content Area - Flex to push button to bottom */}
       <YStack flex={1} justifyContent="space-between">
         {/* Scrollable Content */}
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ flexGrow: 1 }}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        >
           {/* Instruction Heading */}
           <YStack paddingHorizontal="$4" paddingTop="$6" paddingBottom="$4">
             <Text textAlign="center" color="$color12" fontSize="$4">
