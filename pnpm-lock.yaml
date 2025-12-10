@@ -32,8 +32,8 @@ importers:
         specifier: ^9.3.3
         version: 9.3.3(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0)
       '@nktkas/hyperliquid':
-        specifier: 0.28.0
-        version: 0.28.0(typescript@5.9.2)
+        specifier: 0.29.1
+        version: 0.29.1(typescript@5.9.2)
       '@privy-io/chains':
         specifier: ^0.0.4
         version: 0.0.4
@@ -1349,8 +1349,8 @@ packages:
   '@napi-rs/wasm-runtime@0.2.12':
     resolution: {integrity: sha512-ZVWUcfwY4E/yPitQJl481FjFo3K22D6qF0DuFH6Y/nbnE11GY5uguDxZMGXPQ8WQ0128MXQD7TnfHyK4oWoIJQ==}
 
-  '@nktkas/hyperliquid@0.28.0':
-    resolution: {integrity: sha512-aYugcWbICnCWS9V04DWE8qvJMYrEpha2jCxaalgH4kzHAIAKRs6dC6fZeU13G794IToreGP088L4xvRXalsjZA==}
+  '@nktkas/hyperliquid@0.29.1':
+    resolution: {integrity: sha512-VA8ofr6yv26BPOOvGcjtC2snGwmQHEKB4Xd4oFvFbF8DZyVduWaGatXwgoJv+nggZmE5UVV9iqbLIOchQTe8vg==}
     engines: {node: '>=20.19.0'}
     hasBin: true
 
@@ -9979,7 +9979,7 @@ snapshots:
       '@tybys/wasm-util': 0.10.1
     optional: true
 
-  '@nktkas/hyperliquid@0.28.0(typescript@5.9.2)':
+  '@nktkas/hyperliquid@0.29.1(typescript@5.9.2)':
     dependencies:
       '@nktkas/rews': 1.2.2
       '@noble/hashes': 2.0.1

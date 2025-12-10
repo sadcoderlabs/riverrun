@@ -39,6 +39,7 @@ export const REQUEST_WEIGHTS = {
   referral: 20,
   extraAgents: 20,
   userFees: 20,
+  userDexAbstraction: 20,
 
   // Heavy (weight = 60)
   candleSnapshot: 60, // Base 20 + additional weight per 60 items returned

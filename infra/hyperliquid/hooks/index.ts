@@ -7,3 +7,4 @@ export * from './useWebData2';
 export * from './useWebData3';
 export * from './useCandleSnapshot';
 export * from './useLatestPrice';
+export * from './useMultiDexClearinghouse';
