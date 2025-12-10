@@ -4,13 +4,15 @@
  * Provides a function to enable DEX abstraction when viewing HIP-3 assets,
  * allowing the API to return abstracted balance from main perps account.
  *
- * This is a one-time operation per account per session - once enabled,
- * all HIP-3 assets will show the correct abstracted balance.
+ * This is a one-time operation per account - once enabled via API, it persists.
+ * The hook first checks if DEX abstraction is already enabled before calling
+ * the API to avoid "Abstraction transition not allowed" errors.
  */
 
 import { useContainer } from '@/app-internal/di';
 import { useWallet } from '@/app-internal/features/wallet/hooks/useWallet';
 import { useCallback, useState } from 'react';
+import * as infoClient from '@/infra/hyperliquid/client/infoClient';
 
 interface UseEnableDexAbstractionResult {
   /** Whether DEX abstraction is currently being enabled */
@@ -19,8 +21,8 @@ interface UseEnableDexAbstractionResult {
   enable: () => Promise<void>;
 }
 
-// Track enabled wallets across all hook instances (per session)
-const enabledWallets = new Set<string>();
+// Track wallets we've already checked/enabled this session
+const checkedWallets = new Set<string>();
 
 /**
  * Hook to enable HIP-3 DEX abstraction
@@ -46,18 +48,30 @@ export function useEnableDexAbstraction(): UseEnableDexAbstractionResult {
   const [isEnabling, setIsEnabling] = useState(false);
 
   const enable = useCallback(async () => {
-    // Skip if no wallet or already enabled for this wallet
-    if (!wallet?.address || enabledWallets.has(wallet.address)) {
+    // Skip if no wallet or already checked this session
+    if (!wallet?.address || checkedWallets.has(wallet.address)) {
       return;
     }
 
     setIsEnabling(true);
     try {
-      const { agentWallet } = await tryGetAgentWallet.execute();
-      if (agentWallet) {
-        await orderExchange.enableDexAbstraction(agentWallet.signer);
-        enabledWallets.add(wallet.address);
+      // First check if DEX abstraction is already enabled
+      const status = await infoClient.userDexAbstraction({
+        user: wallet.address as `0x${string}`,
+      });
+
+      // Mark as checked regardless of outcome
+      checkedWallets.add(wallet.address);
+
+      // Only enable if status is null (never set before)
+      // API only allows transition from null -> true
+      if (status === null) {
+        const { agentWallet } = await tryGetAgentWallet.execute();
+        if (agentWallet) {
+          await orderExchange.enableDexAbstraction(agentWallet.signer);
+        }
       }
+      // If status is true or false, no action needed (already set)
     } catch (error) {
       // Silent fail - user can still trade, just might see 0 balance initially
       console.warn('[useEnableDexAbstraction] Failed to enable:', error);

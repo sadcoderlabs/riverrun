@@ -3,8 +3,7 @@
  *
  * This hook automatically:
  * - Monitors active wallet changes
- * - Subscribes to position data via HTTP + WebSocket hybrid
- * - Extracts non-zero positions from ALL DEXs (validator perps + HIP-3)
+ * - Gets positions from ALL DEXs (validator perps + HIP-3) via useMultiDexClearinghouse
  * - Enriches positions with market data (markPx, szDecimals)
  * - Updates position store with enriched data
  *
@@ -12,16 +11,14 @@
  * - Embraces React lifecycle (useEffect)
  * - Manages subscriptions automatically
  * - Updates positionStore directly
+ *
+ * Note: Uses useMultiDexClearinghouse which queries all DEXs in parallel.
  */
 
-import { useEffect, useMemo } from 'react';
-import type * as hl from '@nktkas/hyperliquid';
+import { useEffect } from 'react';
 
 import { useWallet } from '../../wallet/hooks/useWallet';
-import {
-  HyperliquidGateway,
-  type SubscriptionHandle,
-} from '@/infra/hyperliquid/hyperliquidGateway';
+import { useMultiDexClearinghouse } from '@/infra/hyperliquid/hooks/useMultiDexClearinghouse';
 import type { MarketPort } from '@/contexts/market/ports/marketPort';
 import type { TelemetryPort } from '@/contexts/telemetry/ports/telemetryPort';
 import { positionStore } from '../adapters/positionStore';
@@ -30,31 +27,6 @@ import type { EnrichedPosition, Position } from '../types/position';
 // ============================================================================
 // Data Processing Functions (Testable)
 // ============================================================================
-
-/**
- * Extract non-zero positions from WebData3 response
- * Flattens positions from ALL perpDexStates (validator perps + HIP-3 DEXs)
- * Exported for testing purposes
- */
-export function extractPositions(data: hl.WsWebData3Event): Position[] {
-  if (!data.perpDexStates) {
-    return [];
-  }
-
-  // Flatten positions from all DEXs
-  return data.perpDexStates.flatMap(dexState => {
-    if (!dexState.clearinghouseState?.assetPositions) {
-      return [];
-    }
-
-    return dexState.clearinghouseState.assetPositions
-      .filter(asset => {
-        const szi = Number(asset.position.szi);
-        return szi !== 0;
-      })
-      .map(asset => asset.position);
-  });
-}
 
 /**
  * Enrich positions with market data
@@ -97,8 +69,11 @@ export function usePositionSubscription(
 ) {
   // Get active wallet address from useWallet hook
   const { address: walletAddress } = useWallet();
-  const gateway = useMemo(() => new HyperliquidGateway(), []);
 
+  // Get positions from all DEXs (validator perps + HIP-3)
+  const { data: multiDexData, isLoading, error } = useMultiDexClearinghouse();
+
+  // Update position store when multi-DEX data changes
   useEffect(() => {
     // No wallet - clear positions
     if (!walletAddress) {
@@ -106,61 +81,52 @@ export function usePositionSubscription(
       return;
     }
 
-    let subscription: SubscriptionHandle | undefined;
-    let isCancelled = false;
+    // Set loading state
+    if (isLoading) {
+      positionStore.getState().setLoading(true);
+      return;
+    }
 
-    (async () => {
+    // Handle error
+    if (error) {
+      console.error('[usePositionSubscription] Error fetching positions:', error);
+      telemetryService.captureError(error, {
+        component: 'usePositionSubscription',
+        action: 'fetchPositions',
+        extra: { walletAddress },
+      });
+      positionStore.getState().setLoading(false);
+      return;
+    }
+
+    // Process positions from multi-DEX data
+    if (multiDexData) {
       try {
-        positionStore.getState().setLoading(true);
+        // Convert aggregated positions to Position type
+        const positions: Position[] = multiDexData.allPositions.map(({ position }) => position);
 
-        // Subscribe to position data via Gateway
-        // Gateway handles HTTP + WS hybrid strategy internally
-        // Using webData3 to get positions from ALL DEXs (validator perps + HIP-3)
-        subscription = await gateway.subscribeWebData3(
-          walletAddress,
-          (data: hl.WsWebData3Event) => {
-            // Don't process if effect was cancelled
-            if (!isCancelled) {
-              try {
-                // Extract non-zero positions from all DEXs
-                const positions = extractPositions(data);
+        // Enrich with market data
+        const enrichedPositions = enrichPositions(positions, marketAdapter);
 
-                // Enrich with market data
-                const enrichedPositions = enrichPositions(positions, marketAdapter);
-
-                // Update store
-                positionStore.getState().setPositions(enrichedPositions);
-                positionStore.getState().setLoading(false);
-              } catch (error) {
-                console.error('[usePositionSubscription] Failed to process position data:', error);
-                telemetryService.captureError(error, {
-                  component: 'usePositionSubscription',
-                  action: 'processPositionData',
-                  extra: { walletAddress },
-                });
-                positionStore.getState().setLoading(false);
-              }
-            }
-          },
-        );
-      } catch (error) {
-        console.error('[usePositionSubscription] Failed to start subscription:', error);
-        telemetryService.captureError(error, {
+        // Update store
+        positionStore.getState().setPositions(enrichedPositions);
+        positionStore.getState().setLoading(false);
+      } catch (err) {
+        console.error('[usePositionSubscription] Failed to process position data:', err);
+        telemetryService.captureError(err, {
           component: 'usePositionSubscription',
-          action: 'startSubscription',
+          action: 'processPositionData',
           extra: { walletAddress },
         });
-        if (!isCancelled) {
-          positionStore.getState().setLoading(false);
-        }
+        positionStore.getState().setLoading(false);
       }
-    })();
+    }
+  }, [walletAddress, multiDexData, isLoading, error, marketAdapter, telemetryService]);
 
-    // Cleanup function
-    return () => {
-      isCancelled = true;
-      subscription?.unsubscribe();
+  // Clear positions when wallet disconnects
+  useEffect(() => {
+    if (!walletAddress) {
       positionStore.getState().clear();
-    };
-  }, [walletAddress, gateway, marketAdapter, telemetryService]);
+    }
+  }, [walletAddress]);
 }
