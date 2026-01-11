@@ -12,7 +12,14 @@ import { storage } from './storageUtil';
  */
 
 // 1. Get projectId at https://dashboard.reown.com
-const projectId = 'REOWN_PROJECT_ID_REMOVED';
+// Set EXPO_PUBLIC_REOWN_PROJECT_ID in your environment or EAS secrets
+const projectId = process.env.EXPO_PUBLIC_REOWN_PROJECT_ID ?? '';
+
+if (!projectId) {
+  console.warn(
+    '[AppKit] EXPO_PUBLIC_REOWN_PROJECT_ID is not set. Wallet connection will not work.',
+  );
+}
 
 // 2. Create metadata
 const metadata = {

@@ -58,12 +58,13 @@ const segmentKey = Constants.expoConfig?.extra?.segmentWriteKey;
 
 ## Our Environment Variables
 
-| Variable                      | Type       | Visibility | Used In                      |
-| ----------------------------- | ---------- | ---------- | ---------------------------- |
-| `APP_VARIANT`                 | Build-time | Plain text | `app.config.ts`              |
-| `SEGMENT_WRITE_KEY`           | Build-time | Sensitive  | `app.config.ts` (via extra)  |
-| `EXPO_PUBLIC_GIT_COMMIT_HASH` | Runtime    | -          | Injected during build/update |
-| `SENTRY_AUTH_TOKEN`           | Build-time | Sensitive  | Build process only           |
+| Variable                       | Type       | Visibility | Used In                      |
+| ------------------------------ | ---------- | ---------- | ---------------------------- |
+| `APP_VARIANT`                  | Build-time | Plain text | `app.config.ts`              |
+| `SEGMENT_WRITE_KEY`            | Build-time | Sensitive  | `app.config.ts` (via extra)  |
+| `EXPO_PUBLIC_GIT_COMMIT_HASH`  | Runtime    | -          | Injected during build/update |
+| `EXPO_PUBLIC_REOWN_PROJECT_ID` | Runtime    | Plain text | Wallet connection (AppKit)   |
+| `SENTRY_AUTH_TOKEN`            | Build-time | Sensitive  | Build process only           |
 
 ## Quick Start
 
@@ -72,6 +73,7 @@ const segmentKey = Constants.expoConfig?.extra?.segmentWriteKey;
 Visit [EAS Dashboard](https://expo.dev/accounts/[account]/projects/[project]/environment-variables) and create variables for each environment (development, preview, production):
 
 - `APP_VARIANT` = `development` / `preview` / `production` (Plain text)
+- `EXPO_PUBLIC_REOWN_PROJECT_ID` = your Reown project ID from https://dashboard.reown.com (Plain text)
 - `SEGMENT_WRITE_KEY` = your segment key (Sensitive)
 - `SENTRY_AUTH_TOKEN` = your sentry token (Sensitive)
 
