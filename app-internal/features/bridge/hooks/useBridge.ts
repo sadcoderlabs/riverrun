@@ -20,7 +20,7 @@
  * State Management:
  * - Uses useState (not Zustand) - follows BuilderFee/Referral pattern
  * - Single hook provides both state and operations
- * - 2 使用端: deposit/withdraw 頁面 (各自獨立，無需共享狀態)
+ * - 2 consumers: deposit/withdraw pages (independent, no shared state needed)
  */
 
 import { useCallback, useState } from 'react';

@@ -1,7 +1,7 @@
 /**
  * CancelOrdersUseCase
  *
- * 職責：Cancel multiple orders in batch
+ * Responsibility: Cancel multiple orders in batch
  *
  * Dependencies:
  * - OrderExchangePort: Execute batch cancellation on the exchange

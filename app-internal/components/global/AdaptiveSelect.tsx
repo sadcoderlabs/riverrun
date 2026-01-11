@@ -261,13 +261,13 @@ function NativeActionSheetSelect() {
     const labels = sortedOptions.map(opt => opt.label);
     labels.push('Cancel');
 
-    // 顯示操作表
+    // Show action sheet
     showActionSheetWithOptions(
       {
         options: labels,
         cancelButtonIndex: labels.length - 1,
         title,
-        // 根據主題設置顏色
+        // Set colors based on theme
         ...(Platform.OS === 'ios'
           ? {
               tintColor: tintColorValue,
@@ -287,31 +287,31 @@ function NativeActionSheetSelect() {
     );
   }, [options, setValue, showActionSheetWithOptions, tintColorValue, title]);
 
-  // 用來查找選中項的文本顯示
+  // Find the label text for selected item
   const selectedLabel = useMemo(() => {
     const selectedOption = options.find(opt => opt.value === value);
     return selectedOption?.label || value || 'Select...';
   }, [options, value]);
 
-  // 確保 customTrigger 是有效的 React 元素
+  // Ensure customTrigger is a valid React element
   if (!React.isValidElement(customTrigger)) {
     console.warn('AdaptiveSelect.Trigger requires a valid React element as children');
     return null;
   }
 
-  // 由於 TypeScript 類型問題，需要先斷言 customTrigger 的類型
+  // Assert customTrigger type due to TypeScript limitations
   const typedTrigger = customTrigger as ReactElement<{ onPress?: () => void; disabled?: boolean }>;
 
   // Define the UI rendering logic outside of useMemo
   const renderTrigger = () => {
     try {
-      // 預設的 Props 集合
+      // Default props collection
       const baseProps = {
         onPress: showActionSheet,
         disabled: options.length === 0,
       };
 
-      // 查找包含字符串的最深層元素並更新它
+      // Find the deepest element containing a string and update it
       const deepUpdateText = (element: ReactElement): ReactElement => {
         const elementWithChildren = element as ElementWithChildren;
 
@@ -330,10 +330,10 @@ function NativeActionSheetSelect() {
         return element;
       };
 
-      // 根據類型執行不同的處理策略
+      // Execute different strategies based on type
       return deepUpdateText(React.cloneElement(typedTrigger, baseProps));
     } catch (error) {
-      // 出錯時回退到簡單的克隆
+      // Fallback to simple clone on error
       console.warn('Error updating trigger:', error);
       return React.cloneElement(typedTrigger, {
         onPress: showActionSheet,
@@ -390,7 +390,7 @@ function WebSelect() {
     return React.cloneElement(customTrigger, { disabled: true } as { disabled: boolean });
   }
 
-  // 將 Tamagui Select 的 Web 實現包裝在自己的組件中
+  // Wrap Tamagui Select's web implementation in our component
   return (
     <TamaguiSelect
       id="food"
@@ -418,13 +418,13 @@ function WebSelect() {
         </TamaguiSelect.ScrollUpButton>
         <TamaguiSelect.Viewport>
           <TamaguiSelect.Group>
-            {/* 顯示標題（如果提供） */}
+            {/* Show title if provided */}
             {title && (
               <View style={{ paddingHorizontal: 10, paddingVertical: 5 }}>
                 <TamaguiSelect.Label>{title}</TamaguiSelect.Label>
               </View>
             )}
-            {/* 將選項按索引排序並渲染為 Select.Item */}
+            {/* Sort options by index and render as Select.Item */}
             {options
               .sort((a, b) => a.index - b.index)
               .map(option => (

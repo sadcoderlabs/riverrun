@@ -2,11 +2,11 @@ import { useCallback, useEffect, useRef } from 'react';
 
 export interface ThrottleOptions {
   /**
-   * 是否在第一次调用时立即执行（默认: true）
+   * Whether to execute immediately on first call (default: true)
    */
   leading?: boolean;
   /**
-   * 是否在节流期结束后执行最后一次调用（默认: true）
+   * Whether to execute the last call after throttle period ends (default: true)
    */
   trailing?: boolean;
 }

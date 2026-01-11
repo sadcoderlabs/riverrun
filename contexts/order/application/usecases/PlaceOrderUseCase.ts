@@ -1,7 +1,7 @@
 /**
  * PlaceOrderUseCase
  *
- * 職責：Place a unified order (Market/Limit with optional TP/SL)
+ * Responsibility: Place a unified order (Market/Limit with optional TP/SL)
  *
  * Dependencies:
  * - OrderExchangePort: Execute orders on the exchange

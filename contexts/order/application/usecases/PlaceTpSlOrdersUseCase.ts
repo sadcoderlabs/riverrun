@@ -1,7 +1,7 @@
 /**
  * PlaceTpSlOrdersUseCase
  *
- * 職責：Place TP/SL orders on an existing position
+ * Responsibility: Place TP/SL orders on an existing position
  *
  * Dependencies:
  * - OrderExchangePort: Execute orders on the exchange

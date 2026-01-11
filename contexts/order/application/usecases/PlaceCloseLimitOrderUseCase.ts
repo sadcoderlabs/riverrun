@@ -1,7 +1,7 @@
 /**
  * PlaceCloseLimitOrderUseCase
  *
- * 職責：Close a position with a limit order
+ * Responsibility: Close a position with a limit order
  *
  * Dependencies:
  * - OrderExchangePort: Execute orders on the exchange
