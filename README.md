@@ -1,6 +1,14 @@
 # Riverrun
 
-Riverrun is a mobile trading application for Hyperliquid, built with React Native and Expo.
+Riverrun is a mobile trading application for [Hyperliquid](https://hyperliquid.xyz), built with React Native and Expo.
+
+## License & Background
+
+This project was developed by the original Perpetual Protocol team under the product name **PERP GO**. After Perpetual Protocol was [transferred to a new team](https://gov.perp.com/discussion/1312093-r), this project was not included in the transfer and has been open sourced.
+
+**License:** [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) (Creative Commons Attribution 4.0 International)
+
+> **Important:** The "PERP" brand has been transferred to a new team. If you fork and deploy this project, **do not use the PERP brand**. See [REBRANDING.md](REBRANDING.md) for details on what needs to be changed.
 
 ## Quick Start
 
