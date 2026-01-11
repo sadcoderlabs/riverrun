@@ -16,10 +16,19 @@ Riverrun is a mobile-first trading application that lets you trade perpetual fut
 
 **Key Characteristics:**
 
-- **Self-Custodial**: You control your private keys. Create an embedded wallet via email (Privy) or connect your existing wallet (WalletConnect)
+- **Self-Custodial**: You always control your private keys — we never have access to your funds
 - **Native Mobile**: Built with React Native for iOS and Android with native performance
 - **Full-Featured**: Complete trading experience including advanced order types, charting, and portfolio management
 - **Hyperliquid Powered**: Direct integration with Hyperliquid L1 for fast, low-cost perpetual futures trading
+
+### Two Ways to Connect (Both Self-Custodial)
+
+| Method                    | How it Works                                                                                                                                                            | Best For                                          |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| **Privy (Email Login)**   | Sign in with email to create an embedded wallet. Your private key is generated locally and encrypted — only you can access it. You can export your private key anytime. | New users who want a simple onboarding experience |
+| **Reown (WalletConnect)** | Connect your existing wallet (MetaMask, Rainbow, etc.) via WalletConnect. Your keys stay in your wallet app.                                                            | Users who already have a crypto wallet            |
+
+Both methods are **fully self-custodial** — your keys, your coins. The app never has custody of your funds.
 
 ## Features
 
