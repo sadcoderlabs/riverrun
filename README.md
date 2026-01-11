@@ -38,7 +38,7 @@ Both methods are **fully self-custodial** — your keys, your coins. The app nev
 - **Order Types**: Market, Limit, Stop Market, Stop Limit orders
 - **Take Profit / Stop Loss**: Set TP/SL with percentage-based or USD-based targets
 - **Real-time Data**: Live order book, price feeds, and funding rates
-- **TradingView Charts**: Professional charting with multiple timeframes
+- **TradingView Charts**: Professional charting with multiple timeframes (requires [TradingView Advanced Charts license](https://www.tradingview.com/advanced-charts/))
 
 ### Wallet & Deposits
 
@@ -72,14 +72,15 @@ Both methods are **fully self-custodial** — your keys, your coins. The app nev
 
 To run this app, you'll need accounts for the following services:
 
-| Service                          | Purpose            | Required | Setup                           |
-| -------------------------------- | ------------------ | -------- | ------------------------------- |
-| [Expo/EAS](https://expo.dev)     | Build & deployment | Yes      | Create project, get `projectId` |
-| [Privy](https://privy.io)        | Embedded wallet    | Yes      | Get App ID                      |
-| [Reown](https://reown.com)       | WalletConnect      | Yes      | Get Project ID                  |
-| [Sentry](https://sentry.io)      | Error tracking     | Optional | Get DSN                         |
-| [Segment](https://segment.com)   | Analytics          | Optional | Get Write Key                   |
-| [Intercom](https://intercom.com) | Customer support   | Optional | Get App ID & API Keys           |
+| Service                                                                     | Purpose            | Required | Setup                                 |
+| --------------------------------------------------------------------------- | ------------------ | -------- | ------------------------------------- |
+| [Expo/EAS](https://expo.dev)                                                | Build & deployment | Yes      | Create project, get `projectId`       |
+| [Privy](https://privy.io)                                                   | Embedded wallet    | Yes      | Get App ID                            |
+| [Reown](https://reown.com)                                                  | WalletConnect      | Yes      | Get Project ID                        |
+| [TradingView Advanced Charts](https://www.tradingview.com/advanced-charts/) | Charting library   | Yes      | Apply for license, host library files |
+| [Sentry](https://sentry.io)                                                 | Error tracking     | Optional | Get DSN                               |
+| [Segment](https://segment.com)                                              | Analytics          | Optional | Get Write Key                         |
+| [Intercom](https://intercom.com)                                            | Customer support   | Optional | Get App ID & API Keys                 |
 
 > **Note:** See [docs/env.md](docs/env.md) for detailed environment variable configuration.
 
