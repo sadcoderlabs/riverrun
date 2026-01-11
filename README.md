@@ -26,7 +26,7 @@ Riverrun is a mobile-first trading application that lets you trade perpetual fut
 | Method                    | How it Works                                                                                                                                                            | Best For                                          |
 | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
 | **Privy (Email Login)**   | Sign in with email to create an embedded wallet. Your private key is generated locally and encrypted — only you can access it. You can export your private key anytime. | New users who want a simple onboarding experience |
-| **Reown (WalletConnect)** | Connect your existing wallet (MetaMask, Rainbow, etc.) via WalletConnect. Your keys stay in your wallet app.                                                            | Users who already have a crypto wallet            |
+| **Reown (WalletConnect)** | Connect your existing wallet (e.g. Rainbow) via WalletConnect. Your keys stay in your wallet app.                                                                       | Users who already have a crypto wallet            |
 
 Both methods are **fully self-custodial** — your keys, your coins. The app never has custody of your funds.
 
@@ -43,7 +43,7 @@ Both methods are **fully self-custodial** — your keys, your coins. The app nev
 ### Wallet & Deposits
 
 - **Embedded Wallet**: Create a wallet instantly via email login (powered by Privy)
-- **External Wallets**: Connect MetaMask, Rainbow, or any WalletConnect-compatible wallet
+- **External Wallets**: Connect any WalletConnect-compatible wallet (e.g. Rainbow)
 - **Deposit/Withdraw**: Bridge USDC from Arbitrum to Hyperliquid L1
 - **Portfolio Overview**: Real-time account equity, positions, and P&L
 
