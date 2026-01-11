@@ -1,6 +1,6 @@
 # Riverrun
 
-Riverrun is a mobile trading application for [Hyperliquid](https://hyperliquid.xyz), built with React Native and Expo.
+Riverrun is a **self-custodial** mobile trading app for [Hyperliquid](https://hyperliquid.xyz) DEX, built with React Native and Expo. It provides a native iOS and Android experience for perpetual futures trading with full control over your funds.
 
 ## License & Background
 
@@ -10,42 +10,105 @@ This project was developed by the original Perpetual Protocol team under the pro
 
 > **Important:** The "PERP" brand has been transferred to a new team. If you fork and deploy this project, **do not use the PERP brand**. See [REBRANDING.md](REBRANDING.md) for details on what needs to be changed.
 
-## Quick Start
+## What is Riverrun?
+
+Riverrun is a mobile-first trading application that lets you trade perpetual futures on Hyperliquid directly from your phone.
+
+**Key Characteristics:**
+
+- **Self-Custodial**: You control your private keys. Create an embedded wallet via email (Privy) or connect your existing wallet (WalletConnect)
+- **Native Mobile**: Built with React Native for iOS and Android with native performance
+- **Full-Featured**: Complete trading experience including advanced order types, charting, and portfolio management
+- **Hyperliquid Powered**: Direct integration with Hyperliquid L1 for fast, low-cost perpetual futures trading
+
+## Features
+
+### Trading
+
+- **Perpetual Futures**: Trade crypto perpetuals with up to 50x leverage
+- **Order Types**: Market, Limit, Stop Market, Stop Limit orders
+- **Take Profit / Stop Loss**: Set TP/SL with percentage-based or USD-based targets
+- **Real-time Data**: Live order book, price feeds, and funding rates
+- **TradingView Charts**: Professional charting with multiple timeframes
+
+### Wallet & Deposits
+
+- **Embedded Wallet**: Create a wallet instantly via email login (powered by Privy)
+- **External Wallets**: Connect MetaMask, Rainbow, or any WalletConnect-compatible wallet
+- **Deposit/Withdraw**: Bridge USDC from Arbitrum to Hyperliquid L1
+- **Portfolio Overview**: Real-time account equity, positions, and P&L
+
+### Account Management
+
+- **Position Tracking**: Monitor all open positions with unrealized P&L
+- **Trade History**: Complete history of all trades and orders
+- **Push Notifications**: Get notified about order fills and liquidations
+
+### Advanced Features
+
+- **Agent Wallet**: Delegate trading to an agent wallet for automated strategies
+- **Builder Fee**: Configure builder fee settings for the app
+- **Referral System**: Apply referral codes for trading fee discounts
+
+## Getting Started
 
 ### Prerequisites
 
-- Node.js 18+
-- pnpm 10+ (`npm install -g pnpm@latest-10` or `brew install pnpm`)
-- iOS Simulator (macOS) or Android Emulator
-- EAS CLI (`pnpm add -g eas-cli`)
+- **Node.js** 18+
+- **pnpm** 10+ (`npm install -g pnpm@latest-10`)
+- **EAS CLI** (`npm install -g eas-cli`)
+- **iOS Simulator** (macOS) or **Android Emulator**
 
-### Setup
+### External Services
+
+To run this app, you'll need accounts for the following services:
+
+| Service                          | Purpose            | Required | Setup                           |
+| -------------------------------- | ------------------ | -------- | ------------------------------- |
+| [Expo/EAS](https://expo.dev)     | Build & deployment | Yes      | Create project, get `projectId` |
+| [Privy](https://privy.io)        | Embedded wallet    | Yes      | Get App ID                      |
+| [Reown](https://reown.com)       | WalletConnect      | Yes      | Get Project ID                  |
+| [Sentry](https://sentry.io)      | Error tracking     | Optional | Get DSN                         |
+| [Segment](https://segment.com)   | Analytics          | Optional | Get Write Key                   |
+| [Intercom](https://intercom.com) | Customer support   | Optional | Get App ID & API Keys           |
+
+> **Note:** See [docs/env.md](docs/env.md) for detailed environment variable configuration.
+
+### Local Development
 
 ```bash
-# 1. Install dependencies
+# 1. Clone and install
+git clone <repo-url>
+cd riverrun
 pnpm install
 
-# 2. Pull environment variables
-eas env:pull --environment development
+# 2. Configure environment variables
+# Create .env.local with your service credentials:
+cat > .env.local << EOF
+APP_VARIANT=development
+EXPO_PUBLIC_REOWN_PROJECT_ID=your_reown_project_id
+# Add other variables as needed (see docs/env.md)
+EOF
 
-# 3. Start the development server
+# 3. Start development server
 pnpm start
 ```
 
-Then press `i` for iOS simulator or `a` for Android emulator.
+Press `i` for iOS Simulator or `a` for Android Emulator.
 
 ### Development Build
 
-For native feature development, you'll need a development build:
+For testing native features (Privy wallet, WalletConnect), you need a development build:
 
 ```bash
-# Build for all platforms
-pnpm run build:development
-
-# Or build for specific platform
+# Build for iOS
 pnpm run build:development:ios
+
+# Build for Android
 pnpm run build:development:android
 ```
+
+> **Note:** Expo Go does not support native modules. You must use a development build for full functionality.
 
 ## Project Structure
 
@@ -144,6 +207,7 @@ pnpm run update:production
 | [Environment Variables](docs/env.md)                                 | Environment configuration                 |
 | [Versioning](docs/versioning.md)                                     | Version management & release process      |
 | [Telemetry Guidelines](docs/telemetry-guidelines.md)                 | Error tracking & analytics                |
+| [Rebranding Guide](REBRANDING.md)                                    | How to rebrand if forking this project    |
 
 ## Coding Standards
 
