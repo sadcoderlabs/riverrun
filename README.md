@@ -74,6 +74,16 @@ To run this app, you'll need accounts for the following services:
 
 > **Note:** See [docs/env.md](docs/env.md) for detailed environment variable configuration.
 
+#### About the Backend
+
+This app references a backend API (`BACKEND_API_BASE_URL`) which is **only used for push notifications** (device registration). The backend is **not included** in this repository and is **completely optional** — all core trading features work without it.
+
+If you don't set up a backend:
+
+- All trading, wallet, deposit/withdraw features work normally
+- Push notifications will be disabled
+- The app gracefully handles the missing backend
+
 ### Local Development
 
 ```bash

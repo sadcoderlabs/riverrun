@@ -108,12 +108,16 @@ grep -r "perpetualprotocol" --include="*.ts" --include="*.tsx" --include="*.json
 grep -r "riverrun" --include="*.ts" --include="*.tsx" --include="*.json" --include="*.md" . | grep -v node_modules | grep -v ".git"
 ```
 
-## Backend API
+## Backend API (Optional)
 
-This app connects to a backend API (`api.go.perp.com`). The backend is **not included** in this repository. You'll need to either:
+This app references a backend API (`api.go.perp.com`) which is **only used for push notifications** (device registration/unregistration). The backend is **not included** in this repository.
 
-1. Build your own backend implementation (see `infra/backend/` for API interface)
-2. Modify the app to work without the backend features
+**Good news:** The backend is completely optional. All core features (trading, wallet, deposits, withdrawals) work without it. If you skip the backend setup:
+
+- Push notifications will be disabled
+- Everything else works normally
+
+If you want push notifications, you can build your own backend. See `infra/backend/` for the simple API interface (just 3 endpoints: register, unregister, status).
 
 ## Questions?
 
