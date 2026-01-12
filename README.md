@@ -2,6 +2,10 @@
 
 Riverrun is a **self-custodial** mobile trading app for [Hyperliquid](https://hyperliquid.xyz) DEX, built with React Native and Expo. It provides a native iOS and Android experience for perpetual futures trading with full control over your funds.
 
+## Demo
+
+[![Demo Video](https://img.youtube.com/vi/EJ3B3oUFzEU/maxresdefault.jpg)](https://youtube.com/shorts/EJ3B3oUFzEU)
+
 ## License & Background
 
 This project was developed by the original Perpetual Protocol team under the product name **PERP GO**. After Perpetual Protocol was [transferred to a new team](https://gov.perp.com/discussion/1312093-r), this project was not included in the transfer and has been open sourced.
