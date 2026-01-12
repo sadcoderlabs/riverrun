@@ -260,3 +260,11 @@ Check that you have the latest EAS CLI:
 ```bash
 pnpm add -g eas-cli
 ```
+
+## Contributors
+
+Thanks to the following people who have contributed to this project:
+
+- [@opass](https://github.com/opass)
+- [@minrey](https://github.com/minrey)
+- [@vinta](https://github.com/vinta)
