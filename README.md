@@ -8,9 +8,11 @@ Riverrun is a **self-custodial** mobile trading app for [Hyperliquid](https://hy
 
 ## License & Background
 
-This project was developed by the original Perpetual Protocol team under the product name **PERP GO**. After Perpetual Protocol was [transferred to a new team](https://gov.perp.com/discussion/1312093-r), this project was not included in the transfer and has been open sourced.
+This project was developed by the original Perpetual Protocol team under the product name **PERP GO**. After Perpetual Protocol was [transferred to a new team](https://gov.perp.com/discussion/1312093-r), the original team decided to open source this project and share the development work with the community.
 
 **License:** [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) (Creative Commons Attribution 4.0 International)
+
+**Copyright:** © 2026 SadCoderLabs (original Perpetual Protocol team before 2025)
 
 > **Important:** The "PERP" brand has been transferred to a new team. If you fork and deploy this project, **do not use the PERP brand**. See [REBRANDING.md](REBRANDING.md) for details on what needs to be changed.
 
