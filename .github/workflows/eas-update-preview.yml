@@ -1,9 +1,9 @@
 name: EAS Update (Preview)
 
 on:
-  push:
-    branches:
-      - develop
+  # push:
+  #   branches:
+  #     - develop
   workflow_dispatch:
     inputs:
       ref:

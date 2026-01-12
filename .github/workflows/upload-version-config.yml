@@ -1,11 +1,11 @@
 name: Upload Version Config to S3
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - "version-config.json"
+  # push:
+  #   branches:
+  #     - main
+  #   paths:
+  #     - "version-config.json"
   workflow_dispatch:
     inputs:
       ref:
