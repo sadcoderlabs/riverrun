@@ -92,7 +92,9 @@ To run this app, you'll need accounts for the following services:
 
 #### About the Backend
 
-This app references a backend API (`BACKEND_API_BASE_URL`) which is **only used for push notifications** (device registration). The backend is **not included** in this repository and is **completely optional** — all core trading features work without it.
+This app references a backend API (`BACKEND_API_BASE_URL`) which is **only used for push notifications** (device registration). The backend is **completely optional** — all core trading features work without it.
+
+If you want push notifications, see: [riverrun-backend](https://github.com/sadcoderlabs/riverrun-backend)
 
 If you don't set up a backend:
 
@@ -266,6 +268,10 @@ Check that you have the latest EAS CLI:
 ```bash
 pnpm add -g eas-cli
 ```
+
+## Related Projects
+
+- [riverrun-backend](https://github.com/sadcoderlabs/riverrun-backend) - Push notification service (optional)
 
 ## Contributors
 
